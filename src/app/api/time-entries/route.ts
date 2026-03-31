@@ -44,7 +44,8 @@ export async function POST(request: Request) {
 
   try {
     parsedEntry = await parseTimeEntry(parsed.data.raw_text, today)
-  } catch {
+  } catch (err) {
+    console.error('Error parsing time entry with Gemini:', err)
     return NextResponse.json({ error: 'Falha ao processar entrada com IA' }, { status: 422 })
   }
 

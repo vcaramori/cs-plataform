@@ -39,7 +39,7 @@ const exampleQuestions = [
 export function PerguntarClient({ accounts }: { accounts: Account[] }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [selectedAccountId, setSelectedAccountId] = useState('')
+  const [selectedAccountId, setSelectedAccountId] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -62,7 +62,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question,
-          account_id: selectedAccountId || undefined,
+          account_id: selectedAccountId === 'all' ? undefined : selectedAccountId,
         }),
       })
 
@@ -114,7 +114,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
             <SelectValue placeholder="Todo o portfólio" />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-            <SelectItem value="" className="text-white hover:bg-slate-700">
+            <SelectItem value="all" className="text-white hover:bg-slate-700">
               <span className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-indigo-400" /> Todo o portfólio
               </span>

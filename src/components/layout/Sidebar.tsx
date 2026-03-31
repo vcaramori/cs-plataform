@@ -18,10 +18,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/accounts', label: 'Contas', icon: Building2 },
-  { href: '/dashboard/time', label: 'Esforço', icon: Clock },
-  { href: '/dashboard/tickets', label: 'Suporte', icon: TicketCheck },
-  { href: '/dashboard/ask', label: 'Perguntar', icon: MessageSquareText },
+  { href: '/esforco', label: 'Esforço', icon: Clock },
+  { href: '/suporte', label: 'Suporte', icon: TicketCheck },
+  { href: '/perguntar', label: 'Perguntar', icon: MessageSquareText },
 ]
 
 export function Sidebar({ user }: { user: User }) {
@@ -38,11 +37,11 @@ export function Sidebar({ user }: { user: User }) {
   const initials = user.email?.slice(0, 2).toUpperCase() ?? 'CS'
 
   return (
-    <aside className="w-60 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
+    <aside className="w-60 flex-shrink-0 bg-plannera-primary border-r border-slate-800 flex flex-col">
       {/* Logo */}
       <div className="p-5 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-plannera-orange flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-xs">CS</span>
           </div>
           <div>
@@ -63,7 +62,7 @@ export function Sidebar({ user }: { user: User }) {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group',
                 active
-                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-600/30'
+                  ? 'bg-plannera-orange/20 text-plannera-orange border border-plannera-orange/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               )}
             >
@@ -79,7 +78,7 @@ export function Sidebar({ user }: { user: User }) {
       <div className="p-3 border-t border-slate-800">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
           <Avatar className="w-8 h-8">
-            <AvatarFallback className="bg-indigo-800 text-indigo-200 text-xs font-semibold">
+            <AvatarFallback className="bg-plannera-sop text-white text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>

@@ -1,4 +1,4 @@
-import { getProModel } from '@/lib/gemini/client'
+import { getFlashModel } from '@/lib/gemini/client'
 import { searchEmbeddings } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -99,7 +99,7 @@ ${contextBlocks || 'Nenhum dado encontrado para essa consulta.'}
 ## Pergunta
 ${question}`
 
-  const model = getProModel()
+  const model = getFlashModel()
   const result = await model.generateContent(prompt)
   const answer = result.response.text().trim()
 

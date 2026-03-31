@@ -371,13 +371,13 @@
 
 Execute antes de qualquer deploy:
 
-- [ ] Login funciona
-- [ ] Dashboard carrega sem erro
-- [ ] Criar conta + contrato funciona
-- [ ] `/esforco` registra entrada com NLP
-- [ ] Modal de transcrição abre e fecha
-- [ ] Upload de transcrição vectoriza (verificar tabela `embeddings`)
-- [ ] `/suporte` importa CSV com 2+ tickets
-- [ ] Shadow Score gera sem erro
-- [ ] `/perguntar` responde pergunta sobre conta com transcrição
-- [ ] Logout funciona
+- [x] Login funciona
+- [x] Dashboard carrega sem erro
+- [x] Criar conta + contrato funciona
+- [x] `/esforco` registra entrada com NLP
+- [x] Modal de transcrição abre e fecha
+- [x] Upload de transcrição vectoriza (verificar tabela `embeddings`)
+- [x] `/suporte` importa CSV com 2+ tickets
+- [x] Shadow Score gera sem erro
+- [x] `/perguntar` responde pergunta sobre conta com transcrição
+- [x] Logout funciona

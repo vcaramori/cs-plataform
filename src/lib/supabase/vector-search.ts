@@ -38,7 +38,8 @@ export async function generateEmbedding(
   const result = await model.embedContent({
     content: { parts: [{ text }], role: 'user' },
     taskType,
-  })
+    outputDimensionality: 1536,
+  } as any)
   return result.embedding.values
 }
 

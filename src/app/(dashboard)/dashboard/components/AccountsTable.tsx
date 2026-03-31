@@ -77,14 +77,14 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                 <button
                   key={s}
                   onClick={() => setSegmentFilter(s)}
-                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${segmentFilter === s ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${segmentFilter === s ? 'bg-plannera-orange text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
                 >
                   {s === 'all' ? 'Todos' : s}
                 </button>
               ))}
             </div>
-            <Link href="/dashboard/accounts/new">
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 gap-1.5">
+            <Link href="/accounts/new">
+              <Button size="sm" className="bg-plannera-orange hover:bg-plannera-orange/80 text-white h-9 gap-1.5">
                 <Plus className="w-4 h-4" />
                 Nova Conta
               </Button>
@@ -143,7 +143,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                     <TableCell className="text-center"><HealthBadge score={account.health_score} /></TableCell>
                     <TableCell className="text-center"><TrendIcon trend={account.health_trend} /></TableCell>
                     <TableCell>
-                      <Link href={`/dashboard/accounts/${account.id}`}>
+                      <Link href={`/accounts/${account.id}`}>
                         <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white h-8 w-8 p-0">
                           <ChevronRight className="w-4 h-4" />
                         </Button>
