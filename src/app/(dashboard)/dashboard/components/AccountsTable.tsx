@@ -115,7 +115,8 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               </TableRow>
             ) : (
               filtered.map(account => {
-                const activeContract = account.contracts?.find(c => c.status === 'active') ?? account.contracts?.[0]
+                const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
+                const activeContract = contracts.find(c => c.status === 'active') ?? contracts[0]
                 return (
                   <TableRow key={account.id} className="border-slate-800 hover:bg-slate-800/50 transition-colors">
                     <TableCell>

@@ -25,10 +25,11 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
 
   if (error || !account) notFound()
 
-  const activeContract = (account.contracts as any[])?.find((c: any) => c.status === 'active') ?? (account.contracts as any[])?.[0] ?? null
-  const contacts = (account.contacts as any[]) ?? []
-  const interactions = (account.interactions as any[]) ?? []
-  const tickets = (account.support_tickets as any[]) ?? []
+  const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
+  const activeContract = contracts.find((c: any) => c.status === 'active') ?? contracts[0] ?? null
+  const contacts = Array.isArray(account.contacts) ? account.contacts : (account.contacts ? [account.contacts] : [])
+  const interactions = Array.isArray(account.interactions) ? account.interactions : (account.interactions ? [account.interactions] : [])
+  const tickets = Array.isArray(account.support_tickets) ? account.support_tickets : (account.support_tickets ? [account.support_tickets] : [])
 
   // Cost-to-Serve: horas do mês atual
   const now = new Date()

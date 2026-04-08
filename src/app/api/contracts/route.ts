@@ -7,10 +7,10 @@ const ContractSchema = z.object({
   mrr: z.number().positive(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   renewal_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']),
+  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
-  contracted_hours_monthly: z.number().min(0),
-  csm_hour_cost: z.number().min(0),
+  contracted_hours_monthly: z.number().min(0).optional().default(0),
+  csm_hour_cost: z.number().min(0).optional().default(0),
   notes: z.string().optional(),
 })
 

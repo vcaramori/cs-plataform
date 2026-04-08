@@ -12,15 +12,18 @@ import {
   MessageSquareText,
   LogOut,
   ChevronRight,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/accounts', label: 'Contas', icon: Building2 },
   { href: '/esforco', label: 'Esforço', icon: Clock },
   { href: '/suporte', label: 'Suporte', icon: TicketCheck },
   { href: '/perguntar', label: 'Perguntar', icon: MessageSquareText },
+  { href: '/users', label: 'Equipe (CSMs)', icon: Users },
 ]
 
 export function Sidebar({ user }: { user: User }) {

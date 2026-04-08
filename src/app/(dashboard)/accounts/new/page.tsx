@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,42 +14,53 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 const schema = z.object({
-  name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres'),
-  segment: z.enum(['SMB', 'Mid-Market', 'Enterprise']),
+  client_name: z.string().min(2, 'Nome do cliente deve ter ao menos 2 caracteres'),
+  account_name: z.string().min(2, 'Nome da conta (solução) deve ter ao menos 2 caracteres'),
+  touch_model: z.enum(['High Touch', 'Mid Touch']),
   industry: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   // Contrato inicial
   mrr: z.preprocess(v => parseFloat(String(v)), z.number().positive('MRR deve ser positivo')),
   start_date: z.string().min(1, 'Informe a data de início'),
   renewal_date: z.string().min(1, 'Informe a data de renovação'),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']),
-  contracted_hours_monthly: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
-  csm_hour_cost: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
+  csm_owner_id: z.string().uuid('Selecione um CSM').optional()
 })
 
 type FormData = {
-  name: string
-  segment: 'SMB' | 'Mid-Market' | 'Enterprise'
+  client_name: string
+  account_name: string
+  touch_model: 'High Touch' | 'Mid Touch'
   industry?: string
   website?: string
   mrr: number
   start_date: string
   renewal_date: string
-  service_type: 'Basic' | 'Professional' | 'Enterprise' | 'Custom'
-  contracted_hours_monthly: number
-  csm_hour_cost: number
+  csm_owner_id?: string
+}
+
+type User = {
+  id: string
+  email: string
 }
 
 export default function NewAccountPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [users, setUsers] = useState<User[]>([])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { segment: 'Mid-Market' as const, service_type: 'Professional' as const },
+    defaultValues: { touch_model: 'Mid Touch' as const },
   })
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(console.error)
+  }, [])
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -58,9 +69,16 @@ export default function NewAccountPage() {
       const accountRes = await fetch('/api/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: data.name, segment: data.segment, industry: data.industry, website: data.website }),
+        body: JSON.stringify({ 
+          client_name: data.client_name, 
+          account_name: data.account_name, 
+          touch_model: data.touch_model, 
+          industry: data.industry, 
+          website: data.website,
+          csm_owner_id: data.csm_owner_id 
+        }),
       })
-      if (!accountRes.ok) throw new Error('Erro ao criar conta')
+      if (!accountRes.ok) throw new Error('Erro ao criar conta/cliente')
       const account = await accountRes.json()
 
       const contractRes = await fetch('/api/contracts', {
@@ -71,14 +89,11 @@ export default function NewAccountPage() {
           mrr: data.mrr,
           start_date: data.start_date,
           renewal_date: data.renewal_date,
-          service_type: data.service_type,
-          contracted_hours_monthly: data.contracted_hours_monthly,
-          csm_hour_cost: data.csm_hour_cost,
         }),
       })
       if (!contractRes.ok) throw new Error('Conta criada, mas erro ao criar contrato')
 
-      router.push(`/dashboard/accounts/${account.id}`)
+      router.push(`/accounts/${account.id}`)
       router.refresh()
     } catch (e: any) {
       setError(e.message)
@@ -93,7 +108,7 @@ export default function NewAccountPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6 max-w-4xl">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/dashboard">
           <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white gap-1.5">
@@ -108,64 +123,89 @@ export default function NewAccountPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card className="bg-slate-900 border-slate-800">
-          <CardHeader><CardTitle className="text-white text-base">Dados da Conta</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-slate-300">Nome da Empresa *</Label>
-                <Input {...register('name')} placeholder="Ex: Acme Corp" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-                {field('name')}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Segmento *</Label>
-                <Select onValueChange={v => setValue('segment', v as any)} defaultValue="Mid-Market">
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    {['SMB', 'Mid-Market', 'Enterprise'].map(s => (
-                      <SelectItem key={s} value={s} className="text-white hover:bg-slate-700">{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Indústria</Label>
-                <Input {...register('industry')} placeholder="Ex: Tecnologia" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-slate-300">Website</Label>
-                <Input {...register('website')} placeholder="https://empresa.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-                {field('website')}
+          <CardHeader>
+            <CardTitle className="text-white text-base">Informações do Cliente e Conta</CardTitle>
+            <CardDescription className="text-slate-400">Preencha os dados primários da empresa e a solução adquirida.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            
+            {/* Bloco Cliente/Empresa */}
+            <div>
+              <h3 className="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">1. Dados da Empresa (Cliente)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-slate-300">Nome da Empresa *</Label>
+                  <Input {...register('client_name')} placeholder="Ex: General Mills" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                  {field('client_name')}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-slate-300">Setor / Indústria</Label>
+                  <Input {...register('industry')} placeholder="Ex: Bens de Consumo" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                </div>
+                <div className="md:col-span-2 space-y-1.5">
+                  <Label className="text-slate-300">Website</Label>
+                  <Input {...register('website')} placeholder="https://generalmills.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                  {field('website')}
+                </div>
               </div>
             </div>
+
+            <div className="border-t border-slate-800" />
+
+            {/* Bloco Conta/Solução */}
+            <div>
+              <h3 className="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">2. Dados da Solução (Conta)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5 md:col-span-1">
+                  <Label className="text-slate-300">Nome da Conta *</Label>
+                  <Input {...register('account_name')} placeholder="Ex: Solução A" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                  {field('account_name')}
+                </div>
+                <div className="space-y-1.5 md:col-span-1">
+                  <Label className="text-slate-300">Modelo de Atendimento *</Label>
+                  <Select onValueChange={v => setValue('touch_model', v as any)} defaultValue="Mid Touch">
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {['High Touch', 'Mid Touch'].map(s => (
+                        <SelectItem key={s} value={s} className="text-white hover:bg-slate-700">{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 md:col-span-1">
+                  <Label className="text-slate-300">CSM Responsável (Opcional)</Label>
+                  <Select onValueChange={v => setValue('csm_owner_id', v as any)}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Atribuir..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="none" className="text-slate-400 hover:bg-slate-700">Nenhum</SelectItem>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={u.id} className="text-white hover:bg-slate-700">{u.email}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {field('csm_owner_id')}
+                </div>
+              </div>
+            </div>
+
           </CardContent>
         </Card>
 
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="text-white text-base">Contrato Inicial</CardTitle>
-            <CardDescription className="text-slate-400">Defina as condições comerciais</CardDescription>
+            <CardDescription className="text-slate-400">Defina as condições comerciais da conta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-slate-300">MRR (R$) *</Label>
                 <Input {...register('mrr')} type="number" step="0.01" placeholder="5000" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
                 {field('mrr')}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Tipo de Serviço *</Label>
-                <Select onValueChange={v => setValue('service_type', v as any)} defaultValue="Professional">
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    {['Basic', 'Professional', 'Enterprise', 'Custom'].map(s => (
-                      <SelectItem key={s} value={s} className="text-white hover:bg-slate-700">{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-slate-300">Data de Início *</Label>
@@ -177,14 +217,6 @@ export default function NewAccountPage() {
                 <Input {...register('renewal_date')} type="date" className="bg-slate-800 border-slate-700 text-white" />
                 {field('renewal_date')}
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Horas Contratadas/Mês</Label>
-                <Input {...register('contracted_hours_monthly')} type="number" step="0.5" placeholder="20" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Custo/Hora do CSM (R$)</Label>
-                <Input {...register('csm_hour_cost')} type="number" step="0.01" placeholder="150" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -193,7 +225,7 @@ export default function NewAccountPage() {
 
         <div className="flex justify-end gap-3">
           <Link href="/dashboard">
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">Cancelar</Button>
+            <Button variant="outline" className="border-red-700 text-red-400 hover:bg-red-950 hover:text-red-300">Cancelar</Button>
           </Link>
           <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -194,7 +194,7 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="flex-1 text-slate-400 hover:text-white border border-slate-700"
+                className="flex-1 text-red-400 hover:text-red-300 border border-red-700 hover:bg-red-950"
               >
                 Cancelar
               </Button>

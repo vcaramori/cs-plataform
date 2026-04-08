@@ -102,7 +102,7 @@ export function AddContactModal({ open, onClose, accountId }: {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="border-slate-700 text-slate-300 hover:bg-slate-800 h-9">Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose} className="border-red-700 text-red-400 hover:bg-red-950 hover:text-red-300 h-9">Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 h-9 gap-1.5">
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Salvar
