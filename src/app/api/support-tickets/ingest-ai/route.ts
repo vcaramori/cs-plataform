@@ -74,7 +74,8 @@ ${content.substring(0, 20000)}
   }>
 
   try {
-    const { result: rawJson } = await generateText(prompt, { allowFallback: true })
+    const { result: rawJson, provider } = await generateText(prompt, { allowFallback: true })
+    console.log(`[IngestAI] Resposta da IA via ${provider}:`, rawJson)
     const jsonStr = rawJson.replace(/```json/g, '').replace(/```/g, '').trim()
     tickets = JSON.parse(jsonStr)
   } catch (err: unknown) {

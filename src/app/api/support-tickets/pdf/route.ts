@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateText } from '@/lib/llm/gateway'
 
 // workaround for CJS/ESM interop in TS
 const pdfParse = require('pdf-parse')
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-const model = genAI.getGenerativeModel({ model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.5-flash', generationConfig: { responseMimeType: 'application/json' } })
 
 export async function POST(request: Request) {
   const supabase = await getSupabaseServerClient()
@@ -57,8 +54,8 @@ export async function POST(request: Request) {
       """
     `
 
-    const response = await model.generateContent(prompt)
-    let jsonStr = response.response.text()
+    const { result: rawJson } = await generateText(prompt, { allowFallback: true })
+    let jsonStr = rawJson
     
     // Remove markdown code blocks se o Gemini inseri-los
     jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim()

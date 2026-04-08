@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, ExternalLink, Calendar, Tag, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { format as formatDate } from 'date-fns'
@@ -474,22 +475,25 @@ export function SuporteClient({
 
                 {result && (
                   <div className={`p-4 rounded-lg border ${
-                    result.created > 0 ? 'bg-emerald-900/20 border-emerald-800' : 'bg-red-900/20 border-red-800'
+                    (result.created ?? 0) > 0 ? 'bg-emerald-900/20 border-emerald-800' : 'bg-red-900/20 border-red-800'
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
-                      {result.created > 0
+                      {(result.created ?? 0) > 0
                         ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         : <AlertTriangle className="w-4 h-4 text-red-400" />}
                       <span className="text-white text-sm font-medium">
-                        {result.created} ticket(s) importado(s)
+                        {result.created ?? 0} ticket(s) importado(s)
                       </span>
                     </div>
-                    {result.errors.length > 0 && (
+                    {result.errors && result.errors.length > 0 && (
                       <ul className="space-y-1">
-                        {result.errors.map((e, i) => (
+                        {result.errors.map((e: string, i: number) => (
                           <li key={i} className="text-red-300 text-xs">• {e}</li>
                         ))}
                       </ul>
+                    )}
+                    {!result.errors && (result as any).error && (
+                       <p className="text-red-300 text-xs">• {(result as any).error}</p>
                     )}
                   </div>
                 )}
