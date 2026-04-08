@@ -23,6 +23,14 @@ export const env = {
     flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-2.0-flash',
     proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-2.5-pro',
   },
+  llm: {
+    provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini' | 'ollama',
+    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS ?? '30000'),
+    allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
+    ollamaUrl: process.env.OLLAMA_URL ?? 'http://localhost:11434',
+    ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b',
+    ollamaEmbeddingModel: process.env.OLLAMA_EMBEDDING_MODEL ?? 'nomic-embed-text',
+  },
   supabase: {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? required('SUPABASE_URL'),
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? required('SUPABASE_ANON_KEY'),

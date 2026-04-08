@@ -1,4 +1,4 @@
-import { getFlashModel } from '@/lib/gemini/client'
+import { generateText } from '@/lib/llm/gateway'
 import type { ActivityType } from '@/lib/supabase/types'
 
 export type ParsedTimeEntry = {
@@ -13,8 +13,6 @@ export async function parseTimeEntry(
   rawText: string,
   today: string
 ): Promise<ParsedTimeEntry> {
-  const model = getFlashModel()
-
   const prompt = `Você é um assistente de Customer Success. Extraia informações de uma entrada de tempo escrita em linguagem natural por um CSM.
 
 Entrada: "${rawText}"
@@ -50,8 +48,7 @@ Instruções:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
 - date: use ${today} se nenhuma data for mencionada; interprete "ontem", "segunda", etc. relativos à data de hoje`
 
-  const result = await model.generateContent(prompt)
-  const raw = result.response.text().trim()
+  const { result: raw } = await generateText(prompt, { allowFallback: true })
   const json = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
   const parsed = JSON.parse(json) as ParsedTimeEntry

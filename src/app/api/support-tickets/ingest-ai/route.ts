@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-const model = genAI.getGenerativeModel({
-  model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.5-flash',
-  generationConfig: { responseMimeType: 'application/json' },
-})
+import { generateText } from '@/lib/llm/gateway'
 
 const BodySchema = z.object({
   content: z.string().min(10),
@@ -80,9 +74,8 @@ ${content.substring(0, 20000)}
   }>
 
   try {
-    const response = await model.generateContent(prompt)
-    let jsonStr = response.response.text()
-    jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim()
+    const { result: rawJson } = await generateText(prompt, { allowFallback: true })
+    const jsonStr = rawJson.replace(/```json/g, '').replace(/```/g, '').trim()
     tickets = JSON.parse(jsonStr)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido'

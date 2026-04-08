@@ -1,5 +1,4 @@
-import { TaskType } from '@google/generative-ai'
-import { getEmbeddingModel } from '@/lib/gemini/client'
+import { generateEmbedding as gatewayEmbed } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { env } from '@/lib/env'
 import { encode, decode } from 'gpt-tokenizer'
@@ -30,17 +29,14 @@ export function chunkText(text: string): string[] {
 // Embeddings via Gemini text-embedding-004
 // ---------------------------------------------------------------------------
 
+/**
+ * Gera embedding via LLM Gateway (Ollama com fallback Gemini)
+ */
 export async function generateEmbedding(
-  text: string,
-  taskType: TaskType = TaskType.RETRIEVAL_DOCUMENT
+  text: string
 ): Promise<number[]> {
-  const model = getEmbeddingModel()
-  const result = await model.embedContent({
-    content: { parts: [{ text }], role: 'user' },
-    taskType,
-    outputDimensionality: 1536,
-  } as any)
-  return result.embedding.values
+  const { result } = await gatewayEmbed(text, { allowFallback: true })
+  return result
 }
 
 // ---------------------------------------------------------------------------
@@ -75,7 +71,7 @@ export async function storeEmbeddings(
   }[] = []
 
   for (let i = 0; i < chunks.length; i++) {
-    const embedding = await generateEmbedding(chunks[i], TaskType.RETRIEVAL_DOCUMENT)
+    const embedding = await generateEmbedding(chunks[i])
     rows.push({
       account_id: accountId,
       source_type: sourceType,
@@ -107,7 +103,7 @@ export async function searchEmbeddings(
   } = {}
 ): Promise<EmbeddingSearchResult[]> {
   const supabase = getSupabaseAdminClient()
-  const embedding = await generateEmbedding(queryText, TaskType.RETRIEVAL_QUERY)
+  const embedding = await generateEmbedding(queryText)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc('search_embeddings', {

@@ -1,4 +1,4 @@
-import { getFlashModel } from '@/lib/gemini/client'
+import { generateText } from '@/lib/llm/gateway'
 import { searchEmbeddings } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -99,9 +99,11 @@ ${contextBlocks || 'Nenhum dado encontrado para essa consulta.'}
 ## Pergunta
 ${question}`
 
-  const model = getFlashModel()
-  const result = await model.generateContent(prompt)
-  const answer = result.response.text().trim()
+  // 4. Gera resposta via LLM Gateway (Ollama ou Gemini com fallback)
+  const { result: answer, provider } = await generateText(prompt, { allowFallback: true })
+  if (provider !== 'ollama') {
+    console.log(`[RAG] Resposta gerada via: ${provider}`)
+  }
 
   // 5. Monta lista de fontes
   const sources: RAGSource[] = finalChunks.map((chunk) => {
