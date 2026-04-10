@@ -5,33 +5,55 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Globe, Building2, TrendingUp, TrendingDown, Minus, AlertTriangle, Sparkles, Loader2 } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  TrendingUp, 
+  TrendingDown, 
+  Minus, 
+  AlertTriangle, 
+  Sparkles, 
+  Loader2, 
+  Info,
+  Calendar,
+  DollarSign,
+  Zap,
+  Ticket,
+  Heart
+} from 'lucide-react'
 import { toast } from 'sonner'
-import type { Account } from '@/lib/supabase/types'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { EditAccountDialog } from './EditAccountDialog'
+import { format, differenceInDays } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
-function HealthRing({ score }: { score: number }) {
-  const color = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444'
-  const r = 28
-  const circ = 2 * Math.PI * r
-  const dash = (score / 100) * circ
+function HealthMiniGauge({ label, value, icon: Icon, color }: { label: string, value: number, icon: any, color: string }) {
   return (
-    <div className="relative w-20 h-20 flex items-center justify-center">
-      <svg className="absolute inset-0 -rotate-90" width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#1e293b" strokeWidth="6" />
-        <circle cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="6"
-          strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round" />
-      </svg>
-      <span className="text-white font-bold text-lg relative z-10">{Math.round(score)}</span>
+    <div className="flex flex-col items-center gap-1 group">
+      <div className={`w-10 h-10 rounded-full border-2 border-slate-800 flex items-center justify-center relative overflow-hidden bg-slate-950`}>
+        <div 
+          className="absolute bottom-0 left-0 w-full transition-all duration-1000" 
+          style={{ height: `${value}%`, backgroundColor: color, opacity: 0.15 }} 
+        />
+        <Icon className="w-4 h-4 relative z-10" style={{ color }} />
+      </div>
+      <span className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">{label}</span>
+      <span className="text-xs font-bold text-white leading-none">{Math.round(value)}%</span>
     </div>
   )
 }
 
 export function AccountHeader({ account, latestHealthScore }: {
-  account: Account
-  latestHealthScore?: { shadow_score: number | null; discrepancy_alert: boolean; shadow_reasoning: string | null } | null
+  account: any
+  latestHealthScore?: any
 }) {
   const router = useRouter()
   const [generating, setGenerating] = useState(false)
+  const [showReasoning, setShowReasoning] = useState(false)
 
   async function handleGenerateShadowScore() {
     setGenerating(true)
@@ -50,77 +72,164 @@ export function AccountHeader({ account, latestHealthScore }: {
     }
   }
 
-  const trendIcon = {
-    up: <TrendingUp className="w-4 h-4 text-emerald-400" />,
-    down: <TrendingDown className="w-4 h-4 text-red-400" />,
-    critical: <AlertTriangle className="w-4 h-4 text-red-500" />,
-    stable: <Minus className="w-4 h-4 text-slate-400" />,
-  }[account.health_trend] ?? <Minus className="w-4 h-4 text-slate-400" />
+  // Cálculos Financeiros
+  const activeContract = account.contracts?.find((c: any) => c.status === 'active') || account.contracts?.[0]
+  const renewalDate = activeContract?.renewal_date ? new Date(activeContract.renewal_date + 'T12:00:00') : null
+  const daysToRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : null
+  
+  const renewalColor = !daysToRenewal ? 'text-slate-500' :
+    daysToRenewal < 30 ? 'text-red-400 font-black' :
+    daysToRenewal < 90 ? 'text-amber-400' : 'text-emerald-400'
 
-  const segmentColor: Record<string, string> = {
-    Enterprise: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    'Mid-Market': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    SMB: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-  }
+  const trendIcon = {
+    up: <TrendingUp className="w-5 h-5 text-emerald-400 animate-pulse" />,
+    down: <TrendingDown className="w-5 h-5 text-red-400 animate-pulse" />,
+    critical: <AlertTriangle className="w-5 h-5 text-red-500" />,
+    stable: <Minus className="w-5 h-5 text-slate-400" />,
+  }[account.health_trend] ?? <Minus className="w-5 h-5 text-slate-400" />
 
   return (
-    <div className="flex items-start gap-4 flex-wrap">
-      <Link href="/dashboard">
-        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white mt-1">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-      </Link>
-      <div className="flex items-center gap-5 flex-1">
-        <div className="w-14 h-14 rounded-xl bg-indigo-800/50 border border-indigo-700/50 flex items-center justify-center flex-shrink-0">
-          <Building2 className="w-7 h-7 text-indigo-300" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-white">{account.name}</h1>
-            <Badge className={`text-xs border ${segmentColor[account.segment] ?? ''}`}>{account.segment}</Badge>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-white bg-slate-900 border border-slate-800">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+            </Button>
+          </Link>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-white tracking-tight">{account.name}</h1>
+            <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 px-3 py-1 font-bold uppercase tracking-widest text-[10px]">
+              {account.segment}
+            </Badge>
+            <EditAccountDialog account={account} />
           </div>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            {account.industry && <span className="text-slate-400 text-sm">{account.industry}</span>}
-            {account.website && (
-              <a href={account.website} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm">
-                <Globe className="w-3 h-3" />{account.website.replace(/^https?:\/\//, '')}
-              </a>
+        </div>
+
+        {/* Financial Quick Stats */}
+        <div className="flex items-center gap-3">
+           <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center gap-3 shadow-2xl">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 uppercase font-black">MRR</span>
+              <span className="text-sm font-bold text-white">R$ {Number(activeContract?.mrr || 0).toLocaleString('pt-BR')}</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center gap-3 shadow-2xl">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 uppercase font-black">Renovação</span>
+              <span className={`text-sm font-bold ${renewalColor}`}>
+                {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal} dias`) : 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Health Score Main Card */}
+        <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Zap className="w-20 h-20 text-indigo-400" />
+          </div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="relative flex items-center justify-center">
+              <svg className="w-16 h-16 -rotate-90">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="#1e293b" strokeWidth="6" />
+                <circle 
+                  cx="32" cy="32" r="28" fill="none" 
+                  stroke={account.health_score >= 70 ? '#10b981' : account.health_score >= 40 ? '#f59e0b' : '#ef4444'} 
+                  strokeWidth="6"
+                  strokeDasharray={`${(account.health_score / 100) * 176} 176`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="absolute text-xl font-black text-white">{Math.round(account.health_score)}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Dashboard Health</span>
+              <div className="flex items-center gap-1.5">
+                {trendIcon}
+                <span className="text-sm font-bold text-white capitalize">{account.health_trend}</span>
+              </div>
+            </div>
+          </div>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleGenerateShadowScore}
+                  disabled={generating}
+                  className="bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white h-8 w-8 p-0 rounded-lg relative z-10"
+                >
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-800 border-slate-700 text-white">
+                <p>Recalcular via Cloud Intelligence</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Health Components / Mini-Indicators */}
+        <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 grid grid-cols-3 md:grid-cols-4 gap-4 items-center">
+          <HealthMiniGauge 
+            label="Adoção" 
+            value={latestHealthScore?.engagement_component || 50} 
+            icon={Zap} 
+            color="#38bdf8" 
+          />
+          <HealthMiniGauge 
+            label="Suporte" 
+            value={latestHealthScore?.ticket_component || 50} 
+            icon={Ticket} 
+            color="#f87171" 
+          />
+          <HealthMiniGauge 
+            label="Relacionamento" 
+            value={latestHealthScore?.sentiment_component || 50} 
+            icon={Heart} 
+            color="#fbbf24" 
+          />
+          
+          <div className="hidden md:flex flex-col justify-center border-l border-slate-800 pl-6 h-10">
+            {latestHealthScore?.shadow_score != null && (
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest leading-none mb-1">Shadow Score (IA)</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-black text-indigo-400">{Math.round(latestHealthScore.shadow_score)}</span>
+                  {latestHealthScore.shadow_reasoning && (
+                    <button 
+                      onClick={() => setShowReasoning(!showReasoning)}
+                      className="text-slate-500 hover:text-indigo-400 transition-colors"
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-4 bg-slate-900 rounded-xl border border-slate-800 px-5 py-3">
-        <HealthRing score={account.health_score} />
-        <div className="space-y-1">
-          <p className="text-slate-400 text-xs">Health Score</p>
-          <div className="flex items-center gap-1.5">
-            {trendIcon}
-            <span className="text-slate-300 text-xs capitalize">{account.health_trend}</span>
+
+       {showReasoning && latestHealthScore?.shadow_reasoning && (
+          <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-4 mt-2 animate-in fade-in slide-in-from-top-2">
+            <p className="text-indigo-300 text-xs italic leading-relaxed">
+              &quot;{latestHealthScore.shadow_reasoning}&quot;
+            </p>
           </div>
-          {latestHealthScore?.shadow_score !== null && latestHealthScore?.shadow_score !== undefined && (
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-indigo-400" />
-              <span className="text-indigo-300 text-xs">Shadow: {Math.round(Number(latestHealthScore.shadow_score))}</span>
-            </div>
-          )}
-          {latestHealthScore?.discrepancy_alert && (
-            <Badge className="bg-orange-500/20 text-orange-300 text-xs px-1.5 py-0.5">
-              Score divergente
-            </Badge>
-          )}
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleGenerateShadowScore}
-          disabled={generating}
-          className="text-slate-500 hover:text-indigo-300 h-7 px-2 ml-1"
-          title="Recalcular Shadow Score"
-        >
-          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-        </Button>
-      </div>
+        )}
     </div>
   )
 }

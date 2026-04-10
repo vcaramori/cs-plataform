@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Loader2 } from 'lucide-react'
 
 const schema = z.object({
@@ -31,7 +31,7 @@ export function AddContactModal({ open, onClose, accountId }: {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
     defaultValues: { seniority: 'Manager' as const, influence_level: 'Neutral' as const, decision_maker: false },
   })
@@ -68,29 +68,23 @@ export function AddContactModal({ open, onClose, accountId }: {
             </div>
             <div className="space-y-1.5">
               <Label className="text-slate-300 text-sm">Senioridade</Label>
-              <Select onValueChange={v => setValue('seniority', v as any)} defaultValue="Manager">
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  {['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => (
-                    <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={watch('seniority')}
+                onValueChange={v => setValue('seniority', v as any)}
+                options={[
+                  ...['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))
+                ]}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-slate-300 text-sm">Influência</Label>
-              <Select onValueChange={v => setValue('influence_level', v as any)} defaultValue="Neutral">
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  {['Champion', 'Neutral', 'Detractor', 'Blocker'].map(s => (
-                    <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={watch('influence_level')}
+                onValueChange={v => setValue('influence_level', v as any)}
+                options={[
+                  ...['Champion', 'Neutral', 'Detractor', 'Blocker'].map(s => ({ label: s, value: s }))
+                ]}
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label className="text-slate-300 text-sm">Email</Label>

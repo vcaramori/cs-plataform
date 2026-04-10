@@ -47,3 +47,6 @@ import/
 import-log*.txt
 scripts/test-*.mjs
 scripts/email-sync-loop.mjs
+
+# Ollama Local Binaries & Models (Project Owned)
+/bin/

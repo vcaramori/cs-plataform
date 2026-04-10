@@ -11,7 +11,6 @@ export default async function EsforcoPage() {
     supabase
       .from('accounts')
       .select('id, name')
-      .eq('csm_owner_id', user.id)
       .order('name'),
     supabase
       .from('time_entries')

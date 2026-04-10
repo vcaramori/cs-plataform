@@ -1,88 +1,61 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Users, Plus, Mail, Crown, Shield, UserX, AlertOctagon } from 'lucide-react'
-import type { Contact } from '@/lib/supabase/types'
-import { AddContactModal } from './AddContactModal'
+import { User, ShieldCheck, Crown, ShieldAlert } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
-const influenceConfig = {
-  Champion: { color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', icon: Crown },
-  Neutral: { color: 'bg-slate-500/20 text-slate-300 border-slate-500/30', icon: Shield },
-  Detractor: { color: 'bg-orange-500/20 text-orange-300 border-orange-500/30', icon: UserX },
-  Blocker: { color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: AlertOctagon },
+interface Contact {
+  id: string
+  name: string
+  role: string
+  influence_level: 'Champion' | 'Neutral' | 'Detractor' | 'Blocker' | string
+  decision_maker: boolean
 }
 
-export function ContactsPowerMap({ contacts, accountId }: { contacts: Contact[], accountId: string }) {
-  const [open, setOpen] = useState(false)
+const influenceConfig: Record<string, { color: string, icon: any }> = {
+  Champion: { color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: Crown },
+  Detractor: { color: 'text-red-400 bg-red-500/10 border-red-500/20', icon: ShieldAlert },
+  Neutral: { color: 'text-slate-400 bg-slate-500/10 border-slate-500/20', icon: User },
+  Blocker: { color: 'text-orange-400 bg-orange-500/10 border-orange-500/20', icon: ShieldAlert },
+}
 
-  const sorted = [...contacts].sort((a, b) => {
-    const order = ['Champion', 'Neutral', 'Detractor', 'Blocker']
-    return order.indexOf(a.influence_level) - order.indexOf(b.influence_level)
-  })
-
+export function ContactsPowerMap({ contacts }: { contacts: Contact[], accountId: string }) {
   return (
-    <>
-      <Card className="bg-slate-900 border-slate-800">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white text-base flex items-center gap-2">
-              <Users className="w-4 h-4 text-indigo-400" /> Power Map
-              <span className="text-slate-500 text-xs font-normal">({contacts.length})</span>
-            </CardTitle>
-            <Button size="sm" variant="ghost"
-              onClick={() => setOpen(true)}
-              className="text-slate-400 hover:text-white h-7 gap-1 text-xs">
-              <Plus className="w-3 h-3" /> Adicionar
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {sorted.length === 0 ? (
-            <div className="text-center py-6">
-              <Users className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-              <p className="text-slate-500 text-sm">Nenhum contato mapeado</p>
-              <Button size="sm" variant="ghost" onClick={() => setOpen(true)}
-                className="text-indigo-400 hover:text-indigo-300 mt-2 text-xs">
-                Adicionar contato
-              </Button>
-            </div>
-          ) : (
-            sorted.map(contact => {
-              const cfg = influenceConfig[contact.influence_level]
-              const Icon = cfg.icon
-              return (
-                <div key={contact.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition-colors">
-                  <div className={`p-1.5 rounded-md ${cfg.color.split(' ').slice(0, 1).join(' ')}`}>
-                    <Icon className={`w-3.5 h-3.5 ${cfg.color.split(' ').slice(1, 2).join(' ')}`} />
+    <div className="space-y-3">
+      {contacts.length === 0 ? (
+        <p className="text-slate-600 text-xs text-center py-4 italic">Nenhum stakeholder mapeado.</p>
+      ) : (
+        contacts.slice(0, 5).map(c => {
+          const config = influenceConfig[c.influence_level] || influenceConfig.Neutral
+          const InfluenceIcon = config.icon
+          const Initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+
+          return (
+            <div 
+              key={c.id} 
+              className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/50 hover:bg-slate-900 transition-colors group"
+            >
+              <div className="flex items-center gap-3 overflow-hidden">
+                <Avatar className="w-10 h-10 border-2 border-slate-800 group-hover:border-indigo-500/50 transition-colors">
+                  <AvatarFallback className="bg-slate-900 text-indigo-400 font-bold text-xs">{Initials}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white text-sm font-bold truncate">{c.name}</span>
+                    {c.decision_maker && <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" title="Tomador de Decisão" />}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-white text-sm font-medium">{contact.name}</span>
-                      {contact.decision_maker && (
-                        <span className="text-yellow-400 text-xs">★</span>
-                      )}
-                    </div>
-                    <p className="text-slate-400 text-xs">{contact.role}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <Badge className={`text-xs border py-0 px-1.5 ${cfg.color}`}>{contact.influence_level}</Badge>
-                      <span className="text-slate-600 text-xs">{contact.seniority}</span>
-                    </div>
-                  </div>
-                  {contact.email && (
-                    <a href={`mailto:${contact.email}`} className="text-slate-500 hover:text-indigo-400 mt-1">
-                      <Mail className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+                  <span className="text-[10px] text-slate-500 font-black uppercase truncate">{c.role}</span>
                 </div>
-              )
-            })
-          )}
-        </CardContent>
-      </Card>
-      <AddContactModal open={open} onClose={() => setOpen(false)} accountId={accountId} />
-    </>
+              </div>
+              <Badge className={`text-[9px] font-black uppercase tracking-tighter ${config.color} border-none`}>
+                <InfluenceIcon className="w-3 h-3 mr-1" />
+                {c.influence_level}
+              </Badge>
+            </div>
+          )
+        })
+      )}
+    </div>
   )
 }

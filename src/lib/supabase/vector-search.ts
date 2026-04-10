@@ -60,7 +60,8 @@ export async function storeEmbeddings(
     .eq('source_type', sourceType)
     .eq('source_id', sourceId)
 
-  // Gera embeddings para cada chunk (sequencial para evitar rate limit)
+  // Gera embeddings em batches paralelos (Ollama local não tem rate limit)
+  const BATCH_SIZE = 3
   const rows: {
     account_id: string
     source_type: string
@@ -70,15 +71,20 @@ export async function storeEmbeddings(
     embedding: number[]
   }[] = []
 
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = await generateEmbedding(chunks[i])
-    rows.push({
-      account_id: accountId,
-      source_type: sourceType,
-      source_id: sourceId,
-      chunk_index: i,
-      chunk_text: chunks[i],
-      embedding,
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch = chunks.slice(i, i + BATCH_SIZE)
+    const embeddings = await Promise.all(
+      batch.map(chunk => generateEmbedding(chunk))
+    )
+    embeddings.forEach((emb, j) => {
+      rows.push({
+        account_id: accountId,
+        source_type: sourceType,
+        source_id: sourceId,
+        chunk_index: i + j,
+        chunk_text: batch[j],
+        embedding: emb,
+      })
     })
   }
 
@@ -102,12 +108,27 @@ export async function searchEmbeddings(
     threshold?: number
   } = {}
 ): Promise<EmbeddingSearchResult[]> {
-  const supabase = getSupabaseAdminClient()
   const embedding = await generateEmbedding(queryText)
+  return searchEmbeddingsWithVector(embedding, options)
+}
+
+/**
+ * Busca por similaridade usando um vetor pré-computado (evita gerar embedding duplicado)
+ */
+export async function searchEmbeddingsWithVector(
+  queryEmbedding: number[],
+  options: {
+    accountId?: string
+    sourceType?: 'interaction' | 'support_ticket'
+    limit?: number
+    threshold?: number
+  } = {}
+): Promise<EmbeddingSearchResult[]> {
+  const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc('search_embeddings', {
-    query_embedding: embedding,
+    query_embedding: queryEmbedding,
     match_account_id: options.accountId ?? null,
     match_source_type: options.sourceType ?? null,
     match_limit: options.limit ?? env.thresholds.vectorTopK,

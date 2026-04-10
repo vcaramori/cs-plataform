@@ -9,6 +9,7 @@ const UpdateSchema = z.object({
   website: z.string().url().optional().or(z.literal('')),
   health_score: z.number().min(0).max(100).optional(),
   health_trend: z.enum(['up', 'stable', 'down', 'critical']).optional(),
+  logo_url: z.string().url().optional().nullable(),
 })
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -51,7 +52,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('Supabase Error (PATCH accounts):', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data)
 }
 

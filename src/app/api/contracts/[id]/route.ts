@@ -3,13 +3,15 @@ import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 const UpdateSchema = z.object({
-  mrr: z.number().positive().optional(),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  renewal_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
+  start_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
+  renewal_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
   service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).optional(),
-  contracted_hours_monthly: z.number().min(0).optional(),
-  csm_hour_cost: z.number().min(0).optional(),
+  contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
+  csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
+  contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).optional(),
+  description: z.string().optional(),
   notes: z.string().optional(),
 })
 
@@ -30,7 +32,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('Supabase Error (PATCH contracts):', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data)
 }
 

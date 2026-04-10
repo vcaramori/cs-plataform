@@ -20,8 +20,8 @@ export const env = {
     // text-embedding-004: modelo estável, 768 dims, suporta RETRIEVAL_DOCUMENT e RETRIEVAL_QUERY
     embeddingModel: process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-004',
     embeddingDimensions: parseInt(process.env.GEMINI_EMBEDDING_DIMENSIONS ?? '768'),
-    flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-2.0-flash',
-    proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-2.5-pro',
+    flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-flash-latest',
+    proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-pro-latest',
   },
   llm: {
     provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini' | 'ollama',
@@ -45,5 +45,8 @@ export const env = {
     costToServeWarn: numeric('COST_TO_SERVE_WARN', 0.15),
     costToServeCritical: numeric('COST_TO_SERVE_CRITICAL', 0.30),
     vectorTopK: parseInt(process.env.VECTOR_TOP_K ?? '8'),
+  },
+  airtable: {
+    token: process.env.AIRTABLE_TOKEN ?? '',
   },
 } as const

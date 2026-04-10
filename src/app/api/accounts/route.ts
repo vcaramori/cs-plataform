@@ -5,10 +5,14 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 const AccountSchema = z.object({
   client_name: z.string().min(2, 'Nome do cliente obrigatório'),
   account_name: z.string().min(2, 'Nome da conta obrigatório'),
-  touch_model: z.enum(['High Touch', 'Mid Touch']),
-  csm_owner_id: z.string().uuid().optional(), // opcional, se não vier usa o logado
+  segment: z.enum(['SMB', 'Mid-Market', 'Enterprise']),
+  csm_owner_id: z.string().uuid().optional(),
   industry: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
+  logo_url: z.string().url().optional().or(z.literal('')),
+  mrr: z.number().positive().optional(),
+  start_date: z.string().optional(),
+  renewal_date: z.string().optional(),
 })
 
 export async function GET() {
@@ -38,7 +42,10 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   const parsed = AccountSchema.safeParse(body)
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  if (!parsed.success) {
+    console.error('Validation Error (POST accounts):', parsed.error.flatten())
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  }
 
   // 1. Criar ou buscar o client
   let clientId: string
@@ -68,17 +75,39 @@ export async function POST(request: Request) {
   }
 
   // 2. Criar a account
-  const { data, error } = await supabase
+  const { data: account, error: accountErr } = await supabase
     .from('accounts')
     .insert({
       client_id: clientId,
       name: parsed.data.account_name,
-      touch_model: parsed.data.touch_model,
+      segment: parsed.data.segment,
+      logo_url: parsed.data.logo_url || null,
       csm_owner_id: parsed.data.csm_owner_id || user.id
     })
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  if (accountErr) return NextResponse.json({ error: accountErr.message }, { status: 500 })
+
+  // 3. Criar o contrato inicial se os dados financeiros estiverem presentes
+  if (parsed.data.mrr && parsed.data.start_date) {
+    const { error: contractErr } = await supabase
+      .from('contracts')
+      .insert({
+        account_id: account.id,
+        mrr: parsed.data.mrr,
+        arr: parsed.data.mrr * 12,
+        start_date: parsed.data.start_date,
+        renewal_date: parsed.data.renewal_date,
+        status: 'active',
+        contract_type: 'initial'
+      })
+    
+    if (contractErr) {
+      console.error('Error creating initial contract:', contractErr)
+      // Não falha a criação da conta se o contrato falhar, mas logamos
+    }
+  }
+
+  return NextResponse.json(account, { status: 201 })
 }

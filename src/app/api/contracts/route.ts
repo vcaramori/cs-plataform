@@ -4,14 +4,16 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 const ContractSchema = z.object({
   account_id: z.string().uuid(),
-  mrr: z.number().positive(),
-  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  renewal_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive('MRR deve ser positivo')),
+  start_date: z.string().optional().or(z.literal('')).transform(v => (v === "" || !v ? null : v)),
+  renewal_date: z.string().optional().or(z.literal('')).transform(v => (v === "" || !v ? null : v)),
   service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
-  contracted_hours_monthly: z.number().min(0).optional().default(0),
-  csm_hour_cost: z.number().min(0).optional().default(0),
+  contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
+  csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
+  contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).default('initial'),
   notes: z.string().optional(),
+  description: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -29,6 +31,9 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('Supabase Error (POST contracts):', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data, { status: 201 })
 }

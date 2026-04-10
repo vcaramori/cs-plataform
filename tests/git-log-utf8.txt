@@ -1,0 +1,312 @@
+commit 9c52eec358c0acbee13243ffb3c7c2516c2221bf
+Author: Vinicius Caramori <vinicius@plannera.com.br>
+Date:   Wed Apr 8 11:59:44 2026 -0300
+
+    feat: LLM Gateway - Ollama local com fallback Gemini (timeout 30s)
+
+diff --git a/src/lib/env.ts b/src/lib/env.ts
+index 62b3afa..15e76bd 100644
+--- a/src/lib/env.ts
++++ b/src/lib/env.ts
+@@ -23,6 +23,14 @@ export const env = {
+     flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-2.0-flash',
+     proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-2.5-pro',
+   },
++  llm: {
++    provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini' | 'ollama',
++    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS ?? '30000'),
++    allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
++    ollamaUrl: process.env.OLLAMA_URL ?? 'http://localhost:11434',
++    ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b',
++    ollamaEmbeddingModel: process.env.OLLAMA_EMBEDDING_MODEL ?? 'nomic-embed-text',
++  },
+   supabase: {
+     url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? required('SUPABASE_URL'),
+     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? required('SUPABASE_ANON_KEY'),
+diff --git a/src/lib/llm/gateway.ts b/src/lib/llm/gateway.ts
+new file mode 100644
+index 0000000..9506718
+--- /dev/null
++++ b/src/lib/llm/gateway.ts
+@@ -0,0 +1,191 @@
++/**
++ * LLM Gateway — Abstração de Provider com Fallback
++ * 
++ * Fluxo:
++ *   1. Tenta executar no Ollama (local, privado)
++ *   2. Se timeout ou erro → fallback para Gemini (se allowFallback=true)
++ *   3. Loga sempre qual provider foi usado
++ * 
++ * Configuração via .env:
++ *   LLM_PROVIDER=ollama|gemini    (default: gemini)
++ *   LLM_TIMEOUT_MS=15000          (timeout antes do fallback, default: 15s)
++ *   LLM_ALLOW_FALLBACK=true|false (default: true)
++ */
++
++import { ollamaGenerate, ollamaEmbed } from './ollama'
++import { GoogleGenerativeAI, TaskType } from '@google/generative-ai'
++
++// ─── Tipos ──────────────────────────────────────────────────────────────────
++
++export type LLMProvider = 'ollama' | 'gemini' | 'gemini-fallback'
++
++export interface GenerateOptions {
++  /** Permite fallback para Gemini se Ollama falhar. Default: true */
++  allowFallback?: boolean
++  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env */
++  timeoutMs?: number
++  /** Temperatura do modelo (0=determinístico, 1=criativo). Default: 0.1 */
++  temperature?: number
++}
++
++export interface EmbedOptions {
++  /** Permite fallback para Gemini se Ollama falhar. Default: true */
++  allowFallback?: boolean
++  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env */
++  timeoutMs?: number
++}
++
++export interface LLMResponse<T> {
++  result: T
++  provider: LLMProvider
++  durationMs: number
++}
++
++// ─── Helpers ─────────────────────────────────────────────────────────────────
++
++function getConfig() {
++  return {
++    provider: (process.env.LLM_PROVIDER || 'gemini') as 'ollama' | 'gemini',
++    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS || '15000'),
++    allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
++  }
++}
++
++function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
++  return Promise.race([
++    promise,
++    new Promise<never>((_, reject) =>
++      setTimeout(() => reject(new Error(`LLM Gateway timeout após ${ms}ms`)), ms)
++    ),
++  ])
++}
++
++function getGeminiFlash() {
++  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
++  return genAI.getGenerativeModel({
++    model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.0-flash',
++  })
++}
++
++function getGeminiEmbedding() {
++  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
++  return genAI.getGenerativeModel({
++    model: process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004',
++  })
++}
++
++// ─── Gateway: Geração de Texto ───────────────────────────────────────────────
++
++/**
++ * Gera texto usando o provider configurado, com fallback automático.
++ */
++export async function generateText(
++  prompt: string,
++  options: GenerateOptions = {}
++): Promise<LLMResponse<string>> {
++  const config = getConfig()
++  const timeoutMs = options.timeoutMs ?? config.timeoutMs
++  const allowFallback = options.allowFallback ?? config.allowFallback
++  const start = Date.now()
++
++  // Provider default: Gemini (sem tentar Ollama)
++  if (config.provider === 'gemini') {
++    const model = getGeminiFlash()
++    const result = await model.generateContent(prompt)
++    return {
++      result: result.response.text().trim(),
++      provider: 'gemini',
++      durationMs: Date.now() - start,
++    }
++  }
++
++  // Provider: Ollama (com timeout e fallback)
++  try {
++    const text = await withTimeout(
++      ollamaGenerate(prompt, { temperature: options.temperature }),
++      timeoutMs
++    )
++    console.log(`[LLM Gateway] ✅ Ollama respondeu em ${Date.now() - start}ms`)
++    return { result: text, provider: 'ollama', durationMs: Date.now() - start }
++
++  } catch (err: any) {
++    const reason = err.message.includes('timeout') ? 'timeout' : 'erro'
++    console.warn(`[LLM Gateway] ⚠️ Ollama falhou (${reason}): ${err.message}`)
++
++    if (!allowFallback) {
++      throw new Error(`[LLM Gateway] Ollama indisponível e fallback desativado: ${err.message}`)
++    }
++
++    // Fallback para Gemini
++    console.log('[LLM Gateway] 🔄 Usando Gemini como fallback...')
++    const model = getGeminiFlash()
++    const result = await model.generateContent(prompt)
++    console.log(`[LLM Gateway] ✅ Gemini respondeu em ${Date.now() - start}ms (incluindo fallback)`)
++    return {
++      result: result.response.text().trim(),
++      provider: 'gemini-fallback',
++      durationMs: Date.now() - start,
++    }
++  }
++}
++
++// ─── Gateway: Embeddings ─────────────────────────────────────────────────────
++
++/**
++ * Gera embeddings usando o provider configurado, com fallback automático.
++ * Nota: dimensões Ollama (nomic-embed-text) = 768; Gemini = 1536
++ */
++export async function generateEmbedding(
++  text: string,
++  options: EmbedOptions = {}
++): Promise<LLMResponse<number[]>> {
++  const config = getConfig()
++  const timeoutMs = options.timeoutMs ?? config.timeoutMs
++  const allowFallback = options.allowFallback ?? config.allowFallback
++  const start = Date.now()
++
++  // Provider default: Gemini
++  if (config.provider === 'gemini') {
++    const model = getGeminiEmbedding()
++    const result = await model.embedContent({
++      content: { parts: [{ text }], role: 'user' },
++      taskType: TaskType.RETRIEVAL_DOCUMENT,
++      outputDimensionality: 1536,
++    } as any)
++    return {
++      result: result.embedding.values,
++      provider: 'gemini',
++      durationMs: Date.now() - start,
++    }
++  }
++
++  // Provider: Ollama (com timeout e fallback)
++  try {
++    const embedding = await withTimeout(ollamaEmbed(text), timeoutMs)
++    console.log(`[LLM Gateway] ✅ Ollama embed em ${Date.now() - start}ms (${embedding.length} dims)`)
++    return { result: embedding, provider: 'ollama', durationMs: Date.now() - start }
++
++  } catch (err: any) {
++    const reason = err.message.includes('timeout') ? 'timeout' : 'erro'
++    console.warn(`[LLM Gateway] ⚠️ Ollama embed falhou (${reason}): ${err.message}`)
++
++    if (!allowFallback) {
++      throw new Error(`[LLM Gateway] Ollama embed indisponível e fallback desativado.`)
++    }
++
++    // Fallback para Gemini
++    console.log('[LLM Gateway] 🔄 Usando Gemini embed como fallback...')
++    const model = getGeminiEmbedding()
++    const result = await model.embedContent({
++      content: { parts: [{ text }], role: 'user' },
++      taskType: TaskType.RETRIEVAL_DOCUMENT,
++      outputDimensionality: 1536,
++    } as any)
++    console.log(`[LLM Gateway] ✅ Gemini embed em ${Date.now() - start}ms (fallback)`)
++    return {
++      result: result.embedding.values,
++      provider: 'gemini-fallback',
++      durationMs: Date.now() - start,
++    }
++  }
++}
+
+commit e7f1080026727af82cc1bda7f134602910d76753
+Author: Vinicius Caramori <vinicius@plannera.com.br>
+Date:   Fri Mar 27 15:53:47 2026 -0300
+
+    feat: plataforma CS completa — Sprints 1 a 6
+    
+    Implementação completa da plataforma de Customer Success:
+    
+    Fundação (Sprints 1-2):
+    - Schema Supabase: accounts, contracts, contacts, interactions,
+      time_entries, support_tickets, health_scores
+    - RLS policies, Auth, middleware
+    - Dashboard com KPIs, CRUD de Contas/Contratos, Power Map de Contatos
+    - CostToServeCard com cálculo de esforço direto e indireto
+    
+    Ingestão de Esforço (Sprint 3):
+    - pgvector substituindo Pinecone: tabela embeddings + índice HNSW
+      + função search_embeddings()
+    - Log de tempo indireto em linguagem natural com Gemini Flash
+    - Upload de transcrições Read.ai com chunking, embedding e análise
+      de sentimento automática
+    
+    Ingestão de Suporte (Sprint 4):
+    - Import de tickets via CSV e texto livre com parser robusto
+    - Resolução automática de conta por nome
+    - Vectorização de tickets para o RAG
+    
+    Shadow Health Score (Sprint 5):
+    - Gemini Pro analisa interações + tickets e gera score com trend,
+      justificativa e fatores de risco
+    - Alerta automático de discrepância quando |manual - shadow| > 20
+    - Botão de recalculo no AccountHeader
+    
+    RAG / Perguntar (Sprint 6):
+    - Pipeline: busca vetorial → enriquecimento → Gemini Pro
+    - Interface de chat com escopo por conta ou portfólio
+    - Exibição de fontes com % de similaridade
+    
+    Docs: SPRINTS.md (roadmap) + TESTES.md (26 cenários de QA)
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/src/lib/env.ts b/src/lib/env.ts
+new file mode 100644
+index 0000000..62b3afa
+--- /dev/null
++++ b/src/lib/env.ts
+@@ -0,0 +1,41 @@
++const isServer = typeof window === 'undefined'
++
++const required = (key: string): string => {
++  const value = process.env[key]
++  if (!value && isServer) throw new Error(`Missing required environment variable: ${key}`)
++  return value ?? ''
++}
++
++const numeric = (key: string, fallback: number): number => {
++  const value = process.env[key]
++  if (!value) return fallback
++  const parsed = parseFloat(value)
++  if (isNaN(parsed)) throw new Error(`Environment variable ${key} must be a number`)
++  return parsed
++}
++
++export const env = {
++  gemini: {
++    apiKey: required('GEMINI_API_KEY'),
++    // text-embedding-004: modelo estável, 768 dims, suporta RETRIEVAL_DOCUMENT e RETRIEVAL_QUERY
++    embeddingModel: process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-004',
++    embeddingDimensions: parseInt(process.env.GEMINI_EMBEDDING_DIMENSIONS ?? '768'),
++    flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-2.0-flash',
++    proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-2.5-pro',
++  },
++  supabase: {
++    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? required('SUPABASE_URL'),
++    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? required('SUPABASE_ANON_KEY'),
++    serviceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
++  },
++  chunking: {
++    chunkSize: parseInt(process.env.CHUNK_SIZE ?? '512'),
++    chunkOverlap: parseInt(process.env.CHUNK_OVERLAP ?? '50'),
++  },
++  thresholds: {
++    sentimentAlert: numeric('SENTIMENT_ALERT_THRESHOLD', -0.4),
++    costToServeWarn: numeric('COST_TO_SERVE_WARN', 0.15),
++    costToServeCritical: numeric('COST_TO_SERVE_CRITICAL', 0.30),
++    vectorTopK: parseInt(process.env.VECTOR_TOP_K ?? '8'),
++  },
++} as const

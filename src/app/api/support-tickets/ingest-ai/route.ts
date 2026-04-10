@@ -94,6 +94,22 @@ ${content.substring(0, 20000)}
   }
 
   // -------------------------------------------------------------------------
+  // Pré-carrega todas as contas do CSM para resolver nomes localmente (sem N+1)
+  // -------------------------------------------------------------------------
+  const { data: allAccounts } = await supabase
+    .from('accounts')
+    .select('id, name')
+    .eq('csm_owner_id', user.id)
+
+  // Helper para normalizar texto (remove acentos + lowercase)
+  const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+  const accountMap = new Map<string, string>()
+  for (const a of allAccounts ?? []) {
+    accountMap.set(normalize(a.name), a.id)
+  }
+
+  // -------------------------------------------------------------------------
   // Salvar tickets no banco
   // -------------------------------------------------------------------------
   let created = 0
@@ -103,16 +119,15 @@ ${content.substring(0, 20000)}
   for (const t of tickets) {
     let finalAccountId = account_id ?? null
 
-    // Tenta resolver conta pelo nome detectado pela IA
+    // Resolve conta localmente via Map normalizado (sem acentos, sem N+1)
     if (!finalAccountId && t.account_name) {
-      const { data: accMatch } = await supabase
-        .from('accounts')
-        .select('id')
-        .ilike('name', `%${t.account_name}%`)
-        .limit(1)
-        .single()
-
-      if (accMatch) finalAccountId = accMatch.id
+      const key = normalize(t.account_name)
+      for (const [name, id] of Array.from(accountMap.entries())) {
+        if (name.includes(key) || key.includes(name)) {
+          finalAccountId = id
+          break
+        }
+      }
     }
 
     // Sem conta = descarta
@@ -142,7 +157,8 @@ ${content.substring(0, 20000)}
       critical: 'critical', critico: 'critical', urgente: 'critical',
     }
 
-    const { error: insertErr } = await supabase
+    // Insert + retorno do ID diretamente (elimina re-query por título)
+    const { data: newTicket, error: insertErr } = await supabase
       .from('support_tickets')
       .insert({
         account_id: finalAccountId,
@@ -154,26 +170,17 @@ ${content.substring(0, 20000)}
         opened_at: openedAt,
         source: 'manual',
       })
+      .select('id')
+      .single()
 
-    if (insertErr) {
-      errors.push(`Erro ao criar "${t.title}": ${insertErr.message}`)
+    if (insertErr || !newTicket) {
+      errors.push(`Erro ao criar "${t.title}": ${insertErr?.message ?? 'erro desconhecido'}`)
     } else {
       created++
       // Vectoriza o ticket para o RAG
       try {
-        const { data: newTicket } = await supabase
-          .from('support_tickets')
-          .select('id')
-          .eq('title', t.title.slice(0, 255))
-          .eq('account_id', finalAccountId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
-
-        if (newTicket) {
-          const textToEmbed = `${t.title}\n\n${t.description}`
-          await storeEmbeddings(finalAccountId, 'support_ticket', newTicket.id, textToEmbed)
-        }
+        const textToEmbed = `${t.title}\n\n${t.description}`
+        await storeEmbeddings(finalAccountId, 'support_ticket', newTicket.id, textToEmbed)
       } catch (err) {
         console.error('Erro na vetorização pós-IA:', err)
       }

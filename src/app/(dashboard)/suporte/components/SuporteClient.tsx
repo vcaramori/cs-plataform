@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, ExternalLink, Calendar, Tag, AlertCircle } from 'lucide-react'
@@ -46,6 +46,7 @@ type Ticket = {
   category: string | null
   opened_at: string
   resolved_at: string | null
+  thread_content: string | null
   accounts: { name: string } | null
 }
 
@@ -179,13 +180,15 @@ export function SuporteClient({
           <Button 
             variant="outline" 
             size="sm" 
+            disabled={isSubmitting}
             onClick={async () => {
-              toast.info('Buscando e-mails na caixa invisível...')
+              setIsSubmitting(true)
+              toast.info('Iniciando sincronização via Power Automate...', { duration: 5000 })
               try {
                 const res = await fetch('/api/support-tickets/email-sync', { method: 'POST' })
                 const data = await res.json()
                 if (data.created > 0) {
-                  toast.success(`${data.created} chamado(s) criados a partir de e-mails!`)
+                  toast.success(data.message || `${data.created} chamados criados!`)
                   router.refresh()
                 } else if (data.message) {
                   toast.info(data.message)
@@ -193,12 +196,18 @@ export function SuporteClient({
                    toast.error(data.error || 'Erro ao sincronizar e-mails.')
                 }
               } catch (e) {
-                 toast.error('Erro de conexão com servidor IMAP.')
+                 toast.error('Erro de conexão com o serviço de automação.')
+              } finally {
+                setIsSubmitting(false)
               }
             }}
-            className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 gap-2 mb-1"
+            className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 gap-2 mb-1"
           >
-            <Mail className="w-4 h-4" />
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
             Sincronizar E-mails
           </Button>
         )}
@@ -213,28 +222,26 @@ export function SuporteClient({
               <Filter className="w-4 h-4 text-slate-400" />
               <span className="text-slate-400 text-sm">Filtros:</span>
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-8 w-40 text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all" className="text-white text-xs">Todos os status</SelectItem>
-                {Object.entries(statusLabels).map(([v, l]) => (
-                  <SelectItem key={v} value={v} className="text-white text-xs">{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterPriority} onValueChange={setFilterPriority}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-8 w-40 text-xs">
-                <SelectValue placeholder="Prioridade" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                <SelectItem value="all" className="text-white text-xs">Todas as prioridades</SelectItem>
-                {Object.entries(priorityLabels).map(([v, l]) => (
-                  <SelectItem key={v} value={v} className="text-white text-xs">{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={filterStatus}
+              onValueChange={setFilterStatus}
+              className="h-8 w-40 text-xs"
+              placeholder="Status"
+              options={[
+                { label: 'Todos os status', value: 'all' },
+                ...Object.entries(statusLabels).map(([value, label]) => ({ label, value }))
+              ]}
+            />
+            <SearchableSelect
+              value={filterPriority}
+              onValueChange={setFilterPriority}
+              className="h-8 w-40 text-xs"
+              placeholder="Prioridade"
+              options={[
+                { label: 'Todas as prioridades', value: 'all' },
+                ...Object.entries(priorityLabels).map(([value, label]) => ({ label, value }))
+              ]}
+            />
             {(filterStatus || filterPriority) && (
               <Button
                 variant="ghost"
@@ -353,10 +360,10 @@ export function SuporteClient({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
                     <AlertCircle className="w-4 h-4 text-indigo-400" />
-                    Descrição Completa
+                    Histórico da Conversa
                   </div>
-                  <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                    {selectedTicket?.description || 'Nenhuma descrição detalhada fornecida.'}
+                  <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap max-h-80 overflow-y-auto">
+                    {selectedTicket?.thread_content || selectedTicket?.description || 'Nenhuma descrição detalhada fornecida.'}
                   </div>
                 </div>
 
@@ -408,21 +415,14 @@ export function SuporteClient({
                   <Label className="text-slate-300 text-sm">
                     Conta padrão <span className="text-slate-500">(opcional — pode vir no conteúdo)</span>
                   </Label>
-                  <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                      <SelectValue placeholder="Selecionar conta..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                      <SelectItem value="all" className="text-white hover:bg-slate-700">
-                        Selecionar conta...
-                      </SelectItem>
-                      {accounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id} className="text-white hover:bg-slate-700">
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={selectedAccountId}
+                    onValueChange={setSelectedAccountId}
+                    options={[
+                      { label: 'Selecionar conta...', value: 'all' },
+                      ...accounts.map(a => ({ label: a.name, value: a.id }))
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1.5">

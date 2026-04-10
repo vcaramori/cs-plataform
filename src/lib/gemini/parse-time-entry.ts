@@ -32,7 +32,10 @@ Tipos válidos para activity_type:
 - "environment-analysis" → analisar dados, métricas, logs, ambiente, investigar problema
 - "strategy"           → planejar estratégia, alinhamento interno sobre conta, pensar próximos passos
 - "reporting"          → gerar relatório, dashboard, status report, resumo executivo
-- "internal-meeting"   → reunião interna com time, alinhamento interno sem cliente
+- "internal-meeting"   → reunião INTERNA com time Plannera, alinhamento sem o cliente
+- "meeting"            → reunião COM O CLIENTE, apresentações gerais, alinhamento direto
+- "onboarding"         → kickoff, implantação, treinamento inicial, go-live, configuração inicial
+- "qbr"                → reunião trimestral de resultados (QBR), review estratégico de sucesso
 - "other"              → qualquer outra atividade que não se encaixa acima
 
 Conversão de tempo (parsed_hours deve ser número decimal):

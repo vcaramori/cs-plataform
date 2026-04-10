@@ -14,8 +14,10 @@ export default async function DashboardPage() {
 
   const totalMRR = safeAccounts.reduce((sum, a) => {
     const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
-    const active = contracts.find((c: any) => c.status === 'active')
-    return sum + (active?.mrr ?? 0)
+    const activeMRR = contracts
+      .filter((c: any) => c.status === 'active')
+      .reduce((s: number, c: any) => s + (Number(c.mrr) || 0), 0)
+    return sum + activeMRR
   }, 0)
 
   const atRisk = safeAccounts.filter(a => a.health_score < 40).length
@@ -27,10 +29,13 @@ export default async function DashboardPage() {
   const in30d = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
   const renewalsSoon = safeAccounts.filter(a => {
     const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
-    const active = contracts.find((c: any) => c.status === 'active')
-    if (!active?.renewal_date) return false
-    const d = new Date(active.renewal_date)
-    return d >= today && d <= in30d
+    const activeContracts = contracts.filter((c: any) => c.status === 'active')
+    
+    return activeContracts.some((c: any) => {
+      if (!c.renewal_date) return false
+      const d = new Date(c.renewal_date)
+      return d >= today && d <= in30d
+    })
   }).length
 
   return (

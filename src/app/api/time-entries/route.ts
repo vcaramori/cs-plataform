@@ -91,5 +91,22 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  const result = data as any
+
+  // 4. Se for uma interação com o cliente, sincroniza com a tabela de interações
+  const clientFacingTypes = ['meeting', 'onboarding', 'qbr']
+  if (clientFacingTypes.includes(parsedEntry.activity_type)) {
+    await supabase.from('interactions').insert({
+      account_id: accountId,
+      csm_id: user.id,
+      title: `Esforço: ${parsedEntry.activity_type === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
+      type: parsedEntry.activity_type,
+      date: parsedEntry.date,
+      direct_hours: parsedEntry.parsed_hours,
+      source: 'effort_sync',
+      time_entry_id: result.id // CRITICAL: This was missing
+    })
+  }
+
+  return NextResponse.json(result, { status: 201 })
 }

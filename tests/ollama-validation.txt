@@ -1,0 +1,5 @@
+RESULTADO DO TESTE:
+- Status: SUCESSO
+- Resposta: Olá! Sim, estou在线上，随时可以为您提供帮助。您有什么问题或需要什么 assistance 呢？（注：这里的“线上”是中文表达，“在线上”翻译成英文是“online”。）
+- Provider Utilizado: ollama
+- Tempo de resposta: 7600ms

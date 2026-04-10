@@ -1,4 +1,4 @@
-import { getProModel } from '@/lib/gemini/client'
+import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export type ShadowScoreResult = {
@@ -92,9 +92,8 @@ escalation_risk, insufficient_data
 - declining: piora nos últimos registros
 - critical: situação crítica imediata`
 
-  const model = getProModel()
-  const result = await model.generateContent(prompt)
-  const raw = result.response.text().trim()
+  const { result: raw, provider } = await generateText(prompt, { allowFallback: true, timeoutMs: 120000 })
+  console.log(`[Shadow Score] Gerado via ${provider}`)
   const json = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
   const parsed = JSON.parse(json) as ShadowScoreResult

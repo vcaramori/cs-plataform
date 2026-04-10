@@ -12,12 +12,10 @@ export default async function SuportePage() {
     supabase
       .from('accounts')
       .select('id, name')
-      .eq('csm_owner_id', user.id)
       .order('name'),
     supabase
       .from('support_tickets')
       .select('*, accounts!inner(name, csm_owner_id)')
-      .eq('accounts.csm_owner_id', user.id)
       .order('opened_at', { ascending: false })
       .limit(200),
   ])

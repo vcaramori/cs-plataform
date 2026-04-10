@@ -116,7 +116,15 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
             ) : (
               filtered.map(account => {
                 const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
-                const activeContract = contracts.find(c => c.status === 'active') ?? contracts[0]
+                const activeContracts = contracts.filter(c => c.status === 'active')
+                
+                const totalMRR = activeContracts.reduce((sum, c) => sum + (Number(c.mrr) || 0), 0)
+                
+                // Get nearest renewal date from active contracts
+                const nearestRenewal = activeContracts
+                  .filter(c => c.renewal_date)
+                  .sort((a, b) => new Date(a.renewal_date!).getTime() - new Date(b.renewal_date!).getTime())[0]
+
                 return (
                   <TableRow key={account.id} className="border-slate-800 hover:bg-slate-800/50 transition-colors">
                     <TableCell>
@@ -128,18 +136,25 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                     <TableCell><SegmentBadge segment={account.segment} /></TableCell>
                     <TableCell>
                       <span className="text-slate-200 text-sm font-medium">
-                        {activeContract ? `R$ ${Number(activeContract.mrr).toLocaleString('pt-BR')}` : '—'}
+                        {totalMRR > 0 ? `R$ ${totalMRR.toLocaleString('pt-BR')}` : '—'}
                       </span>
+                      {activeContracts.length > 1 && (
+                        <p className="text-[10px] text-slate-500">{activeContracts.length} produtos</p>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span className="text-slate-300 text-sm">
-                        {activeContract?.renewal_date
-                          ? new Date(activeContract.renewal_date).toLocaleDateString('pt-BR')
+                        {nearestRenewal?.renewal_date
+                          ? new Date(nearestRenewal.renewal_date).toLocaleDateString('pt-BR')
                           : '—'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      {activeContract ? <StatusBadge status={activeContract.status} /> : <span className="text-slate-600 text-xs">Sem contrato</span>}
+                      {activeContracts.length > 0 ? (
+                        <StatusBadge status="active" />
+                      ) : (
+                        <span className="text-slate-600 text-xs">Sem contrato</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-center"><HealthBadge score={account.health_score} /></TableCell>
                     <TableCell className="text-center"><TrendIcon trend={account.health_trend} /></TableCell>

@@ -1,0 +1,5 @@
+--- Teste de Geração de Texto ---
+SUCESSO TEXTO: [Provider: gemini] | Saída: Recebido! O teste funcionou perfeitamente. Como posso ajudar você hoje?
+
+--- Teste de Geração de Embedding ---
+SUCESSO EMBEDDING: [Provider: gemini] | Dimensões: 1536

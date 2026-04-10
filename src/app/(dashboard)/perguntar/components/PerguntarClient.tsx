@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Textarea } from '@/components/ui/textarea'
 import { MessageSquare, Sparkles, Loader2, FileText, TicketCheck, Send, Globe } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -109,23 +109,16 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
           <Globe className="w-4 h-4 text-slate-400" />
           <span className="text-slate-400 text-sm">Escopo:</span>
         </div>
-        <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-          <SelectTrigger className="bg-slate-800 border-slate-700 text-white w-64">
-            <SelectValue placeholder="Todo o portfólio" />
-          </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-            <SelectItem value="all" className="text-white hover:bg-slate-700">
-              <span className="flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-indigo-400" /> Todo o portfólio
-              </span>
-            </SelectItem>
-            {accounts.map((a) => (
-              <SelectItem key={a.id} value={a.id} className="text-white hover:bg-slate-700">
-                {a.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-64">
+          <SearchableSelect
+            value={selectedAccountId}
+            onValueChange={setSelectedAccountId}
+            options={[
+              { label: 'Todo o portfólio', value: 'all' },
+              ...accounts.map(a => ({ label: a.name, value: a.id }))
+            ]}
+          />
+        </div>
         {selectedAccount && (
           <Badge className="bg-indigo-500/20 text-indigo-300">
             Filtrando: {selectedAccount.name}

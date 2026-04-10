@@ -1,5 +1,5 @@
-import { generateText } from '@/lib/llm/gateway'
-import { searchEmbeddings } from '@/lib/supabase/vector-search'
+import { generateText, generateEmbedding } from '@/lib/llm/gateway'
+import { searchEmbeddingsWithVector } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export type RAGSource = {
@@ -24,16 +24,19 @@ export async function runRAGPipeline(
 ): Promise<RAGResult> {
   const supabase = getSupabaseAdminClient()
 
-  // 1. Busca vetorial nos embeddings
-  const chunks = await searchEmbeddings(question, {
+  // 1. Gera embedding da pergunta UMA ÚNICA VEZ (reutilizado se threshold for relaxado)
+  const { result: queryEmbedding } = await generateEmbedding(question, { allowFallback: true })
+
+  // 2. Busca vetorial nos embeddings (reutiliza o vetor)
+  const chunks = await searchEmbeddingsWithVector(queryEmbedding, {
     accountId,
     limit: 8,
     threshold: 0.4,
   })
 
-  // Fallback: se não achou chunks suficientes e havia filtro por conta, tenta sem threshold
+  // Fallback: se poucos resultados, relaxa threshold SEM regenerar embedding
   const finalChunks = chunks.length < 2
-    ? await searchEmbeddings(question, { accountId, limit: 8, threshold: 0.2 })
+    ? await searchEmbeddingsWithVector(queryEmbedding, { accountId, limit: 8, threshold: 0.2 })
     : chunks
 
   // 2. Enriquece chunks com metadados das fontes originais

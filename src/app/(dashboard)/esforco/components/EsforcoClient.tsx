@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
-import { Clock, Loader2, Sparkles, ChevronDown } from 'lucide-react'
+import { EffortEditModal } from '@/components/shared/EffortEditModal'
+import { Clock, Loader2, Sparkles, ChevronDown, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -19,6 +20,9 @@ const activityLabels: Record<string, string> = {
   strategy: 'Estratégia',
   reporting: 'Relatório',
   'internal-meeting': 'Reunião interna',
+  meeting: 'Reunião com cliente',
+  onboarding: 'Implantação / Onboarding',
+  qbr: 'QBR / Sucesso',
   other: 'Outro',
 }
 
@@ -51,7 +55,8 @@ export function EsforcoClient({
 }) {
   const router = useRouter()
   const [text, setText] = useState('')
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('')
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [entries, setEntries] = useState<Entry[]>(initialEntries)
 
@@ -69,7 +74,7 @@ export function EsforcoClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           raw_text: text,
-          account_id: selectedAccountId || undefined,
+          account_id: selectedAccountId !== 'all' ? selectedAccountId : undefined,
         }),
       })
 
@@ -88,7 +93,7 @@ export function EsforcoClient({
         `${data.parsed_hours}h registrada — ${activityLabels[data.activity_type] ?? data.activity_type}`
       )
       setText('')
-      setSelectedAccountId('')
+      setSelectedAccountId('all')
       router.refresh()
 
       // Adiciona ao topo da lista local para feedback imediato
@@ -96,6 +101,11 @@ export function EsforcoClient({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleUpdate = (updated: Entry) => {
+    setEntries(prev => prev.map(e => e.id === updated.id ? updated : e))
+    setSelectedEntry(updated)
   }
 
   // Agrupa horas por conta para o totalizador
@@ -125,18 +135,14 @@ export function EsforcoClient({
               <Label className="text-slate-300 text-sm">
                 Conta <span className="text-slate-500">(opcional — pode mencionar no texto)</span>
               </Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                  <SelectValue placeholder="Selecionar conta..." />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-                  {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id} className="text-white hover:bg-slate-700">
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+                options={[
+                  { label: 'Selecionar conta...', value: 'all' },
+                  ...accounts.map((a) => ({ label: a.name, value: a.id }))
+                ]}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -235,12 +241,17 @@ export function EsforcoClient({
                       <th className="text-left text-slate-400 font-medium pb-2 pr-4">Atividade</th>
                       <th className="text-left text-slate-400 font-medium pb-2 pr-4">Descrição</th>
                       <th className="text-center text-slate-400 font-medium pb-2 pr-4">Horas</th>
-                      <th className="text-left text-slate-400 font-medium pb-2">Data</th>
+                      <th className="text-left text-slate-400 font-medium pb-2 pr-4">Data</th>
+                      <th className="pb-2"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
                     {entries.map((e) => (
-                      <tr key={e.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr 
+                        key={e.id} 
+                        className="hover:bg-slate-800/30 transition-colors cursor-pointer group"
+                        onClick={() => setSelectedEntry(e)}
+                      >
                         <td className="py-2.5 pr-4 text-white font-medium">
                           {e.accounts?.name ?? '—'}
                         </td>
@@ -257,8 +268,13 @@ export function EsforcoClient({
                             {Number(e.parsed_hours).toFixed(1)}h
                           </Badge>
                         </td>
-                        <td className="py-2.5 text-slate-400 text-xs whitespace-nowrap">
+                        <td className="py-2.5 pr-4 text-slate-400 text-xs whitespace-nowrap">
                           {format(new Date(e.date + 'T12:00:00'), 'dd MMM yyyy', { locale: ptBR })}
+                        </td>
+                        <td className="py-2.5 text-right">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Eye className="w-4 h-4 text-slate-400" />
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -269,6 +285,13 @@ export function EsforcoClient({
           </CardContent>
         </Card>
       </div>
+
+      <EffortEditModal 
+        entry={selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+        onUpdate={handleUpdate}
+        accounts={accounts}
+      />
     </div>
   )
 }

@@ -27,6 +27,7 @@ export async function middleware(request: NextRequest) {
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
   const isProtected = request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname.startsWith('/accounts') ||
     request.nextUrl.pathname.startsWith('/api/accounts') ||
     request.nextUrl.pathname.startsWith('/api/contracts') ||
     request.nextUrl.pathname.startsWith('/api/contacts') ||
@@ -52,5 +53,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/api/accounts/:path*', '/api/contracts/:path*', '/api/contacts/:path*', '/api/interactions/:path*', '/api/ask/:path*'],
+  matcher: ['/dashboard/:path*', '/accounts/:path*', '/login', '/api/accounts/:path*', '/api/contracts/:path*', '/api/contacts/:path*', '/api/interactions/:path*', '/api/ask/:path*'],
 }

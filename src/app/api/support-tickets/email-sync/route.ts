@@ -1,84 +1,222 @@
 import { NextResponse } from 'next/server'
-// import { getSupabaseServerClient } from '@/lib/supabase/server'
-// import { storeEmbeddings } from '@/lib/supabase/vector-search'
-// import imaps from 'imap-simple'
-// import { simpleParser } from 'mailparser'
-// import { GoogleGenerativeAI } from '@google/generative-ai'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { storeEmbeddings } from '@/lib/supabase/vector-search'
+import { generateText } from '@/lib/llm/gateway'
 
-/**
- * Lógica de Sincronização IMAP (Pausada temporariamente)
- * Para reativar: 
- * 1. Descomente os imports acima
- * 2. Descomente o bloco de código dentro da função POST
- * 3. Configure as credenciais IMAP no .env
- */
+const POWER_AUTOMATE_URL = 'https://defaultf3eedc7b7dd742b3a805865afbe2da.b7.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/051bab82e2a54ff19f3559914040a96f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zhoFnRlXIstaSSJ_JoO0pvvxZSLU7dVXDXw7t7iZ9f4'
 
 export async function POST(req: Request) {
-  /*
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-  const model = genAI.getGenerativeModel({ 
-    model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.0-flash', 
-    generationConfig: { responseMimeType: 'application/json' } 
-  })
-
   const supabase = await getSupabaseServerClient()
-  
-  // Autenticação híbrida: Sessão de usuário OU Segredo de API (para automação)
-  const authHeader = req.headers.get('Authorization')
-  const apiSecret = process.env.API_SECRET
-  const isAutomated = apiSecret && authHeader === `Bearer ${apiSecret}`
-
-  let user = null
-  if (!isAutomated) {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    user = authUser
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!process.env.IMAP_USER || !process.env.IMAP_PASSWORD || !process.env.IMAP_HOST) {
-    return NextResponse.json({ error: 'Configuração de IMAP incompleta no arquivo .env' }, { status: 500 })
-  }
-
-  const imapFolder = process.env.IMAP_FOLDER || 'Helpdesk'
-  const config = {
-    imap: {
-      user: process.env.IMAP_USER,
-      password: process.env.IMAP_PASSWORD,
-      host: process.env.IMAP_HOST,
-      port: Number(process.env.IMAP_PORT) || 993,
-      tls: process.env.IMAP_TLS !== 'false',
-      authTimeout: 10000
-    }
-  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const connection = await imaps.connect(config)
-    await connection.openBox(imapFolder)
-    const searchCriteria = ['UNSEEN']
-    const fetchOptions = { bodies: ['HEADER', 'TEXT'], struct: true }
-    const messages = await connection.search(searchCriteria, fetchOptions)
-    
-    if (messages.length === 0) {
-      connection.end()
-      return NextResponse.json({ message: `Nenhum e-mail novo na pasta '${imapFolder}'.`, created: 0 })
+    // 1. Disparar o Power Automate
+    console.log('[EmailSync] Disparando Power Automate...')
+    const paResponse = await fetch(POWER_AUTOMATE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trigger: 'manual_sync', user_id: user.id })
+    })
+
+    if (!paResponse.ok) {
+      const errorText = await paResponse.text()
+      console.error('[EmailSync] Erro no Power Automate. Status:', paResponse.status, 'Body:', errorText)
+      return NextResponse.json({ 
+        error: 'Erro ao conectar com Power Automate',
+        pa_status: paResponse.status,
+        pa_error: errorText.substring(0, 200)
+      }, { status: 502 })
     }
+
+    let rawEmails;
+    const responseText = await paResponse.text();
+    
+    try {
+      rawEmails = JSON.parse(responseText);
+    } catch (e) {
+      console.error('[EmailSync] Falha ao parsear JSON do Power Automate. Recebido:', responseText);
+      return NextResponse.json({ 
+        error: 'O Power Automate retornou um formato inválido (não é um JSON). Verifique se o bloco "Response" no seu fluxo está enviando o "value" do passo anterior.',
+        received: responseText.substring(0, 100)
+      }, { status: 502 });
+    }
+    
+    // O Power Automate 'Get emails (V3)' retorna um objeto { value: [...] }
+    const emails = Array.isArray(rawEmails) ? rawEmails : (rawEmails.value || []);
+    
+    // Se não vier um array, assume retorno vazio ou erro
+    if (emails.length === 0) {
+      return NextResponse.json({ message: 'Nenhum e-mail novo encontrado pelo Power Automate.', created: 0 })
+    }
+
+    console.log(`[EmailSync] ${emails.length} e-mails recebidos. Processando com IA...`)
+
+    // 2. Preparar conteúdo para a IA
+    // Usamos bodyPreview para evitar o ruído do HTML pesado e garantir que caiba no contexto
+    const contentToProcess = emails.map((email: any, idx: number) => {
+      const subject = email.subject || email.Subject || 'Sem Assunto';
+      const body = email.bodyPreview || email.BodyPreview || email.body || email.Body || '';
+      const from = email.from || email.From || 'Desconhecido';
+      const date = email.receivedDateTime || email.DateTimeReceived || '';
+      
+      return `EMAIL #${idx + 1}\nDE: ${from}\nDATA: ${date}\nASSUNTO: ${subject}\nCONTEÚDO:\n${body.substring(0, 2000)}\n----------------------------------`
+    }).join('\n\n')
+
+    const prompt = `
+Você é um assistente especializado em extrair tickets de suporte a partir de e-mails.
+
+Abaixo está uma lista de e-mails capturados. Sua tarefa:
+1. Identificar chamados/problemas de cliente REAIS nos textos.
+2. Para cada chamado, extraia:
+   - external_ticket_id: o código alfanumérico do ticket (ex: "81DYA3", "K136AZ") encontrado no assunto ou no início do corpo. Se não encontrar, gere null.
+   - title: título claro e conciso.
+   - message_content: o corpo principal desta mensagem específica (remova assinaturas e notas de sistema).
+   - status: "open", "in-progress", "resolved", "closed" (deduza pelo tom da mensagem).
+   - priority: "low", "medium", "high", "critical".
+   - category: categoria (ex: "acesso", "bug", "financeiro", "duvida").
+   - account_name: nome do cliente/empresa sugerido.
+   - opened_at: data no formato YYYY-MM-DD.
+
+Retorne APENAS um JSON array.
+
+E-Mails:
+"""
+${contentToProcess.substring(0, 25000)}
+"""
+`
+
+    const { result: rawJson } = await generateText(prompt, { allowFallback: true })
+    
+    let tickets;
+    try {
+      const jsonStr = rawJson.replace(/```json/g, '').replace(/```/g, '').trim()
+      tickets = JSON.parse(jsonStr)
+    } catch (e) {
+      console.error('[EmailSync] Falha ao parsear JSON da IA. Output da IA:', rawJson);
+      return NextResponse.json({ 
+        error: 'A IA gerou uma resposta malformada.',
+        details: e instanceof Error ? e.message : String(e)
+      }, { status: 502 });
+    }
+
+    if (!Array.isArray(tickets) || tickets.length === 0) {
+      return NextResponse.json({ message: 'A IA não identificou chamados válidos nos e-mails.', created: 0 })
+    }
+
+    // 3. Persistência Híbrida (Relacional Crescente + Vetorização Adiada)
+    const { data: allAccounts } = await supabase.from('accounts').select('id, name').eq('csm_owner_id', user.id)
+    const normalize = (s: string | null | undefined) => {
+      if (!s) return ''
+      return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    }
+    const accountMap = new Map<string, string>()
+    for (const a of allAccounts ?? []) { accountMap.set(normalize(a.name), a.id) }
 
     let created = 0
-    for (const item of messages) {
-       // ... lógica de processamento e AI ...
-       // (Mantida em histórico para restauração total se necessário)
+    let updated = 0
+    let vectorized = 0
+    const errors: string[] = []
+    const today = new Date().toISOString().slice(0, 10)
+
+    for (const t of tickets) {
+      // 3.1 Identificar Conta
+      let finalAccountId = null
+      if (t.account_name) {
+        const key = normalize(t.account_name)
+        for (const [name, id] of Array.from(accountMap.entries())) {
+          if (name.includes(key) || key.includes(name)) {
+            finalAccountId = id
+            break
+          }
+        }
+      }
+
+      if (!finalAccountId) {
+        errors.push(`Chamado "${t.title}" ignorado - conta não identificada.`)
+        continue
+      }
+
+      // 3.2 Verificar se Ticket já existe (pelo external_ticket_id)
+      const { data: existingTicket } = t.external_ticket_id 
+        ? await supabase.from('support_tickets').select('*').eq('external_ticket_id', t.external_ticket_id).single()
+        : { data: null }
+
+      const newMessage = `\n\n--- Atualização em ${today} ---\n${t.message_content || t.title}`
+      const isFinishing = t.status === 'resolved' || t.status === 'closed'
+
+      if (existingTicket) {
+        // Atualizar Ticket Existente (Append)
+        const updatedThread = (existingTicket.thread_content || existingTicket.description || '') + newMessage
+        const { error: updateErr } = await supabase
+          .from('support_tickets')
+          .update({
+            thread_content: updatedThread,
+            status: t.status || existingTicket.status,
+            priority: t.priority || existingTicket.priority,
+          })
+          .eq('id', existingTicket.id)
+
+        if (!updateErr) {
+          updated++
+          // Vetorizar apenas se estiver finalizando e ainda não foi vetorizado
+          if (isFinishing && !existingTicket.is_vectorized) {
+            try {
+              await storeEmbeddings(finalAccountId, 'support_ticket', existingTicket.id, updatedThread)
+              await supabase.from('support_tickets').update({ is_vectorized: true }).eq('id', existingTicket.id)
+              vectorized++
+            } catch (vErr) { console.error('Erro na vetorização adiada:', vErr) }
+          }
+        }
+      } else {
+        // Criar Novo Ticket
+        const { data: newTicket, error: insertErr } = await supabase
+          .from('support_tickets')
+          .insert({
+            account_id: finalAccountId,
+            external_ticket_id: t.external_ticket_id,
+            title: t.title.slice(0, 255),
+            description: t.message_content || t.title,
+            thread_content: t.message_content || t.title,
+            status: t.status || 'open',
+            priority: t.priority || 'medium',
+            category: t.category || null,
+            opened_at: t.opened_at || today,
+            source: 'email',
+            is_vectorized: false
+          })
+          .select('id')
+          .single()
+
+        if (!insertErr && newTicket) {
+          created++
+          // Vetorização imediata apenas se já nasceu resolvido (raro)
+          if (isFinishing) {
+             try {
+                await storeEmbeddings(finalAccountId, 'support_ticket', newTicket.id, t.message_content || t.title)
+                await supabase.from('support_tickets').update({ is_vectorized: true }).eq('id', newTicket.id)
+                vectorized++
+             } catch {}
+          }
+        }
+      }
     }
 
-    connection.end()
-    return NextResponse.json({ message: 'Sincronização concluída.', processed: created })
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
-  }
-  */
+    return NextResponse.json({ 
+      message: `Sincronização concluída. ${created} criados, ${updated} atualizados, ${vectorized} vetorizados.`, 
+      created, 
+      updated,
+      vectorized,
+      errors 
+    })
 
-  return NextResponse.json({ 
-    message: 'Integração via e-mail (IMAP) pausada. Use a importação via CSV ou Texto Livre na aba ao lado.', 
-    created: 0, 
-    errors: [] 
-  })
+  } catch (err: any) {
+    console.error('[EmailSync] Fatal Error:', err)
+    return NextResponse.json({ 
+      error: 'Erro interno ao processar sincronização.',
+      message: err.message,
+      stack: err.stack,
+      type: err.name
+    }, { status: 500 })
+  }
 }

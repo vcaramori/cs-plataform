@@ -10,15 +10,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { ImageUpload } from '@/components/ui/image-upload'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 const schema = z.object({
   client_name: z.string().min(2, 'Nome do cliente deve ter ao menos 2 caracteres'),
   account_name: z.string().min(2, 'Nome da conta (solução) deve ter ao menos 2 caracteres'),
-  touch_model: z.enum(['High Touch', 'Mid Touch']),
+  segment: z.enum(['SMB', 'Mid-Market', 'Enterprise']),
   industry: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
+  logo_url: z.string().optional(),
   // Contrato inicial
   mrr: z.preprocess(v => parseFloat(String(v)), z.number().positive('MRR deve ser positivo')),
   start_date: z.string().min(1, 'Informe a data de início'),
@@ -29,9 +33,10 @@ const schema = z.object({
 type FormData = {
   client_name: string
   account_name: string
-  touch_model: 'High Touch' | 'Mid Touch'
+  segment: 'SMB' | 'Mid-Market' | 'Enterprise'
   industry?: string
   website?: string
+  logo_url?: string
   mrr: number
   start_date: string
   renewal_date: string
@@ -50,9 +55,9 @@ export default function NewAccountPage() {
   const [users, setUsers] = useState<User[]>([])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { touch_model: 'Mid Touch' as const },
+    defaultValues: { segment: 'Mid-Market' as const },
   })
 
   useEffect(() => {
@@ -72,31 +77,30 @@ export default function NewAccountPage() {
         body: JSON.stringify({ 
           client_name: data.client_name, 
           account_name: data.account_name, 
-          touch_model: data.touch_model, 
+          segment: data.segment, 
           industry: data.industry, 
           website: data.website,
-          csm_owner_id: data.csm_owner_id 
-        }),
-      })
-      if (!accountRes.ok) throw new Error('Erro ao criar conta/cliente')
-      const account = await accountRes.json()
-
-      const contractRes = await fetch('/api/contracts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          account_id: account.id,
+          logo_url: data.logo_url,
+          csm_owner_id: data.csm_owner_id,
           mrr: data.mrr,
           start_date: data.start_date,
           renewal_date: data.renewal_date,
         }),
       })
-      if (!contractRes.ok) throw new Error('Conta criada, mas erro ao criar contrato')
 
+      if (!accountRes.ok) {
+        const err = await accountRes.json()
+        throw new Error(err.error?.fieldErrors ? 'Erro de validação nos campos' : (err.error || 'Erro ao criar conta/cliente'))
+      }
+      
+      const account = await accountRes.json()
+
+      toast.success('Conta e contrato criados com sucesso!')
       router.push(`/accounts/${account.id}`)
       router.refresh()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message)
     } finally {
       setLoading(false)
     }
@@ -132,20 +136,32 @@ export default function NewAccountPage() {
             {/* Bloco Cliente/Empresa */}
             <div>
               <h3 className="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">1. Dados da Empresa (Cliente)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-slate-300">Nome da Empresa *</Label>
-                  <Input {...register('client_name')} placeholder="Ex: General Mills" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-                  {field('client_name')}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Logo da Empresa */}
+                <div className="md:col-span-1 space-y-1.5 flex flex-col items-center">
+                  <Label className="text-slate-300 w-full text-left">Logotipo</Label>
+                  <ImageUpload 
+                    value={watch('logo_url')} 
+                    onChange={(url) => setValue('logo_url', url)} 
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-slate-300">Setor / Indústria</Label>
-                  <Input {...register('industry')} placeholder="Ex: Bens de Consumo" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-                </div>
-                <div className="md:col-span-2 space-y-1.5">
-                  <Label className="text-slate-300">Website</Label>
-                  <Input {...register('website')} placeholder="https://generalmills.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
-                  {field('website')}
+
+                {/* Dados em Texto */}
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300">Nome da Empresa *</Label>
+                    <Input {...register('client_name')} placeholder="Ex: General Mills" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                    {field('client_name')}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300">Setor / Indústria</Label>
+                    <Input {...register('industry')} placeholder="Ex: Bens de Consumo" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                  </div>
+                  <div className="md:col-span-2 space-y-1.5">
+                    <Label className="text-slate-300">Website</Label>
+                    <Input {...register('website')} placeholder="https://generalmills.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                    {field('website')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -161,32 +177,31 @@ export default function NewAccountPage() {
                   <Input {...register('account_name')} placeholder="Ex: Solução A" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
                   {field('account_name')}
                 </div>
-                <div className="space-y-1.5 md:col-span-1">
-                  <Label className="text-slate-300">Modelo de Atendimento *</Label>
-                  <Select onValueChange={v => setValue('touch_model', v as any)} defaultValue="Mid Touch">
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      {['High Touch', 'Mid Touch'].map(s => (
-                        <SelectItem key={s} value={s} className="text-white hover:bg-slate-700">{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-1.5">
+                  <Label className="text-slate-300">Segmento *</Label>
+                  <SearchableSelect
+                    value={watch('segment')}
+                    onValueChange={(v) => setValue('segment', v as any)}
+                    options={[
+                      { label: 'SMB', value: 'SMB' },
+                      { label: 'Mid-Market', value: 'Mid-Market' },
+                      { label: 'Enterprise', value: 'Enterprise' },
+                    ]}
+                  />
+                  {errors.segment && <p className="text-red-500 text-xs">{errors.segment.message}</p>}
                 </div>
                 <div className="space-y-1.5 md:col-span-1">
                   <Label className="text-slate-300">CSM Responsável (Opcional)</Label>
-                  <Select onValueChange={v => setValue('csm_owner_id', v as any)}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                      <SelectValue placeholder="Atribuir..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="none" className="text-slate-400 hover:bg-slate-700">Nenhum</SelectItem>
-                      {users.map(u => (
-                        <SelectItem key={u.id} value={u.id} className="text-white hover:bg-slate-700">{u.email}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    placeholder="Atribuir..."
+                    emptyMessage="Nenhum CSM encontrado."
+                    value={watch('csm_owner_id')}
+                    onValueChange={(v) => setValue('csm_owner_id', v === 'none' ? undefined : v)}
+                    options={[
+                      { label: 'Nenhum', value: 'none' },
+                      ...users.map(u => ({ label: u.email, value: u.id }))
+                    ]}
+                  />
                   {field('csm_owner_id')}
                 </div>
               </div>

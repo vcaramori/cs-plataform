@@ -1,0 +1,13 @@
+=== Iniciando Teste do Gateway LLM com Ollama ===
+Config: Provider=ollama, URL=http://localhost:11434, Fallback=false
+
+1. Testando Geração de Texto...
+❌ Erro na geração de texto: [LLM Gateway] Ollama indisponível e fallback desativado: fetch failed
+
+2. Testando Geração de Embeddings...
+❌ Erro na geração de embeddings: [LLM Gateway] Ollama embed indisponível e fallback desativado.
+
+=== Testando Com Fallback Ativo ===
+
+3. Testando Fallback (deve usar Gemini)...
+❌ Erro no fallback: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent: [400 Bad Request] API key not valid. Please pass a valid API key. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"API_KEY_INVALID","domain":"googleapis.com","metadata":{"service":"generativelanguage.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"API key not valid. Please pass a valid API key."}]

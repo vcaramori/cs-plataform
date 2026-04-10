@@ -4,6 +4,7 @@ import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
 
 // workaround for CJS/ESM interop in TS
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse')
 
 export async function POST(request: Request) {

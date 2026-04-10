@@ -1,74 +1,63 @@
 import { notFound } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { AccountHeader } from './components/AccountHeader'
-import { ContractCard } from './components/ContractCard'
-import { ContactsPowerMap } from './components/ContactsPowerMap'
-import { InteractionsList } from './components/InteractionsList'
-import { CostToServeCard } from './components/CostToServeCard'
+import { AccountDetailPageClient } from './components/AccountDetailPageClient'
 
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await getSupabaseServerClient()
 
+  // Buscar todos os dados da conta em uma única query expandida
   const { data: account, error } = await supabase
     .from('accounts')
     .select(`
       *,
       contracts (*),
       contacts (*),
-      interactions (*, time_entries(*)),
+      interactions (*),
       support_tickets (*),
-      health_scores (*)
+      health_scores (*),
+      time_entries (*),
+      success_goals (*),
+      adoption_metrics (*)
     `)
     .eq('id', id)
     .single()
 
   if (error || !account) notFound()
 
+  // Normalização de arrays (Supabase pode retornar null para joins vazios)
   const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
-  const activeContract = contracts.find((c: any) => c.status === 'active') ?? contracts[0] ?? null
   const contacts = Array.isArray(account.contacts) ? account.contacts : (account.contacts ? [account.contacts] : [])
   const interactions = Array.isArray(account.interactions) ? account.interactions : (account.interactions ? [account.interactions] : [])
   const tickets = Array.isArray(account.support_tickets) ? account.support_tickets : (account.support_tickets ? [account.support_tickets] : [])
+  const entries = Array.isArray(account.time_entries) ? account.time_entries : (account.time_entries ? [account.time_entries] : [])
+  const healthScores = Array.isArray(account.health_scores) ? account.health_scores : (account.health_scores ? [account.health_scores] : [])
+  const successGoals = Array.isArray(account.success_goals) ? account.success_goals : (account.success_goals ? [account.success_goals] : [])
+  const adoptionMetrics = Array.isArray(account.adoption_metrics) ? account.adoption_metrics : (account.adoption_metrics ? [account.adoption_metrics] : [])
 
-  // Cost-to-Serve: horas do mês atual
-  const now = new Date()
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-  const directHoursMonth = interactions
-    .filter((i: any) => i.date >= firstOfMonth)
-    .reduce((sum: number, i: any) => sum + Number(i.direct_hours ?? 0), 0)
-
-  const { data: timeEntries } = await supabase
-    .from('time_entries')
-    .select('parsed_hours')
-    .eq('account_id', id)
-    .gte('date', firstOfMonth)
-  const indirectHoursMonth = (timeEntries ?? []).reduce((sum, t) => sum + Number(t.parsed_hours ?? 0), 0)
+  const activeContracts = contracts.filter((c: any) => c.status === 'active')
+  const displayContracts = activeContracts.length > 0 ? activeContracts : (contracts.length > 0 ? [contracts[0]] : [])
 
   return (
     <div className="p-6 space-y-6">
       <AccountHeader
         account={account as any}
-        latestHealthScore={(account as any).health_scores?.[0] ?? null}
+        latestHealthScore={healthScores.sort((a,b) => new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime())[0] ?? null}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {activeContract && <ContractCard contract={activeContract} />}
-          <InteractionsList interactions={interactions} tickets={tickets} accountId={id} contractId={activeContract?.id ?? null} />
-        </div>
-        <div className="space-y-6">
-          {activeContract && (
-            <CostToServeCard
-              directHours={directHoursMonth}
-              indirectHours={indirectHoursMonth}
-              mrr={Number(activeContract.mrr)}
-              csmHourCost={Number(activeContract.csm_hour_cost)}
-            />
-          )}
-          <ContactsPowerMap contacts={contacts} accountId={id} />
-        </div>
-      </div>
+      <AccountDetailPageClient 
+        id={id}
+        accountName={account.name}
+        displayContracts={displayContracts}
+        contracts={contracts}
+        interactions={interactions}
+        tickets={tickets}
+        efforts={entries}
+        contacts={contacts}
+        successGoals={successGoals}
+        adoptionMetrics={adoptionMetrics}
+      />
     </div>
   )
 }
