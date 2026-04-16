@@ -97,40 +97,44 @@ export async function runRAGPipeline(
   // Se estamos em modo global, tentamos detectar se a pergunta cita algum cliente
   let extraAccountContext = ''
   if (!accountId && allAccounts && allAccounts.length > 0) {
-    const mentionedAccounts = allAccounts.filter(acc => {
+    const mentionedAccounts = (allAccounts || []).filter((acc: any) => {
       const questionLower = question.toLowerCase()
-      const nameLower = acc.name.toLowerCase()
+      const nameLower = (acc.name || '').toLowerCase()
       
       // 1. Match exato ou substring direta
-      if (questionLower.includes(nameLower)) return true
+      if (nameLower && questionLower.includes(nameLower)) return true
       
       // 2. Match pelo "Base Name" (remove sufixos após hífens ou parênteses)
-      const baseName = acc.name.split(/[-(\[]/)[0].trim().toLowerCase()
+      const baseName = (acc.name || '').split(/[-(\[]/)[0].trim().toLowerCase()
       if (baseName.length > 3 && questionLower.includes(baseName)) return true
       
       // 3. Match por termos significativos (palavras longas únicas)
-      const words = acc.name.split(/\s+/).filter(w => w.length > 4)
-      return words.some(w => questionLower.includes(w.toLowerCase()))
+      const words = (acc.name || '').split(/\s+/).filter((w: string) => w.length > 4)
+      return words.some((w: string) => questionLower.includes(w.toLowerCase()))
     })
 
     if (mentionedAccounts.length > 0) {
-      // Busca contexto extra para o primeiro cliente mencionado (limite para não explodir tokens)
-      const targetAcc = mentionedAccounts[0]
-      const [extraAdoption, extraPlan] = await Promise.all([
-        db.from('feature_adoption')
-          .select('id, status, action_plan, action_status, product_features(name)')
-          .eq('account_id', targetAcc.id),
-        getAccountPlanSummary(targetAcc.id, supabase)
-      ])
+      try {
+        // Busca contexto extra para o primeiro cliente mencionado (limite para não explodir tokens)
+        const targetAcc = mentionedAccounts[0]
+        const [extraAdoption, extraPlan] = await Promise.all([
+          db.from('feature_adoption')
+            .select('id, status, action_plan, action_status, product_features(name)')
+            .eq('account_id', targetAcc.id),
+          getAccountPlanSummary(targetAcc.id, supabase)
+        ])
 
-      const extraLines = (extraAdoption.data || []).map((a: any) => 
-        `- ${a.product_features?.name}: ${a.status.toUpperCase()}`
-      ).join('\n')
+        const extraLines = (extraAdoption.data || []).map((a: any) => 
+          `- ${a.product_features?.name || 'Funcionalidade'}: ${(a.status || 'N/A').toUpperCase()}`
+        ).join('\n')
 
-      extraAccountContext = `\n\n## CONTEXTO ESPECÍFICO DEEP-DIVE: ${targetAcc.name}
-Plano: ${extraPlan.plan_name} | Risco de Downgrade: ${extraPlan.risk_level.toUpperCase()}
-Adoção:
+        extraAccountContext = `\n\n## CONTEXTO ESPECÍFICO DEEP-DIVE: ${targetAcc.name}
+Plan: ${extraPlan?.plan_name || 'Nenhum'} | Downside Risk: ${(extraPlan?.risk_level || 'none').toUpperCase()}
+Adoption:
 ${extraLines || 'Dados de adoção não encontrados.'}`
+      } catch (err) {
+        console.error('[RAG] Erro no Deep-Dive context:', err)
+      }
     }
   }
 
@@ -141,13 +145,15 @@ ${extraLines || 'Dados de adoção não encontrados.'}`
   const contextBlocks = finalChunks.map((chunk, idx) => {
     if (chunk.source_type === 'interaction') {
       const meta = interactionMap.get(chunk.source_id)
-      const account = (meta?.accounts as any)?.name ?? 'LOGO desconhecido'
+      const accountsRaw = meta?.accounts as any
+      const account = Array.isArray(accountsRaw) ? accountsRaw[0]?.name : accountsRaw?.name ?? 'Conta desconhecida'
       const date = meta?.date ?? ''
       const type = meta?.type ?? 'meeting'
       return `[${idx + 1}] REUNIÃO | ${account} | ${date} | Tipo: ${type}\n${chunk.chunk_text}`
     } else {
       const meta = ticketMap.get(chunk.source_id)
-      const account = (meta?.accounts as any)?.name ?? 'LOGO desconhecido'
+      const accountsRaw = meta?.accounts as any
+      const account = Array.isArray(accountsRaw) ? accountsRaw[0]?.name : accountsRaw?.name ?? 'Conta desconhecida'
       const date = meta?.opened_at ?? ''
       const priority = meta?.priority ?? 'medium'
       return `[${idx + 1}] TICKET | ${account} | ${date} | Prioridade: ${priority}\n${chunk.chunk_text}`
@@ -266,10 +272,12 @@ ${question}`
   const sources: RAGSource[] = finalChunks.map((chunk) => {
     if (chunk.source_type === 'interaction') {
       const meta = interactionMap.get(chunk.source_id)
+      const accountsRaw = meta?.accounts as any
+      const account_name = Array.isArray(accountsRaw) ? accountsRaw[0]?.name : accountsRaw?.name ?? 'Conta desconhecida'
       return {
         type: 'interaction' as const,
         source_id: chunk.source_id,
-        account_name: (meta?.accounts as any)?.name ?? 'Conta desconhecida',
+        account_name,
         title: meta?.title ?? 'Reunião',
         date: meta?.date ?? '',
         excerpt: chunk.chunk_text.slice(0, 150),
@@ -277,10 +285,12 @@ ${question}`
       }
     } else {
       const meta = ticketMap.get(chunk.source_id)
+      const accountsRaw = meta?.accounts as any
+      const account_name = Array.isArray(accountsRaw) ? accountsRaw[0]?.name : accountsRaw?.name ?? 'Conta desconhecida'
       return {
         type: 'support_ticket' as const,
         source_id: chunk.source_id,
-        account_name: (meta?.accounts as any)?.name ?? 'Conta desconhecida',
+        account_name,
         title: meta?.title ?? 'Ticket',
         date: meta?.opened_at ?? '',
         excerpt: chunk.chunk_text.slice(0, 150),
