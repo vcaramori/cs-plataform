@@ -2,7 +2,9 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Ticket, AlertTriangle, Clock } from 'lucide-react'
+import { Ticket, AlertTriangle, Clock, ChevronRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 interface TicketProps {
   id: string
@@ -12,49 +14,78 @@ interface TicketProps {
   opened_at: string
 }
 
-const priorityColors: Record<string, string> = {
-  critical: 'bg-red-500/20 text-red-300',
-  high: 'bg-orange-500/20 text-orange-300',
-  medium: 'bg-yellow-500/20 text-yellow-300',
-  low: 'bg-slate-500/20 text-slate-300',
+const priorityConfig: Record<string, { color: string, bg: string, ring: string }> = {
+  critical: { color: 'text-plannera-demand', bg: 'bg-plannera-demand/10', ring: 'ring-plannera-demand/20' },
+  high: { color: 'text-plannera-orange', bg: 'bg-plannera-orange/10', ring: 'ring-plannera-orange/20' },
+  medium: { color: 'text-plannera-operations', bg: 'bg-plannera-operations/10', ring: 'ring-plannera-operations/20' },
+  low: { color: 'text-slate-400', bg: 'bg-slate-500/10', ring: 'ring-slate-500/20' },
 }
 
 export function RecentTicketsWidget({ tickets }: { tickets: TicketProps[] }) {
   const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed')
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {openTickets.length === 0 ? (
-        <Card className="bg-slate-900/40 border-slate-800 border-dashed p-6 text-center">
-          <p className="text-slate-600 text-xs">Sem tickets críticos no momento.</p>
+        <Card className="bg-slate-900/40 border-slate-800 border-dashed p-10 text-center">
+          <p className="text-slate-600 text-[10px] font-bold uppercase tracking-widest leading-none">Sem tickets críticos no radar</p>
         </Card>
       ) : (
-        openTickets.slice(0, 3).map(t => (
-          <div 
-            key={t.id} 
-            className="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800/50 hover:bg-slate-900 transition-colors group"
-          >
-            <div className={`p-2 rounded-lg ${t.priority === 'critical' ? 'bg-red-500/10' : 'bg-slate-900'}`}>
-              <AlertTriangle className={`w-4 h-4 ${t.priority === 'critical' ? 'text-red-400 animate-pulse' : 'text-slate-500'}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-white text-xs font-bold truncate pr-2">{t.title}</span>
-                <Badge className={`text-[8px] font-black uppercase px-1.5 py-0 border-none ${priorityColors[t.priority] || ''}`}>
-                  {t.priority}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                 <span className="text-slate-500 text-[9px] flex items-center gap-1 font-medium">
-                  <Clock className="w-3 h-3" />
-                  {new Date(t.opened_at).toLocaleDateString('pt-BR')}
-                </span>
-                <span className="text-slate-700 text-[9px]">•</span>
-                <span className="text-slate-500 text-[9px] uppercase font-black tracking-tighter">{t.status}</span>
-              </div>
-            </div>
-          </div>
-        ))
+        openTickets.slice(0, 3).map((t, idx) => {
+          const config = priorityConfig[t.priority] || priorityConfig.low
+          return (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <Card className="glass-card group hover:bg-white/5 transition-all duration-300 border-none relative overflow-hidden">
+                {t.priority === 'critical' && (
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-plannera-demand/5 blur-2xl pointer-events-none" />
+                )}
+                
+                <CardContent className="p-4 flex items-start gap-4">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
+                    config.bg, config.color
+                  )}>
+                    <AlertTriangle className={cn("w-5 h-5", t.priority === 'critical' && "animate-pulse")} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-center justify-between">
+                       <span className="text-white text-sm font-bold uppercase tracking-tight truncate pr-4">{t.title}</span>
+                       <Badge variant="outline" className={cn(
+                         "text-[8px] font-bold uppercase tracking-[0.1em] px-2 py-0 border-none h-4 shrink-0",
+                         config.bg, config.color, config.ring
+                       )}>
+                         {t.priority}
+                       </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/20 border border-white/5">
+                          <Clock className="w-3 h-3 text-slate-500" />
+                          <span className="text-[9px] text-slate-500 font-black uppercase tracking-tighter">
+                            {new Date(t.opened_at).toLocaleDateString('pt-BR')}
+                          </span>
+                       </div>
+                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic opacity-50">{t.status}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )
+        })
+      )}
+      
+      {openTickets.length > 0 && (
+         <button className="w-full py-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group mt-2">
+            Ver Todos os Tickets
+            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+         </button>
       )}
     </div>
   )

@@ -25,11 +25,23 @@ export const env = {
   },
   llm: {
     provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini' | 'ollama',
-    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS ?? '30000'),
+    // fallbackProvider: qual LLM usar quando Ollama falha (gemini | claude). Default: gemini.
+    fallbackProvider: (process.env.LLM_FALLBACK_PROVIDER ?? 'gemini') as 'gemini' | 'claude',
+    // 60s — CPU precisa de ~25-50s para 512 tokens no qwen2.5:1.5b; deixa margem para prompts maiores.
+    // Com GPU ou modelo remoto, pode reduzir para 15000.
+    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'),
     allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
     ollamaUrl: process.env.OLLAMA_URL ?? 'http://localhost:11434',
-    ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b',
+    ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:1.5b',
     ollamaEmbeddingModel: process.env.OLLAMA_EMBEDDING_MODEL ?? 'nomic-embed-text',
+    // Tokens máximos por resposta. 512 é seguro para CPU; aumente com OLLAMA_NUM_PREDICT no .env.
+    ollamaNumPredict: parseInt(process.env.OLLAMA_NUM_PREDICT ?? '512'),
+  },
+  claude: {
+    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    // claude-haiku-4-5: mais rápido/barato — ideal como fallback de geração de texto.
+    model: process.env.CLAUDE_MODEL ?? 'claude-haiku-4-5',
+    maxTokens: parseInt(process.env.CLAUDE_MAX_TOKENS ?? '1024'),
   },
   supabase: {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? required('SUPABASE_URL'),

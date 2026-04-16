@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Plus, Users, Mail, UserPlus } from 'lucide-react'
+import { Loader2, Plus, Users, Mail, UserPlus, ShieldCheck } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
 type User = {
   id: string
@@ -74,94 +76,120 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Users className="w-6 h-6 text-indigo-500" /> Equipe (CSMs)
+    <div className="p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-heading font-extrabold text-white flex items-center gap-3 uppercase tracking-tight">
+          <div className="p-2 rounded-xl bg-plannera-sop/10 border border-plannera-sop/20">
+            <Users className="w-7 h-7 text-plannera-orange" />
+          </div>
+          Gestão de Equipe <span className="text-plannera-orange/40 ml-2">(CSMs)</span>
         </h1>
-        <p className="text-slate-400 text-sm mt-1">Gerencie os acessos do time de Customer Success na plataforma</p>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] ml-14 opacity-70">Controle de Acessos e Governança Plannera</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Card className="bg-slate-900 border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-indigo-400" />
-                Novo Usuário
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <Card className="glass-card border-none shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-plannera-orange/5 blur-3xl pointer-events-none" />
+            <CardHeader className="pb-6">
+              <CardTitle className="text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-plannera-orange" />
+                Novo Integrante
               </CardTitle>
-              <CardDescription className="text-slate-400">Cadastre um novo membro</CardDescription>
+              <CardDescription className="text-slate-500 text-[10px] font-medium uppercase tracking-tight">Expandir time de sucesso</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-slate-300">Email *</Label>
+              <form onSubmit={onSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Email Corporativo *</Label>
                   <Input 
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="csm@plannera.com.br" 
-                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" 
+                    placeholder="csm@plannera.tech" 
+                    className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 h-11 rounded-xl transition-all focus:border-plannera-orange" 
                     required 
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-slate-300">Senha Provisória *</Label>
+                <div className="space-y-2">
+                  <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Senha de Acesso *</Label>
                   <Input 
                     type="password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="mínimo 6 caracteres" 
-                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" 
+                    placeholder="Gerada via protocolo" 
+                    className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 h-11 rounded-xl transition-all focus:border-plannera-orange" 
                     required 
                     minLength={6}
                   />
                 </div>
                 
-                {error && <p className="text-red-400 text-xs">{error}</p>}
-                {success && <p className="text-green-400 text-xs">{success}</p>}
+                <AnimatePresence>
+                  {error && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-plannera-demand text-[10px] font-bold uppercase tracking-widest bg-plannera-demand/10 p-2 rounded-lg text-center">{error}</motion.p>
+                  )}
+                  {success && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-plannera-ds text-[10px] font-bold uppercase tracking-widest bg-plannera-ds/10 p-2 rounded-lg text-center">{success}</motion.p>
+                  )}
+                </AnimatePresence>
 
-                <Button type="submit" disabled={creating} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2 mt-4">
-                  {creating && <Loader2 className="w-4 h-4 animate-spin" />}
+                <Button type="submit" disabled={creating} className="w-full bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold uppercase tracking-widest h-12 rounded-xl shadow-xl transition-all active:scale-95 gap-2">
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   {creating ? 'Cadastrando...' : 'Cadastrar CSM'}
                 </Button>
               </form>
+
+              <div className="mt-8 pt-6 border-t border-white/5">
+                 <div className="flex items-center gap-3 opacity-40">
+                    <ShieldCheck className="w-4 h-4 text-slate-500" />
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Acessos auditados via logs Supabase</span>
+                 </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="md:col-span-2">
-          <Card className="bg-slate-900 border-slate-800 h-full">
-            <CardHeader>
-              <CardTitle className="text-white text-base">Membros Cadastrados</CardTitle>
+        <div className="lg:col-span-2">
+          <Card className="glass-card border-none shadow-2xl h-full">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-white text-sm font-bold uppercase tracking-widest">Matriz de Membros</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                <div className="flex flex-col items-center justify-center p-20 gap-4">
+                  <Loader2 className="w-10 h-10 text-plannera-orange animate-spin" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] animate-pulse">Consultando IAM...</span>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {users.length === 0 ? (
-                    <p className="text-slate-400 text-sm">Nenhum usuário cadastrado além de você.</p>
-                  ) : (
-                    users.map(user => (
-                      <div key={user.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                            <Mail className="w-4 h-4" />
+                <div className="space-y-4">
+                  <AnimatePresence mode='popLayout'>
+                    {users.length === 0 ? (
+                      <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest text-center py-20 opacity-30">Nenhum usuário cadastrado além de você.</p>
+                    ) : (
+                      users.map((user, idx) => (
+                        <motion.div 
+                          key={user.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="group flex items-center justify-between p-4 rounded-xl bg-black/20 border border-white/5 hover:bg-white/[0.03] transition-all"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-plannera-sop/10 border border-plannera-sop/20 text-plannera-orange flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                              <Mail className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-bold tracking-tight uppercase group-hover:text-plannera-orange transition-colors">{user.email}</p>
+                              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest opacity-60">
+                                {user.last_sign_in_at ? `Atividade: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Credenciais Pendentes'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-white text-sm font-medium">{user.email}</p>
-                            <p className="text-slate-400 text-xs">
-                              {user.last_sign_in_at ? `Último acesso: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Nunca acessou'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-slate-500 text-xs">ID: {user.id.split('-')[0]}...</div>
-                      </div>
-                    ))
-                  )}
+                          <div className="text-slate-700 text-[10px] font-mono font-bold px-3 py-1 rounded bg-black/40 border border-white/5">TOKEN: {user.id.split('-')[0].toUpperCase()}</div>
+                        </motion.div>
+                      ))
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
             </CardContent>

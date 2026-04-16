@@ -9,15 +9,30 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    # Script opcional para garantir que o contêiner baixe os modelos ao iniciar
+    environment:
+      # Aumenta o contexto máximo — reduz trocas de contexto em prompts longos
+      - OLLAMA_NUM_CTX=2048
+      # Threads de CPU (ajuste conforme núcleos disponíveis; 0 = automático)
+      - OLLAMA_NUM_THREAD=0
+    # Aguarda o servidor estar healthy antes de fazer pull dos modelos
     entrypoint: >
       /bin/sh -c "
       /bin/ollama serve &
-      sleep 5 &&
-      /bin/ollama pull qwen2.5:7b &&
+      echo 'Aguardando Ollama iniciar...' &&
+      until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do sleep 2; done &&
+      echo 'Ollama pronto. Baixando modelos...' &&
+      /bin/ollama pull qwen2.5:1.5b &&
       /bin/ollama pull nomic-embed-text &&
+      echo 'Modelos prontos.' &&
       wait
       "
+    # Health check para o docker saber quando o serviço está pronto
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 volumes:
   ollama_data:

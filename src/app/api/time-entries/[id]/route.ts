@@ -15,8 +15,9 @@ const CLIENT_FACING_TYPES = ['meeting', 'onboarding', 'qbr']
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,7 +30,7 @@ export async function PATCH(
   const { data: updatedEntry, error: entryError } = await supabase
     .from('time_entries')
     .update(parsed.data)
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('csm_id', user.id)
     .select('*, accounts(name)')
     .single()
@@ -43,7 +44,7 @@ export async function PATCH(
   const { data: existingInteraction } = await supabase
     .from('interactions')
     .select('id')
-    .eq('time_entry_id', params.id)
+    .eq('time_entry_id', id)
     .single()
 
   if (existingInteraction) {
@@ -54,7 +55,7 @@ export async function PATCH(
         .update({
           account_id: updatedEntry.account_id,
           type: updatedEntry.activity_type,
-          title: `Esforço Integrado: ${updatedEntry.activity_type}`,
+          title: `SYNC: ${updatedEntry.activity_type.toUpperCase()}`,
           date: updatedEntry.date,
           direct_hours: updatedEntry.parsed_hours,
           raw_transcript: updatedEntry.parsed_description,
@@ -85,4 +86,31 @@ export async function PATCH(
   }
 
   return NextResponse.json(updatedEntry)
+}
+
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 1. Remover interações vinculadas primeiro
+  await supabase
+    .from('interactions')
+    .delete()
+    .eq('time_entry_id', id)
+
+  // 2. Remover o esforço
+  const { error } = await supabase
+    .from('time_entries')
+    .delete()
+    .eq('id', id)
+    .eq('csm_id', user.id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return new NextResponse(null, { status: 204 })
 }

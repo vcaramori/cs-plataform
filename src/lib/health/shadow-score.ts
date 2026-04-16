@@ -35,7 +35,7 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
     return {
       score: 50,
       trend: 'stable',
-      justification: 'Dados insuficientes para gerar Shadow Score. Adicione interações ou tickets para esta conta.',
+      justification: 'Dados insuficientes para gerar Shadow Score. Adicione interações ou tickets para este LOGO.',
       risk_factors: ['insufficient_data'],
       confidence: 'low',
     }
@@ -56,7 +56,7 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
     return `- [${t.opened_at}] ${t.priority.toUpperCase()}: ${t.title} (${t.status})${resolved}\n  ${t.description?.slice(0, 150) ?? ''}`
   }).join('\n')
 
-  const prompt = `Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para esta conta.
+  const prompt = `Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para este LOGO.
 
 ## Interações recentes
 ${interactionsContext || 'Nenhuma interação registrada'}
@@ -93,10 +93,27 @@ escalation_risk, insufficient_data
 - critical: situação crítica imediata`
 
   const { result: raw, provider } = await generateText(prompt, { allowFallback: true, timeoutMs: 120000 })
-  console.log(`[Shadow Score] Gerado via ${provider}`)
-  const json = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  console.log(`[Shadow Score] Resposta bruta do ${provider}: ${raw}`)
 
-  const parsed = JSON.parse(json) as ShadowScoreResult
-  parsed.score = Math.max(0, Math.min(100, Math.round(parsed.score)))
-  return parsed
+  try {
+    // Extração robusta de JSON: busca o primeiro '{' e o último '}'
+    const firstBrace = raw.indexOf('{')
+    const lastBrace = raw.lastIndexOf('}')
+    
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error('A resposta da IA não contém um objeto JSON válido.')
+    }
+
+    const jsonString = raw.slice(firstBrace, lastBrace + 1).trim()
+    const parsed = JSON.parse(jsonString) as ShadowScoreResult
+    
+    // Validação básica de campos obrigatórios
+    if (typeof parsed.score !== 'number') throw new Error('Campo "score" ausente ou inválido.')
+    
+    parsed.score = Math.max(0, Math.min(100, Math.round(parsed.score)))
+    return parsed
+  } catch (err: any) {
+    console.error(`[Shadow Score] Falha ao parsear JSON. Erro: ${err.message}. Payload: ${raw}`)
+    throw new Error(`Resposta da IA inválida para análise: ${err.message}`)
+  }
 }

@@ -10,6 +10,7 @@ const AccountSchema = z.object({
   industry: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   logo_url: z.string().url().optional().or(z.literal('')),
+  tax_id: z.string().optional().or(z.literal('')),
   mrr: z.number().positive().optional(),
   start_date: z.string().optional(),
   renewal_date: z.string().optional(),
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
       name: parsed.data.account_name,
       segment: parsed.data.segment,
       logo_url: parsed.data.logo_url || null,
+      tax_id: parsed.data.tax_id || null,
       csm_owner_id: parsed.data.csm_owner_id || user.id
     })
     .select()

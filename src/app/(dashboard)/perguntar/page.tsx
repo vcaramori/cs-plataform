@@ -18,7 +18,7 @@ export default async function PerguntarPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Perguntar</h1>
         <p className="text-slate-400 text-sm mt-1">
-          Faça perguntas em linguagem natural sobre contas ou sobre o portfólio inteiro
+          Faça perguntas em linguagem natural sobre LOGOS ou sobre o portfólio inteiro
         </p>
       </div>
       <PerguntarClient accounts={accounts ?? []} />

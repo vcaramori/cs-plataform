@@ -24,7 +24,7 @@ export type Option = {
   value: string
 }
 
-interface SearchableSelectProps {
+export interface SearchableSelectProps {
   options: Option[]
   value?: string
   onValueChange: (value: string) => void
@@ -55,14 +55,17 @@ export function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between bg-slate-800 border-slate-700 text-white hover:bg-slate-700 hover:text-white font-normal",
+            "w-full justify-between bg-slate-800/80 border-white/8 text-white hover:bg-slate-700 hover:text-white",
+            "text-[10px] font-bold uppercase tracking-wide",
             className
           )}
         >
-          {value
-            ? options.find((option) => option.value === value)?.label || placeholder
-            : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="truncate">
+            {value
+              ? options.find((option) => option.value === value)?.label || placeholder
+              : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-40" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-slate-900 border-slate-800">

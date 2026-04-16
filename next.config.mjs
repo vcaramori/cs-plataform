@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@pinecone-database/pinecone'],
-  },
+  serverExternalPackages: ['@pinecone-database/pinecone', 'pdf-parse'],
 };
 
 export default nextConfig;

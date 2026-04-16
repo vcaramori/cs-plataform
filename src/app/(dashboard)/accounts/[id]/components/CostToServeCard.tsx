@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, TrendingUp } from 'lucide-react'
 import { env } from '@/lib/env'
+import { formatCurrency, formatNumber } from '@/lib/utils'
 
 interface Props {
   directHours: number
@@ -61,20 +62,20 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
         <div className="space-y-2 pt-1">
           <div className="flex justify-between text-sm">
             <span className="text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Direto</span>
-            <span className="text-white font-medium">{directHours.toFixed(1)}h</span>
+            <span className="text-white font-medium">{formatNumber(directHours)}h</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Indireto</span>
-            <span className="text-white font-medium">{indirectHours.toFixed(1)}h</span>
+            <span className="text-white font-medium">{formatNumber(indirectHours)}h</span>
           </div>
           <div className="flex justify-between text-sm border-t border-slate-800 pt-2">
             <span className="text-slate-300 font-medium">Total</span>
-            <span className="text-white font-bold">{totalHours.toFixed(1)}h</span>
+            <span className="text-white font-bold">{formatNumber(totalHours)}h</span>
           </div>
           {csmHourCost > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Custo Total</span>
-              <span className="text-white font-medium">R$ {(totalHours * csmHourCost).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+              <span className="text-white font-medium">{formatCurrency(totalHours * csmHourCost)}</span>
             </div>
           )}
         </div>

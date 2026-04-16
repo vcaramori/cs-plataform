@@ -7,6 +7,8 @@ export interface OllamaGenerateOptions {
   model?: string
   temperature?: number
   stream?: boolean
+  /** Máximo de tokens a gerar. Default: 512 (adequado para CPU; aumente se precisar de respostas longas) */
+  maxTokens?: number
 }
 
 export interface OllamaEmbedOptions {
@@ -22,7 +24,10 @@ export async function ollamaGenerate(
   options: OllamaGenerateOptions = {}
 ): Promise<string> {
   const baseUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
-  const model = options.model || process.env.OLLAMA_MODEL || 'qwen2.5:7b'
+  const model = options.model || process.env.OLLAMA_MODEL || 'qwen2.5:1.5b'
+  // Em CPU, cada token custa ~50-100ms. 512 tokens ≈ 25-50s — seguro dentro do timeout de 60s.
+  // Aumente via OLLAMA_NUM_PREDICT se precisar de respostas mais longas (e ajuste LLM_TIMEOUT_MS).
+  const numPredict = options.maxTokens ?? parseInt(process.env.OLLAMA_NUM_PREDICT || '512')
 
   const response = await fetch(`${baseUrl}/api/generate`, {
     method: 'POST',
@@ -32,8 +37,9 @@ export async function ollamaGenerate(
       prompt,
       stream: false,
       options: {
-        temperature: options.temperature ?? 0.1,
-        num_predict: 2048,
+        temperature: options.temperature ?? 0,
+        num_predict: numPredict,
+        repeat_penalty: 1.2,
       },
     }),
   })

@@ -19,7 +19,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       health_scores (*),
       time_entries (*),
       success_goals (*),
-      adoption_metrics (*)
+      adoption_metrics (*),
+      feature_adoption (*)
     `)
     .eq('id', id)
     .single()
@@ -35,6 +36,20 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const healthScores = Array.isArray(account.health_scores) ? account.health_scores : (account.health_scores ? [account.health_scores] : [])
   const successGoals = Array.isArray(account.success_goals) ? account.success_goals : (account.success_goals ? [account.success_goals] : [])
   const adoptionMetrics = Array.isArray(account.adoption_metrics) ? account.adoption_metrics : (account.adoption_metrics ? [account.adoption_metrics] : [])
+  const adoptionRecords = Array.isArray(account.feature_adoption) ? account.feature_adoption : (account.feature_adoption ? [account.feature_adoption] : [])
+
+  // Calcular Score de Adoção Real para o Header
+  const total = adoptionRecords.length
+  const inUse = adoptionRecords.filter((r: any) => r.status === 'in_use').length
+  const partial = adoptionRecords.filter((r: any) => r.status === 'partial').length
+  const blocked = adoptionRecords.filter((r: any) => r.status === 'blocked').length
+  const notApplicable = adoptionRecords.filter((r: any) => r.status === 'na').length
+  
+  const totalExcluded = notApplicable
+  const totalApplicable = total - totalExcluded
+  const currentAdoptionScore = totalApplicable > 0 
+    ? Math.round(((inUse + (partial * 0.5)) / totalApplicable) * 100) 
+    : 0
 
   const activeContracts = contracts.filter((c: any) => c.status === 'active')
   const displayContracts = activeContracts.length > 0 ? activeContracts : (contracts.length > 0 ? [contracts[0]] : [])
@@ -43,7 +58,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     <div className="p-6 space-y-6">
       <AccountHeader
         account={account as any}
-        latestHealthScore={healthScores.sort((a,b) => new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime())[0] ?? null}
+        latestHealthScore={healthScores.sort((a: any, b: any) => new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime())[0] ?? null}
+        currentAdoptionScore={currentAdoptionScore}
       />
 
       <AccountDetailPageClient 

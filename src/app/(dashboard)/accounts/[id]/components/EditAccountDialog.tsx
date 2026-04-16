@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { ImageUpload } from '@/components/ui/image-upload'
 import { Settings2, Loader2 } from 'lucide-react'
+import { MaskedInput } from '@/components/ui/masked-input'
 import { toast } from 'sonner'
 import type { Account } from '@/lib/supabase/types'
 
@@ -28,6 +29,8 @@ const schema = z.object({
   industry: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   logo_url: z.string().url().optional().nullable(),
+  tax_id: z.string().optional().nullable(),
+  plan_id: z.string().uuid().optional().nullable(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -35,16 +38,48 @@ type FormData = z.infer<typeof schema>
 export function EditAccountDialog({ account }: { account: Account }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [plans, setPlans] = useState<any[]>([])
   const router = useRouter()
 
+  useEffect(() => {
+    if (open) {
+      fetchPlans()
+    }
+  }, [open])
+
+  async function fetchPlans() {
+    try {
+      const [plansRes, accountPlanRes] = await Promise.all([
+        fetch('/api/product/plans'),
+        fetch(`/api/accounts/${account.id}/plan`)
+      ])
+      
+      if (plansRes.ok) {
+        const data = await plansRes.json()
+        setPlans(data)
+      }
+
+      if (accountPlanRes.ok) {
+        const data = await accountPlanRes.json()
+        if (data && data.plan_id) {
+          setValue('plan_id', data.plan_id)
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching plans:', e)
+    }
+  }
+
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       name: account.name,
       segment: account.segment as any,
       industry: account.industry || '',
       website: account.website || '',
-      logo_url: account.logo_url,
+      logo_url: account.logo_url ?? undefined,
+      tax_id: (account as any).tax_id || '',
+      plan_id: null,
     },
   })
 
@@ -56,6 +91,15 @@ export function EditAccountDialog({ account }: { account: Account }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
+
+      // Update plan if changed
+      if (data.plan_id) {
+        await fetch(`/api/accounts/${account.id}/plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan_id: data.plan_id }),
+        })
+      }
 
       if (!res.ok) {
         const err = await res.json()
@@ -93,9 +137,9 @@ export function EditAccountDialog({ account }: { account: Account }) {
             <div className="space-y-4">
               <div className="space-y-1.5 text-center">
                 <Label className="text-slate-300 w-full text-left">Logotipo</Label>
-                <ImageUpload 
-                  value={watch('logo_url')} 
-                  onChange={(url) => setValue('logo_url', url)} 
+                <ImageUpload
+                  value={watch('logo_url') ?? undefined}
+                  onChange={(url) => setValue('logo_url', url)}
                 />
               </div>
 
@@ -144,6 +188,29 @@ export function EditAccountDialog({ account }: { account: Account }) {
                   className="bg-slate-900 border-slate-800 text-white"
                 />
                 {errors.website && <p className="text-red-500 text-xs">{errors.website.message}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-slate-300">CNPJ / TAX ID</Label>
+                <MaskedInput 
+                  maskType="tax_id"
+                  value={watch('tax_id') ?? ''}
+                  onValueChange={(v) => setValue('tax_id', v)}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-slate-300">Plano de Assinatura</Label>
+                <SearchableSelect
+                  value={watch('plan_id') || ''}
+                  onValueChange={(v) => setValue('plan_id', v)}
+                  options={[
+                    { label: 'Nenhum Plano', value: '' },
+                    ...plans.map(p => ({ label: p.name, value: p.id }))
+                  ]}
+                />
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Define as funcionalidades liberadas contratualmente.</p>
               </div>
             </div>
           </div>

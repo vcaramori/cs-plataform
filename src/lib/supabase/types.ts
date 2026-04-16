@@ -18,6 +18,7 @@ export type Account = {
   csm_owner_id: string
   industry: string | null
   website: string | null
+  logo_url: string | null
   health_score: number
   health_trend: HealthTrend
   created_at: string
@@ -35,6 +36,7 @@ export type Contract = {
   contracted_hours_monthly: number
   csm_hour_cost: number
   notes: string | null
+  description: string | null
 }
 
 export type Contact = {
@@ -46,6 +48,9 @@ export type Contact = {
   influence_level: ContactInfluence
   decision_maker: boolean
   email: string | null
+  phone: string | null
+  linkedin_url: string | null
+  photo_url: string | null
   last_interaction_date: string | null
   notes: string | null
 }
@@ -123,6 +128,10 @@ export type HealthScore = {
   engagement_component: number | null
   discrepancy: number | null
   discrepancy_alert: boolean
+  classification: string | null
+  created_by: string | null
+  created_at: string | null
+  source_type: string | null
 }
 
 // Joined types for UI

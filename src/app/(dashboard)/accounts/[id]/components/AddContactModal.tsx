@@ -5,23 +5,36 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Loader2 } from 'lucide-react'
+import { Loader2, UserPlus } from 'lucide-react'
+import { MaskedInput } from '@/components/ui/masked-input'
+import { toast } from 'sonner'
 
 const schema = z.object({
-  name: z.string().min(2),
-  role: z.string().min(1),
+  firstName: z.string().min(1, 'Informe o nome'),
+  lastName: z.string().min(1, 'Informe o sobrenome'),
+  role: z.string().min(1, 'Informe o cargo'),
   seniority: z.enum(['C-Level', 'VP', 'Director', 'Manager', 'IC']),
-  influence_level: z.enum(['Champion', 'Neutral', 'Detractor', 'Blocker']),
-  email: z.string().email().optional().or(z.literal('')),
+  influence_level: z.enum(['Campeão', 'Neutro', 'Detrator', 'Bloqueador']),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
   decision_maker: z.boolean(),
 })
 
 type FormData = z.infer<typeof schema>
+
+// Mapeamento para os valores aceitos pela API
+const influenceMap: Record<string, string> = {
+  'Campeão': 'Champion',
+  'Neutro': 'Neutral',
+  'Detrator': 'Detractor',
+  'Bloqueador': 'Blocker',
+}
 
 export function AddContactModal({ open, onClose, accountId }: {
   open: boolean
@@ -30,76 +43,190 @@ export function AddContactModal({ open, onClose, accountId }: {
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { seniority: 'Manager' as const, influence_level: 'Neutral' as const, decision_maker: false },
+    defaultValues: {
+      seniority: 'Manager',
+      influence_level: 'Neutro',
+      decision_maker: false,
+    },
   })
 
   async function onSubmit(data: FormData) {
     setLoading(true)
-    await fetch('/api/contacts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, account_id: accountId }),
-    })
-    setLoading(false)
-    reset()
-    onClose()
-    router.refresh()
+    try {
+      const res = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_id: accountId,
+          name: `${data.firstName} ${data.lastName}`.trim(),
+          role: data.role,
+          seniority: data.seniority,
+          influence_level: influenceMap[data.influence_level] ?? 'Neutral',
+          decision_maker: data.decision_maker,
+          email: data.email?.toLowerCase() || null,
+          phone: data.phone || null,
+          linkedin_url: data.linkedin_url || null,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error ?? 'Erro ao salvar')
+      }
+      toast.success('Stakeholder adicionado!')
+      reset()
+      onClose()
+      router.refresh()
+    } catch (e: any) {
+      toast.error(e.message || 'Erro inesperado')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-md">
+      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-white">Adicionar Contato</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-slate-300 text-sm">Nome *</Label>
-              <Input {...register('name')} className="bg-slate-800 border-slate-700 text-white h-9" placeholder="João Silva" />
-              {errors.name && <p className="text-red-400 text-xs">{errors.name.message}</p>}
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
+              <UserPlus className="w-4 h-4 text-plannera-orange" />
             </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-slate-300 text-sm">Cargo *</Label>
-              <Input {...register('role')} className="bg-slate-800 border-slate-700 text-white h-9" placeholder="Head de TI" />
+            <div>
+              <DialogTitle className="text-white text-base font-bold uppercase tracking-tight">
+                Adicionar Stakeholder
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 text-[10px] font-bold uppercase tracking-wide mt-0">
+                Mapa de Influência
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
+
+          {/* Nome e Sobrenome */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Nome *</Label>
+              <Input
+                {...register('firstName')}
+                className="bg-slate-800 border-slate-700 text-white h-9"
+                placeholder="João"
+              />
+              {errors.firstName && <p className="text-red-400 text-[10px]">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-slate-300 text-sm">Senioridade</Label>
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Sobrenome *</Label>
+              <Input
+                {...register('lastName')}
+                className="bg-slate-800 border-slate-700 text-white h-9"
+                placeholder="Silva"
+              />
+              {errors.lastName && <p className="text-red-400 text-[10px]">{errors.lastName.message}</p>}
+            </div>
+          </div>
+
+          {/* Cargo */}
+          <div className="space-y-1.5">
+            <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Cargo *</Label>
+            <Input
+              {...register('role')}
+              className="bg-slate-800 border-slate-700 text-white h-9"
+              placeholder="Head de TI, CEO, Gerente de Projetos..."
+            />
+            {errors.role && <p className="text-red-400 text-[10px]">{errors.role.message}</p>}
+          </div>
+
+          {/* Senioridade e Nível de Influência */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Senioridade</Label>
               <SearchableSelect
                 value={watch('seniority')}
                 onValueChange={v => setValue('seniority', v as any)}
-                options={[
-                  ...['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))
-                ]}
+                options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-slate-300 text-sm">Influência</Label>
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Nível de Influência</Label>
               <SearchableSelect
                 value={watch('influence_level')}
                 onValueChange={v => setValue('influence_level', v as any)}
                 options={[
-                  ...['Champion', 'Neutral', 'Detractor', 'Blocker'].map(s => ({ label: s, value: s }))
+                  { label: 'Campeão', value: 'Campeão' },
+                  { label: 'Neutro', value: 'Neutro' },
+                  { label: 'Detrator', value: 'Detrator' },
+                  { label: 'Bloqueador', value: 'Bloqueador' },
                 ]}
               />
             </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label className="text-slate-300 text-sm">Email</Label>
-              <Input {...register('email')} type="email" className="bg-slate-800 border-slate-700 text-white h-9" placeholder="joao@empresa.com" />
+          </div>
+
+          {/* E-mail e Telefone */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">E-mail</Label>
+              <Input
+                {...register('email')}
+                type="email"
+                className="bg-slate-800 border-slate-700 text-white h-9"
+                placeholder="joao@empresa.com"
+              />
+              {errors.email && <p className="text-red-400 text-[10px]">{errors.email.message}</p>}
             </div>
-            <div className="col-span-2 flex items-center gap-2">
-              <input type="checkbox" id="dm" {...register('decision_maker')} className="rounded" />
-              <Label htmlFor="dm" className="text-slate-300 text-sm cursor-pointer">Tomador de decisão</Label>
+            <div className="space-y-1.5">
+              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Telefone</Label>
+              <MaskedInput 
+                maskType="phone"
+                value={watch('phone')}
+                onValueChange={(v) => setValue('phone', v)}
+                placeholder="(00) 00000-0000"
+                className="h-9"
+              />
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="border-red-700 text-red-400 hover:bg-red-950 hover:text-red-300 h-9">Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 h-9 gap-1.5">
+
+          {/* LinkedIn e Foto */}
+          <div className="space-y-1.5">
+            <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">
+              URL do LinkedIn
+              <span className="ml-1 text-slate-600 normal-case font-medium">— foto carregada automaticamente</span>
+            </Label>
+            <Input
+              {...register('linkedin_url')}
+              className="bg-slate-800 border-slate-700 text-white h-9"
+              placeholder="https://linkedin.com/in/joaosilva"
+            />
+            {errors.linkedin_url && <p className="text-red-400 text-[10px]">{errors.linkedin_url.message}</p>}
+          </div>
+
+          {/* Tomador de decisão */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div
+              onClick={() => setValue('decision_maker', !watch('decision_maker'))}
+              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-slate-700'}`}
+            >
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
+            </div>
+            <span className="text-slate-300 text-sm font-bold group-hover:text-white transition-colors">
+              Tomador de decisão
+            </span>
+          </label>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
+            <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold gap-2"
+            >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Salvar
+              Salvar Stakeholder
             </Button>
           </div>
         </form>

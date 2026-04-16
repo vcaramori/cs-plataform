@@ -1,37 +1,39 @@
 /**
  * LLM Gateway — Abstração de Provider com Fallback
- * 
+ *
  * Fluxo:
  *   1. Tenta executar no Ollama (local, privado)
  *   2. Se timeout ou erro → fallback para Gemini (se allowFallback=true)
  *   3. Loga sempre qual provider foi usado
- * 
+ *
  * Configuração via .env:
  *   LLM_PROVIDER=ollama|gemini    (default: gemini)
- *   LLM_TIMEOUT_MS=15000          (timeout antes do fallback, default: 15s)
+ *   LLM_TIMEOUT_MS=60000          (timeout antes do fallback, default: 60s — CPU precisa de tempo)
  *   LLM_ALLOW_FALLBACK=true|false (default: true)
  */
 
 import { ollamaGenerate, ollamaEmbed } from './ollama'
 import { GoogleGenerativeAI, TaskType } from '@google/generative-ai'
+import Anthropic from '@anthropic-ai/sdk'
+import { env } from '@/lib/env'
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
-export type LLMProvider = 'ollama' | 'gemini' | 'gemini-fallback'
+export type LLMProvider = 'ollama' | 'gemini' | 'gemini-fallback' | 'claude-fallback'
 
 export interface GenerateOptions {
-  /** Permite fallback para Gemini se Ollama falhar. Default: true */
+  /** Permite fallback para Provedores em nuvem se Ollama falhar. Default: true */
   allowFallback?: boolean
-  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env */
+  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env (120s) */
   timeoutMs?: number
-  /** Temperatura do modelo (0=determinístico, 1=criativo). Default: 0.1 */
+  /** Temperatura do modelo (0=determinístico, 1=criativo). Default: 0 */
   temperature?: number
 }
 
 export interface EmbedOptions {
   /** Permite fallback para Gemini se Ollama falhar. Default: true */
   allowFallback?: boolean
-  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env */
+  /** Timeout em ms antes de acionar o fallback. Default: LLM_TIMEOUT_MS env (120s) */
   timeoutMs?: number
 }
 
@@ -45,9 +47,10 @@ export interface LLMResponse<T> {
 
 function getConfig() {
   return {
-    provider: (process.env.LLM_PROVIDER || 'gemini') as 'ollama' | 'gemini',
-    timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS || '15000'),
-    allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
+    provider: env.llm.provider,
+    fallbackProvider: env.llm.fallbackProvider,
+    timeoutMs: env.llm.timeoutMs,
+    allowFallback: env.llm.allowFallback,
   }
 }
 
@@ -60,29 +63,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ])
 }
 
-function getGeminiFlash() {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-  return genAI.getGenerativeModel(
-    { model: process.env.GEMINI_FLASH_MODEL || 'gemini-1.5-flash-latest' },
-    { apiVersion: 'v1beta' }
-  )
-}
-
-function getGeminiEmbedding() {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-  return genAI.getGenerativeModel(
-    { model: process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004' },
-    { apiVersion: 'v1beta' }
-  )
-}
-
-// ─── Gateway: Geração de Texto ───────────────────────────────────────────────
+// ─── Providers Externos ──────────────────────────────────────────────────────
 
 /**
- * Helper interno para geração via Gemini com tentativa de fallback em caso de 503 (overload)
+ * Helper interno para geração via Gemini (Google)
  */
 async function geminiGenerate(prompt: string, primaryModel: string, fallbackModel?: string): Promise<string> {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+  const genAI = new GoogleGenerativeAI(env.gemini.apiKey)
   
   try {
     const model = genAI.getGenerativeModel({ model: primaryModel }, { apiVersion: 'v1beta' })
@@ -105,7 +92,46 @@ async function geminiGenerate(prompt: string, primaryModel: string, fallbackMode
 }
 
 /**
+ * Helper interno para geração via Claude (Anthropic)
+ */
+async function claudeGenerate(prompt: string): Promise<string> {
+  if (!env.claude.apiKey) {
+    throw new Error('ANTHROPIC_API_KEY não configurada')
+  }
+
+  const anthropic = new Anthropic({ apiKey: env.claude.apiKey })
+  
+  try {
+    const response = await anthropic.messages.create({
+      model: env.claude.model,
+      max_tokens: env.claude.maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+    })
+
+    const content = response.content[0]
+    if (content.type === 'text') {
+      return content.text.trim()
+    }
+    return ''
+  } catch (err: any) {
+    throw err
+  }
+}
+
+function getGeminiEmbedding() {
+  const genAI = new GoogleGenerativeAI(env.gemini.apiKey)
+  return genAI.getGenerativeModel(
+    { model: env.gemini.embeddingModel || 'text-embedding-004' },
+    { apiVersion: 'v1beta' }
+  )
+}
+
+// ─── Gateway: Geração de Texto ───────────────────────────────────────────────
+
+/**
  * Gera texto usando o provider configurado, com fallback automático.
+ * Ordem de Fallback: Ollama -> Gemini -> Claude (ou conforme configurado)
  */
 export async function generateText(
   prompt: string,
@@ -116,24 +142,20 @@ export async function generateText(
   const allowFallback = options.allowFallback ?? config.allowFallback
   const start = Date.now()
 
-  // Configuração dos modelos (Abril 2026)
-  const flashModel = process.env.GEMINI_FLASH_MODEL || 'gemini-1.5-flash-latest'
-  const proModel = process.env.GEMINI_PRO_MODEL || 'gemini-3.1-pro-preview'
+  // IDs dos modelos Gemini
+  const flashModel = env.gemini.flashModel
+  const proModel = env.gemini.proModel
 
-  // Provider default: Gemini (direto)
+  // Provider Default: Gemini
   if (config.provider === 'gemini') {
     const text = await geminiGenerate(prompt, flashModel, proModel)
-    return {
-      result: text,
-      provider: 'gemini',
-      durationMs: Date.now() - start,
-    }
+    return { result: text, provider: 'gemini', durationMs: Date.now() - start }
   }
 
-  // Provider: Ollama (com timeout e fallback)
+  // Provider: Ollama (com timeout e fallback em cascata)
   try {
     const text = await withTimeout(
-      ollamaGenerate(prompt, { temperature: options.temperature }),
+      ollamaGenerate(prompt, { temperature: options.temperature ?? 0 }),
       timeoutMs
     )
     console.log(`[LLM Gateway] ✅ Ollama respondeu em ${Date.now() - start}ms`)
@@ -147,10 +169,42 @@ export async function generateText(
       throw new Error(`[LLM Gateway] Ollama indisponível e fallback desativado: ${err.message}`)
     }
 
+    // 1. Tenta Fallback Primário (Gemini)
+    try {
+      console.log('[LLM Gateway] 🔄 Usando Gemini como fallback primário...')
+      const text = await geminiGenerate(prompt, proModel, flashModel)
+      console.log(`[LLM Gateway] ✅ Gemini respondeu em ${Date.now() - start}ms (fallback)`)
+      return { result: text, provider: 'gemini-fallback', durationMs: Date.now() - start }
+    } catch (geminiErr: any) {
+      console.warn(`[LLM Gateway] ⚠️ Gemini também falhou: ${geminiErr.message}`)
+      
+      // 2. Tenta Fallback Secundário (Claude)
+      try {
+        console.log('[LLM Gateway] 🔄 Usando Claude como fallback de última instância...')
+        const text = await claudeGenerate(prompt)
+        return {
+          result: text,
+          provider: 'claude-fallback',
+          durationMs: Date.now() - start,
+        }
+      } catch (claudeErr: any) {
+        console.warn(`[LLM Gateway] ⚠️ Claude também falhou: ${claudeErr.message}`)
+        // Fallback 2: Gemini (double fallback)
+        console.log('[LLM Gateway] 🔄 Usando Gemini como double fallback...')
+        const text = await geminiGenerate(prompt, proModel, flashModel)
+        console.log(`[LLM Gateway] ✅ Gemini respondeu em ${Date.now() - start}ms (double fallback)`)
+        return {
+          result: text,
+          provider: 'gemini-fallback',
+          durationMs: Date.now() - start,
+        }
+      }
+    }
+
     // Fallback para Gemini (tentando Pro primeiro, depois Flash se 503)
     console.log('[LLM Gateway] 🔄 Usando Gemini como fallback...')
     const text = await geminiGenerate(prompt, proModel, flashModel)
-    console.log(`[LLM Gateway] ✅ Gemini respondeu em ${Date.now() - start}ms (incluindo fallback)`)
+    console.log(`[LLM Gateway] ✅ Gemini respondeu em ${Date.now() - start}ms (fallback)`)
     return {
       result: text,
       provider: 'gemini-fallback',

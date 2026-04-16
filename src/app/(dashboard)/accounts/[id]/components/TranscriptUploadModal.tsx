@@ -45,7 +45,7 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
   } | null>(null)
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(FormSchema) as any,
     defaultValues: {
       type: 'meeting',
       date: new Date().toISOString().slice(0, 10),

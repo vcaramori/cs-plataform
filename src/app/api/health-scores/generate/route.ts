@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { generateShadowScore } from '@/lib/health/shadow-score'
+import { getHealthClassification } from '@/lib/health/utils'
 
 const BodySchema = z.object({
   account_id: z.string().uuid(),
@@ -16,18 +17,20 @@ export async function POST(request: Request) {
   const parsed = BodySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
+  const { account_id } = parsed.data
+
   // Valida ownership
   const { data: account } = await supabase
     .from('accounts')
     .select('id')
-    .eq('id', parsed.data.account_id)
+    .eq('id', account_id)
     .eq('csm_owner_id', user.id)
     .single()
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
 
   let shadowResult
   try {
-    shadowResult = await generateShadowScore(parsed.data.account_id)
+    shadowResult = await generateShadowScore(account_id)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erro desconhecido'
     return NextResponse.json({ error: `Falha ao gerar Shadow Score: ${msg}` }, { status: 500 })
@@ -35,48 +38,47 @@ export async function POST(request: Request) {
 
   const today = new Date().toISOString().slice(0, 10)
 
-  // Busca score manual do dia para calcular discrepância
-  const { data: existing } = await supabase
+  // Busca o último score manual vigente para calcular discrepância
+  const { data: latestManual } = await supabase
     .from('health_scores')
-    .select('id, manual_score')
-    .eq('account_id', parsed.data.account_id)
-    .eq('evaluated_at', today)
+    .select('manual_score')
+    .eq('account_id', account_id)
+    .not('manual_score', 'is', null)
+    .order('evaluated_at', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
     .single()
 
-  const discrepancyAlert = existing?.manual_score !== null && existing?.manual_score !== undefined
-    ? Math.abs(Number(existing.manual_score) - shadowResult.score) > 20
-    : false
+  const manualScore = latestManual?.manual_score != null ? Number(latestManual.manual_score) : null
+  const discrepancyAlert = manualScore !== null ? Math.abs(manualScore - shadowResult.score) > 20 : false
 
-  let data, error
-  if (existing) {
-    ;({ data, error } = await supabase
-      .from('health_scores')
-      .update({
-        shadow_score: shadowResult.score,
-        shadow_reasoning: shadowResult.justification,
-        discrepancy_alert: discrepancyAlert,
-      })
-      .eq('id', existing.id)
-      .select()
-      .single())
-  } else {
-    ;({ data, error } = await supabase
-      .from('health_scores')
-      .insert({
-        account_id: parsed.data.account_id,
-        evaluated_at: today,
-        shadow_score: shadowResult.score,
-        shadow_reasoning: shadowResult.justification,
-        discrepancy_alert: false,
-      })
-      .select()
-      .single())
-  }
+  // Inserção da nova entrada histórica de IA
+  const { data: newEntry, error: insertError } = await supabase
+    .from('health_scores')
+    .insert({
+      account_id,
+      evaluated_at: today, // Analisado hoje
+      shadow_score: shadowResult.score,
+      shadow_reasoning: shadowResult.justification,
+      classification: getHealthClassification(shadowResult.score),
+      source_type: 'ai_generation',
+      discrepancy_alert: discrepancyAlert,
+    })
+    .select()
+    .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+
+  // Atualiza alerta de discrepância na tabela accounts
+  await supabase
+    .from('accounts')
+    .update({ 
+      discrepancy_alert: discrepancyAlert,
+    })
+    .eq('id', account_id)
 
   return NextResponse.json({
-    ...data,
+    ...newEntry,
     shadow_trend: shadowResult.trend,
     risk_factors: shadowResult.risk_factors,
     confidence: shadowResult.confidence,

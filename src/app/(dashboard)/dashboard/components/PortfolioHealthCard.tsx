@@ -1,75 +1,163 @@
+'use client'
+
 import { Card, CardContent } from '@/components/ui/card'
-import { Building2, DollarSign, Heart, AlertTriangle, CalendarClock } from 'lucide-react'
+import { Building2, DollarSign, Heart, AlertTriangle, CalendarClock, TrendingUp } from 'lucide-react'
+import { motion, useSpring, useTransform, animate } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   totalAccounts: number
+  totalActiveContracts: number // New prop
   totalMRR: number
   avgHealthScore: number
   atRisk: number
   renewalsSoon: number
 }
 
-function KPICard({ icon: Icon, label, value, sub, color }: {
-  icon: React.ElementType
-  label: string
-  value: string | number
-  sub?: string
-  color: string
-}) {
+function Odometer({ value, prefix = "", suffix = "", decimal = 0 }: { value: number, prefix?: string, suffix?: string, decimal?: number }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    const controls = animate(0, value, {
+      duration: 2,
+      ease: "easeOut",
+      onUpdate: (latest) => setDisplayValue(latest)
+    })
+    return () => controls.stop()
+  }, [value])
+
   return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            {sub && <p className="text-slate-500 text-xs mt-1">{sub}</p>}
-          </div>
-          <div className={`p-2 rounded-lg ${color}`}>
-            <Icon className="w-5 h-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <span>
+      {prefix}{displayValue.toLocaleString('pt-BR', { minimumFractionDigits: decimal, maximumFractionDigits: decimal })}{suffix}
+    </span>
   )
 }
 
-export function PortfolioHealthCard({ totalAccounts, totalMRR, avgHealthScore, atRisk, renewalsSoon }: Props) {
+function KPICard({ 
+  icon: Icon, 
+  label, 
+  value, 
+  sub, 
+  color, 
+  index,
+  prefix,
+  suffix,
+  decimal
+}: {
+  icon: React.ElementType
+  label: string
+  value: number
+  sub?: string
+  color: string
+  index: number
+  prefix?: string
+  suffix?: string
+  decimal?: number
+}) {
+  const [bgClass, textClass] = color.split(' ')
+  const barClass = textClass?.replace('text-', 'bg-') ?? 'bg-slate-400'
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
+    >
+      <Card className="glass-card group overflow-hidden relative">
+        <div className={cn(
+          "absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-[0.12] transition-opacity group-hover:opacity-25 pointer-events-none",
+          barClass
+        )} />
+
+        <CardContent className="p-5 relative z-10">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-wide leading-none mb-2">{label}</p>
+              <h3 className="text-2xl font-black text-white tracking-tighter">
+                <Odometer value={value} prefix={prefix} suffix={suffix} decimal={decimal} />
+              </h3>
+              {sub && <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wide opacity-70 mt-1 whitespace-nowrap">{sub}</p>}
+            </div>
+            <div className={cn("p-2.5 rounded-xl shadow-lg transition-transform group-hover:scale-110", bgClass, textClass)}>
+              <Icon className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 1.5, delay: 0.5 + (index * 0.1) }}
+              className={cn("h-full opacity-60 rounded-full", barClass)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
+export function PortfolioHealthCard({ 
+  totalAccounts, 
+  totalActiveContracts, // New prop
+  totalMRR, 
+  avgHealthScore, 
+  atRisk, 
+  renewalsSoon 
+}: Props) {
+  const isMrrMillion = totalMRR >= 1000000
+  const isArrMillion = (totalMRR * 12) >= 1000000
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
       <KPICard
+        index={0}
         icon={Building2}
-        label="Total de Contas"
+        label="TOTAL DE LOGOS"
         value={totalAccounts}
-        color="bg-indigo-600/20 text-indigo-400"
+        sub={`${totalActiveContracts === 1 ? 'Conta' : 'Contas'}: ${totalActiveContracts}`}
+        color="bg-indigo-600/10 text-indigo-400"
       />
       <KPICard
+        index={1}
         icon={DollarSign}
         label="MRR Total"
-        value={`R$ ${totalMRR.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
-        sub={`ARR: R$ ${(totalMRR * 12).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
-        color="bg-emerald-600/20 text-emerald-400"
+        value={isMrrMillion ? totalMRR / 1000000 : totalMRR}
+        prefix="R$ "
+        decimal={isMrrMillion ? 3 : 0}
+        suffix={isMrrMillion ? ' Mi' : ''}
+        sub={
+          isArrMillion 
+            ? `ARR: R$ ${((totalMRR * 12) / 1000000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} Mi`
+            : `ARR: R$ ${(totalMRR * 12).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+        }
+        color="bg-emerald-600/10 text-emerald-400"
       />
       <KPICard
+        index={2}
         icon={Heart}
         label="Health Médio"
-        value={`${avgHealthScore}`}
-        sub="Portfólio geral"
-        color={`${avgHealthScore >= 70 ? 'bg-emerald-600/20 text-emerald-400' : avgHealthScore >= 40 ? 'bg-yellow-600/20 text-yellow-400' : 'bg-red-600/20 text-red-400'}`}
+        value={avgHealthScore}
+        suffix="%"
+        sub="Score Geral"
+        color={avgHealthScore >= 70 ? 'bg-emerald-600/10 text-emerald-400' : avgHealthScore >= 40 ? 'bg-yellow-600/10 text-yellow-400' : 'bg-red-600/10 text-red-400'}
       />
       <KPICard
+        index={3}
         icon={AlertTriangle}
-        label="Em Risco"
+        label="LOGOS em Risco"
         value={atRisk}
-        sub="Health score < 40"
-        color={atRisk > 0 ? 'bg-red-600/20 text-red-400' : 'bg-slate-700 text-slate-400'}
+        sub="Health Score < 40"
+        color={atRisk > 0 ? 'bg-red-600/10 text-red-500' : 'bg-slate-800/10 text-slate-500'}
       />
       <KPICard
+        index={4}
         icon={CalendarClock}
         label="Renovações (30d)"
         value={renewalsSoon}
-        sub="Próximos 30 dias"
-        color={renewalsSoon > 0 ? 'bg-orange-600/20 text-orange-400' : 'bg-slate-700 text-slate-400'}
+        sub="Cycle Monitor"
+        color={renewalsSoon > 0 ? 'bg-orange-600/10 text-orange-400' : 'bg-slate-800/10 text-slate-500'}
       />
     </div>
   )

@@ -24,30 +24,44 @@ export async function GET(
     .select('*')
     .eq('account_id', account_id)
     .order('evaluated_at', { ascending: false })
-    .limit(30)
+    .order('created_at', { ascending: false })
+    .limit(50)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const latest = scores?.[0] ?? null
+  const safeScores = scores ?? []
+  
+  // Encontra os vigentes (últimos por data de referência)
+  const latestManual = safeScores.find(s => s.manual_score !== null)
+  const latestShadow = safeScores.find(s => s.shadow_score !== null)
 
   return NextResponse.json({
-    manual: latest ? {
-      score: latest.manual_score,
-      date: latest.evaluated_at,
-      notes: latest.manual_notes,
+    account_id,
+    manual: latestManual ? {
+      score: latestManual.manual_score,
+      date: latestManual.evaluated_at,
+      notes: latestManual.manual_notes,
+      classification: latestManual.classification,
+      source_type: latestManual.source_type,
     } : null,
-    shadow: latest ? {
-      score: latest.shadow_score,
-      justification: latest.shadow_reasoning,
-      date: latest.evaluated_at,
-      discrepancy: latest.discrepancy,
+    shadow: latestShadow ? {
+      score: latestShadow.shadow_score,
+      justification: latestShadow.shadow_reasoning,
+      date: latestShadow.evaluated_at,
+      classification: latestShadow.classification,
+      discrepancy: latestShadow.discrepancy,
     } : null,
-    discrepancy_alert: latest?.discrepancy_alert ?? false,
-    history: (scores ?? []).map((s) => ({
+    discrepancy_alert: latestManual?.discrepancy_alert || latestShadow?.discrepancy_alert || false,
+    history: safeScores.map((s) => ({
+      id: s.id,
       date: s.evaluated_at,
+      created_at: s.created_at,
       manual_score: s.manual_score,
       shadow_score: s.shadow_score,
-      discrepancy: s.discrepancy,
+      classification: s.classification,
+      notes: s.manual_notes,
+      shadow_reasoning: s.shadow_reasoning,
+      source_type: s.source_type,
       discrepancy_alert: s.discrepancy_alert,
     })),
   })

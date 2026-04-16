@@ -2,26 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Yu Gothic — system font declaration.
+  Disponível em: Windows 8.1+ ("Yu Gothic", "Yu Gothic UI") e macOS 10.9+ ("YuGothic").
+  Usa local() para ativar sem download — sem dependência de Google Fonts.
+*/
+@font-face {
+  font-family: 'Yu Gothic';
+  font-style: normal;
+  font-weight: 100 700;
+  src:
+    local('Yu Gothic Light'),
+    local('Yu Gothic'),
+    local('Yu Gothic UI'),
+    local('YuGothic');
+  font-display: swap;
 }
 
-@media (prefers-color-scheme: dark) {
+@font-face {
+  font-family: 'Yu Gothic';
+  font-style: normal;
+  font-weight: 700;
+  src:
+    local('Yu Gothic Bold'),
+    local('Yu Gothic UI Bold'),
+    local('YuGothic Bold');
+  font-display: swap;
+}
+
+@layer base {
   :root {
-    --background: #1a1f35; /* Um pouco mais escuro que o Primary para contraste */
-    --foreground: #f8fafc;
+    --background: 231 32% 8%;    /* Dark Navy */
+    --foreground: 210 40% 98%;
+
+    --card: 231 32% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 231 32% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 23 92% 54%;       /* Plannera Orange #f7941e */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 226 41% 38%;    /* S&OP Blue #3a4c8a */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 231 20% 20%;
+    --muted-foreground: 215 20.2% 75.1%;
+
+    --accent: 231 32% 20%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 8 66% 57%;    /* Demand Red #d85d4b */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 231 32% 18%;
+    --input: 231 32% 18%;
+    --ring: 23 92% 54%;
+
+    --radius: 0.75rem;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground selection:bg-plannera-orange/30;
+    font-family: "Yu Gothic", "Yu Gothic UI", "YuGothic", "Hiragino Sans", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /*
+      antialiased em fundo escuro com Yu Gothic produz renderização limpa.
+      Evitar subpixel-antialiased que causa o efeito de "contorno" percebido
+      especialmente em Windows com fontes de traço fino.
+    */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(231,32%,15%,1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(23,92%,10%,0.2) 0, transparent 50%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+
+  /*
+    Tamanho mínimo de fonte legível: 12px (text-xs).
+    Texto < 12px com uppercase + tracking-widest cria artefatos de anti-aliasing
+    que produzem a percepção de "contorno externo" na fonte.
+  */
+  :root {
+    font-size: 16px;
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .glass {
+    @apply bg-[#2d3558]/30 backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-card {
+    @apply bg-[#2d3558]/10 backdrop-blur-md border border-[#3a4c8a]/20 shadow-2xl;
+  }
+
+  /*
+    text-glow reduzido: shadow muito forte (blur 10px, opacity 0.3) causava
+    a percepção de um stroke/contorno externo ao redor de cada caractere.
+    Agora: blur 6px, opacity 0.15 — mantém o efeito sem criar artefato visual.
+  */
+  .text-glow {
+    text-shadow: 0 0 6px rgba(247, 148, 30, 0.15);
+  }
+
+  /* Utilities de label padronizadas — tamanho mínimo 11px legível */
+  .label-xs {
+    @apply text-xs font-bold uppercase tracking-wide text-slate-400;
+  }
+
+  .label-2xs {
+    @apply text-[11px] font-bold uppercase tracking-wide text-slate-500;
+  }
+
+  /* Scroll sem scrollbar visível */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.05) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 2px;
   }
 }

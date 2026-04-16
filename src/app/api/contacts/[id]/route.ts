@@ -9,6 +9,9 @@ const UpdateSchema = z.object({
   influence_level: z.enum(['Champion', 'Neutral', 'Detractor', 'Blocker']).optional(),
   decision_maker: z.boolean().optional(),
   email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  linkedin_url: z.string().url().optional().or(z.literal('')),
+  photo_url: z.string().url().optional().or(z.literal('')),
   last_interaction_date: z.string().optional(),
   notes: z.string().optional(),
 })

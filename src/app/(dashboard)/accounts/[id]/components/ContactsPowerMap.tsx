@@ -1,61 +1,203 @@
 'use client'
 
+import { useState } from 'react'
+import type { ElementType } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { User, ShieldCheck, Crown, ShieldAlert } from 'lucide-react'
+import { Crown, ShieldAlert, User, ShieldCheck, UserPlus, Mail, Phone, Link2, ExternalLink } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { motion, AnimatePresence } from 'framer-motion'
+import { cn } from '@/lib/utils'
+import { AddContactModal } from './AddContactModal'
 
 interface Contact {
   id: string
   name: string
   role: string
+  seniority: string
   influence_level: 'Champion' | 'Neutral' | 'Detractor' | 'Blocker' | string
   decision_maker: boolean
+  email?: string | null
+  phone?: string | null
+  linkedin_url?: string | null
+  photo_url?: string | null
 }
 
-const influenceConfig: Record<string, { color: string, icon: any }> = {
-  Champion: { color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20', icon: Crown },
-  Detractor: { color: 'text-red-400 bg-red-500/10 border-red-500/20', icon: ShieldAlert },
-  Neutral: { color: 'text-slate-400 bg-slate-500/10 border-slate-500/20', icon: User },
-  Blocker: { color: 'text-orange-400 bg-orange-500/10 border-orange-500/20', icon: ShieldAlert },
+/** Extrai o username do LinkedIn e constrói a URL do avatar via unavatar.io */
+function linkedinPhoto(url?: string | null): string | undefined {
+  if (!url) return undefined
+  const match = url.match(/linkedin\.com\/in\/([^/?#]+)/i)
+  return match ? `https://unavatar.io/linkedin/${match[1]}` : undefined
 }
 
-export function ContactsPowerMap({ contacts }: { contacts: Contact[], accountId: string }) {
+const influenceConfig: Record<string, { label: string; color: string; bg: string; ring: string; icon: any }> = {
+  Champion:  { label: 'Campeão',    color: 'text-plannera-ds',      bg: 'bg-plannera-ds/10',      ring: 'ring-plannera-ds/20',      icon: Crown },
+  Detractor: { label: 'Detrator',   color: 'text-plannera-demand',  bg: 'bg-plannera-demand/10',  ring: 'ring-plannera-demand/20',  icon: ShieldAlert },
+  Blocker:   { label: 'Bloqueador', color: 'text-plannera-orange',  bg: 'bg-plannera-orange/10',  ring: 'ring-plannera-orange/20',  icon: ShieldAlert },
+  Neutral:   { label: 'Neutro',     color: 'text-slate-400',        bg: 'bg-slate-500/10',        ring: 'ring-slate-500/20',        icon: User },
+}
+
+export function ContactsPowerMap({ contacts, accountId }: { contacts: Contact[]; accountId: string }) {
+  const [addOpen, setAddOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  const visible = expanded ? contacts : contacts.slice(0, 4)
+
   return (
-    <div className="space-y-3">
-      {contacts.length === 0 ? (
-        <p className="text-slate-600 text-xs text-center py-4 italic">Nenhum stakeholder mapeado.</p>
-      ) : (
-        contacts.slice(0, 5).map(c => {
-          const config = influenceConfig[c.influence_level] || influenceConfig.Neutral
-          const InfluenceIcon = config.icon
-          const Initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    <>
+      <AddContactModal open={addOpen} onClose={() => setAddOpen(false)} accountId={accountId} />
 
-          return (
-            <div 
-              key={c.id} 
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/50 hover:bg-slate-900 transition-colors group"
+      <div className="space-y-3">
+        {contacts.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-8 rounded-2xl border border-dashed border-white/10 text-center"
+          >
+            <User className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+            <p className="text-slate-600 text-xs font-bold uppercase tracking-wide leading-none mb-4">
+              Nenhum stakeholder mapeado
+            </p>
+            <button
+              onClick={() => setAddOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 text-plannera-orange text-[10px] font-bold uppercase tracking-wide hover:bg-plannera-orange/20 transition-all"
             >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <Avatar className="w-10 h-10 border-2 border-slate-800 group-hover:border-indigo-500/50 transition-colors">
-                  <AvatarFallback className="bg-slate-900 text-indigo-400 font-bold text-xs">{Initials}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white text-sm font-bold truncate">{c.name}</span>
-                    {c.decision_maker && <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" title="Tomador de Decisão" />}
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-black uppercase truncate">{c.role}</span>
-                </div>
-              </div>
-              <Badge className={`text-[9px] font-black uppercase tracking-tighter ${config.color} border-none`}>
-                <InfluenceIcon className="w-3 h-3 mr-1" />
-                {c.influence_level}
-              </Badge>
+              <UserPlus className="w-3.5 h-3.5" />
+              Adicionar primeiro stakeholder
+            </button>
+          </motion.div>
+        ) : (
+          <>
+            <AnimatePresence mode="popLayout">
+              {visible.map((c, idx) => {
+                const config = influenceConfig[c.influence_level] ?? influenceConfig.Neutral
+                const InfluenceIcon = (config?.icon ?? User) as ElementType
+                const initials = c.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                // photo_url manual tem prioridade; senão deriva do LinkedIn via unavatar.io
+                const photoSrc = c.photo_url || linkedinPhoto(c.linkedin_url)
+
+                return (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <Card className="glass-card group hover:bg-white/[0.04] transition-all duration-200 border-none overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          {/* Avatar */}
+                          <div className="relative shrink-0">
+                            <Avatar className="w-11 h-11 border-2 border-white/5 group-hover:border-plannera-sop/30 transition-all shadow-lg">
+                              <AvatarImage src={photoSrc} alt={c.name} />
+                              <AvatarFallback className="bg-slate-900 text-plannera-sop font-bold text-sm">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            {c.decision_maker && (
+                              <div
+                                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-plannera-orange border-2 border-slate-950 flex items-center justify-center shadow"
+                                title="Tomador de decisão"
+                              >
+                                <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Dados */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            {/* Nome + badge influência */}
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-white text-sm font-bold uppercase tracking-tight truncate group-hover:text-plannera-orange transition-colors">
+                                {c.name}
+                              </span>
+                              <span className={cn(
+                                "shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset",
+                                config.bg, config.color, config.ring
+                              )}>
+                                <InfluenceIcon className="w-2.5 h-2.5" />
+                                {config.label}
+                              </span>
+                            </div>
+
+                            {/* Cargo + senioridade */}
+                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wide truncate">
+                              {c.role}
+                              {c.seniority && (
+                                <span className="text-slate-600"> · {c.seniority}</span>
+                              )}
+                            </p>
+
+                            {/* Contatos: e-mail, telefone, LinkedIn */}
+                            {(c.email || c.phone || c.linkedin_url) && (
+                              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                                {c.email && (
+                                  <a
+                                    href={`mailto:${c.email}`}
+                                    onClick={e => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-500 hover:text-plannera-ds transition-colors uppercase tracking-wide"
+                                    title={c.email}
+                                  >
+                                    <Mail className="w-3 h-3" />
+                                    <span className="max-w-[90px] truncate">{c.email}</span>
+                                  </a>
+                                )}
+                                {c.phone && (
+                                  <a
+                                    href={`tel:${c.phone}`}
+                                    onClick={e => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-500 hover:text-plannera-ds transition-colors uppercase tracking-wide"
+                                    title={c.phone}
+                                  >
+                                    <Phone className="w-3 h-3" />
+                                    <span>{c.phone}</span>
+                                  </a>
+                                )}
+                                {c.linkedin_url && (
+                                  <a
+                                    href={c.linkedin_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={e => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-500 hover:text-plannera-sop transition-colors uppercase tracking-wide"
+                                  >
+                                    <Link2 className="w-3 h-3" />
+                                    LinkedIn
+                                    <ExternalLink className="w-2.5 h-2.5" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+
+            {/* Botões: expandir + adicionar */}
+            <div className="flex items-center gap-2 pt-1">
+              {contacts.length > 4 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-slate-500 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wide"
+                >
+                  {expanded ? 'Recolher' : `Ver mais ${contacts.length - 4} stakeholders`}
+                </button>
+              )}
+              <button
+                onClick={() => setAddOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 text-plannera-orange hover:bg-plannera-orange/20 transition-all text-[10px] font-bold uppercase tracking-wide whitespace-nowrap"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Adicionar
+              </button>
             </div>
-          )
-        })
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </>
   )
 }

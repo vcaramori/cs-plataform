@@ -36,15 +36,15 @@ export default async function AccountsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-indigo-500" /> Contas
+            <Building2 className="w-6 h-6 text-indigo-500" /> LOGOS
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Gerencie os clientes e suas soluções ativas
+            Gerencie os clientes e seus LOGOS ativos
           </p>
         </div>
         <Link href="/accounts/new">
           <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-            <Plus className="w-4 h-4" /> Nova Conta
+            <Plus className="w-4 h-4" /> Novo LOGO
           </Button>
         </Link>
       </div>
@@ -54,10 +54,10 @@ export default async function AccountsPage() {
         {!accounts || accounts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Building2 className="w-12 h-12 text-slate-700" />
-            <p className="text-slate-400">Nenhuma conta cadastrada ainda.</p>
+            <p className="text-slate-400">Nenhum LOGO cadastrado ainda.</p>
             <Link href="/accounts/new">
               <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white mt-2 gap-2">
-                <Plus className="w-4 h-4" /> Criar primeira conta
+                <Plus className="w-4 h-4" /> Criar primeiro LOGO
               </Button>
             </Link>
           </div>
@@ -67,7 +67,7 @@ export default async function AccountsPage() {
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-800/40">
                   <th className="text-left text-slate-400 font-medium px-5 py-3">Cliente</th>
-                  <th className="text-left text-slate-400 font-medium px-4 py-3">Conta / Solução</th>
+                  <th className="text-left text-slate-400 font-medium px-4 py-3">LOGO / Solução</th>
                   <th className="text-center text-slate-400 font-medium px-4 py-3">Health</th>
                   <th className="text-center text-slate-400 font-medium px-4 py-3">Status</th>
                   <th className="text-right text-slate-400 font-medium px-4 py-3">MRR</th>

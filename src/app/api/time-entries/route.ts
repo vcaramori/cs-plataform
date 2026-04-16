@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     await supabase.from('interactions').insert({
       account_id: accountId,
       csm_id: user.id,
-      title: `Esforço: ${parsedEntry.activity_type === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
+      title: `Esforço: ${(parsedEntry.activity_type as string) === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
       type: parsedEntry.activity_type,
       date: parsedEntry.date,
       direct_hours: parsedEntry.parsed_hours,

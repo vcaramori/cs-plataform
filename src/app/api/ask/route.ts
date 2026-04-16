@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { runRAGPipeline } from '@/lib/rag/pipeline'
+import { runRAGPipeline } from '@/lib/rag/rag-pipeline'
 
 const BodySchema = z.object({
   question: z.string().min(3).max(500),

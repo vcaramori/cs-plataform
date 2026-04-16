@@ -1,21 +1,22 @@
-import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { PortfolioHealthCard } from './components/PortfolioHealthCard'
-import { AccountsTable } from './components/AccountsTable'
+import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { PortfolioHealthCard } from "./components/PortfolioHealthCard"
+import { AccountsTable } from "./components/AccountsTable"
+import { Sparkles, LayoutDashboard } from "lucide-react"
 
 export default async function DashboardPage() {
   const supabase = await getSupabaseServerClient()
 
   const { data: accounts } = await supabase
-    .from('accounts')
+    .from("accounts")
     .select(`*, contracts(id, mrr, arr, renewal_date, service_type, status, contracted_hours_monthly, csm_hour_cost)`)
-    .order('name')
+    .order("name")
 
   const safeAccounts = accounts ?? []
 
   const totalMRR = safeAccounts.reduce((sum, a) => {
     const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
     const activeMRR = contracts
-      .filter((c: any) => c.status === 'active')
+      .filter((c: any) => c.status === "active")
       .reduce((s: number, c: any) => s + (Number(c.mrr) || 0), 0)
     return sum + activeMRR
   }, 0)
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
   const in30d = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
   const renewalsSoon = safeAccounts.filter(a => {
     const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
-    const activeContracts = contracts.filter((c: any) => c.status === 'active')
+    const activeContracts = contracts.filter((c: any) => c.status === "active")
     
     return activeContracts.some((c: any) => {
       if (!c.renewal_date) return false
@@ -38,22 +39,45 @@ export default async function DashboardPage() {
     })
   }).length
 
+  const totalActiveContracts = safeAccounts.reduce((sum, a) => {
+    const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
+    return sum + contracts.filter((c: any) => c.status === "active").length
+  }, 0)
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-400 text-sm mt-1">Visão geral do portfólio de contas</p>
+    <div className="space-y-10 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Premium Header ... */}
+      <div className="flex flex-col gap-2 relative">
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-indigo-500/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
+             <LayoutDashboard className="w-5 h-5 text-indigo-400" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">Portfolio Control</h1>
+        </div>
+        <p className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wide flex items-center gap-2">
+          Visão Executiva de Clientes e Receita Recorrente
+          <Sparkles className="w-3.5 h-3.5 text-indigo-500/50" />
+        </p>
       </div>
 
-      <PortfolioHealthCard
-        totalAccounts={safeAccounts.length}
-        totalMRR={totalMRR}
-        avgHealthScore={avgHealth}
-        atRisk={atRisk}
-        renewalsSoon={renewalsSoon}
-      />
+      {/* KPI Section */}
+      <section className="relative">
+        <PortfolioHealthCard
+          totalAccounts={safeAccounts.length}
+          totalActiveContracts={totalActiveContracts}
+          totalMRR={totalMRR}
+          avgHealthScore={avgHealth}
+          atRisk={atRisk}
+          renewalsSoon={renewalsSoon}
+        />
+      </section>
 
-      <AccountsTable accounts={safeAccounts as any} />
+      {/* Main Table Section */}
+      <section className="relative pb-20">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent pointer-events-none rounded-3xl" />
+        <AccountsTable accounts={safeAccounts as any} />
+      </section>
     </div>
   )
 }

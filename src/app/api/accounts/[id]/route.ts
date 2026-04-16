@@ -10,6 +10,7 @@ const UpdateSchema = z.object({
   health_score: z.number().min(0).max(100).optional(),
   health_trend: z.enum(['up', 'stable', 'down', 'critical']).optional(),
   logo_url: z.string().url().optional().nullable(),
+  tax_id: z.string().optional().nullable(),
 })
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {

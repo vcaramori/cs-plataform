@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Pencil, Loader2 } from 'lucide-react'
+import { MaskedInput } from '@/components/ui/masked-input'
 import { toast } from 'sonner'
 
 const schema = z.object({
@@ -41,7 +42,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
   const router = useRouter()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       contract_type: (contract.contract_type as any) || 'initial',
       service_type: (contract.service_type as any) || 'Professional',
@@ -167,8 +168,12 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
               />
             </div>
             <div className="space-y-2">
-              <Label>MRR (R$)</Label>
-              <Input {...register('mrr')} type="number" step="0.01" className="bg-slate-800 border-slate-700" />
+              <Label>MRR</Label>
+              <MaskedInput 
+                maskType="currency"
+                value={watch('mrr')}
+                onValueChange={(v) => setValue('mrr', parseFloat(v) || 0)}
+              />
               {errors.mrr && <p className="text-red-400 text-xs">{errors.mrr.message}</p>}
             </div>
           </div>
@@ -183,6 +188,27 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
               <Label>Data de Renovação</Label>
               <Input {...register('renewal_date')} type="date" className="bg-slate-800 border-slate-700" />
               {errors.renewal_date && <p className="text-red-400 text-xs">{errors.renewal_date.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Horas Contratadas (Mês)</Label>
+              <MaskedInput 
+                maskType="decimal"
+                value={watch('contracted_hours_monthly')}
+                onValueChange={(v) => setValue('contracted_hours_monthly', parseFloat(v) || 0)}
+              />
+              {errors.contracted_hours_monthly && <p className="text-red-400 text-xs">{errors.contracted_hours_monthly.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label>Custo Hora CSM</Label>
+              <MaskedInput 
+                maskType="currency"
+                value={watch('csm_hour_cost')}
+                onValueChange={(v) => setValue('csm_hour_cost', parseFloat(v) || 0)}
+              />
+              {errors.csm_hour_cost && <p className="text-red-400 text-xs">{errors.csm_hour_cost.message}</p>}
             </div>
           </div>
 

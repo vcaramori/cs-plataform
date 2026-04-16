@@ -34,7 +34,7 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
   const router = useRouter()
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       contract_type: 'initial',
       service_type: 'Professional',
@@ -73,15 +73,19 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-plannera-orange hover:bg-plannera-orange/80 text-white gap-2">
-          <Plus className="w-4 h-4" /> Novo Produto/Contrato
-        </Button>
+        {/* Botão compacto para caber inline na seção Governance sem sobrepor */}
+        <button
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-plannera-orange/10 hover:bg-plannera-orange/20 border border-plannera-orange/30 text-plannera-orange transition-all hover:scale-105 active:scale-95"
+          title="Novo Produto/Contrato"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
       </DialogTrigger>
       <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
         <DialogHeader>
           <DialogTitle>Registrar Novo Produto/Contrato</DialogTitle>
           <DialogDescription className="text-slate-400">
-            Adicione uma nova solução (ex: S&OP, Abast) contendo seu próprio histórico e vigência. Para aditivar um contrato existente, clique no botão "Atualizar / Aditivo" no card correspondente.
+            Adicione uma nova solução (ex: S&OP, Abast) contendo seu próprio histórico e vigência. Para aditivar um contrato existente, clique no botão &quot;Atualizar / Aditivo&quot; no card correspondente.
           </DialogDescription>
         </DialogHeader>
 

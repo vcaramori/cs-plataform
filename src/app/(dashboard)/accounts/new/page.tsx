@@ -12,17 +12,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { ImageUpload } from '@/components/ui/image-upload'
+import { MaskedInput } from '@/components/ui/masked-input'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
 const schema = z.object({
   client_name: z.string().min(2, 'Nome do cliente deve ter ao menos 2 caracteres'),
-  account_name: z.string().min(2, 'Nome da conta (solução) deve ter ao menos 2 caracteres'),
+  account_name: z.string().min(2, 'Nome do LOGO (solução) deve ter ao menos 2 caracteres'),
   segment: z.enum(['SMB', 'Mid-Market', 'Enterprise']),
   industry: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   logo_url: z.string().optional(),
+  tax_id: z.string().optional().or(z.literal('')),
   // Contrato inicial
   mrr: z.preprocess(v => parseFloat(String(v)), z.number().positive('MRR deve ser positivo')),
   start_date: z.string().min(1, 'Informe a data de início'),
@@ -37,6 +39,7 @@ type FormData = {
   industry?: string
   website?: string
   logo_url?: string
+  tax_id?: string
   mrr: number
   start_date: string
   renewal_date: string
@@ -81,6 +84,7 @@ export default function NewAccountPage() {
           industry: data.industry, 
           website: data.website,
           logo_url: data.logo_url,
+          tax_id: data.tax_id,
           csm_owner_id: data.csm_owner_id,
           mrr: data.mrr,
           start_date: data.start_date,
@@ -90,12 +94,12 @@ export default function NewAccountPage() {
 
       if (!accountRes.ok) {
         const err = await accountRes.json()
-        throw new Error(err.error?.fieldErrors ? 'Erro de validação nos campos' : (err.error || 'Erro ao criar conta/cliente'))
+        throw new Error(err.error?.fieldErrors ? 'Erro de validação nos campos' : (err.error || 'Erro ao criar LOGO/cliente'))
       }
       
       const account = await accountRes.json()
 
-      toast.success('Conta e contrato criados com sucesso!')
+      toast.success('LOGO e contrato criados com sucesso!')
       router.push(`/accounts/${account.id}`)
       router.refresh()
     } catch (e: any) {
@@ -120,15 +124,15 @@ export default function NewAccountPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Nova Conta</h1>
-          <p className="text-slate-400 text-sm">Cadastre a conta e o contrato inicial</p>
+          <h1 className="text-2xl font-bold text-white">Novo LOGO</h1>
+          <p className="text-slate-400 text-sm">Cadastre o LOGO e o contrato inicial</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
-            <CardTitle className="text-white text-base">Informações do Cliente e Conta</CardTitle>
+            <CardTitle className="text-white text-base">Informações do Cliente e LOGO</CardTitle>
             <CardDescription className="text-slate-400">Preencha os dados primários da empresa e a solução adquirida.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -157,10 +161,20 @@ export default function NewAccountPage() {
                     <Label className="text-slate-300">Setor / Indústria</Label>
                     <Input {...register('industry')} placeholder="Ex: Bens de Consumo" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
                   </div>
-                  <div className="md:col-span-2 space-y-1.5">
+                  <div className="space-y-1.5">
                     <Label className="text-slate-300">Website</Label>
                     <Input {...register('website')} placeholder="https://generalmills.com" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
                     {field('website')}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300">CNPJ / TAX ID</Label>
+                    <MaskedInput 
+                      maskType="tax_id"
+                      value={watch('tax_id')}
+                      onValueChange={(v) => setValue('tax_id', v)}
+                      placeholder="00.000.000/0000-00"
+                    />
+                    {field('tax_id')}
                   </div>
                 </div>
               </div>
@@ -170,10 +184,10 @@ export default function NewAccountPage() {
 
             {/* Bloco Conta/Solução */}
             <div>
-              <h3 className="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">2. Dados da Solução (Conta)</h3>
+              <h3 className="text-sm font-medium text-indigo-400 mb-3 uppercase tracking-wider">2. Dados da Solução (LOGO)</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5 md:col-span-1">
-                  <Label className="text-slate-300">Nome da Conta *</Label>
+                  <Label className="text-slate-300">Nome do LOGO *</Label>
                   <Input {...register('account_name')} placeholder="Ex: Solução A" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
                   {field('account_name')}
                 </div>
@@ -213,13 +227,18 @@ export default function NewAccountPage() {
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <CardTitle className="text-white text-base">Contrato Inicial</CardTitle>
-            <CardDescription className="text-slate-400">Defina as condições comerciais da conta</CardDescription>
+            <CardDescription className="text-slate-400">Defina as condições comerciais do LOGO</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-slate-300">MRR (R$) *</Label>
-                <Input {...register('mrr')} type="number" step="0.01" placeholder="5000" className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" />
+                <Label className="text-slate-300">MRR *</Label>
+                <MaskedInput 
+                  maskType="currency"
+                  value={watch('mrr')}
+                  onValueChange={(v) => setValue('mrr', parseFloat(v) || 0)}
+                  placeholder="R$ 0,00"
+                />
                 {field('mrr')}
               </div>
               <div className="space-y-1.5">
@@ -244,7 +263,7 @@ export default function NewAccountPage() {
           </Link>
           <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? 'Salvando...' : 'Criar Conta'}
+            {loading ? 'Salvando...' : 'Criar LOGO'}
           </Button>
         </div>
       </form>

@@ -10,6 +10,9 @@ const ContactSchema = z.object({
   influence_level: z.enum(['Champion', 'Neutral', 'Detractor', 'Blocker']),
   decision_maker: z.boolean().default(false),
   email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  linkedin_url: z.string().url().optional().or(z.literal('')),
+  photo_url: z.string().url().optional().or(z.literal('')),
   notes: z.string().optional(),
 })
 
