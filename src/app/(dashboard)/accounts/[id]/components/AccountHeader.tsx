@@ -56,7 +56,9 @@ const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), {
 const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false })
 
 
-function HealthMiniGauge({ label, value, icon: Icon, color, index }: { label: string, value: number, icon: any, color: string, index: number }) {
+function HealthMiniGauge({ label, value, icon: Icon, color, index, displayLabel }: {
+  label: string, value: number, icon: any, color: string, index: number, displayLabel?: string
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -75,7 +77,9 @@ function HealthMiniGauge({ label, value, icon: Icon, color, index }: { label: st
       </div>
       <div className="text-center">
         <p className="text-[9px] text-slate-400 uppercase font-extrabold tracking-widest leading-none mb-1">{label}</p>
-        <p className="text-sm font-bold text-white leading-none tracking-tight">{Math.round(value)}%</p>
+        <p className="text-sm font-bold text-white leading-none tracking-tight">
+          {displayLabel ?? `${Math.round(value)}%`}
+        </p>
       </div>
     </motion.div>
   )
@@ -288,51 +292,6 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
             </div>
           </div>
 
-          {/* NPS Pill */}
-          <div className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-2xl border-white/5 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-              <MessageSquare className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-slate-500 uppercase font-bold tracking-wide leading-none mb-0.5">NPS</span>
-              {npsScore === null ? (
-                <span className="text-base font-bold tracking-tight text-slate-500">—</span>
-              ) : (
-                <span className={cn(
-                  "text-base font-bold tracking-tight",
-                  npsScore >= 50 ? 'text-emerald-400' : npsScore >= 0 ? 'text-amber-400' : 'text-red-400'
-                )}>
-                  {npsScore > 0 ? `+${npsScore}` : npsScore}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* SLA Pill */}
-          <div className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-2xl border-white/5 shrink-0">
-            <div className={cn(
-              "w-9 h-9 rounded-xl flex items-center justify-center border",
-              slaActive ? "bg-plannera-ds/10 border-plannera-ds/20" : "bg-slate-700/20 border-white/5"
-            )}>
-              {slaActive
-                ? <ShieldCheck className="w-4 h-4 text-plannera-ds" />
-                : <ShieldOff className="w-4 h-4 text-slate-500" />
-              }
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-slate-500 uppercase font-bold tracking-wide leading-none mb-0.5">SLA</span>
-              {slaActive === null ? (
-                <span className="text-base font-bold tracking-tight text-slate-500">—</span>
-              ) : (
-                <span className={cn(
-                  "text-base font-bold tracking-tight",
-                  slaActive ? 'text-plannera-ds' : 'text-slate-500'
-                )}>
-                  {slaActive ? 'Ativo' : 'Sem SLA'}
-                </span>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -444,40 +403,72 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </div>
         </div>
 
-        {/* Gauges de componentes de health + Shadow Score
-            2 colunas no mobile/tablet, 4 colunas em lg+
+        {/* Gauges de saúde + NPS + SLA + Score IA
+            Mobile: 3 cols (linha 1: Adoção|Suporte|Relacionamento, linha 2: NPS|SLA|IA)
+            SM+: mesma estrutura 3x2
         */}
-        <div className="lg:col-span-3 glass-card p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 items-center border-plannera-sop/10">
+        <div className="lg:col-span-3 glass-card p-4 grid grid-cols-3 gap-4 items-center border-plannera-sop/10">
           <HealthMiniGauge index={0} label="Adoção"         value={currentAdoptionScore ?? latestHealthScore?.engagement_component ?? 50} icon={Zap}    color="#2ba09d" />
           <HealthMiniGauge index={1} label="Suporte"        value={latestHealthScore?.ticket_component     || 50} icon={Ticket} color="#f8b967" />
           <HealthMiniGauge index={2} label="Relacionamento" value={latestHealthScore?.sentiment_component  || 50} icon={Heart}  color="#ea724a" />
 
-          <div className="flex flex-col justify-center sm:border-l sm:border-white/10 sm:pl-6 h-full col-span-2 sm:col-span-1 border-t sm:border-t-0 border-white/10 pt-4 sm:pt-0">
+          {/* Separador de linha */}
+          <div className="col-span-3 h-px bg-white/[0.04]" />
+
+          {/* Linha 2: NPS */}
+          <HealthMiniGauge
+            index={3}
+            label="NPS"
+            value={npsScore === null ? 50 : Math.max(0, (npsScore + 100) / 2)}
+            icon={MessageSquare}
+            color="#818cf8"
+            displayLabel={npsScore === null ? '—' : npsScore > 0 ? `+${npsScore}` : String(npsScore)}
+          />
+
+          {/* Linha 2: SLA */}
+          <HealthMiniGauge
+            index={4}
+            label="SLA"
+            value={slaActive === null ? 50 : slaActive ? 100 : 15}
+            icon={slaActive ? ShieldCheck : ShieldOff}
+            color={slaActive ? '#2ba09d' : '#6b7280'}
+            displayLabel={slaActive === null ? '—' : slaActive ? 'Ativo' : 'Sem SLA'}
+          />
+
+          {/* Linha 2: Score IA */}
+          <div className="flex flex-col items-center gap-2 group">
             {latestHealthScore?.shadow_score != null ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-plannera-orange/10 flex items-center justify-center border border-plannera-orange/20">
-                    <Sparkles className="w-4 h-4 text-plannera-orange" />
+              <>
+                <div className="w-12 h-12 rounded-2xl border border-plannera-orange/20 bg-plannera-orange/5 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-5 h-5 text-plannera-orange" />
+                </div>
+                <div className="text-center">
+                  <p className="text-[9px] text-slate-400 uppercase font-extrabold tracking-widest leading-none mb-1">Score IA</p>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span className="text-sm font-bold text-plannera-orange leading-none tracking-tight">
+                      {Math.round(latestHealthScore.shadow_score)}
+                    </span>
+                    {latestHealthScore.shadow_reasoning && (
+                      <button
+                        onClick={() => setShowReasoning(!showReasoning)}
+                        className="text-slate-600 hover:text-plannera-orange transition-colors"
+                      >
+                        <Info className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
-                  <span className="text-xs text-slate-500 uppercase font-bold tracking-wide leading-none">Score IA</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-plannera-orange tracking-tight">{Math.round(latestHealthScore.shadow_score)}</span>
-                  {latestHealthScore.shadow_reasoning && (
-                    <button
-                      onClick={() => setShowReasoning(!showReasoning)}
-                      className="p-1.5 rounded-lg bg-white/5 text-slate-500 hover:text-plannera-orange transition-all hover:bg-plannera-orange/10 border border-white/5"
-                    >
-                      <Info className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
+              </>
             ) : (
-              <div className="opacity-30">
-                <p className="text-xs text-slate-600 uppercase font-bold tracking-wide leading-none mb-1">Insights IA</p>
-                <p className="text-xs italic text-slate-500 font-bold uppercase tracking-tight">Análise Pendente...</p>
-              </div>
+              <>
+                <div className="w-12 h-12 rounded-2xl border border-white/5 bg-white/5 flex items-center justify-center opacity-30">
+                  <Sparkles className="w-5 h-5 text-slate-400" />
+                </div>
+                <div className="text-center opacity-30">
+                  <p className="text-[9px] text-slate-400 uppercase font-extrabold tracking-widest leading-none mb-1">Score IA</p>
+                  <p className="text-[10px] italic text-slate-500 font-bold">Pendente</p>
+                </div>
+              </>
             )}
           </div>
         </div>
