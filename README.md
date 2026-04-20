@@ -18,6 +18,24 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 > - Mudanças em regras de negócio (recorrência NPS, thresholds, classificações)
 >
 > **Nenhuma tarefa está completa se este arquivo não reflete o estado atual do sistema.**
+>
+> ---
+>
+> **REGRA DE DOCUMENTAÇÃO DE PRODUTO**
+>
+> Além do README, toda **nova regra de negócio** deve ser documentada em `docs/product/`. Isso inclui:
+> - Alterações em telas existentes (KPIs, filtros, comportamento)
+> - Novos fluxos de usuário
+> - Mudanças em ciclo de vida (ticket, NPS, contratos)
+> - Regras de validação ou autorização
+> - Thresholds ou classificações (health, NPS, SLA)
+>
+> Para atualizar:
+> 1. Edite o arquivo correspondente em `docs/product/` (ex: `04-suporte.md` para regras de suporte)
+> 2. Ou crie novo arquivo se for uma tela nova
+> 3. Mantenha o índice em `docs/product/specification.md` atualizado
+>
+> **A documentação de produto é a referência para PM/PO entenderem o comportamento do sistema.**
 
 ---
 
@@ -113,7 +131,8 @@ Gestão completa de contas. Cada logo possui:
 
 - **Dados básicos**: segmento (Indústria / MRO / Varejo), setor de atuação, website, logo, CNPJ
 - **Endereço estruturado**: CEP com auto-preenchimento via ViaCEP, Logradouro, Número, Complemento, Bairro, Cidade, UF — ou flag de endereço internacional
-- **Múltiplos contratos**: cada conta pode ter N contratos (inicial, aditivo, upgrade, renovação), cada um com MRR, ARR calculado, tipo de serviço (Basic / Professional / Enterprise / Custom), status, datas de início e renovação, desconto por cupom e duração — editáveis individualmente em modo edit
+- **Múltiplos contratos**: cada conta pode ter N contratos (inicial, aditivo, upgrade, renovação), cada um com MRR, ARR calculado, tipo de serviço (Basic / Professional / Enterprise / Custom), status, datas de início e renovação, desconto por cupom (percentual ou valor fixo) e duração — editáveis individualmente em modo edit.
+- **Layout Comercial**: Interface de alta densidade em duas colunas. Coluna esquerda focada em dados financeiros (Financial Engine e Coupon Management); Coluna direita focada em cronograma de vigência e anotações contratuais.
 - **Power Map**: stakeholders com seniority, nível de influência, flag de decisor, e-mail, LinkedIn
 - **Interações**: reuniões, e-mails, QBRs, onboardings, check-ins — com horas, tipo e transcrição
 - **Tickets de Suporte**: status, prioridade, categoria, datas
@@ -123,7 +142,7 @@ Gestão completa de contas. Cada logo possui:
 
 **Navegação de edição**: o ícone de lápis na tabela do dashboard e no cabeçalho da conta redirecionam para `/accounts/[id]/edit`, que carrega o formulário completo com todos os contratos e dados estruturados.
 
-**Header da conta**: exibe quatro pills de status no canto direito — MRR, Renovação, NPS (score calculado para o período dos últimos 30 dias; mostra `—` se nenhuma resposta) e SLA (Ativo / Sem SLA conforme existência de `sla_policies` vinculada ao contrato ativo). A linha do tempo usa um trilho central alinhado ao centro dos ícones e rola independentemente da coluna central.
+**Header da conta**: exibe dois pills financeiros no canto direito (MRR e Renovação). O grid de saúde abaixo exibe duas linhas de indicadores — linha 1: Adoção | Suporte | Relacionamento; linha 2: NPS (score dos últimos 30 dias, `—` se sem respostas) | SLA (Ativo / Sem SLA conforme `sla_policies` do contrato ativo) | Score IA — todos sempre visíveis sem scroll. A linha do tempo usa ícones `w-8` com trilho alinhado ao centro e card com `overflow-hidden` para evitar overflow de texto.
 
 ---
 
@@ -256,7 +275,9 @@ Módulo completo de suporte com SLA, ciclo de vida de ticket e CSAT.
 
 **CSAT:** E-mail enviado via SMTP (Outlook 365) ao resolver ticket. Token com validade configurável. Score 1–5 + comentário. Score ≤ 2 dispara notificação para agente e head de CS.
 
-**Área de atendimento** (`/suporte/[id]`): Workspace osTicket-inspired com layout de duas colunas. Coluna principal: thread de conversa cronológica (mensagem original do cliente, thread de e-mail, respostas dos agentes, notas internas) + área de composição com abas "Responder ao Cliente" e "Nota Interna" + opção de resolver ao enviar. Sidebar: ações contextuais (1ª resposta, resolver, reabrir), painel SLA com banner de aviso quando não configurado, classificação inline editável (status, prioridade, nível SLA, categoria com 9 tópicos predefinidos), reatribuição de responsável, info do cliente e histórico de datas. Banner de alerta em destaque quando nenhuma política SLA está configurada para o contrato — com link direto para configurar.
+**Área de atendimento** (`/suporte/[id]`): Workspace osTicket-inspired com layout de duas colunas. Coluna principal: thread de conversa cronológica (mensagem original do cliente, thread de e-mail, respostas dos agentes, notas internas) + área de composição com abas "Responder ao Cliente" e "Nota Interna" + opção de resolver ao enviar. Sidebar: ações contextuais (1ª resposta, resolver, reabrir), painel SLA com banner de aviso quando não configurado, classificação inline editável (status, prioridade, nível SLA, categoria com 9 tópicos predefinidos), reatribuição de responsável, info do cliente e histórico de datas. 
+**Gestão de SLA De/Para**: O sistema permite mapear nomenclaturas específicas do cliente (ex: "Urgente", "P1") para os níveis internos do Padrão Plannera (Crítico, Alto, Médio, Baixo), garantindo que os prazos de resposta e resolução sejam aplicados corretamente conforme o contrato.
+Banner de alerta em destaque quando nenhuma política SLA está configurada para o contrato — com link direto para configurar.
 
 **Dashboard executivo** (`/suporte/dashboard`): 4 camadas — KPIs operacionais em tempo real, KPIs do período (compliance SLA, TMP, TMR, CSAT médio), desempenho por agente e saúde por cliente. Exportação XLSX.
 
