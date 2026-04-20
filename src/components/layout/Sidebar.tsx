@@ -55,6 +55,9 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(
+    settingsItems.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))
+  )
 
   async function handleSignOut() {
     const supabase = getSupabaseBrowserClient()
@@ -182,22 +185,50 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         </div>
 
         {/* Settings Section */}
-        <div className="space-y-3">
-          {!isCollapsed && (
+        <div className={cn("space-y-1", isCollapsed && "pt-4 border-t border-white/5")}>
+          {/* Configurações — botão expansível */}
+          <button
+            type="button"
+            onClick={() => { if (!isCollapsed) setSettingsOpen(o => !o) }}
+            className={cn(
+              "w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all border border-transparent",
+              settingsOpen && !isCollapsed
+                ? "text-white bg-white/5"
+                : "text-slate-500 hover:text-white hover:bg-white/5"
+            )}
+          >
+            <Layers className={cn(
+              "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
+              settingsOpen ? "text-plannera-orange/70" : "text-slate-600 group-hover:text-plannera-orange/60"
+            )} />
+            {!isCollapsed && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 text-left whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                Configurações
+              </motion.span>
+            )}
+            {!isCollapsed && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <ChevronRight className={cn(
+                  "w-3.5 h-3.5 text-slate-600 transition-transform duration-200",
+                  settingsOpen && "rotate-90"
+                )} />
+              </motion.div>
+            )}
+          </button>
+
+          {/* Sub-itens expansíveis */}
+          {(settingsOpen || isCollapsed) && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="px-4"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15 }}
+              className={cn("space-y-1", !isCollapsed && "pl-3")}
             >
-              <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">Configurações</p>
+              {settingsItems.map((item) => (
+                <NavLink key={item.href} {...item} />
+              ))}
             </motion.div>
           )}
-          
-          <div className={cn("space-y-1", isCollapsed && "pt-4 border-t border-white/5")}>
-            {settingsItems.map((item) => (
-              <NavLink key={item.href} {...item} />
-            ))}
-          </div>
         </div>
       </nav>
 
