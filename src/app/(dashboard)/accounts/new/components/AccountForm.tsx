@@ -41,10 +41,20 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Account, Contract } from '@/lib/supabase/types'
 
-const SLAMappingSchema = z.object({
-  external_label: z.string().min(1),
-  internal_level: z.enum(['critical', 'high', 'medium', 'low']),
+const SLALevelSchema = z.object({
+  level: z.enum(['critical', 'high', 'medium', 'low']),
+  first_response_minutes: z.number().min(1).default(30),
+  resolution_minutes: z.number().min(1).default(240),
+  // labels do cliente que mapeiam para este nível (ex: ["Bug Blocker", "P0"])
+  client_labels: z.array(z.string()).default([]),
 })
+
+const DEFAULT_SLA_LEVELS = [
+  { level: 'critical' as const, first_response_minutes: 30,  resolution_minutes: 240,  client_labels: [] },
+  { level: 'high'     as const, first_response_minutes: 120, resolution_minutes: 480,  client_labels: [] },
+  { level: 'medium'   as const, first_response_minutes: 240, resolution_minutes: 1440, client_labels: [] },
+  { level: 'low'      as const, first_response_minutes: 480, resolution_minutes: 2880, client_labels: [] },
+]
 
 const ContractSchema = z.object({
   id: z.string().optional(),
@@ -63,7 +73,7 @@ const ContractSchema = z.object({
   discount_value_brl: z.number().min(0).default(0),
   // SLA
   sla_use_global: z.boolean().default(true),
-  sla_mappings: z.array(SLAMappingSchema).default([]),
+  sla_levels: z.array(SLALevelSchema).default(DEFAULT_SLA_LEVELS),
   notes: z.string().optional().nullable(),
 })
 
@@ -126,7 +136,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         discount_type: (c.discount_type ?? 'percentage') as 'percentage' | 'fixed',
         discount_value_brl: c.discount_value_brl ?? 0,
         sla_use_global: true,
-        sla_mappings: [],
+        sla_levels: DEFAULT_SLA_LEVELS,
       }))
     } : {
       segment: 'Indústria',
@@ -205,6 +215,25 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         body: JSON.stringify({ ...contract, account_id: initialData.id }),
       })
       if (!res.ok) throw new Error('Erro ao salvar contrato')
+      const saved = await res.json()
+      const contractId = contract.id ?? saved.id
+
+      // Salvar SLA do contrato se customizado
+      if (!contract.sla_use_global && contractId) {
+        const slaRes = await fetch(`/api/contracts/${contractId}/sla`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            use_global_standard: false,
+            alert_threshold_pct: 25,
+            auto_close_hours: 48,
+            timezone: 'America/Sao_Paulo',
+            levels: contract.sla_levels ?? DEFAULT_SLA_LEVELS,
+          }),
+        })
+        if (!slaRes.ok) throw new Error('Erro ao salvar SLA do contrato')
+      }
+
       toast.success('Contrato salvo!')
       router.refresh()
     } catch (e: any) {
@@ -212,6 +241,30 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
     } finally {
       setLoading(false)
     }
+  }
+
+  // Carrega SLA existente ao abrir contrato em edit mode
+  async function loadContractSLA(contractId: string, index: number) {
+    try {
+      const res = await fetch(`/api/contracts/${contractId}/sla`)
+      if (!res.ok) return
+      const policy = await res.json()
+      if (!policy) return
+      setValue(`contracts.${index}.sla_use_global`, policy.use_global_standard ?? true)
+      if (policy.levels?.length === 4) {
+        const mappingsByLevel: Record<string, string[]> = {}
+        for (const m of (policy.mappings ?? [])) {
+          if (!mappingsByLevel[m.internal_level]) mappingsByLevel[m.internal_level] = []
+          mappingsByLevel[m.internal_level].push(m.external_label)
+        }
+        setValue(`contracts.${index}.sla_levels`, policy.levels.map((l: any) => ({
+          level: l.level,
+          first_response_minutes: l.first_response_minutes,
+          resolution_minutes: l.resolution_minutes,
+          client_labels: mappingsByLevel[l.level] ?? [],
+        })))
+      }
+    } catch { /* silently ignore */ }
   }
 
   return (
@@ -405,7 +458,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   discount_type: 'percentage',
                   discount_value_brl: 0,
                   sla_use_global: true,
-                  sla_mappings: [],
+                  sla_levels: DEFAULT_SLA_LEVELS,
                 })}
                 className="h-9 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest gap-1.5"
               >
@@ -599,13 +652,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* SLA do Contrato */}
-                  <div className="col-span-2 md:col-span-4 space-y-3 p-4 bg-black/40 rounded-xl border border-white/5">
+                  <div className="col-span-2 md:col-span-4 space-y-4 p-4 bg-black/40 rounded-xl border border-white/5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Shield className="w-3.5 h-3.5 text-indigo-400" />
                         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SLA do Contrato</Label>
                       </div>
-                      {/* Padrão Plannera / Customizado */}
                       <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
                         <button
                           type="button"
@@ -621,7 +673,11 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         </button>
                         <button
                           type="button"
-                          onClick={() => setValue(`contracts.${index}.sla_use_global`, false)}
+                          onClick={() => {
+                            setValue(`contracts.${index}.sla_use_global`, false)
+                            const cid = watch(`contracts.${index}.id`)
+                            if (cid) loadContractSLA(cid, index)
+                          }}
                           className={cn(
                             'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-1',
                             !watch(`contracts.${index}.sla_use_global`)
@@ -634,63 +690,112 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                       </div>
                     </div>
 
-                    {!watch(`contracts.${index}.sla_use_global`) && (
-                      <div className="space-y-3 pt-1">
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">
-                          Mapeie os níveis do cliente para os níveis internos da Plannera
-                        </p>
-                        {/* Cabeçalho da tabela */}
-                        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center px-1">
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Label do Cliente</span>
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">→</span>
+                    {watch(`contracts.${index}.sla_use_global`) ? (
+                      <p className="text-[9px] text-slate-600 font-medium italic px-1">
+                        Este contrato herda os prazos do SLA Padrão Plannera. Para customizar, selecione "Customizado".
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Header da tabela */}
+                        <div className="grid grid-cols-[120px_1fr_80px_80px_auto] gap-2 items-center px-2">
                           <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Nível Interno</span>
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Labels do Cliente (De)</span>
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">1ª Resp (min)</span>
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">Resolução (min)</span>
                           <span />
                         </div>
-                        {(watch(`contracts.${index}.sla_mappings`) ?? []).map((_, mi) => (
-                          <div key={mi} className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center">
-                            <Input
-                              {...register(`contracts.${index}.sla_mappings.${mi}.external_label`)}
-                              placeholder="Ex: P1, Urgente..."
-                              className="h-8 text-xs bg-white/5 border-none"
-                            />
-                            <span className="text-slate-600 text-xs font-bold px-1">→</span>
-                            <SearchableSelect
-                              value={watch(`contracts.${index}.sla_mappings.${mi}.internal_level`)}
-                              onValueChange={(v) => setValue(`contracts.${index}.sla_mappings.${mi}.internal_level`, v as any)}
-                              className="h-8 text-xs"
-                              options={[
-                                { label: 'Crítico', value: 'critical' },
-                                { label: 'Alto', value: 'high' },
-                                { label: 'Médio', value: 'medium' },
-                                { label: 'Baixo', value: 'low' },
-                              ]}
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-600 hover:text-red-400"
-                              onClick={() => {
-                                const current = watch(`contracts.${index}.sla_mappings`) ?? []
-                                setValue(`contracts.${index}.sla_mappings`, current.filter((_, i) => i !== mi))
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-[9px] font-bold uppercase tracking-widest text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1 px-3"
-                          onClick={() => {
-                            const current = watch(`contracts.${index}.sla_mappings`) ?? []
-                            setValue(`contracts.${index}.sla_mappings`, [...current, { external_label: '', internal_level: 'medium' }])
-                          }}
-                        >
-                          <Plus className="w-3 h-3" /> Adicionar Mapeamento
-                        </Button>
+
+                        {(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS).map((lvl, li) => {
+                          const levelMeta = {
+                            critical: { label: 'Crítico', color: 'text-red-400 border-red-500/20 bg-red-500/5' },
+                            high:     { label: 'Alto',    color: 'text-orange-400 border-orange-500/20 bg-orange-500/5' },
+                            medium:   { label: 'Médio',   color: 'text-amber-400 border-amber-500/20 bg-amber-500/5' },
+                            low:      { label: 'Baixo',   color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' },
+                          }[lvl.level]
+
+                          return (
+                            <div key={lvl.level} className="grid grid-cols-[120px_1fr_80px_80px_auto] gap-2 items-start p-2 rounded-lg bg-white/[0.02] border border-white/5">
+                              {/* Nível badge */}
+                              <div className="pt-1">
+                                <span className={cn('text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full border', levelMeta?.color)}>
+                                  {levelMeta?.label}
+                                </span>
+                              </div>
+
+                              {/* Labels do cliente (tags) */}
+                              <div className="space-y-1.5">
+                                <div className="flex flex-wrap gap-1">
+                                  {(lvl.client_labels ?? []).map((label, labelIdx) => (
+                                    <span
+                                      key={labelIdx}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-slate-300"
+                                    >
+                                      {label}
+                                      <button
+                                        type="button"
+                                        className="text-slate-500 hover:text-red-400 transition-colors"
+                                        onClick={() => {
+                                          const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                          levels[li] = { ...levels[li], client_labels: levels[li].client_labels.filter((_, i) => i !== labelIdx) }
+                                          setValue(`contracts.${index}.sla_levels`, levels)
+                                        }}
+                                      >×</button>
+                                    </span>
+                                  ))}
+                                </div>
+                                <Input
+                                  placeholder="Ex: Bug Blocker, P0 — Enter para adicionar"
+                                  className="h-7 text-xs bg-white/5 border-none placeholder:text-slate-700"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ',') {
+                                      e.preventDefault()
+                                      const val = e.currentTarget.value.trim().replace(/,$/, '')
+                                      if (!val) return
+                                      const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                      if (!levels[li].client_labels.includes(val)) {
+                                        levels[li] = { ...levels[li], client_labels: [...levels[li].client_labels, val] }
+                                        setValue(`contracts.${index}.sla_levels`, levels)
+                                      }
+                                      e.currentTarget.value = ''
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              {/* 1ª Resposta */}
+                              <Input
+                                type="number"
+                                min="1"
+                                value={lvl.first_response_minutes}
+                                onChange={(e) => {
+                                  const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                  levels[li] = { ...levels[li], first_response_minutes: parseInt(e.target.value) || 1 }
+                                  setValue(`contracts.${index}.sla_levels`, levels)
+                                }}
+                                className="h-8 text-xs text-center bg-white/5 border-none font-mono"
+                              />
+
+                              {/* Resolução */}
+                              <Input
+                                type="number"
+                                min="1"
+                                value={lvl.resolution_minutes}
+                                onChange={(e) => {
+                                  const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                  levels[li] = { ...levels[li], resolution_minutes: parseInt(e.target.value) || 1 }
+                                  setValue(`contracts.${index}.sla_levels`, levels)
+                                }}
+                                className="h-8 text-xs text-center bg-white/5 border-none font-mono"
+                              />
+
+                              <div />
+                            </div>
+                          )
+                        })}
+
+                        <p className="text-[8px] text-slate-700 px-1 pt-1">
+                          Digite o label do cliente e pressione <kbd className="px-1 py-0.5 rounded bg-white/5 text-slate-500">Enter</kbd> para adicionar. O agente verá o nível interno; o cliente verá seu próprio label.
+                        </p>
                       </div>
                     )}
                   </div>
