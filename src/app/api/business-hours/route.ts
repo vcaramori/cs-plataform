@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '../../../../lib/supabase/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 export async function GET(request: Request) {
-  const supabase = createClient()
+  const supabase = await getSupabaseServerClient()
   const { searchParams } = new URL(request.url)
   const accountId = searchParams.get('account_id')
   
@@ -34,7 +34,7 @@ const itemSchema = z.object({
 const bulkPostSchema = z.array(itemSchema)
 
 export async function PUT(request: Request) {
-  const supabase = createClient()
+  const supabase = await getSupabaseServerClient()
   const body = await request.json()
 
   const parsed = bulkPostSchema.safeParse(body)

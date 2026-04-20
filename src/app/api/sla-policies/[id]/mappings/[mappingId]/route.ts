@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '../../../../../../../lib/supabase/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string, mappingId: string } }
 ) {
-  const supabase = createClient()
+  const supabase = await getSupabaseServerClient()
   const { id, mappingId } = params
 
   const { error } = await supabase
