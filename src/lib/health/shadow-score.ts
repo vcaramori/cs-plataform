@@ -25,7 +25,7 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
       .limit(10),
     db
       .from('support_tickets')
-      .select('title, description, status, priority, category, opened_at, resolved_at')
+      .select('title, description, status, priority, internal_level, category, opened_at, resolved_at, sla_breach_resolution')
       .eq('account_id', accountId)
       .order('opened_at', { ascending: false })
       .limit(10),
@@ -53,7 +53,9 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
 
   const ticketsContext = (tickets ?? []).map((t) => {
     const resolved = t.resolved_at ? ` | Resolvido: ${t.resolved_at}` : ' | ABERTO'
-    return `- [${t.opened_at}] ${t.priority.toUpperCase()}: ${t.title} (${t.status})${resolved}\n  ${t.description?.slice(0, 150) ?? ''}`
+    const level = t.internal_level ? ` | Nível interno: ${t.internal_level}` : ''
+    const slaBreach = t.sla_breach_resolution ? ' | ⚠️ SLA de resolução violado' : ''
+    return `- [${t.opened_at}] ${t.priority.toUpperCase()}: ${t.title} (${t.status})${level}${slaBreach}${resolved}\n  ${t.description?.slice(0, 150) ?? ''}`
   }).join('\n')
 
   const prompt = `Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para este LOGO.
@@ -84,7 +86,11 @@ Retorne APENAS um JSON válido com esta estrutura exata:
 ## Fatores de risco possíveis
 critical_tickets, unresolved_tickets, negative_sentiment, low_engagement,
 declining_meetings, churn_signals, payment_issues, integration_failures,
-escalation_risk, insufficient_data
+escalation_risk, insufficient_data, sla_breached
+
+## Regras especiais para tickets
+- Tickets com internal_level "critical" pesam 2x mais negativamente que medium/low
+- Tickets com sla_breach_resolution = true devem adicionar "sla_breached" aos risk_factors e reduzir o score
 
 ## Trend
 - improving: melhora nos últimos registros

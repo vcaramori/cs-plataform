@@ -16,6 +16,7 @@ export default async function SuportePage() {
     supabase
       .from('support_tickets')
       .select('*, accounts!inner(name, csm_owner_id)')
+      .order('sla_status_resolution', { ascending: true, nullsFirst: false })
       .order('opened_at', { ascending: false })
       .limit(200),
   ])

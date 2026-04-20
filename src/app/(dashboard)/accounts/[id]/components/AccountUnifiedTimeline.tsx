@@ -73,8 +73,8 @@ export function AccountUnifiedTimeline({ interactions, efforts, accounts }: Prop
       </div>
 
       <div className="relative space-y-6 px-4">
-        {/* Timeline Hub Rail */}
-        <div className="absolute left-[31px] top-0 bottom-0 w-[1px] bg-white/5" />
+        {/* Timeline Hub Rail — left-10 = 40px aligns with icon center (16px padding + 24px half of w-12) */}
+        <div className="absolute left-10 top-6 bottom-6 w-px bg-white/[0.06]" />
 
         <AnimatePresence mode="popLayout">
           {filtered.slice(0, 10).map((item, idx) => (
@@ -83,7 +83,7 @@ export function AccountUnifiedTimeline({ interactions, efforts, accounts }: Prop
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05, duration: 0.4 }}
-              className="relative flex items-start gap-8 group"
+              className="relative flex items-start gap-4 group"
             >
               {/* Dot/Icon Hub */}
               <div className={cn(
@@ -109,14 +109,14 @@ export function AccountUnifiedTimeline({ interactions, efforts, accounts }: Prop
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-white text-sm font-bold tracking-tight truncate max-w-[200px]">
+                      <span className="text-white text-sm font-bold tracking-tight truncate min-w-0">
                         {item.title || item.parsed_description}
                       </span>
                       {item.isStrategic && (
-                        <Badge className="bg-plannera-orange/10 text-plannera-orange border-none text-[8px] font-bold uppercase tracking-widest h-4">Strategic Event</Badge>
+                        <Badge className="bg-plannera-orange/10 text-plannera-orange border-none text-[8px] font-bold uppercase tracking-widest h-4 shrink-0">Strategic</Badge>
                       )}
                     </div>
-                    <span className="text-slate-500 text-[9px] font-bold uppercase font-mono tracking-tighter">
+                    <span className="text-slate-500 text-[9px] font-bold uppercase font-mono tracking-tighter shrink-0">
                       {new Date(item.date).toLocaleDateString('pt-BR')}
                     </span>
                   </div>

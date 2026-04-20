@@ -12,7 +12,6 @@ import { Search, Plus, TrendingUp, TrendingDown, Minus, AlertTriangle, Building2
 import type { Account, Contract } from '@/lib/supabase/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatCurrency, formatNumber } from '@/lib/utils'
-import { HealthScoreEditModal } from './HealthScoreEditModal'
 import {
   Tooltip,
   TooltipContent,
@@ -62,9 +61,9 @@ function TrendIcon({ trend }: { trend: string }) {
 
 function SegmentBadge({ segment }: { segment: string }) {
   const colors: Record<string, string> = {
-    Enterprise: 'bg-plannera-sop/10 text-plannera-sop border-plannera-sop/20',
-    'Mid-Market': 'bg-plannera-operations/10 text-plannera-operations border-plannera-operations/20',
-    SMB: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+    'Indústria': 'bg-plannera-sop/10 text-plannera-sop border-plannera-sop/20',
+    'MRO': 'bg-plannera-operations/10 text-plannera-operations border-plannera-operations/20',
+    'Varejo': 'bg-plannera-orange/10 text-plannera-orange border-plannera-orange/20',
   }
   return <Badge variant="outline" className={cn("text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 border", colors[segment] ?? '')}>{segment}</Badge>
 }
@@ -73,8 +72,6 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
   const router = useRouter()
   const [search, setSearch] = useState('')
   const [segmentFilter, setSegmentFilter] = useState<string>('all')
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
-
   const filtered = accounts.filter(a => {
     const matchSearch = a.name.toLowerCase().includes(search.toLowerCase())
     const matchSegment = segmentFilter === 'all' || a.segment === segmentFilter
@@ -103,7 +100,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               </div>
 
               <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
-                {['all', 'SMB', 'Mid-Market', 'Enterprise'].map(s => (
+                {['all', 'Indústria', 'MRO', 'Varejo'].map(s => (
                   <button
                     key={s}
                     onClick={() => setSegmentFilter(s)}
@@ -154,7 +151,11 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                   {filtered.map((account, index) => {
                     const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
                     const activeContracts = contracts.filter(c => c.status === 'active')
-                    const totalMRR = activeContracts.reduce((sum, c) => sum + (Number(c.mrr) || 0), 0)
+                    const totalMRR = activeContracts.reduce((sum, c) => {
+                      const baseMrr = Number(c.mrr) || 0;
+                      const discount = Number(c.discount_percentage) || 0;
+                      return sum + (baseMrr * (1 - discount / 100));
+                    }, 0)
                     const nearestRenewal = activeContracts
                       .filter(c => c.renewal_date)
                       .sort((a, b) => new Date(a.renewal_date!).getTime() - new Date(b.renewal_date!).getTime())[0]
@@ -209,7 +210,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                               className="w-8 h-8 rounded-lg opacity-0 group-hover/health:opacity-100 hover:bg-white/5 text-slate-500 hover:text-plannera-orange transition-all"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setEditingAccount(account);
+                                router.push(`/accounts/${account.id}/edit`);
                               }}
                             >
                               <Pencil className="w-4 h-4" />
@@ -233,12 +234,6 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
         </CardContent>
       </Card>
 
-      <HealthScoreEditModal
-        isOpen={!!editingAccount}
-        onClose={() => setEditingAccount(null)}
-        account={editingAccount ? { id: editingAccount.id, name: editingAccount.name, health_score: editingAccount.health_score } : null}
-        onSuccess={() => router.refresh()}
-      />
     </>
   )
 }

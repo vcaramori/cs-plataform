@@ -77,7 +77,7 @@ export function ClientDashboardLayout({ user, children }: Props) {
         </div>
 
         {/* Conteúdo da página */}
-        <div className="relative z-10 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="relative z-10 p-4 md:p-6 lg:p-8 w-full">
 
           {children}
         </div>

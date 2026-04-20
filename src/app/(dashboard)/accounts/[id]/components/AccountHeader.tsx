@@ -26,7 +26,10 @@ import {
   User,
   Activity,
   Clock,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  ShieldCheck,
+  ShieldOff,
 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { HealthScoreDetailsModal } from './HealthScoreDetailsModal'
@@ -37,8 +40,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { EditAccountDialog } from './EditAccountDialog'
-import { NewContractDialog } from './NewContractDialog'
 import { HealthScoreEditModal } from '../../../dashboard/components/HealthScoreEditModal'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -94,9 +95,13 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
   const [showEditModal, setShowEditModal] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [summaryData, setSummaryData] = useState<any>(null)
+  const [npsScore, setNpsScore] = useState<number | null>(null)
+  const [slaActive, setSlaActive] = useState<boolean | null>(null)
 
   useEffect(() => {
     fetchHistory()
+    fetchNPS()
+    fetchSLA()
   }, [account.id])
 
   async function fetchHistory() {
@@ -108,6 +113,27 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
     } catch (err) {
       console.error('Error fetching history:', err)
     }
+  }
+
+  async function fetchNPS() {
+    try {
+      const res = await fetch(`/api/nps/stats?account_id=${account.id}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.total_responses > 0) setNpsScore(data.nps_score)
+    } catch {}
+  }
+
+  async function fetchSLA() {
+    try {
+      const contracts = account.contracts || []
+      const activeContract = contracts.find((c: any) => c.status === 'active') || contracts[0]
+      if (!activeContract) { setSlaActive(false); return }
+      const res = await fetch(`/api/sla-policies?contract_id=${activeContract.id}`)
+      if (!res.ok) { setSlaActive(false); return }
+      const data = await res.json()
+      setSlaActive(!!data)
+    } catch { setSlaActive(false) }
   }
 
   // Agrupar por data para o sparkline de fundo
@@ -218,8 +244,12 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
                 <Badge className="bg-plannera-orange/10 text-plannera-orange border-plannera-orange/20 px-2.5 py-0.5 font-bold uppercase tracking-wide text-xs h-5 shrink-0">
                   {account.segment}
                 </Badge>
-                <EditAccountDialog account={account} />
-                <NewContractDialog accountId={account.id} />
+                <Link
+                  href={`/accounts/${account.id}/edit`}
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Link>
               </div>
               <p className="text-slate-500 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 mt-0.5 truncate">
                 ID: <span className="text-slate-400">{account.id.split('-')[0]}</span>
@@ -255,6 +285,52 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
               <span className={cn("text-base font-bold tracking-tight", renewalColor)}>
                 {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
               </span>
+            </div>
+          </div>
+
+          {/* NPS Pill */}
+          <div className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-2xl border-white/5 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+              <MessageSquare className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-500 uppercase font-bold tracking-wide leading-none mb-0.5">NPS</span>
+              {npsScore === null ? (
+                <span className="text-base font-bold tracking-tight text-slate-500">—</span>
+              ) : (
+                <span className={cn(
+                  "text-base font-bold tracking-tight",
+                  npsScore >= 50 ? 'text-emerald-400' : npsScore >= 0 ? 'text-amber-400' : 'text-red-400'
+                )}>
+                  {npsScore > 0 ? `+${npsScore}` : npsScore}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* SLA Pill */}
+          <div className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-2xl border-white/5 shrink-0">
+            <div className={cn(
+              "w-9 h-9 rounded-xl flex items-center justify-center border",
+              slaActive ? "bg-plannera-ds/10 border-plannera-ds/20" : "bg-slate-700/20 border-white/5"
+            )}>
+              {slaActive
+                ? <ShieldCheck className="w-4 h-4 text-plannera-ds" />
+                : <ShieldOff className="w-4 h-4 text-slate-500" />
+              }
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-500 uppercase font-bold tracking-wide leading-none mb-0.5">SLA</span>
+              {slaActive === null ? (
+                <span className="text-base font-bold tracking-tight text-slate-500">—</span>
+              ) : (
+                <span className={cn(
+                  "text-base font-bold tracking-tight",
+                  slaActive ? 'text-plannera-ds' : 'text-slate-500'
+                )}>
+                  {slaActive ? 'Ativo' : 'Sem SLA'}
+                </span>
+              )}
             </div>
           </div>
         </div>

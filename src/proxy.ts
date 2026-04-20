@@ -5,8 +5,8 @@ export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -23,20 +23,27 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+  // Refreshes the session token so server-side getUser() works in API routes
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login')
-  const isProtected = request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/accounts') ||
-    request.nextUrl.pathname.startsWith('/api/accounts') ||
-    request.nextUrl.pathname.startsWith('/api/contracts') ||
-    request.nextUrl.pathname.startsWith('/api/contacts') ||
-    request.nextUrl.pathname.startsWith('/api/interactions') ||
-    request.nextUrl.pathname.startsWith('/api/ask')
+  const { pathname } = request.nextUrl
+  const isAuthRoute = pathname.startsWith('/login')
+  const isProtectedRoute = 
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/accounts') ||
+    pathname.startsWith('/esforco') ||
+    pathname.startsWith('/suporte') ||
+    pathname.startsWith('/perguntar') ||
+    pathname.startsWith('/api/accounts') ||
+    pathname.startsWith('/api/contracts') ||
+    pathname.startsWith('/api/contacts') ||
+    pathname.startsWith('/api/interactions') ||
+    pathname.startsWith('/api/ask')
 
-  if (!user && isProtected) {
-    if (request.nextUrl.pathname.startsWith('/api')) {
-      return NextResponse.next()
+  if (!user && isProtectedRoute) {
+    // Para chamadas de API, não redirecionamos, apenas deixamos seguir ou retornamos 401 mais tarde na rota
+    if (pathname.startsWith('/api')) {
+      return supabaseResponse
     }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -53,5 +60,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/accounts/:path*', '/login', '/api/accounts/:path*', '/api/contracts/:path*', '/api/contacts/:path*', '/api/interactions/:path*', '/api/ask/:path*'],
+  matcher: [
+    /*
+     * Match all request paths except static files and images
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

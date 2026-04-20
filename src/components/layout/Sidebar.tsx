@@ -17,7 +17,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
-  Layers
+  Layers,
+  Star,
+  BarChart2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -27,16 +29,18 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/accounts',  label: 'Logos',         icon: Building2 },
   { href: '/esforco',   label: 'Esforço',        icon: Clock },
-  { href: '/suporte',   label: 'Suporte',        icon: TicketCheck },
+  { href: '/suporte',           label: 'Suporte',        icon: TicketCheck },
+  { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
+  { href: '/nps',               label: 'NPS',            icon: Star },
   { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
 ]
 
 const settingsItems = [
-  { href: '/users',             label: 'Equipe (CSMs)',  icon: Users },
-  { href: '/settings/features', label: 'Funcionalidades', icon: Sparkles },
-  { href: '/settings/plans',    label: 'Planos',         icon: Layers },
+  { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users },
+  { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
+  { href: '/settings/plans',        label: 'Planos',         icon: Layers },
+  { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
 ]
 
 interface SidebarProps {

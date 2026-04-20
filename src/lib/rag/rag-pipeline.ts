@@ -2,6 +2,7 @@ import { generateText, generateEmbedding } from '@/lib/llm/gateway'
 import { searchEmbeddingsWithVector } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getAccountPlanSummary, getPortfolioSummary, type PortfolioSummary } from '@/lib/adoption/risk-engine'
+import { getNPSSegment } from '@/lib/supabase/types'
 
 export type RAGSource = {
   type: 'interaction' | 'support_ticket'
@@ -82,8 +83,18 @@ export async function runRAGPipeline(
           .select('name, role, influence_level, decision_maker')
           .eq('account_id', accountId)
       : Promise.resolve({ data: [] as any[] }),
-    db.from('accounts').select('id, name')
-  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }]
+    db.from('accounts').select('id, name'),
+    accountId
+      ? db
+          .from('nps_responses')
+          .select('score, comment, tags, user_email, responded_at')
+          .eq('account_id', accountId)
+          .eq('dismissed', false)
+          .not('score', 'is', null)
+          .order('responded_at', { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] as any[] }),
+  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }]
 
   const interactionRecords = results[0].data
   const ticketRecords = results[1].data
@@ -92,6 +103,7 @@ export async function runRAGPipeline(
   const portfolioSummary = results[4]
   const contacts = results[5].data
   const allAccounts = results[6].data
+  const npsRecords = results[7].data
 
   // 2.1 Detecção de Entidades (Account Discovery)
   // Se estamos em modo global, tentamos detectar se a pergunta cita algum cliente
@@ -221,10 +233,38 @@ ${riskList || 'Nenhum risco imediato detectado.'}
 ${blockerList || 'Nenhum bloqueio mapeado.'}`
   }
 
-  // 3.4 Adiciona Contexto de Stakeholders
+  // 3.4 Adiciona Contexto de NPS
+  let npsContext = ''
+  if (npsRecords && npsRecords.length > 0) {
+    let promoters = 0, passives = 0, detractors = 0, scoreSum = 0
+    for (const r of npsRecords) {
+      const seg = getNPSSegment(r.score)
+      if (seg === 'promoter') promoters++
+      else if (seg === 'passive') passives++
+      else detractors++
+      scoreSum += r.score
+    }
+    const total = npsRecords.length
+    const avgScore = (scoreSum / total).toFixed(1)
+    const npsScore = Math.round(((promoters - detractors) / total) * 100)
+    const commentLines = npsRecords
+      .filter((r: any) => r.comment)
+      .slice(0, 5)
+      .map((r: any) => {
+        const seg = getNPSSegment(r.score)
+        const segLabel = seg === 'promoter' ? 'PROMOTOR' : seg === 'passive' ? 'NEUTRO' : 'DETRATOR'
+        const tagStr = r.tags?.length > 0 ? ` [${r.tags.join(', ')}]` : ''
+        return `- ${r.score}/10 (${segLabel})${tagStr}: "${r.comment}"`
+      }).join('\n')
+    npsContext = `\n\n## NPS DO CLIENTE
+Score NPS: ${npsScore > 0 ? '+' : ''}${npsScore} | Nota Média: ${avgScore}/10 | Respostas: ${total}
+Promotores: ${promoters} | Neutros: ${passives} | Detratores: ${detractors}
+${commentLines ? `\nÚltimos comentários:\n${commentLines}` : ''}`
+  }
+
   let stakeholderContext = ''
   if (contacts && contacts.length > 0) {
-    const contactLines = contacts.map(c => 
+    const contactLines = contacts.map((c: any) =>
       `- ${c.name} (${c.role}): Influência: ${c.influence_level} | Decisor: ${c.decision_maker ? 'Sim' : 'Não'}`
     ).join('\n')
     stakeholderContext = `\n\n## STAKEHOLDERS (POWER MAP)\n${contactLines}`
@@ -255,6 +295,7 @@ CLASSIFICAÇÃO DE SAÚDE (HEALTH SCORE):
 ${contextBlocks || 'Nenhum dado de interação/tickets recente.'}
 ${adoptionContext}
 ${planRiskContext}
+${npsContext}
 ${portfolioContext}
 ${stakeholderContext}
 ${extraAccountContext}
@@ -300,4 +341,64 @@ ${question}`
   })
 
   return { answer, sources }
+}
+
+/**
+ * Ingests a single NPS response into the RAG vector database.
+ * This is called automatically when a new response with a comment is received.
+ */
+export async function ingestNPSResponse(responseId: string): Promise<boolean> {
+  try {
+    const admin = getSupabaseAdminClient()
+    const db = admin as any
+
+    // 1. Busca os dados completos da resposta e da conta
+    const { data: response, error: fetchErr } = await db
+      .from('nps_responses')
+      .select('*, accounts(name)')
+      .eq('id', responseId)
+      .single()
+
+    if (fetchErr || !response) {
+      console.error('[RAG] Erro ao buscar resposta para ingestão:', fetchErr)
+      return false
+    }
+
+    if (!response.comment || response.score === null) {
+      // Ignora respostas sem comentário ou nota (não agregam valor semântico)
+      return false
+    }
+
+    const accountName = response.accounts?.name ?? 'Conta desconhecida'
+    const segment = getNPSSegment(response.score)
+    const segLabel = segment === 'promoter' ? 'PROMOTOR' : segment === 'passive' ? 'NEUTRO' : 'DETRATOR'
+    const tagStr = response.tags?.length > 0 ? `Tags: ${response.tags.join(', ')}. ` : ''
+
+    const chunkText = `NPS Response | ${accountName} | Score: ${response.score}/10 (${segLabel}) | ${tagStr}Comentário: ${response.comment} | Email: ${response.user_email} | Data: ${response.responded_at ?? response.created_at}`
+
+    // 2. Gera embedding
+    const { result: embedding } = await generateEmbedding(chunkText, { allowFallback: true })
+
+    // 3. Upsert no banco de vetores
+    const { error: upsertErr } = await db
+      .from('embeddings')
+      .upsert({
+        account_id: response.account_id,
+        source_type: 'nps_response',
+        source_id: response.id,
+        chunk_index: 0,
+        chunk_text: chunkText,
+        embedding,
+      }, { onConflict: 'source_type,source_id,chunk_index' })
+
+    if (upsertErr) {
+      console.error('[RAG] Erro ao fazer upsert do embedding NPS:', upsertErr)
+      return false
+    }
+
+    return true
+  } catch (err) {
+    console.error('[RAG] Erro fatal na ingestão NPS:', err)
+    return false
+  }
 }

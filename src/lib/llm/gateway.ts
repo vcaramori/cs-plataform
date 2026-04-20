@@ -28,6 +28,10 @@ export interface GenerateOptions {
   timeoutMs?: number
   /** Temperatura do modelo (0=determinístico, 1=criativo). Default: 0 */
   temperature?: number
+  /** Força um provider específico, ignorando a config LLM_PROVIDER. */
+  provider?: 'gemini' | 'claude'
+  /** Sobrescreve max_tokens para Claude (útil para respostas longas). */
+  maxTokens?: number
 }
 
 export interface EmbedOptions {
@@ -94,17 +98,17 @@ async function geminiGenerate(prompt: string, primaryModel: string, fallbackMode
 /**
  * Helper interno para geração via Claude (Anthropic)
  */
-async function claudeGenerate(prompt: string): Promise<string> {
+async function claudeGenerate(prompt: string, maxTokens?: number): Promise<string> {
   if (!env.claude.apiKey) {
     throw new Error('ANTHROPIC_API_KEY não configurada')
   }
 
   const anthropic = new Anthropic({ apiKey: env.claude.apiKey })
-  
+
   try {
     const response = await anthropic.messages.create({
       model: env.claude.model,
-      max_tokens: env.claude.maxTokens,
+      max_tokens: maxTokens ?? env.claude.maxTokens,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0,
     })
@@ -146,6 +150,25 @@ export async function generateText(
   const flashModel = env.gemini.flashModel
   const proModel = env.gemini.proModel
 
+  // Provider forçado via opção (ignora LLM_PROVIDER, mas mantém fallback)
+  if (options.provider === 'claude') {
+    const text = await claudeGenerate(prompt, options.maxTokens)
+    return { result: text, provider: 'claude-fallback', durationMs: Date.now() - start }
+  }
+  if (options.provider === 'gemini') {
+    try {
+      // Usa proModel como primário (mesma ordem do fallback do Ollama que está funcional)
+      const text = await geminiGenerate(prompt, proModel, flashModel)
+      return { result: text, provider: 'gemini', durationMs: Date.now() - start }
+    } catch (geminiErr: any) {
+      console.warn(`[LLM Gateway] ⚠️ Gemini (forced) falhou: ${geminiErr.message}`)
+      if (!allowFallback) throw geminiErr
+      console.log('[LLM Gateway] 🔄 Gemini falhou, tentando Claude como fallback...')
+      const text = await claudeGenerate(prompt, options.maxTokens)
+      return { result: text, provider: 'claude-fallback', durationMs: Date.now() - start }
+    }
+  }
+
   // Provider Default: Gemini
   if (config.provider === 'gemini') {
     const text = await geminiGenerate(prompt, flashModel, proModel)
@@ -181,7 +204,7 @@ export async function generateText(
       // 2. Tenta Fallback Secundário (Claude)
       try {
         console.log('[LLM Gateway] 🔄 Usando Claude como fallback de última instância...')
-        const text = await claudeGenerate(prompt)
+        const text = await claudeGenerate(prompt, options.maxTokens)
         return {
           result: text,
           provider: 'claude-fallback',

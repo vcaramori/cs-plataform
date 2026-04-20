@@ -9,7 +9,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Bell, AlertTriangle, Clock, ChevronRight, Sparkles, Loader2 } from 'lucide-react'
+import { Bell, AlertTriangle, Clock, ChevronRight, Sparkles, Loader2, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -130,14 +130,20 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
                     <div className="flex gap-4">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                        n.type === 'stale_score' ? "bg-plannera-orange/10 text-plannera-orange" : "bg-red-500/10 text-red-500"
+                        n.type === 'stale_score' ? "bg-plannera-orange/10 text-plannera-orange" : 
+                        n.type === 'new_ticket' ? "bg-blue-500/10 text-blue-500" :
+                        "bg-red-500/10 text-red-500"
                       )}>
-                        {n.type === 'stale_score' ? <Clock className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                        {n.type === 'stale_score' ? <Clock className="w-5 h-5" /> : 
+                         n.type === 'new_ticket' ? <MessageSquare className="w-5 h-5" /> :
+                         <AlertTriangle className="w-5 h-5" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-slate-300 font-black text-[10px] uppercase tracking-widest leading-none">
-                            {n.type === 'stale_score' ? 'Health Score' : 'Discrepância IA'}
+                            {n.type === 'stale_score' ? 'Health Score' : 
+                             n.type === 'new_ticket' ? 'Suporte' :
+                             'Discrepância IA'}
                           </p>
                           <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
                         </div>

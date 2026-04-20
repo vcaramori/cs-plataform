@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
+import { enrichTicketWithSLA, logSLAEvent, buildResolutionSLAFreeze, openTicket, reopenTicket, createFromClosed } from '@/lib/support/lifecycle'
+import { classifyIntent } from '@/lib/support/intent-classifier'
 
 const POWER_AUTOMATE_URL = 'https://defaultf3eedc7b7dd742b3a805865afbe2da.b7.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/051bab82e2a54ff19f3559914040a96f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=zhoFnRlXIstaSSJ_JoO0pvvxZSLU7dVXDXw7t7iZ9f4'
 
@@ -148,17 +150,63 @@ ${contentToProcess.substring(0, 25000)}
       if (existingTicket) {
         // Atualizar Ticket Existente (Append)
         const updatedThread = (existingTicket.thread_content || existingTicket.description || '') + newMessage
+
+        // Se o ticket está fechado, novo reply cria ticket filho
+        if (existingTicket.status === 'closed') {
+          const intent = await classifyIntent(t.message_content || t.title)
+          if (intent === 'question_or_issue' || intent === 'unclear') {
+            await createFromClosed(existingTicket.id, {
+              account_id: finalAccountId,
+              title: `[Reabertura] ${existingTicket.title}`,
+              description: t.message_content || t.title,
+              thread_content: t.message_content || t.title,
+              status: 'open',
+              priority: existingTicket.priority,
+              external_priority_label: existingTicket.internal_level,
+              category: existingTicket.category,
+              opened_at: today,
+              source: 'email',
+              is_vectorized: false
+            })
+            created++
+          }
+          // Gratitude on closed ticket: ignore
+          continue
+        }
+
+        // Se o ticket está resolvido, classificar intenção para reabrir ou ignorar
+        if (existingTicket.status === 'resolved') {
+          const intent = await classifyIntent(t.message_content || t.title)
+          if (intent === 'question_or_issue' || intent === 'unclear') {
+            await reopenTicket(existingTicket.id)
+            await supabase.from('support_tickets').update({ thread_content: updatedThread }).eq('id', existingTicket.id)
+            updated++
+          }
+          // Gratitude on resolved: ignore (auto-close will handle it)
+          continue
+        }
+
+        let updates: any = {
+          thread_content: updatedThread,
+          status: t.status || existingTicket.status,
+          priority: t.priority || existingTicket.priority,
+        }
+
+        // Se está resolvendo/fechando agora e antes não estava, congela o SLA
+        if (isFinishing && existingTicket.status !== 'resolved' && existingTicket.status !== 'closed') {
+          updates = { ...updates, ...buildResolutionSLAFreeze(existingTicket) }
+        }
+
         const { error: updateErr } = await supabase
           .from('support_tickets')
-          .update({
-            thread_content: updatedThread,
-            status: t.status || existingTicket.status,
-            priority: t.priority || existingTicket.priority,
-          })
+          .update(updates)
           .eq('id', existingTicket.id)
 
         if (!updateErr) {
           updated++
+          if (isFinishing && existingTicket.status !== 'resolved' && existingTicket.status !== 'closed') {
+             logSLAEvent(existingTicket.id, 'ticket_resolved', { source: 'email_sync' }).catch(console.error)
+          }
           // Vetorizar apenas se estiver finalizando e ainda não foi vetorizado
           if (isFinishing && !existingTicket.is_vectorized) {
             try {
@@ -170,26 +218,38 @@ ${contentToProcess.substring(0, 25000)}
         }
       } else {
         // Criar Novo Ticket
+        const enrichedPayload = await enrichTicketWithSLA({
+          account_id: finalAccountId,
+          external_ticket_id: t.external_ticket_id,
+          title: t.title.slice(0, 255),
+          description: t.message_content || t.title,
+          thread_content: t.message_content || t.title,
+          status: t.status || 'open',
+          priority: t.priority || 'medium',
+          external_priority_label: t.priority || 'medium', // Usa na engine do SLA
+          category: t.category || null,
+          opened_at: t.opened_at || today,
+          source: 'email',
+          is_vectorized: false
+        })
+
+        // Se o ticket já entra resolvido (ex: e-mail de notificação de fechamento), congela imediato
+        if (isFinishing && enrichedPayload.sla_policy_id) {
+           Object.assign(enrichedPayload, buildResolutionSLAFreeze(enrichedPayload))
+        }
+
         const { data: newTicket, error: insertErr } = await supabase
           .from('support_tickets')
-          .insert({
-            account_id: finalAccountId,
-            external_ticket_id: t.external_ticket_id,
-            title: t.title.slice(0, 255),
-            description: t.message_content || t.title,
-            thread_content: t.message_content || t.title,
-            status: t.status || 'open',
-            priority: t.priority || 'medium',
-            category: t.category || null,
-            opened_at: t.opened_at || today,
-            source: 'email',
-            is_vectorized: false
-          })
-          .select('id')
+          .insert(enrichedPayload)
+          .select('id, internal_level')
           .single()
 
         if (!insertErr && newTicket) {
           created++
+          openTicket(newTicket.id).catch(console.error)
+          if (isFinishing) {
+             logSLAEvent(newTicket.id, 'ticket_resolved', { source: 'email_sync' }).catch(console.error)
+          }
           // Vetorização imediata apenas se já nasceu resolvido (raro)
           if (isFinishing) {
              try {

@@ -25,7 +25,7 @@ import type { Account } from '@/lib/supabase/types'
 
 const schema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  segment: z.enum(['SMB', 'Mid-Market', 'Enterprise']),
+  segment: z.enum(['Indústria', 'MRO', 'Varejo']),
   industry: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   logo_url: z.string().url().optional().nullable(),
@@ -162,9 +162,9 @@ export function EditAccountDialog({ account }: { account: Account }) {
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
                   options={[
-                    { label: 'SMB', value: 'SMB' },
-                    { label: 'Mid-Market', value: 'Mid-Market' },
-                    { label: 'Enterprise', value: 'Enterprise' },
+                    { label: 'Indústria', value: 'Indústria' },
+                    { label: 'MRO', value: 'MRO' },
+                    { label: 'Varejo', value: 'Varejo' },
                   ]}
                 />
               </div>

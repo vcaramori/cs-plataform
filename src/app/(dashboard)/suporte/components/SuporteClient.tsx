@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
-import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Calendar, Tag, AlertCircle, Sparkles } from 'lucide-react'
+import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Sparkles, LayoutDashboard } from 'lucide-react'
+import { SLABadge } from '@/components/support/SLABadge'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -41,11 +41,30 @@ type Ticket = {
   description: string
   status: string
   priority: string
+  internal_level?: string | null
   category: string | null
   opened_at: string
   resolved_at: string | null
   thread_content: string | null
   accounts: { name: string } | null
+  sla_status_resolution?: string | null
+  sla_status_first_response?: string | null
+  resolution_deadline?: string | null
+}
+
+const SLA_SORT_ORDER: Record<string, number> = { vencido: 0, atencao: 1, no_prazo: 2, cumprido: 3, violado: 4 }
+const LEVEL_SORT_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+
+function sortTickets(tickets: Ticket[]) {
+  return [...tickets].sort((a, b) => {
+    const aStatus = a.sla_status_resolution ?? 'no_prazo'
+    const bStatus = b.sla_status_resolution ?? 'no_prazo'
+    if (aStatus !== bStatus) return (SLA_SORT_ORDER[aStatus] ?? 5) - (SLA_SORT_ORDER[bStatus] ?? 5)
+    const aLevel = a.internal_level ?? 'low'
+    const bLevel = b.internal_level ?? 'low'
+    if (aLevel !== bLevel) return (LEVEL_SORT_ORDER[aLevel] ?? 4) - (LEVEL_SORT_ORDER[bLevel] ?? 4)
+    return new Date(a.opened_at).getTime() - new Date(b.opened_at).getTime()
+  })
 }
 
 const csvExample = `account_name,title,description,status,priority,category,opened_at
@@ -85,7 +104,6 @@ export function SuporteClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<{ created: number; errors: string[] } | null>(null)
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets)
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
 
   async function handleIngest() {
     if (format !== 'pdf' && !content.trim()) { toast.error('Cole o conteúdo antes de importar'); return }
@@ -147,15 +165,44 @@ export function SuporteClient({
     }
   }
 
-  const filteredTickets = tickets.filter((t) => {
+  const filteredTickets = sortTickets(tickets.filter((t) => {
     if (filterStatus !== 'all' && t.status !== filterStatus) return false
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
     return true
-  })
+  }))
+
+  const openTickets = tickets.filter(t => ['open', 'in_progress', 'reopened'].includes(t.status))
+  const breachedCount = openTickets.filter(t => t.sla_status_resolution === 'vencido' || t.sla_status_first_response === 'vencido').length
+  const attentionCount = openTickets.filter(t => t.sla_status_resolution === 'atencao' || t.sla_status_first_response === 'atencao').length
 
   return (
     <div className="space-y-4">
-      {/* Tabs */}
+      {/* KPI Strip */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: 'Abertos', value: openTickets.length, color: 'text-indigo-400', icon: TicketCheck },
+          { label: 'SLA Vencido', value: breachedCount, color: 'text-red-400', icon: AlertTriangle },
+          { label: 'SLA Atenção', value: attentionCount, color: 'text-amber-400', icon: AlertTriangle },
+          { label: 'Total', value: tickets.length, color: 'text-slate-400', icon: CheckCircle2 },
+        ].map(({ label, value, color, icon: Icon }) => (
+          <div key={label} className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+            <Icon className={`w-4 h-4 ${color}`} />
+            <div>
+              <p className="text-xs text-slate-500 font-semibold">{label}</p>
+              <p className={`text-xl font-black ${color}`}>{value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Link para Dashboard executivo */}
+      <div className="flex justify-end">
+        <Link href="/suporte/dashboard" className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+          <LayoutDashboard className="w-3.5 h-3.5" />
+          Ver Dashboard Executivo
+        </Link>
+      </div>
+
       {/* Premium Tabs */}
       <div className="flex justify-between items-center border-b border-white/5 pb-2">
         <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
@@ -269,7 +316,7 @@ export function SuporteClient({
                         <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Título do Chamado</TableHead>
                         <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">Status</TableHead>
                         <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">Prioridade</TableHead>
-                        <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Categoria</TableHead>
+                        <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">SLA</TableHead>
                         <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] pr-8 text-right">Abertura</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -284,7 +331,7 @@ export function SuporteClient({
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.03 }}
-                              onClick={() => setSelectedTicket(t)}
+                              onClick={() => router.push(`/suporte/${t.id}`)}
                               className="group border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
                             >
                               <TableCell className="p-4 pl-8 whitespace-nowrap">
@@ -308,8 +355,10 @@ export function SuporteClient({
                                   {pConf.label}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-slate-500 text-xs font-bold uppercase tracking-tighter">
-                                {t.category ?? '—'}
+                              <TableCell className="text-center whitespace-nowrap">
+                                {t.sla_status_resolution
+                                  ? <SLABadge status={t.sla_status_resolution as any} />
+                                  : <span className="text-slate-600 text-xs">—</span>}
                               </TableCell>
                               <TableCell className="pr-8 text-right">
                                 <span className="text-slate-400 text-[10px] font-black font-mono">
@@ -327,65 +376,6 @@ export function SuporteClient({
             </CardContent>
           </Card>
 
-          {/* Modal de Detalhes do Ticket */}
-          <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
-            <DialogContent className="glass-card border-none text-white max-w-2xl backdrop-blur-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <DialogHeader>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide", statusConfig[selectedTicket?.status ?? '']?.bg, statusConfig[selectedTicket?.status ?? '']?.color)}>
-                    {statusConfig[selectedTicket?.status ?? '']?.label}
-                  </span>
-                  <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide", priorityConfig[selectedTicket?.priority ?? '']?.bg, priorityConfig[selectedTicket?.priority ?? '']?.color)}>
-                    {priorityConfig[selectedTicket?.priority ?? '']?.label}
-                  </span>
-                </div>
-                <DialogTitle className="text-2xl font-heading font-extrabold text-white tracking-tight uppercase mb-1">
-                  {selectedTicket?.title}
-                </DialogTitle>
-                <DialogDescription className="text-plannera-orange font-bold text-[10px] uppercase tracking-[0.2em] opacity-70">
-                   {selectedTicket?.accounts?.name || 'Cliente Corporativo'}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6 mt-4">
-                {/* Metadados Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Calendar className="w-4 h-4 text-plannera-orange" />
-                    <span>Aberto em: <strong>{selectedTicket?.opened_at ? formatDate(new Date(selectedTicket.opened_at + 'T12:00:00'), 'dd/MM/yyyy') : '—'}</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <Tag className="w-4 h-4 text-plannera-orange" />
-                    <span>Categoria: <strong>{selectedTicket?.category ?? '—'}</strong></span>
-                  </div>
-                </div>
-
-                <Separator className="bg-slate-800" />
-
-                {/* Descrição */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
-                    <AlertCircle className="w-4 h-4 text-plannera-orange" />
-                    Histórico da Conversa
-                  </div>
-                  <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap max-h-80 overflow-y-auto">
-                    {selectedTicket?.thread_content || selectedTicket?.description || 'Nenhuma descrição detalhada fornecida.'}
-                  </div>
-                </div>
-
-                {/* Ações / Rodapé */}
-                <div className="flex justify-end pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSelectedTicket(null)}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
-                  >
-                    Fechar
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       )}
 

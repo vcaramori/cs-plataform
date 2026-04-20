@@ -9,6 +9,7 @@ import { QuickDocuments } from './QuickDocuments'
 import { AccountChat } from './AccountChat'
 import { EditContractDialog } from './EditContractDialog'
 import { AdoptionChart } from './AdoptionChart'
+import Link from 'next/link'
 import {
   History,
   TrendingUp,
@@ -20,6 +21,7 @@ import {
   DollarSign,
   CalendarDays,
   FileText,
+  Settings2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -228,11 +230,17 @@ export function AccountDetailPageClient({
 
           {/* Governança Contratual */}
           <section className="space-y-4">
-            <div className="flex items-center px-1 h-8">
+            <div className="flex items-center justify-between px-1 h-8">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-plannera-ds" />
                 <h2 className="text-xs font-heading font-extrabold text-white uppercase tracking-wide">Governança</h2>
               </div>
+              <Link
+                href={`/accounts/${id}/sla`}
+                className="flex items-center gap-1 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest"
+              >
+                <Settings2 className="w-3 h-3" /> Configurar SLA
+              </Link>
             </div>
 
             {displayContracts.length === 0 ? (

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { enrichTicketWithSLA, logSLAEvent } from '@/lib/support/lifecycle'
 
 const TicketSchema = z.object({
   account_id: z.string().uuid(),
@@ -60,12 +61,19 @@ export async function POST(request: Request) {
 
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
 
+  const enrichedPayload = await enrichTicketWithSLA({ ...parsed.data, source: 'manual' })
+
   const { data, error } = await supabase
     .from('support_tickets')
-    .insert({ ...parsed.data, source: 'manual' })
+    .insert(enrichedPayload)
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Log creation event asynchronously
+  logSLAEvent(data.id, 'ticket_created', { source: 'manual', assigned_priority: data.internal_level }).catch(console.error)
+
   return NextResponse.json(data, { status: 201 })
 }
+

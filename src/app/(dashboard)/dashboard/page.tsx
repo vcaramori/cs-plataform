@@ -1,10 +1,14 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { PortfolioHealthCard } from "./components/PortfolioHealthCard"
 import { AccountsTable } from "./components/AccountsTable"
 import { Sparkles, LayoutDashboard } from "lucide-react"
+import { getNPSSegment } from "@/lib/supabase/types"
+import { NPSTestLoader } from "./components/NPSTestLoader"
 
 export default async function DashboardPage() {
   const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: accounts } = await supabase
     .from("accounts")
@@ -44,8 +48,51 @@ export default async function DashboardPage() {
     return sum + contracts.filter((c: any) => c.status === "active").length
   }, 0)
 
+  // NPS Score global do portfólio
+  let npsScore: number | null = null
+  try {
+    if (user) {
+      const admin = getSupabaseAdminClient()
+      const myAccountIds = safeAccounts.map((a: any) => a.id)
+      if (myAccountIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: npsResponses } = await (admin as any)
+          .from('nps_responses')
+          .select('score')
+          .in('account_id', myAccountIds)
+          .eq('dismissed', false)
+          .not('score', 'is', null)
+        if (npsResponses && npsResponses.length > 0) {
+          let promoters = 0, detractors = 0
+          for (const r of npsResponses) {
+            const seg = getNPSSegment(r.score)
+            if (seg === 'promoter') promoters++
+            else if (seg === 'detractor') detractors++
+          }
+          npsScore = Math.round(((promoters - detractors) / npsResponses.length) * 100)
+        }
+      }
+    }
+  } catch { /* NPS opcional — não quebra o dashboard */ }
+
+  // Busca se há algum programa NPS em "Modo de Teste"
+  const { data: testProgram } = await (getSupabaseAdminClient() as any)
+    .from('nps_programs')
+    .select('program_key')
+    .eq('is_test_mode', true)
+    .maybeSingle()
+
   return (
     <div className="space-y-10 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Script de teste NPS se ativo */}
+      {testProgram && user?.email && (
+        <NPSTestLoader
+          programKey={testProgram.program_key}
+          userEmail={user.email}
+          userId={user.id}
+        />
+      )}
+
       {/* Premium Header ... */}
       <div className="flex flex-col gap-2 relative">
         <div className="absolute -left-12 top-0 w-24 h-24 bg-indigo-500/10 blur-[60px] rounded-full pointer-events-none" />
@@ -70,6 +117,7 @@ export default async function DashboardPage() {
           avgHealthScore={avgHealth}
           atRisk={atRisk}
           renewalsSoon={renewalsSoon}
+          npsScore={npsScore}
         />
       </section>
 
