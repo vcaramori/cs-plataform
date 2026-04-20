@@ -329,8 +329,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
             </div>
 
-            {/* Demais campos de identificação */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Demais campos de identificação — 1 linha */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <Label className={LABEL}>Segmento *</Label>
                 <SearchableSelect
@@ -405,13 +405,13 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
             </div>
 
-            {/* Linha 2: Número + Complemento + Bairro + Cidade + UF */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {/* Linha 2: Número + Complemento + Bairro + Cidade + UF — 1 linha */}
+            <div className="grid grid-cols-2 md:grid-cols-[80px_1fr_120px_1fr_80px] gap-4">
               <div className="space-y-1.5">
                 <Label className={LABEL}>Número</Label>
                 <Input {...register('number')} placeholder="1000" className={INPUT} />
               </div>
-              <div className="space-y-1.5 md:col-span-2">
+              <div className="space-y-1.5">
                 <Label className={LABEL}>Complemento</Label>
                 <Input {...register('complement')} placeholder="Sala 42, Bloco B..." className={INPUT} />
               </div>
@@ -423,11 +423,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <Label className={LABEL}>Cidade</Label>
                 <Input {...register('city')} placeholder="São Paulo" className={INPUT} />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-1.5">
-                <Label className={LABEL}>Estado / UF</Label>
+                <Label className={LABEL}>UF</Label>
                 <Input {...register('state')} placeholder="SP" className={INPUT} />
               </div>
             </div>
@@ -818,8 +815,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
           </CardHeader>
           <CardContent className="px-8 pb-8 space-y-6">
 
-            {/* Faturamento */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Faturamento — 1 linha */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <Label className={LABEL}>Dia de Vencimento</Label>
                 <Input {...register('billing_day', { valueAsNumber: true })} type="number" min="1" max="31" className={INPUT} />
@@ -836,10 +833,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <Label className={LABEL}>Telefone de Faturamento</Label>
                 <Input {...register('billing_contact_phone')} placeholder="(00) 00000-0000" className={INPUT} />
               </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <Label className={LABEL}>Regras de Faturamento</Label>
-                <Textarea {...register('billing_rules')} className="min-h-[80px] bg-white/[0.03] border-white/8 text-sm" placeholder="Descreva acordos específicos..." />
-              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className={LABEL}>Regras de Faturamento</Label>
+              <Textarea {...register('billing_rules')} className="min-h-[80px] bg-white/[0.03] border-white/8 text-sm" placeholder="Descreva acordos específicos..." />
             </div>
 
             {/* Divider */}
