@@ -1,7 +1,8 @@
-# Plano de Arquitetura Dual-Bank: On-Prem + Azure SQL
+# Plano de Arquitetura: Azure SQL + NextAuth
 
 > **Data:** Abril 2026  
-> **Status:** Planejado
+> **Status:** Planejado  
+> **Decisão:** Stack unificada — Azure SQL para tudo (relacional + vetores), NextAuth.js para auth
 
 ---
 
@@ -9,52 +10,51 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     DESENVOLVIMENTO (Local)                   │
+│                     DESENVOLVIMENTO (Local)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────┐      ┌──────────────┐      ┌──────────┐  │
-│  │   Next.js   │─────▶│  Adapter   │─────▶│Azure SQL│  │
-│  │  (localhost)│      │  Dual-Bank │      │ Local  │  │
-│  └──────────────┘      └──────────────┘      └──────────┘  │
-│                              │                            │      │
-│                     ┌────────┴────────┐                  │      │
-│                     │ Supabase Local │◀─────────────────┘      │
-│                     │ (Docker)      │                         │
-│                     │ pgvector     │                         │
-│                     │ + Auth      │                         │
-│                     │ + Storage   │                         │
-│                     └─────────────┘                         │
-│                          │                                 │
-│                    Docker Desktop                         │
-└─────────────────────────────────────────────────────────┘
+│                                                                  │
+│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐  │
+│  │   Next.js   │─────▶│  NextAuth.js │      │  Azure SQL   │  │
+│  │  (localhost)│      │  (sessions)  │─────▶│  (dev / IP)  │  │
+│  └──────────────┘      └──────────────┘      └──────────────┘  │
+│         │                                           ▲           │
+│         └───────────── mssql queries ───────────────┘           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     PRODUÇÃO (Azure)                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐      ┌──────────────┐      ┌──────────┐   │
-│  │   Next.js  │─────▶│  Adapter   │─────▶│ Azure   │   │
-│  │ (App SRV) │      │  Dual-Bank │      │  SQL   │   │
-│  └──────────────┘      └──────────────┘      └──────────┘   │
-│                              │                            │   │
-│                     ┌────────┴────────┐                  │   │
-│                     │ Supabase Cloud   │◀─────────────────┘   │
-│                     │ (pgvector)       │                       │
-│                     │ + Auth           │                       │
-│                     │ + Storage       │                       │
-│                     └─────────────┘                          │
-│                           │                                   │
-│                      Supabase Hosted                         │
-└─────────────────────────────────────────────────────────┘
+│                                                                  │
+│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐  │
+│  │   Next.js   │─────▶│  NextAuth.js │      │  Azure SQL   │  │
+│  │ (App SRV)  │      │  (sessions)  │─────▶│ (Private EP) │  │
+│  └──────────────┘      └──────────────┘      └──────────────┘  │
+│         │                                           ▲           │
+│         └───────────── mssql queries ───────────────┘           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Motivação
 
-- **Banco relacional no Azure SQL**:对齐 com infraestrutura existente da empresa
-- **Supabase local/on-prem**: embeddings + RAG + Auth sem dependência de cloud externo
-- **Menor impacto**: split progressivo, não migração-big bang
+- **Stack única:** Azure SQL suporta vetores nativamente — sem necessidade de Supabase
+- **Auth único:** NextAuth.js gerencia internos (CSMs) e externos (clientes) com roles, sem dois gestores de identidade
+- **Menor complexidade operacional:** um banco, um sistema de auth, sem serviços externos adicionais
+
+---
+
+## Decisão de Auth
+
+| Perfil | Método | Role |
+|--------|--------|------|
+| CSM / interno | Email + senha (NextAuth credentials) | `csm` |
+| Cliente externo | Email + senha ou magic link | `client` |
+
+> Azure Entra ID SSO foi descartado: adicionaria um segundo gestor de identidade sem benefício real, já que o portal de cliente precisa de auth própria de qualquer forma.
 
 ---
 
@@ -62,7 +62,7 @@
 
 | Dado | Banco | Motivação |
 |------|-------|-----------|
-| accounts | Azure SQL | Dados core,对齐 enterprise |
+| accounts | Azure SQL | Dados core enterprise |
 | contracts | Azure SQL | Dados core |
 | contacts | Azure SQL | Power Map |
 | interactions | Azure SQL | Registros operacionais |
@@ -70,13 +70,13 @@
 | support_tickets | Azure SQL | Ciclo de vida suporte |
 | health_scores | Azure SQL | Histórico health |
 | sla_policies | Azure SQL | Regras SLA |
-| **embeddings** | **Supabase Local** | **Requires pgvector** |
-| **search_embeddings()** | **Supabase Local** | **Função pgvector** |
-| **Auth** | **Supabase Local/Cloud** | **JWT + RLS nativo** |
+| **users** | **Azure SQL** | **Gerenciado pelo NextAuth** |
+| **sessions** | **Azure SQL** | **Gerenciado pelo NextAuth** |
+| **embeddings** | **Azure SQL** | **VECTOR nativo (SQL Server 2022+)** |
 
 ---
 
-## Tabelas no Azure SQL (16)
+## Tabelas de Domínio no Azure SQL (18)
 
 - accounts
 - contracts
@@ -97,78 +97,40 @@
 - nps_questions
 - nps_answers
 
----
+### Tabelas NextAuth (geradas pelo adapter)
 
-## Fase 1: Setup Supabase Local (Docker)
-
-### docker-compose.yml
-
-```yaml
-services:
-  db:
-    image: supabase/postgres:15.6.1.147
-    container_name: cscontinuum_supabase_db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-    volumes:
-      - supabase_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  studio:
-    image: supabase/studio:20250420
-    container_name: cscontinuum_supabase_studio
-    ports:
-      - "54323:3000"
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: cscontinuum_ollama
-    ports:
-      - "11434:11434"
-
-volumes:
-  supabase_data:
-```
-
-### Migrações Aplicadas
-
-- `003_pgvector.sql` — Apenas embeddings + search_vectors()
+- users
+- accounts (OAuth — separada da tabela de clientes)
+- sessions
+- verification_tokens
 
 ---
 
-## Fase 2: Setup Azure SQL Database
+## Fase 1: Setup Azure SQL Database
 
 ### Responsável: Admin Azure
 
 | Item | Detalhe |
 |------|---------|
 | **Database** | `cscontinuum` |
-| **Tier** | Basic (~R$45/mês) |
-| **Acesso** | IP temporário para dev |
+| **Tier** | General Purpose S2 ou superior (necessário para VECTOR) |
+| **Acesso dev** | IP fixo do dev liberado via firewall rule |
 | **Produção** | Private Endpoint via VNet |
+| **Versão** | Mais recente disponível no Azure SQL |
 
 ### Connection String (desenvolvimento)
 
 ```
-Server=[servidor].database.windows.net;Database=cscontinuum;User Id=[user];Password=[senha];
+Server=[servidor].database.windows.net;Database=cscontinuum;User Id=[user];Password=[senha];Encrypt=True;TrustServerCertificate=False;
 ```
 
 ---
 
-## Fase 3: Schema Azure SQL
+## Fase 2: Schema Azure SQL
 
-Ver: `supabase/migrations/azure-sql-schema.sql`
+Ver: `src/lib/azure-sql/schema.sql`
 
-### Estrutura
+### Estrutura de domínio
 
 | Tabela | Notas |
 |--------|-------|
@@ -193,66 +155,60 @@ Ver: `supabase/migrations/azure-sql-schema.sql`
 
 ---
 
-## Fase 4: Adapter Dual-Bank
+## Fase 3: Estrutura do Projeto
 
 ```
 src/lib/
-├── supabase/
-│   ├── client.ts         # Conexão existing
-│   ├── admin.ts        # Conexão admin
-│   └── vector-search.ts # Apenas embeddings
-├── azure-sql/         # NOVO
-│   ├── client.ts      # ms-sql / tedious
-│   ├── types.ts      # Tipos TypeScript
-│   └── queries/      # Queries por domínio
-└── db.ts             # Router: decide qual banco usar
-```
-
-### Lógica de Routing
-
-```typescript
-// Queries relacionais → Azure SQL
-const accounts = await azureDb.query('accounts', filter)
-
-// Queries embeddings → Supabase (local/cloud)
-const embeddings = await supabase.rpc('search_embeddings', {...})
+├── azure-sql/
+│   ├── client.ts      # Conexão mssql / node-mssql
+│   ├── types.ts       # Tipos TypeScript
+│   └── queries/       # Queries por domínio
+├── auth/
+│   ├── config.ts      # NextAuth config (providers, callbacks, roles)
+│   └── adapter.ts     # NextAuth MsSQL Adapter
+└── db.ts              # Client singleton exportado
 ```
 
 ---
 
-## Fase 5: Configuração de Ambiente
+## Fase 4: Configuração de Ambiente
 
 ### .env desenvolvimento
 
 ```bash
-# Azure SQL (relacional)
-AZURE_SQL_CONNECTION_STRING=Server=...;Database=cscontinuum;User Id=...;Password=...;
+# Azure SQL
+AZURE_SQL_SERVER=[servidor].database.windows.net
+AZURE_SQL_DATABASE=cscontinuum
+AZURE_SQL_USER=[user]
+AZURE_SQL_PASSWORD=[senha]
 
-# Supabase Local (embeddings + auth)
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:5432
-NEXT_PUBLIC_SUPABASE_ANON_KEY=dev_anon_key
-SUPABASE_SERVICE_ROLE_KEY=dev_service_key
+# NextAuth
+NEXTAUTH_SECRET=[random_secret]
+NEXTAUTH_URL=http://localhost:3000
 ```
 
 ### .env produção
 
 ```bash
-# Azure SQL (relacional - privado via VNet)
-AZURE_SQL_CONNECTION_STRING=Server=...;Database=cscontinuum;Trusted_Connection=True;
+# Azure SQL (privado via VNet)
+AZURE_SQL_SERVER=[servidor].database.windows.net
+AZURE_SQL_DATABASE=cscontinuum
+AZURE_SQL_USER=[user]
+AZURE_SQL_PASSWORD=[senha]
 
-# Supabase Cloud (pgvector + auth)
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# NextAuth
+NEXTAUTH_SECRET=[random_secret]
+NEXTAUTH_URL=https://[dominio].azurewebsites.net
 ```
 
 ---
 
 ## Fases de Deploy
 
-| Fase | Ambiente | Banco Relacional | Embeddings | Auth | App |
-|------|---------|---------------|-----------|------|-----|
-| 1 | Dev Local | Azure SQL (IP liberto) | Supabase Local | Supabase Local | Local |
-| 2 | Prod | Azure SQL (Private) | Supabase Cloud | Supabase Cloud | Azure App Service |
+| Fase | Ambiente | Banco | Auth | App |
+|------|---------|-------|------|-----|
+| 1 | Dev Local | Azure SQL (IP liberado) | NextAuth local | localhost:3000 |
+| 2 | Prod | Azure SQL (Private Endpoint) | NextAuth prod | Azure App Service |
 
 ---
 
@@ -261,25 +217,55 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 | # | Item | Status |
 |---|------|--------|
 | 1 | Database `cscontinuum` criada | ⏳ |
-| 2 | IP liberado para dev | ⏳ |
-| 3 | Connection string recebida | ⏳ |
+| 2 | Versão confirmada: mais recente disponível (suporte a VECTOR) | ⏳ |
+| 3 | IP do dev liberado via firewall rule | ⏳ |
+| 4 | Connection string com usuário dedicado recebida | ⏳ |
+| 5 | Private Endpoint configurado para produção | ⏳ |
 
 ---
 
-## Próximos Passos (após connection string)
+## Plano de Migração (após banco criado e .env configurado)
 
-1. Gerar script T-SQL das 16 tabelas
-2. Atualizar docker-compose.yml com Supabase local
-3. Implementar adapter Azure SQL
-4. Configurar dual routing
-5. Testar end-to-end local
-6. Deploy produção
+### Pré-requisito: .env preenchido
+
+```bash
+AZURE_SQL_SERVER=[servidor recebido do admin].database.windows.net
+AZURE_SQL_DATABASE=cscontinuum
+AZURE_SQL_USER=[usuário recebido]
+AZURE_SQL_PASSWORD=[senha recebida]
+NEXTAUTH_SECRET=[gerar com: openssl rand -base64 32]
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### Etapas em ordem
+
+| # | Etapa | O que fazer |
+|---|-------|-------------|
+| 1 | **Instalar dependências** | `npm install mssql next-auth @auth/mssql-adapter` |
+| 2 | **Criar client Azure SQL** | Implementar `src/lib/azure-sql/client.ts` com pool de conexão via `mssql` |
+| 3 | **Executar schema T-SQL** | Rodar `src/lib/azure-sql/schema.sql` no banco — cria as 18 tabelas de domínio |
+| 4 | **Configurar NextAuth** | Implementar `src/lib/auth/config.ts` com providers credentials + roles `csm`/`client` |
+| 5 | **Tabelas NextAuth** | O adapter cria automaticamente: `users`, `sessions`, `accounts`, `verification_tokens` |
+| 6 | **Remover Supabase Auth** | Substituir chamadas `supabase.auth.*` pelo NextAuth `signIn`/`signOut`/`getSession` |
+| 7 | **Remover Supabase client** | Substituir queries `supabase.from(...)` por queries diretas via `src/lib/azure-sql/client.ts` |
+| 8 | **Testar autenticação** | Login CSM + login cliente + redirect correto por role |
+| 9 | **Testar queries** | Verificar todas as páginas: accounts, contracts, tickets, health, NPS, CSAT |
+| 10 | **Remover dependências Supabase** | `npm uninstall @supabase/supabase-js @supabase/ssr` |
+| 11 | **Deploy produção** | Configurar variáveis de ambiente no Azure App Service + Private Endpoint |
+
+### Critérios de conclusão
+
+- [ ] Login funcional para CSM e cliente com roles distintos
+- [ ] Todas as páginas carregando dados do Azure SQL
+- [ ] Zero imports de `@supabase/*` no projeto
+- [ ] Testes end-to-end passando em local antes do deploy
 
 ---
 
 ## Referências
 
-- [pgvector](https://github.com/pgvector/pgvector)
 - [Azure SQL Vector Support](https://learn.microsoft.com/en-us/sql/relational-databases/vectors/vectors-sql-server)
-- [mssql-node driver](https://github.com/tediousjs/node-mssql)
+- [node-mssql driver](https://github.com/tediousjs/node-mssql)
+- [NextAuth.js](https://next-auth.js.org/)
 - [Azure SQL Private Endpoint](https://learn.microsoft.com/en-us/azure/azure-sql/database/private-endpoint-overview)
+- [Azure SQL Firewall Rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure)

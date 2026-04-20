@@ -63,9 +63,9 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 | Linguagem | TypeScript | 5 |
 | UI | React | 19.2.0 |
 | Estilo | Tailwind CSS + Radix UI | 3.4.1 |
-| Banco de dados | Supabase (PostgreSQL) | 2.100.1 |
-| Vetores | pgvector (extensão Postgres) | — |
-| Auth | Supabase Auth (JWT + RLS) | — |
+| Banco de dados | Azure SQL (SQL Server — relacional + vetores nativos) | — |
+| Vetores | VECTOR nativo do Azure SQL (SQL Server 2022+) | — |
+| Auth | NextAuth.js (credentials — roles `csm` / `client`) | — |
 | LLM principal | Ollama local (qwen2.5) | — |
 | LLM fallback | Google Gemini + Anthropic Claude | — |
 | State | TanStack React Query | 5.95.2 |
@@ -97,10 +97,10 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 └──────────┬──────────────────────────────────┬───────────────┘
            │                                  │
 ┌──────────▼──────┐                 ┌─────────▼───────────────┐
-│  Supabase       │                 │  LLM Providers          │
-│  PostgreSQL     │                 │  Ollama (local)         │
-│  pgvector       │                 │  ↓ Gemini (fallback)    │
-│  Auth + RLS     │                 │  ↓ Claude (fallback)    │
+│  Azure SQL      │                 │  LLM Providers          │
+│  (relacional +  │                 │  Ollama (local)         │
+│   VECTOR nativo)│                 │  ↓ Gemini (fallback)    │
+│  NextAuth.js    │                 │  ↓ Claude (fallback)    │
 └─────────────────┘                 └─────────────────────────┘
 ```
 

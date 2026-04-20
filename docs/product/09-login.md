@@ -2,7 +2,7 @@
 
 ## Visão Geral do Módulo
 
-O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Suporta autenticação via email/senha com integração Supabase Auth.
+O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Suporta autenticação via email/senha para dois perfis distintos: CSMs (internos) e clientes (portal externo), gerenciados pelo **NextAuth.js** com sessões armazenadas no Azure SQL.
 
 **Caminho:** `/login`
 
@@ -12,22 +12,22 @@ O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Supo
 
 | Regra | Descrição |
 |-------|-----------|
-| **Provedor** | Supabase Auth (email/password) |
+| **Provedor** | NextAuth.js credentials (email/password) |
+| **Roles** | `csm` (interno) · `client` (portal cliente) |
 | **Session Duration** | 7 dias |
 | **Remember Me** | Extende para 30 dias |
-| **Redirect** | `/dashboard` pós-login |
+| **Redirect** | `/dashboard` pós-login (CSM) · `/portal` pós-login (cliente) |
 | **Logout** | Limpa sessão e redireciona `/login` |
 
 ### Fluxo de Autenticação
 
 ```
 1. [Usuário acessa /login]
-2. [Se já autenticado → redirect /dashboard]
+2. [Se já autenticado → redirect por role: /dashboard (csm) ou /portal (client)]
 3. [Usuário preenche email + senha]
-4. [POST /api/auth/login]
-5. [Supabase valida credenciais]
-6. [Se válido → cria session → redirect /dashboard]
-7. [Se inválido → exibe erro]
+4. [NextAuth credentials provider valida contra tabela users no Azure SQL]
+5. [Se válido → cria session no Azure SQL → redirect por role]
+6. [Se inválido → exibe erro]
 ```
 
 ---
@@ -67,9 +67,9 @@ O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Supo
 ## 1.4 Requisitos Técnicos
 
 ### Autenticação
-- Supabase Auth via `@supabase/ssr`
+- NextAuth.js credentials provider
+- Sessões armazenadas no Azure SQL via MsSQL Adapter
 - Cookies HttpOnly para session
-- JWT storage no cliente
 
 ### Segurança
 - Rate limiting: 5 tentativas
@@ -79,8 +79,8 @@ O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Supo
 ### API
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| POST | `/api/auth/login` | Login |
-| POST | `/api/auth/logout` | Logout |
+| POST | `/api/auth/signin` | Login (NextAuth) |
+| POST | `/api/auth/signout` | Logout (NextAuth) |
 | POST | `/api/auth/reset` | Reset password |
 
 ---
@@ -100,4 +100,5 @@ O módulo **Login** gerencia a autenticação de usuários no CS-Continuum. Supo
 
 | Data | Alteração |
 |------|------------|
-| Abr/2026 | Versão inicial |
+| Abr/2026 | Versão inicial com Supabase Auth |
+| Abr/2026 | Migração para NextAuth.js + Azure SQL — Supabase removido |
