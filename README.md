@@ -131,8 +131,9 @@ Gestão completa de contas. Cada logo possui:
 
 - **Dados básicos**: segmento (Indústria / MRO / Varejo), setor de atuação, website, logo, CNPJ
 - **Endereço estruturado**: CEP com auto-preenchimento via ViaCEP, Logradouro, Número, Complemento, Bairro, Cidade, UF — ou flag de endereço internacional
-- **Múltiplos contratos**: cada conta pode ter N contratos (inicial, aditivo, upgrade, renovação), cada um com MRR, ARR calculado, tipo de serviço (Basic / Professional / Enterprise / Custom), status, datas de início e renovação, desconto por cupom (percentual ou valor fixo) e duração — editáveis individualmente em modo edit.
-- **Layout Comercial**: Interface de alta densidade em duas colunas. Coluna esquerda focada em dados financeiros (Financial Engine e Coupon Management); Coluna direita focada em cronograma de vigência e anotações contratuais.
+- **Múltiplos contratos**: cada conta pode ter N contratos (inicial, aditivo, upgrade, renovação), cada um com MRR, ARR calculado, tipo de serviço (Basic / Professional / Enterprise / Custom), status, datas de início e renovação, desconto por cupom (percentual em % ou valor fixo em R$, com toggle no formulário) e duração — editáveis individualmente em modo edit.
+- **SLA por contrato**: cada contrato define se usa o Padrão Plannera (herdado da política global) ou um SLA customizado com mapeamento de-para: labels do cliente (ex: "Urgente", "P1") → níveis internos (Crítico / Alto / Médio / Baixo).
+- **Layout Comercial**: Interface de alta densidade em duas colunas. Coluna esquerda focada em dados financeiros (Financial Engine + desconto) e configuração de SLA; Coluna direita focada em cronograma de vigência e anotações contratuais.
 - **Power Map**: stakeholders com seniority, nível de influência, flag de decisor, e-mail, LinkedIn
 - **Interações**: reuniões, e-mails, QBRs, onboardings, check-ins — com horas, tipo e transcrição
 - **Tickets de Suporte**: status, prioridade, categoria, datas
@@ -307,6 +308,8 @@ Para features bloqueadas, o CSM registra a categoria do bloqueio, a razão, um p
 
 - **`/settings/plans`**: CRUD de planos de assinatura com tier_rank para cálculo de risco
 - **`/settings/features`**: Catálogo de features do produto associadas a planos
+- **`/settings/sla`**: Política SLA global Plannera — define os prazos padrão de 1ª resposta e resolução por nível (Crítico / Alto / Médio / Baixo), threshold de alerta de proximidade e fechamento automático. Esta política é herdada por contratos que não possuem SLA customizado.
+- **`/settings/business-hours`**: CRUD de horários comerciais globais e por conta
 - **`/users`**: Gestão da equipe de CSMs
 
 ---
@@ -668,6 +671,7 @@ csplataform/
 │   │   │   │   └── dashboard/           # Dashboard executivo (4 camadas + XLSX)
 │   │   │   ├── accounts/[id]/sla/       # Configuração de política SLA por conta
 │   │   │   ├── settings/business-hours/ # CRUD de horários comerciais
+│   │   │   ├── settings/sla/            # Política SLA global Plannera
 │   │   │   ├── product/                 # Adoção de features
 │   │   │   ├── settings/features/       # Catálogo de features
 │   │   │   ├── settings/plans/          # Planos de assinatura

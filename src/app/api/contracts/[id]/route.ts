@@ -11,6 +11,12 @@ const UpdateSchema = z.object({
   contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
   csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).optional(),
+  pricing_type: z.enum(['standard', 'custom']).optional(),
+  pricing_explanation: z.string().optional().nullable(),
+  discount_percentage: z.number().min(0).max(100).optional(),
+  discount_duration_months: z.number().int().min(0).optional(),
+  discount_type: z.enum(['percentage', 'fixed']).optional(),
+  discount_value_brl: z.number().min(0).optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
 })

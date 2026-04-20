@@ -42,6 +42,8 @@ export type Account = {
   created_at: string
 }
 
+export type DiscountType = 'percentage' | 'fixed'
+
 export type Contract = {
   id: string
   account_id: string
@@ -56,6 +58,8 @@ export type Contract = {
   pricing_explanation: string | null
   discount_percentage: number
   discount_duration_months: number
+  discount_type: DiscountType
+  discount_value_brl: number
   contracted_hours_monthly: number
   csm_hour_cost: number
   notes: string | null
@@ -262,14 +266,18 @@ export type AccountDetail = Account & {
 // Support SLA Types
 export type SLAPolicy = {
   id: string
-  account_id: string
-  contract_id: string
+  account_id: string | null
+  contract_id: string | null
+  is_global: boolean
+  use_global_standard: boolean
   alert_threshold_pct: number
   auto_close_hours: number
   timezone: string
   is_active: boolean
   created_at: string
   updated_at: string
+  levels?: SLAPolicyLevel[]
+  mappings?: SLALevelMapping[]
 }
 
 export type SLAPolicyLevel = {

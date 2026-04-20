@@ -19,7 +19,8 @@ import {
   Sparkles,
   Layers,
   Star,
-  BarChart2
+  BarChart2,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -41,6 +42,7 @@ const settingsItems = [
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
+  { href: '/settings/sla',           label: 'Política SLA', icon: ShieldCheck },
 ]
 
 interface SidebarProps {

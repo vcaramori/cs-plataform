@@ -32,11 +32,19 @@ import {
   FileText,
   Target,
   Users,
+  ShieldCheck,
+  ShieldOff,
+  Shield,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Account, Contract } from '@/lib/supabase/types'
+
+const SLAMappingSchema = z.object({
+  external_label: z.string().min(1),
+  internal_level: z.enum(['critical', 'high', 'medium', 'low']),
+})
 
 const ContractSchema = z.object({
   id: z.string().optional(),
@@ -51,6 +59,11 @@ const ContractSchema = z.object({
   pricing_explanation: z.string().optional().nullable(),
   discount_percentage: z.number().min(0).max(100).default(0),
   discount_duration_months: z.number().int().min(0).default(0),
+  discount_type: z.enum(['percentage', 'fixed']).default('percentage'),
+  discount_value_brl: z.number().min(0).default(0),
+  // SLA
+  sla_use_global: z.boolean().default(true),
+  sla_mappings: z.array(SLAMappingSchema).default([]),
   notes: z.string().optional().nullable(),
 })
 
@@ -101,11 +114,20 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
 
   const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: initialData ? {
       ...initialData,
       account_name: initialData.name,
-      contracts: initialData.contracts.map(c => ({ ...c, id: c.id }))
+      company_name: initialData.company_name ?? '',
+      contracts: initialData.contracts.map(c => ({
+        ...c,
+        id: c.id,
+        discount_type: (c.discount_type ?? 'percentage') as 'percentage' | 'fixed',
+        discount_value_brl: c.discount_value_brl ?? 0,
+        sla_use_global: true,
+        sla_mappings: [],
+      }))
     } : {
       segment: 'Indústria',
       contracts: [],
@@ -380,6 +402,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   pricing_type: 'standard',
                   discount_percentage: 0,
                   discount_duration_months: 0,
+                  discount_type: 'percentage',
+                  discount_value_brl: 0,
+                  sla_use_global: true,
+                  sla_mappings: [],
                 })}
                 className="h-9 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest gap-1.5"
               >
@@ -483,14 +509,51 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         className="h-10 text-base font-bold"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">% Cupom</Label>
-                        <Input {...register(`contracts.${index}.discount_percentage`, { valueAsNumber: true })} type="number" className="h-9" />
+                    {/* Desconto: toggle % / R$ */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Desconto</Label>
+                        <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
+                          {(['percentage', 'fixed'] as const).map(type => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setValue(`contracts.${index}.discount_type`, type)}
+                              className={cn(
+                                'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all',
+                                watch(`contracts.${index}.discount_type`) === type
+                                  ? 'bg-plannera-orange text-white shadow'
+                                  : 'text-slate-500 hover:text-white'
+                              )}
+                            >
+                              {type === 'percentage' ? '%' : 'R$'}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Meses</Label>
-                        <Input {...register(`contracts.${index}.discount_duration_months`, { valueAsNumber: true })} type="number" className="h-9" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          {watch(`contracts.${index}.discount_type`) === 'percentage' ? (
+                            <>
+                              <Label className="text-[9px] font-bold text-slate-500 uppercase">% Desconto</Label>
+                              <Input {...register(`contracts.${index}.discount_percentage`, { valueAsNumber: true })} type="number" min="0" max="100" className="h-9" />
+                            </>
+                          ) : (
+                            <>
+                              <Label className="text-[9px] font-bold text-slate-500 uppercase">Valor R$</Label>
+                              <MaskedInput
+                                maskType="currency"
+                                value={watch(`contracts.${index}.discount_value_brl`) || 0}
+                                onValueChange={(v) => setValue(`contracts.${index}.discount_value_brl`, parseFloat(v) || 0)}
+                                className="h-9"
+                              />
+                            </>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[9px] font-bold text-slate-500 uppercase">Meses</Label>
+                          <Input {...register(`contracts.${index}.discount_duration_months`, { valueAsNumber: true })} type="number" className="h-9" />
+                        </div>
                       </div>
                     </div>
                     {watch(`contracts.${index}.pricing_type`) === 'custom' && (
@@ -530,6 +593,103 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           className="h-8 px-4 rounded-lg text-[9px] font-bold uppercase tracking-widest border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                         >
                           Salvar Unidade
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SLA do Contrato */}
+                  <div className="col-span-2 md:col-span-4 space-y-3 p-4 bg-black/40 rounded-xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SLA do Contrato</Label>
+                      </div>
+                      {/* Padrão Plannera / Customizado */}
+                      <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
+                        <button
+                          type="button"
+                          onClick={() => setValue(`contracts.${index}.sla_use_global`, true)}
+                          className={cn(
+                            'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-1',
+                            watch(`contracts.${index}.sla_use_global`)
+                              ? 'bg-indigo-500 text-white shadow'
+                              : 'text-slate-500 hover:text-white'
+                          )}
+                        >
+                          <ShieldCheck className="w-3 h-3" /> Padrão Plannera
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setValue(`contracts.${index}.sla_use_global`, false)}
+                          className={cn(
+                            'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-1',
+                            !watch(`contracts.${index}.sla_use_global`)
+                              ? 'bg-plannera-orange text-white shadow'
+                              : 'text-slate-500 hover:text-white'
+                          )}
+                        >
+                          <ShieldOff className="w-3 h-3" /> Customizado
+                        </button>
+                      </div>
+                    </div>
+
+                    {!watch(`contracts.${index}.sla_use_global`) && (
+                      <div className="space-y-3 pt-1">
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">
+                          Mapeie os níveis do cliente para os níveis internos da Plannera
+                        </p>
+                        {/* Cabeçalho da tabela */}
+                        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center px-1">
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Label do Cliente</span>
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">→</span>
+                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Nível Interno</span>
+                          <span />
+                        </div>
+                        {(watch(`contracts.${index}.sla_mappings`) ?? []).map((_, mi) => (
+                          <div key={mi} className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center">
+                            <Input
+                              {...register(`contracts.${index}.sla_mappings.${mi}.external_label`)}
+                              placeholder="Ex: P1, Urgente..."
+                              className="h-8 text-xs bg-white/5 border-none"
+                            />
+                            <span className="text-slate-600 text-xs font-bold px-1">→</span>
+                            <SearchableSelect
+                              value={watch(`contracts.${index}.sla_mappings.${mi}.internal_level`)}
+                              onValueChange={(v) => setValue(`contracts.${index}.sla_mappings.${mi}.internal_level`, v as any)}
+                              className="h-8 text-xs"
+                              options={[
+                                { label: 'Crítico', value: 'critical' },
+                                { label: 'Alto', value: 'high' },
+                                { label: 'Médio', value: 'medium' },
+                                { label: 'Baixo', value: 'low' },
+                              ]}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-600 hover:text-red-400"
+                              onClick={() => {
+                                const current = watch(`contracts.${index}.sla_mappings`) ?? []
+                                setValue(`contracts.${index}.sla_mappings`, current.filter((_, i) => i !== mi))
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[9px] font-bold uppercase tracking-widest text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 gap-1 px-3"
+                          onClick={() => {
+                            const current = watch(`contracts.${index}.sla_mappings`) ?? []
+                            setValue(`contracts.${index}.sla_mappings`, [...current, { external_label: '', internal_level: 'medium' }])
+                          }}
+                        >
+                          <Plus className="w-3 h-3" /> Adicionar Mapeamento
                         </Button>
                       </div>
                     )}
