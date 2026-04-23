@@ -52,7 +52,7 @@ export function ClientDashboardLayout({ user, children }: Props) {
         </div>
 
         {/* Conteúdo da página */}
-        <div className="relative z-10 w-full">
+        <div className="relative z-10 w-full h-full flex flex-col">
           {children}
         </div>
       </main>

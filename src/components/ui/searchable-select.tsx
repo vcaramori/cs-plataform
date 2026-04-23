@@ -69,7 +69,7 @@ export function SearchableSelect({
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-40" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-surface-card border border-border-divider shadow-xl rounded-xl">
         <Command className="bg-transparent">
           <CommandInput 
             placeholder="Pesquisar..." 

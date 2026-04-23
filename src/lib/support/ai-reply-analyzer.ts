@@ -53,7 +53,6 @@ RESPOSTA FORMATADA (JSON APENAS):
   try {
     const { result } = await generateText(prompt, {
       temperature: 0,
-      provider: 'gemini',
       allowFallback: true,
     })
     const jsonMatch = result.match(/\{[\s\S]*\}/)

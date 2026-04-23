@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { PageContainer } from '@/components/ui/page-container'
+import { Text } from '@/components/ui/typography'
 import { SLABadge } from '@/components/support/SLABadge'
 import { SLATimer } from '@/components/support/SLATimer'
 import { TicketLifecycleBar } from '@/components/support/TicketLifecycleBar'
@@ -17,11 +19,11 @@ import { CSATDisplay } from '@/components/support/CSATDisplay'
 import { ReplyReviewModal } from '@/components/support/ReplyReviewModal'
 import type { ReplyReviewResult } from '@/app/api/support-tickets/review-reply/route'
 import {
-  ArrowLeft, User, Building2, Clock, Calendar,
+  ArrowLeft, User, Building2, Calendar,
   Lock, CheckCircle2, AlertTriangle, RefreshCw, UserCheck,
-  Settings2, Send, Loader2, MessageSquare, ChevronRight,
-  ExternalLink, GitBranch, Star, AlertCircle, Save,
-  Mail, FileText, Hash, Shield, Zap, ChevronDown, Sparkles, ClipboardCheck
+  Settings2, Send, Loader2, ChevronRight,
+  ExternalLink, GitBranch, Star, Save,
+  Mail, FileText, Zap, ClipboardCheck
 } from 'lucide-react'
 import {
   Select,
@@ -30,6 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -81,17 +89,34 @@ interface Ticket {
   resolved_at?: string | null
   first_response_at?: string | null
   closed_at?: string | null
+  pending_reason: 'client' | 'product' | 'none' | null
+  sla_breach_first_response: boolean
+  sla_breach_resolution: boolean
+  sla_status_first_response: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
+  sla_status_resolution: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
+  sla_policy_id?: string | null
   first_response_deadline?: string | null
   resolution_deadline?: string | null
-  sla_status_first_response?: string | null
-  sla_status_resolution?: string | null
-  sla_policy_id?: string | null
   assigned_to?: string | null
   parent_ticket_id?: string | null
   external_ticket_id?: string | null
   account_id: string
   accounts: { id: string; name: string }
   external_priority_label?: string | null
+}
+
+interface SupportIndicators {
+  etaStatus: 'no_prazo' | 'atrasado' | 'nenhum'
+  brokenEta: boolean
+  harmonicMean: number | null
+  latencyMinutes: number | null
+  pillars: {
+    tom: number
+    estrutura: number
+    empatia: number
+    clareza: number
+    alinhamento: number
+  } | null
 }
 
 interface Agent {
@@ -151,15 +176,15 @@ const priorityCfg: Record<string, { label: string; color: string }> = {
 }
 
 const eventMeta: Record<string, { icon: React.ElementType; label: string; color: string }> = {
-  opened:             { icon: FileText,     label: 'Ticket criado',            color: 'text-indigo-400' },
-  ticket_open:        { icon: FileText,     label: 'Ticket aberto',            color: 'text-indigo-400' },
-  ticket_in_progress: { icon: Zap,          label: 'Em andamento',             color: 'text-amber-400' },
-  assigned:           { icon: UserCheck,    label: 'Ticket atribuído',         color: 'text-blue-400' },
-  first_response:     { icon: CheckCircle2, label: '1ª resposta registrada',   color: 'text-emerald-400' },
-  ticket_resolved:    { icon: CheckCircle2, label: 'Ticket resolvido',         color: 'text-emerald-400' },
+  opened:             { icon: FileText,     label: 'Ticket criado',            color: 'text-indigo-600' },
+  ticket_open:        { icon: FileText,     label: 'Ticket aberto',            color: 'text-indigo-600' },
+  ticket_in_progress: { icon: Zap,          label: 'Em andamento',             color: 'text-amber-600' },
+  assigned:           { icon: UserCheck,    label: 'Ticket atribuído',         color: 'text-blue-600' },
+  first_response:     { icon: CheckCircle2, label: '1ª resposta registrada',   color: 'text-emerald-600' },
+  ticket_resolved:    { icon: CheckCircle2, label: 'Ticket resolvido',         color: 'text-emerald-600' },
   ticket_closed:      { icon: CheckCircle2, label: 'Ticket fechado',           color: 'text-content-secondary' },
-  ticket_reopened:    { icon: RefreshCw,    label: 'Ticket reaberto',          color: 'text-orange-400' },
-  sla_breach:         { icon: AlertTriangle,label: 'SLA violado',              color: 'text-red-400' },
+  ticket_reopened:    { icon: RefreshCw,    label: 'Ticket reaberto',          color: 'text-orange-600' },
+  sla_breach:         { icon: AlertTriangle,label: 'SLA violado',              color: 'text-red-600' },
 }
 
 function fmtTs(ts: string, dateOnly = false) {
@@ -199,16 +224,16 @@ function AgentReply({ event, agents }: { event: SLAEvent; agents: Agent[] }) {
   const shortName = authorEmail.split('@')[0]
   return (
     <div className="flex gap-3 flex-row-reverse">
-      <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-        <Mail className="w-4 h-4 text-indigo-400" />
+      <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0 mt-0.5">
+        <Mail className="w-4 h-4 text-indigo-600" />
       </div>
       <div className="flex-1 max-w-2xl flex flex-col items-end">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-content-secondary text-[11px]">{fmtTs(event.occurred_at)}</span>
-          <span className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold">{shortName}</span>
+          <Text variant="secondary" className="text-[11px]">{fmtTs(event.occurred_at)}</Text>
+          <Text variant="primary" className="text-xs font-semibold text-indigo-600">{shortName}</Text>
         </div>
-        <div className="bg-indigo-50 border border-indigo-100 dark:bg-indigo-600/10 dark:border-indigo-500/20 rounded-2xl rounded-tr-sm p-4 w-full text-right">
-          <p className="text-content-primary text-sm leading-relaxed whitespace-pre-wrap text-left">{event.metadata?.body}</p>
+        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl rounded-tr-sm p-4 w-full">
+          <p className="text-content-primary text-sm leading-relaxed whitespace-pre-wrap">{event.metadata?.body}</p>
         </div>
       </div>
     </div>
@@ -220,19 +245,19 @@ function InternalNote({ event }: { event: SLAEvent }) {
   const shortName = authorEmail.split('@')[0]
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-        <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+      <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+        <Lock className="w-3.5 h-3.5 text-amber-600" />
       </div>
       <div className="flex-1 max-w-2xl">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-amber-600 dark:text-amber-400 text-xs font-semibold">{shortName}</span>
-          <span className="bg-amber-100 border border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-500 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1">
+          <span className="text-amber-700 text-xs font-semibold">{shortName}</span>
+          <span className="bg-amber-100 border border-amber-200 text-amber-700 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1">
             <Lock className="w-2.5 h-2.5" /> Nota Interna
           </span>
-          <span className="text-content-secondary text-[11px] ml-auto">{fmtTs(event.occurred_at)}</span>
+          <Text variant="secondary" className="text-[11px] ml-auto">{fmtTs(event.occurred_at)}</Text>
         </div>
-        <div className="bg-amber-50/50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/15 rounded-2xl rounded-tl-sm p-4">
-          <p className="text-amber-900/80 dark:text-amber-100/80 text-sm leading-relaxed whitespace-pre-wrap">{event.metadata?.body}</p>
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl rounded-tl-sm p-4">
+          <p className="text-amber-900/80 text-sm leading-relaxed whitespace-pre-wrap">{event.metadata?.body}</p>
         </div>
       </div>
     </div>
@@ -260,26 +285,114 @@ function LifecycleDivider({ event }: { event: SLAEvent }) {
 export function TicketDetailClient({ ticket: init, events: initEvents, messages: initMessages, csatResponse, agents, currentUserId }: Props) {
   const router = useRouter()
   const threadRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  const [ticket, setTicket] = useState(init)
+  const [ticket] = useState(init)
   const [events, setEvents] = useState(initEvents)
   const [messages, setMessages] = useState(initMessages)
+  const isInitialMount = useRef(true)
 
   // Compose state
   const [tab, setTab] = useState<'reply' | 'note'>('reply')
   const [composeBody, setComposeBody] = useState('')
-  const [closeAfter, setCloseAfter] = useState(false)
   const [sending, setSending] = useState(false)
 
   // Reply Outcome & AI
   const [outcome, setOutcome] = useState<'solution' | 'pending_client' | 'pending_product' | 'none'>('none')
   const [reviewApproved, setReviewApproved] = useState(false)
   const [reviewFailed, setReviewFailed] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
 
   // Reply Review (Padrão Plannera)
   const [reviewOpen, setReviewOpen] = useState(false)
-  const [reviewing, setReviewing] = useState(false)
   const [reviewResult, setReviewResult] = useState<ReplyReviewResult | null>(null)
+  const [indicatorsOpen, setIndicatorsOpen] = useState(false)
+  const [indicators, setIndicators] = useState<SupportIndicators | null>(null)
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      calculateIndicators()
+    }
+  }, [messages])
+
+  const calculateIndicators = () => {
+    // 1. Média Harmônica e Pilares
+    const repliesWithEval = messages
+      .filter(m => m.type === 'reply' && m.metadata?.evaluation)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+    let pillars = null
+    let hMean = null
+
+    if (repliesWithEval.length > 0) {
+      const evalData = repliesWithEval[0].metadata.evaluation
+      pillars = {
+        tom: evalData.tone || evalData.tom || 0,
+        estrutura: evalData.structure || evalData.estrutura || 0,
+        empatia: evalData.empathy || evalData.empatia || 0,
+        clareza: evalData.clarity || evalData.clareza || 0,
+        alinhamento: evalData.alignment || evalData.alinhamento || 0
+      }
+      
+      const scores = [pillars.tom, pillars.estrutura, pillars.empatia, pillars.clareza, pillars.alinhamento]
+      if (scores.every(s => s > 0)) {
+        const sumInv = scores.reduce((acc, s) => acc + (1 / s), 0)
+        hMean = Math.round((scores.length / sumInv) * 10) / 10
+      } else {
+        hMean = 0
+      }
+    }
+
+    // 2. ETA e Broken ETA
+    let etaStatus: 'no_prazo' | 'atrasado' | 'nenhum' = 'nenhum'
+    let brokenEta = false
+    
+    const agentMessages = messages.filter(m => m.type === 'reply' || m.type === 'note')
+    
+    for (const msg of agentMessages) {
+      const text = msg.body.toLowerCase()
+      const etaMatch = text.match(/(volto|retorno|respondo|até|compromisso|prazo)\s*(em|às|as)?\s*(\d{1,2})(:|h|min)/i)
+      
+      if (etaMatch) {
+        const msgDate = new Date(msg.created_at)
+        const now = new Date()
+        const diffHours = (now.getTime() - msgDate.getTime()) / (1000 * 60 * 60)
+        
+        if (diffHours > 2 && ticket.status !== 'resolved' && ticket.status !== 'closed') {
+          etaStatus = 'atrasado'
+          brokenEta = true
+          if (pillars) pillars.alinhamento = Math.max(0, pillars.alinhamento - 40) // Penalidade forte
+        } else {
+          etaStatus = 'no_prazo'
+        }
+      }
+    }
+
+    // 3. Latência Média (Fictício para demonstrador, usaria getBusinessMinutesBetween)
+    let totalLatency = 0
+    let interactionCount = 0
+    
+    for (let i = 1; i < messages.length; i++) {
+      const current = messages[i]
+      const prev = messages[i-1]
+      
+      if (prev.author_email !== ticket.accounts.name && current.type === 'reply') {
+        const start = new Date(prev.created_at)
+        const end = new Date(current.created_at)
+        const diff = (end.getTime() - start.getTime()) / (1000 * 60)
+        totalLatency += diff
+        interactionCount++
+      }
+    }
+
+    setIndicators({
+      etaStatus,
+      brokenEta,
+      harmonicMean: hMean,
+      latencyMinutes: interactionCount > 0 ? Math.round(totalLatency / interactionCount) : null,
+      pillars
+    })
+  }
 
   // Inline editing
   const [editStatus, setEditStatus]     = useState(ticket.status)
@@ -303,8 +416,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
   // Scroll thread to bottom when events change
   useEffect(() => {
-    if (threadRef.current) {
-      threadRef.current.scrollTop = threadRef.current.scrollHeight
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ 
+        behavior: isInitialMount.current ? 'auto' : 'smooth' 
+      })
+      isInitialMount.current = false
     }
   }, [events])
 
@@ -475,10 +591,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <PageContainer noPadding className="flex flex-col h-full min-h-0">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <div className="border-b border-border-divider bg-surface-card px-6 py-4 shrink-0">
+      <div className="sticky top-0 z-20 border-b border-border-divider bg-surface-card px-6 py-4">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-content-secondary text-[11px] font-semibold uppercase tracking-widest mb-3">
           <Link href="/suporte" className="hover:text-content-primary transition-colors flex items-center gap-1">
@@ -526,24 +642,28 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               )}
             </div>
 
-            <h1 className="h1-page !text-xl break-words leading-tight">{ticket.title}</h1>
+            <Text as="h1" variant="primary" className="text-xl font-black uppercase tracking-tight break-words leading-tight">{ticket.title}</Text>
 
-            <div className="flex items-center gap-3 text-xs text-content-secondary">
-              <Link href={`/accounts/${account.id}`} className="flex items-center gap-1.5 text-primary hover:opacity-80 transition-opacity font-bold uppercase tracking-tight">
+            <div className="flex items-center gap-3">
+              <Link href={`/accounts/${account.id}`} className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-400 transition-colors font-bold uppercase tracking-tight text-xs">
                 <Building2 className="w-3.5 h-3.5" />{account.name}<ExternalLink className="w-2.5 h-2.5" />
               </Link>
-              <span>·</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Aberto: {fmtTs(ticket.opened_at + 'T12:00:00', true)}</span>
+              <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">·</Text>
+              <Text variant="secondary" className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
+                <Calendar className="w-3 h-3" /> Aberto: {fmtTs(ticket.opened_at + 'T12:00:00', true)}
+              </Text>
               {currentAgentEmail && (
                 <>
-                  <span>·</span>
-                  <span className="flex items-center gap-1"><UserCheck className="w-3 h-3" /> {currentAgentEmail.split('@')[0]}</span>
+                  <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">·</Text>
+                  <Text variant="secondary" className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
+                    <UserCheck className="w-3 h-3" /> {currentAgentEmail.split('@')[0]}
+                  </Text>
                 </>
               )}
               {ticket.parent_ticket_id && (
                 <>
-                  <span>·</span>
-                  <Link href={`/suporte/${ticket.parent_ticket_id}`} className="flex items-center gap-1 hover:text-content-primary transition-colors">
+                  <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">·</Text>
+                  <Link href={`/suporte/${ticket.parent_ticket_id}`} className="flex items-center gap-1 text-content-secondary hover:text-content-primary transition-colors text-[10px] font-bold uppercase tracking-widest">
                     <GitBranch className="w-3 h-3" /> Ticket pai
                   </Link>
                 </>
@@ -556,32 +676,15 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         </div>
       </div>
 
-      {/* ── SLA Warning Banner ───────────────────────────────────────── */}
-      {!hasSLA && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <p className="text-amber-600 dark:text-amber-400 text-xs font-semibold">
-              <strong>SLA não configurado</strong> — Este chamado não tem prazos monitorados. Crie uma política SLA para o contrato deste cliente.
-            </p>
-          </div>
-          <Link
-            href={`/accounts/${account.id}/sla`}
-            className="flex items-center gap-1 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 text-[11px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap ml-4"
-          >
-            <Settings2 className="w-3 h-3" /> Configurar SLA
-          </Link>
-        </div>
-      )}
 
       {/* ── Main: Thread + Sidebar ───────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-col xl:flex-row flex-1 min-h-0 overflow-hidden">
 
         {/* LEFT: Thread + Compose ─────────────────────────────────── */}
-        <div className="flex flex-col flex-1 min-w-0 border-r border-border-divider w-full">
+        <div className="flex-1 min-w-0 xl:border-r border-border-divider flex flex-col min-h-0 relative">
 
           {/* Thread (scrollable) */}
-          <div ref={threadRef} className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/50 dark:bg-slate-950/20">
+          <div ref={threadRef} className="flex-1 p-6 space-y-5 bg-surface-background overflow-y-auto custom-scrollbar">
 
             {/* Original message */}
             <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
@@ -662,12 +765,13 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 <CSATDisplay response={csatResponse} />
               </div>
             )}
+            <div ref={bottomRef} />
           </div>
 
           {/* Compose area ─────────────────────────────────────────── */}
-          <div className="border-t border-border-divider bg-surface-card p-4 shrink-0 shadow-lg">
+          <div className="sticky bottom-0 z-10 border-t border-border-divider bg-surface-card p-4 shadow-lg">
             {/* Tabs */}
-            <div className="flex items-center gap-1 mb-3 bg-slate-100 dark:bg-accent/10 p-1 rounded-xl border border-border-divider w-fit">
+            <div className="flex items-center gap-1 mb-3 bg-surface-background p-1 rounded-xl border border-border-divider w-fit">
               <button
                 onClick={() => setTab('reply')}
                 className={cn(
@@ -684,7 +788,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 className={cn(
                   'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
                   tab === 'note'
-                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 shadow border border-amber-200 dark:border-amber-500/30'
+                    ? 'bg-amber-100 text-amber-700 shadow border border-amber-200'
                     : 'text-content-secondary hover:text-content-primary'
                 )}
               >
@@ -694,12 +798,12 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
             {/* Context indicator */}
             {tab === 'note' && (
-              <p className="text-amber-500/70 text-[10px] mb-2 flex items-center gap-1">
+              <p className="text-amber-600 text-[10px] mb-2 flex items-center gap-1">
                 <Lock className="w-3 h-3" /> Visível apenas para a equipe interna — não será enviado ao cliente
               </p>
             )}
             {tab === 'reply' && (
-              <p className="text-indigo-400/70 text-[10px] mb-2 flex items-center gap-1">
+              <p className="text-indigo-600 text-[10px] mb-2 flex items-center gap-1">
                 <Mail className="w-3 h-3" /> Resposta registrada no histórico do chamado
               </p>
             )}
@@ -715,7 +819,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               rows={4}
               className={cn(
                 'bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-xl resize-none border transition-colors',
-                tab === 'reply' ? 'border-indigo-200 focus:border-indigo-400 dark:border-indigo-500/20 dark:focus:border-indigo-500/40' : 'border-amber-200 focus:border-amber-400 dark:border-amber-500/10 dark:focus:border-amber-500/30'
+                tab === 'reply' ? 'border-indigo-200 focus:border-indigo-400' : 'border-amber-200 focus:border-amber-400'
               )}
             />
 
@@ -760,7 +864,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     'font-bold uppercase tracking-widest text-[10px] gap-1.5',
                     tab === 'reply'
                       ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                      : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/20'
+                      : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border border-amber-200'
                   )}
                 >
                   {(reviewing || sending)
@@ -780,16 +884,27 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         </div>
 
         {/* RIGHT: Sidebar ──────────────────────────────────────────── */}
-        <div className="w-80 shrink-0 overflow-y-auto bg-surface-card border-l border-border-divider">
+        <div className="w-full xl:w-72 xl:shrink-0 bg-surface-card border-t xl:border-t-0 xl:border-l border-border-divider overflow-y-auto custom-scrollbar">
 
           {/* ─ SLA ───────────────────────────────────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em]">SLA</p>
-                {!hasSLA && <AlertTriangle className="w-3 h-3 text-amber-400" />}
-              </div>
-              <Link href={`/accounts/${account.id}/sla`} className="flex items-center gap-1 text-[10px] text-content-secondary hover:text-indigo-400 transition-colors font-semibold uppercase tracking-widest">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 cursor-help">
+                      <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">SLA</Text>
+                      {!hasSLA && <AlertTriangle className="w-3 h-3 text-amber-600" />}
+                    </div>
+                  </TooltipTrigger>
+                  {!hasSLA && (
+                    <TooltipContent side="left" className="max-w-[240px] text-xs p-3 leading-relaxed">
+                      Este chamado não tem prazos monitorados. Crie uma política SLA para o contrato deste cliente.
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+              <Link href={`/accounts/${account.id}/sla`} className="flex items-center gap-1 text-[10px] text-content-secondary hover:text-indigo-600 transition-colors font-semibold uppercase tracking-widest">
                 <Settings2 className="w-3 h-3" /> Config
               </Link>
             </div>
@@ -827,7 +942,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
           {/* ─ Classificação (inline editable) ──────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">
-            <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em]">Classificação</p>
+            <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Classificação</Text>
 
             <div className="space-y-2.5">
               <div>
@@ -847,8 +962,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               </div>
 
               <div>
-                <label className="text-[10px] text-content-secondary font-bold uppercase tracking-widest block mb-1">Prioridade</label>
-                <Select value={editPriority} onValueChange={setEditPriority}>
+                <label className="text-[10px] text-content-secondary font-black uppercase tracking-widest block mb-1">Prioridade / SLA</label>
+                <Select value={editPriority} onValueChange={(v) => { setEditPriority(v); setEditLevel(v); }}>
                   <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
@@ -856,23 +971,6 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     {PRIORITIES.map(p => (
                       <SelectItem key={p.value} value={p.value} className="text-xs">
                         {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-content-secondary font-bold uppercase tracking-widest block mb-1">Nível Interno (SLA)</label>
-                <Select value={editLevel} onValueChange={setEditLevel}>
-                  <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
-                    <SelectValue placeholder="Nível Interno" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider text-content-primary">
-                    <SelectItem value="none" className="text-xs opacity-50 italic">— Não definido —</SelectItem>
-                    {LEVELS.map(l => (
-                      <SelectItem key={l.value} value={l.value} className="text-xs">
-                        {l.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -903,7 +1001,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                       onClick={handleSaveProps}
                       disabled={savingProps}
                       size="sm"
-                      className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 font-bold uppercase tracking-widest text-[10px] gap-1.5"
+                      className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold uppercase tracking-widest text-[10px] gap-1.5"
                     >
                       {savingProps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                       Salvar Alterações
@@ -916,11 +1014,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
           {/* ─ Responsável ───────────────────────────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">
-            <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em]">Responsável</p>
+            <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Responsável</Text>
 
             <div className="flex items-center gap-2.5 p-2.5 bg-surface-background rounded-lg border border-border-divider">
-              <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0">
+                <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
               </div>
               <div>
                 <p className="text-content-primary text-xs font-semibold">{currentAgentEmail?.split('@')[0] ?? 'Não atribuído'}</p>
@@ -952,47 +1050,18 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   {assignLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
                   Reatribuir
                 </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setIndicatorsOpen(true)}
+                  className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  Ver Indicadores 360°
+                </Button>
               </div>
             )}
           </section>
-
-          {/* ─ Info do Cliente ───────────────────────────────── */}
-          <section className="border-b border-border-divider p-4 space-y-3">
-            <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em]">Cliente</p>
-            <div className="flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-indigo-500/10 border border-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-content-primary text-xs font-semibold">{account.name}</p>
-                <Link
-                  href={`/accounts/${account.id}`}
-                  className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-[11px] font-medium transition-colors mt-0.5"
-                >
-                  Ver conta <ExternalLink className="w-2.5 h-2.5" />
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          {/* ─ Datas / Timeline ─────────────────────────────── */}
-          <section className="p-4 space-y-2.5">
-            <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em] mb-3">Histórico</p>
-            {[
-              { label: 'Aberto em',      value: ticket.opened_at ? fmtTs(ticket.opened_at + 'T12:00:00') : null, color: 'text-content-primary' },
-              { label: '1ª Resposta',    value: ticket.first_response_at ? fmtTs(ticket.first_response_at) : null, color: 'text-emerald-600 dark:text-emerald-400' },
-              { label: 'Resolvido em',   value: ticket.resolved_at ? fmtTs(ticket.resolved_at) : null, color: 'text-emerald-600 dark:text-emerald-400' },
-              { label: 'Fechado em',     value: ticket.closed_at ? fmtTs(ticket.closed_at) : null, color: 'text-content-secondary' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-start justify-between gap-2">
-                <span className="text-[10px] text-content-secondary font-bold uppercase tracking-widest shrink-0">{label}</span>
-                <span className={cn('text-[11px] font-mono text-right', value ? color : 'text-content-secondary opacity-40')}>
-                  {value ?? '—'}
-                </span>
-              </div>
-            ))}
-          </section>
-
         </div>
       </div>
 
@@ -1015,6 +1084,152 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         }}
         onClose={() => setReviewOpen(false)}
       />
+
+      <IndicatorsModal
+        open={indicatorsOpen}
+        onClose={() => setIndicatorsOpen(false)}
+        indicators={indicators}
+      />
+    </PageContainer>
+  )
+}
+
+// ─── Indicators Modal ─────────────────────────────────────────────────────────
+
+function IndicatorsModal({ open, onClose, indicators }: { 
+  open: boolean, 
+  onClose: () => void, 
+  indicators: SupportIndicators | null 
+}) {
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="w-full max-w-2xl bg-surface-card border border-border-divider rounded-xl shadow-2xl overflow-hidden"
+      >
+        <div className="p-6 border-b border-border-divider flex items-center justify-between bg-surface-background">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div>
+              <Text as="h3" size="xl" weight="bold" className="text-content-primary">Indicadores 360°</Text>
+              <Text size="sm" variant="secondary">Performance e Qualidade em Tempo Real</Text>
+            </div>
+          </div>
+          <Button variant="ghost" onClick={onClose} size="sm">
+            <ChevronRight className="w-5 h-5 rotate-180" />
+          </Button>
+        </div>
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Coluna 1: Qualidade */}
+          <div className="space-y-4">
+            <Text className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Métricas de Qualidade</Text>
+            
+            <div className="bg-surface-background p-4 rounded-lg border border-border-divider">
+              <div className="flex items-end justify-between mb-2">
+                <Text size="sm" variant="secondary">Média Harmônica</Text>
+                <Text className="text-3xl font-black text-indigo-500">{indicators?.harmonicMean || 'N/A'}</Text>
+              </div>
+              <div className="h-2 bg-border-divider rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-500 transition-all duration-500" 
+                  style={{ width: `${(indicators?.harmonicMean || 0) * 10}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { label: 'Tom de Voz', value: indicators?.pillars?.tom },
+                { label: 'Estrutura', value: indicators?.pillars?.estrutura },
+                { label: 'Empatia', value: indicators?.pillars?.empatia },
+                { label: 'Clareza', value: indicators?.pillars?.clareza },
+                { label: 'Alinhamento', value: indicators?.pillars?.alinhamento },
+              ].map(p => (
+                <div key={p.label} className="flex items-center justify-between text-xs p-2 hover:bg-surface-background rounded transition-colors">
+                  <Text className="text-content-secondary">{p.label}</Text>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-1.5 bg-border-divider rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-indigo-400/50" 
+                        style={{ width: `${(p.value || 0) * 10}%` }}
+                      />
+                    </div>
+                    <Text className="font-mono font-bold w-4">{p.value || '-'}</Text>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Coluna 2: Operacional */}
+          <div className="space-y-4">
+            <Text className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Métricas Operacionais</Text>
+            
+            <div className="bg-surface-background p-4 rounded-lg border border-border-divider">
+              <Text size="sm" variant="secondary" className="mb-1">Status do ETA</Text>
+              <div className="flex items-center gap-2">
+                {indicators?.etaStatus === 'no_prazo' ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <Text className="font-bold text-emerald-500">Compromisso Mantido</Text>
+                  </>
+                ) : indicators?.etaStatus === 'atrasado' ? (
+                  <>
+                    <AlertTriangle className="w-5 h-5 text-rose-500" />
+                    <Text className="font-bold text-rose-500">Compromisso Quebrado</Text>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5 text-content-secondary opacity-30" />
+                    <Text className="text-content-secondary italic">Sem ETA detectado</Text>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-surface-background p-4 rounded-lg border border-border-divider">
+              <Text size="sm" variant="secondary" className="mb-1">Latência (Horário Útil)</Text>
+              <div className="flex items-baseline gap-1">
+                <Text className="text-2xl font-black text-content-primary">
+                  {indicators?.latencyMinutes ? indicators.latencyMinutes : '--'}
+                </Text>
+                <Text size="sm" variant="secondary" className="font-bold">min</Text>
+              </div>
+              <Text className="text-[10px] text-content-secondary mt-1 italic">
+                * Calculado apenas entre 09:00 e 18:00
+              </Text>
+            </div>
+
+            <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <div className="flex gap-3">
+                <div className="shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold text-amber-900 leading-tight">Insight da IA</Text>
+                  <Text className="text-[11px] text-amber-800/80 leading-relaxed">
+                    {indicators?.brokenEta 
+                      ? "A quebra de compromisso de horário impactou severamente o score de Alinhamento. Priorize o fechamento deste ciclo para mitigar o atrito."
+                      : "O atendimento mantém consistência tonal elevada. Recomenda-se manter a estrutura de tópicos adotada na última interação."}
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-surface-background border-t border-border-divider flex justify-end">
+          <Button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
+            Entendido
+          </Button>
+        </div>
+      </motion.div>
     </div>
   )
 }

@@ -76,6 +76,8 @@ export async function POST(request: Request) {
     )
   }
 
+  const needsReview = parsedEntry.confidence_score < 0.8
+
   const { data, error } = await supabase
     .from('time_entries')
     .insert({
@@ -86,12 +88,17 @@ export async function POST(request: Request) {
       parsed_hours: parsedEntry.parsed_hours,
       parsed_description: parsedEntry.parsed_description,
       date: parsedEntry.date,
+      ...(needsReview && { status: 'pending_review' }),
     })
     .select('*, accounts(name)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const result = data as any
+
+  if (needsReview) {
+    console.warn(`[TimeEntry] confidence_score=${parsedEntry.confidence_score} — salvo com status pending_review`)
+  }
 
   // 4. Se for uma interação com o cliente, sincroniza com a tabela de interações
   const clientFacingTypes = ['meeting', 'onboarding', 'qbr']
@@ -108,5 +115,9 @@ export async function POST(request: Request) {
     })
   }
 
-  return NextResponse.json(result, { status: 201 })
+  return NextResponse.json({
+    ...result,
+    confidence_score: parsedEntry.confidence_score,
+    needs_review: needsReview,
+  }, { status: 201 })
 }

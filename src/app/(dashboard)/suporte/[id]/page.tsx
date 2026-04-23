@@ -51,7 +51,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     // Escape the dashboard padding container and fill the entire available area
-    <div className="-m-4 md:-m-6 lg:-m-8 flex flex-col overflow-hidden" style={{ height: '100vh' }}>
+    <div className="flex flex-col min-h-0 w-full h-full max-h-full overflow-hidden">
       <TicketDetailClient
         ticket={ticket as any}
         events={events ?? []}

@@ -44,7 +44,7 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data: updatedData, error } = await supabase
     .from('product_features')
     .update(parsed.data)
     .eq('id', id)
@@ -52,5 +52,5 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(updatedData)
 }

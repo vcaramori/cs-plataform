@@ -44,6 +44,7 @@ type Ticket = {
   internal_level?: string | null
   category: string | null
   opened_at: string
+  created_at: string
   resolved_at: string | null
   thread_content: string | null
   accounts: { name: string } | null

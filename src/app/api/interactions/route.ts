@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { getFlashModel } from '@/lib/gemini/client'
+import { generateText } from '@/lib/llm/gateway'
 
 const InteractionSchema = z.object({
   account_id: z.string().uuid(),
@@ -15,16 +15,16 @@ const InteractionSchema = z.object({
 
 async function extractHoursFromTranscript(transcript: string): Promise<number> {
   try {
-    const model = getFlashModel()
-    const result = await model.generateContent(
+    const { result } = await generateText(
       `Analise esta transcrição de reunião e estime a duração em horas (número decimal, ex: 1.5).
       Procure por timestamps, menções de horário de início/fim, ou duração explícita.
       Se não encontrar, estime pelo volume de texto (considere ~130 palavras por minuto de fala).
       Retorne APENAS o número, sem texto adicional.
 
-      Transcrição: ${transcript.slice(0, 3000)}`
+      Transcrição: ${transcript.slice(0, 3000)}`,
+      { temperature: 0 }
     )
-    const hours = parseFloat(result.response.text().trim())
+    const hours = parseFloat(result.trim())
     return isNaN(hours) || hours <= 0 ? 1.0 : Math.min(hours, 8.0)
   } catch {
     return 1.0

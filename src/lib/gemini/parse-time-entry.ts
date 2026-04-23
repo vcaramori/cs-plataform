@@ -7,6 +7,7 @@ export type ParsedTimeEntry = {
   parsed_description: string
   account_name_hint: string | null
   date: string
+  confidence_score: number
 }
 
 export async function parseTimeEntry(
@@ -24,8 +25,16 @@ Retorne APENAS um JSON válido com esta estrutura:
   "parsed_hours": <número>,
   "parsed_description": "<descrição>",
   "account_name_hint": "<nome da conta ou null>",
-  "date": "<YYYY-MM-DD>"
+  "date": "<YYYY-MM-DD>",
+  "confidence_score": <número entre 0.0 e 1.0>
 }
+
+Critérios para confidence_score:
+- 1.0: texto claro com tipo, duração, descrição e conta todos explícitos
+- 0.9: um campo deduzido com alta certeza (ex: data implícita como "ontem")
+- 0.7-0.8: tipo de atividade ou conta ambíguos, mas interpretação razoável
+- 0.5-0.6: múltiplas informações ausentes, entrada muito curta ou vaga
+- < 0.5: entrada praticamente impossível de interpretar com precisão
 
 Tipos válidos para activity_type:
 - "preparation"        → preparar deck, material, apresentação, proposta, documento para cliente
@@ -63,6 +72,9 @@ Instruções:
     // Garantias de segurança
     if (!parsed.parsed_hours || parsed.parsed_hours <= 0) parsed.parsed_hours = 1.0
     if (!parsed.date) parsed.date = today
+    if (typeof parsed.confidence_score !== 'number' || parsed.confidence_score < 0 || parsed.confidence_score > 1) {
+      parsed.confidence_score = 0.7
+    }
 
     return parsed
   } catch (err) {

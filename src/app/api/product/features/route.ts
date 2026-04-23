@@ -15,13 +15,13 @@ export async function GET() {
   if (authError || !data?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const user = data.user
 
-  const { data, error } = await supabase
+  const { data: featuresData, error } = await supabase
     .from('product_features')
     .select('*')
     .order('name')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(featuresData)
 }
 
 export async function POST(request: Request) {
@@ -36,12 +36,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data: newData, error } = await supabase
     .from('product_features')
     .insert(parsed.data)
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  return NextResponse.json(newData, { status: 201 })
 }

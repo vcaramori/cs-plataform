@@ -29,7 +29,7 @@ O módulo **Suporte** é o sistema de gestão de tickets do CS-Continuum. Permit
 Layout de duas colunas:
 
 **Coluna principal (esquerda):**
-- Thread cronológica: mensagem original do cliente → replies dos agentes → notas internas
+- Thread cronológica: mensagem original do cliente → replies dos agentes → notas internas. A visualização inicia automaticamente pelo final (mensagens mais recentes) para agilizar o atendimento.
 - Cada evento distinguido visualmente (cor de fundo, ícone, label)
 - Área de composição com abas "Responder ao Cliente" / "Nota Interna"
 
@@ -68,7 +68,7 @@ Edição do textarea após aprovação reseta `reviewApproved = false` (força n
 
 **Sidebar (direita):**
 - Classificação inline: status, prioridade, nível SLA, categoria (9 tópicos predefinidos), agente responsável
-- Painel SLA com `SLATimer` e `SLABadge` — banner de aviso destacado quando nenhuma política está configurada (com link para `/suporte/sla`)
+- Painel SLA com `SLATimer` e `SLABadge` — indicador visual (ícone de alerta) e tooltip informativo exibidos quando nenhuma política está configurada, liberando espaço na área de leitura central.
 - Info do cliente (nome da conta, link para detalhe)
 - Histórico de datas (criação, 1ª resposta, resolução)
 
@@ -88,6 +88,30 @@ Edição do textarea após aprovação reseta `reviewApproved = false` (força n
 | **Por cliente** | Tickets abertos por conta, saúde de suporte por logo |
 
 Exportação XLSX disponível (3 abas: tickets, por agente, por cliente).
+
+---
+
+### 4.1.4 Indicadores 360° (Modal)
+
+Acesso rápido via botão "Ver Indicadores 360°" na sidebar lateral. Consolida a performance do ticket em três dimensões críticas:
+
+#### A. Dimensão de Qualidade (Média Harmônica)
+Exibe a nota atual baseada na última avaliação da IA (Review de Resposta).
+- **Cálculo**: Média harmônica dos 5 pilares (Tom, Estrutura, Empatia, Clareza, Alinhamento).
+- **Visual**: Gráfico de progresso circular ou barra com a nota consolidada (0-100).
+- **Detalhamento**: Lista dos 5 pilares com suas notas individuais.
+
+#### B. Dimensão de Compromisso (ETA Tracking)
+Monitoramento proativo de promessas de retorno feitas pelo agente no histórico.
+- **Detecção**: IA varre o histórico em busca de termos como "volto em 1h", "respondo até às 15:00", "amanhã cedo te dou um retorno".
+- **Status `no_prazo`**: Promessa feita e dentro do tempo, ou cumprida com nova resposta.
+- **Status `atrasado`**: Tempo da promessa expirou sem nova interação do agente.
+- **Penalidade**: Um ETA quebrado reduz automaticamente o score de **Alinhamento** em 40 pontos no cálculo consolidado.
+
+#### C. Dimensão de Eficiência (Latência Útil)
+Tempo médio de resposta do agente às interações do cliente.
+- **Janela Útil**: O cálculo considera apenas o horário comercial configurado (padrão 09:00 - 18:00).
+- **Regra**: Tempo decorrido entre a mensagem do cliente e a reply do agente.
 
 ---
 
@@ -144,34 +168,49 @@ Calculado em **minutos úteis** no fuso `America/Sao_Paulo` usando a tabela `bus
 
 **Chamada única ao Gemini** (`provider: 'gemini', allowFallback: true` — Ollama ignorado para esta operação).
 
+**Avaliação Context-Aware:** A IA recebe TODO o histórico de mensagens do ticket antes de avaliar o rascunho. Os 5 critérios são julgados levando em conta o problema original do cliente, o sentimento acumulado ao longo da conversa e o tom das respostas anteriores — nunca de forma isolada.
+
 **Input enviado:**
 - Rascunho da resposta do agente
-- Contexto: assunto, descrição original, histórico de respostas, categoria, nome da conta
+- Contexto: assunto, descrição original, histórico completo de respostas, categoria, nome da conta e nome do agente
+
+**Os 5 Critérios de Avaliação (0–100 cada):**
+
+| Critério | O que avalia |
+|----------|-------------|
+| **Tom** | Adequação emocional ao contexto, calor humano, linguagem proporcional à gravidade do chamado |
+| **Estrutura** | Sequência lógica, aderência ao Padrão Plannera: saudação → contexto → solução → próximos passos → fechamento |
+| **Empatia** | Reconhecimento genuíno do sentimento do cliente, validação da dor, personalização baseada no histórico |
+| **Clareza** | Objetividade, linguagem simples e direta, ausência de ambiguidades ou jargões desnecessários |
+| **Alinhamento** | Conformidade plena com o Padrão Plannera, uso dos nomes reais, zero placeholders, assinatura correta |
+
+**Fórmula nota_final (Média Harmônica dos 5 Critérios):**
+```
+nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
+```
+Escala: 0–100. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
+
+**Regra de alerta:** `show_alert = true` quando `nota_final < 60`.
 
 **Output (campo a campo):**
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `sentiment` | `'Equilibrado' \| 'Neutro' \| 'Rígido'` | Tom emocional detectado |
-| `feedback_summary` | string | Resumo em português do feedback |
-| `evaluation.tom` | 0–100 | Score de tom |
+| `feedback_summary` | string | Resumo em português do feedback, referenciando o histórico quando relevante |
+| `evaluation.tom` | 0–100 | Score de tom (context-aware) |
 | `evaluation.estrutura` | 0–100 | Score de estrutura |
-| `evaluation.empatia` | 0–100 | Score de empatia |
+| `evaluation.empatia` | 0–100 | Score de empatia (context-aware) |
 | `evaluation.clareza` | 0–100 | Score de clareza |
 | `evaluation.alinhamento` | 0–100 | Alinhamento ao Padrão Plannera |
-| `recommended_version` | string | Versão reescrita pela IA |
-| `training_notes` | string | Nota de treinamento para o agente |
-| `pillar_scores.habilidades_comunicacao` | 0–100 | Pilar 1 |
-| `pillar_scores.efetividade_respostas` | 0–100 | Pilar 2 |
-| `nota_final` | number \| null | Média harmônica dos 5 scores de evaluation |
+| `recommended_version` | string | Versão reescrita pela IA com nomes reais e contexto do chamado |
+| `training_notes` | string | Nota de treinamento para o agente (1-2 frases) |
+| `pillar_scores.habilidades_comunicacao` | 0–100 | Pilar agregado de comunicação |
+| `pillar_scores.efetividade_respostas` | 0–100 | Pilar agregado de efetividade |
+| `nota_final` | number \| null | Média harmônica dos 5 critérios; `null` se qualquer critério for 0 |
 | `show_alert` | boolean | `true` se `nota_final < 60` |
 | `suggested_outcome` | `'solution' \| 'pending_client' \| 'pending_product' \| 'none'` | Status sugerido pela IA |
-| `outcome_reasoning` | string | Justificativa do status sugerido |
-
-**Fórmula nota_final (média harmônica):**
-```
-nota_final = n / Σ(1/x)  onde n=5 e x = [tom, estrutura, empatia, clareza, alinhamento]
-```
+| `outcome_reasoning` | string | Justificativa do status sugerido (1 frase) |
 
 ---
 
@@ -355,7 +394,7 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Caso | Comportamento |
 |------|----------------|
 | IA indisponível ao avaliar | `reviewFailed = true` → botão "Enviar sem Avaliação" habilitado |
-| SLA não configurado | Banner de aviso no sidebar com link para configurar |
+| SLA não configurado | Ícone de alerta e Tooltip informativo no sidebar lateral |
 | Tickets sem política SLA | `sla_status` permanece nulo, sem cálculo |
 | SMTP falha ao resolver | `email_delivery_failed = true` em `csat_tokens`, ticket resolve normalmente |
 | Score CSAT ≤ 2 | Notificação para agente + head de CS |
@@ -378,3 +417,8 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Abr/2026 | `reviewFailed` bypass garante que agente nunca fique bloqueado |
 | Abr/2026 | ReplyReviewModal via createPortal (z-index 9999) |
 | Abr/2026 | `suggested_outcome` + `outcome_reasoning` adicionados ao output da IA |
+| Abr/2026 | Avaliação migrada para 5 critérios (0-100) com Média Harmônica; `show_alert` quando `nota_final < 60` |
+| Abr/2026 | Avaliação context-aware: IA usa TODO o histórico do ticket para julgar o rascunho |
+| Abr/2026 | Refatoração visual completa para Vibrant Light Mode; layout responsivo com header/compose sticky e sidebar empilhável em mobile |
+| Abr/2026 | `defaultTheme` da aplicação alterado para `light` — alinhamento com design system |
+| Abr/2026 | Implementado **Indicadores 360°**: modal com monitoramento de ETA (promessas de retorno), Média Harmônica de qualidade e Latência em horário útil |

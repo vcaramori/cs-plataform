@@ -57,7 +57,7 @@ interface TextProps
 const Text = React.forwardRef<HTMLElement, TextProps>(
   ({ as: Tag = "p", className, variant, size, weight, ...props }, ref) => (
     <Tag
-      ref={ref as React.Ref<HTMLParagraphElement>}
+      ref={ref as React.Ref<any>}
       className={cn(textVariants({ variant, size, weight }), className)}
       {...props}
     />

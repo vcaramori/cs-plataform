@@ -59,14 +59,19 @@ DIRETRIZES DE TOM:
 - Evitar formalismos excessivos, jargões e excessos de desculpas
 - Substituir "Permaneço à disposição." por "Permanecemos à disposição sempre que precisar."
 
-AVALIAÇÃO DOS PILARES (notas de 1 a 10):
-- Habilidades de Comunicação: saudação, escrita, entendimento, linguagem simples, validação do sentimento, encerramento
-- Efetividade das Respostas: clareza da solução, confirmação da resolução, próximos passos
+AVALIAÇÃO DOS 5 CRITÉRIOS DE QUALIDADE (notas de 0 a 100):
+Avalie cada critério usando TODO o histórico do chamado como contexto — compare o rascunho com o que foi dito anteriormente, qual é o problema original e qual é o sentimento acumulado do cliente.
+- Tom (0-100): adequação emocional ao contexto do cliente, calor humano, linguagem apropriada à gravidade do chamado
+- Estrutura (0-100): sequência lógica, clareza de propósito, aderência ao Padrão Plannera (saudação → contexto → solução → próximos passos → fechamento)
+- Empatia (0-100): reconhecimento genuíno do sentimento do cliente, validação da dor, personalização baseada no histórico do chamado
+- Clareza (0-100): objetividade, linguagem simples e direta, ausência de ambiguidades ou jargões desnecessários
+- Alinhamento (0-100): conformidade plena com o Padrão Plannera, uso dos nomes reais, zero placeholders, assinatura correta
 
-CÁLCULO DA NOTA FINAL — Média Harmônica:
-n / Σ(1/x), onde x são os dois pilares avaliados. Penaliza mais fortemente notas baixas.
+CÁLCULO DA NOTA FINAL — Média Harmônica dos 5 Critérios:
+nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
+Escala de resultado: 0-100. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
 
-ALERTA: inclua show_alert=true APENAS se a mensagem tiver qualidade muito baixa (ausência de saudação, sem contexto, mensagem de uma linha ou claramente incompleta).
+ALERTA: inclua show_alert=true se nota_final < 60.
 
 CLASSIFICAÇÃO DO STATUS SUGERIDO (campo "suggested_outcome"):
 Aplique as regras na ordem abaixo e use a PRIMEIRA que se encaixar:
@@ -104,7 +109,7 @@ export async function POST(req: NextRequest) {
         }`
       : ''
 
-    const userPrompt = `Avalie a seguinte mensagem de suporte, usando o contexto do chamado fornecido para produzir uma versão reescrita com os nomes e contexto reais — sem placeholders.
+    const userPrompt = `Avalie a seguinte mensagem de suporte usando TODO o histórico do chamado como contexto. Seu julgamento dos 5 critérios deve levar em conta o que foi dito antes, o problema original do cliente e o sentimento acumulado — não avalie o rascunho de forma isolada.
 
 ${contextBlock}
 
@@ -123,32 +128,30 @@ INSTRUÇÕES IMPORTANTES:
 FORMATO DE SAÍDA OBRIGATÓRIO (JSON apenas, sem markdown):
 {
   "sentiment": "Equilibrado" | "Neutro" | "Rígido",
-  "feedback_summary": "Pontos fortes e de melhoria em 2-3 frases",
+  "feedback_summary": "Pontos fortes e de melhoria em 2-3 frases, referenciando o histórico do chamado quando relevante",
   "evaluation": {
-    "tom": <1-10>,
-    "estrutura": <1-10>,
-    "empatia": <1-10>,
-    "clareza": <1-10>,
-    "alinhamento": <1-10>
+    "tom": <0-100>,
+    "estrutura": <0-100>,
+    "empatia": <0-100>,
+    "clareza": <0-100>,
+    "alinhamento": <0-100>
   },
   "recommended_version": "Versão reescrita completa com nomes reais e contexto do chamado",
   "training_notes": "Breve explicação de aprendizado para o agente (1-2 frases)",
   "pillar_scores": {
-    "habilidades_comunicacao": <1-10>,
-    "efetividade_respostas": <1-10>
+    "habilidades_comunicacao": <0-100>,
+    "efetividade_respostas": <0-100>
   },
-  "nota_final": <número com 1 casa decimal ou null>,
-  "show_alert": <true | false>,
+  "nota_final": <número com 1 casa decimal calculado pela fórmula: 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento), ou null se qualquer critério for 0>,
+  "show_alert": <true se nota_final < 60, caso contrário false>,
   "suggested_outcome": "solution" | "pending_client" | "pending_product" | "none",
   "outcome_reasoning": "Motivo em 1 frase curta"
 }`
 
-    const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${userPrompt}`
-    const { result, provider } = await generateText(fullPrompt, {
+    const { result, provider } = await generateText(userPrompt, {
+      systemInstruction: SYSTEM_PROMPT,
       temperature: 0.2,
-      provider: 'gemini',
       allowFallback: true,
-      maxTokens: 4096,
     })
 
     console.log(`[ReplyReview] provider=${provider} raw_length=${result.length}`)

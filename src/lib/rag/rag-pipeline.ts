@@ -56,7 +56,7 @@ export async function runRAGPipeline(
     interactionIds.length > 0
       ? db
           .from('interactions')
-          .select('id, title, date, type, accounts(name)')
+          .select('id, title, date, type, raw_transcript, accounts(name)')
           .in('id', interactionIds)
       : Promise.resolve({ data: [] as any[] }),
     ticketIds.length > 0
@@ -94,7 +94,34 @@ export async function runRAGPipeline(
           .order('responded_at', { ascending: false })
           .limit(10)
       : Promise.resolve({ data: [] as any[] }),
-  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }]
+    // [8] Journal de Esforço — transcrições de reuniões, relatos de atividades, notas de contato
+    accountId
+      ? db
+          .from('time_entries')
+          .select('date, activity_type, parsed_hours, parsed_description, natural_language_input')
+          .eq('account_id', accountId)
+          .order('date', { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] as any[] }),
+    // [9] Health Score — comparação Manual vs Shadow (detecta discrepância > 20)
+    accountId
+      ? db
+          .from('health_scores')
+          .select('evaluated_at, manual_score, shadow_score, discrepancy, discrepancy_alert, manual_notes, shadow_reasoning, classification')
+          .eq('account_id', accountId)
+          .order('evaluated_at', { ascending: false })
+          .limit(3)
+      : Promise.resolve({ data: [] as any[] }),
+    // [10] Financeiro — MRR, ARR, status do contrato e renovação
+    accountId
+      ? db
+          .from('contracts')
+          .select('mrr, arr, renewal_date, status, service_type, contracted_hours_monthly, notes')
+          .eq('account_id', accountId)
+          .eq('status', 'active')
+          .limit(1)
+      : Promise.resolve({ data: [] as any[] }),
+  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }]
 
   const interactionRecords = results[0].data
   const ticketRecords = results[1].data
@@ -104,6 +131,9 @@ export async function runRAGPipeline(
   const contacts = results[5].data
   const allAccounts = results[6].data
   const npsRecords = results[7].data
+  const timeEntries = results[8].data
+  const healthScores = results[9].data
+  const contracts = results[10].data
 
   // 2.1 Detecção de Entidades (Account Discovery)
   // Se estamos em modo global, tentamos detectar se a pergunta cita algum cliente
@@ -161,7 +191,8 @@ ${extraLines || 'Dados de adoção não encontrados.'}`
       const account = Array.isArray(accountsRaw) ? accountsRaw[0]?.name : accountsRaw?.name ?? 'Conta desconhecida'
       const date = meta?.date ?? ''
       const type = meta?.type ?? 'meeting'
-      return `[${idx + 1}] REUNIÃO | ${account} | ${date} | Tipo: ${type}\n${chunk.chunk_text}`
+      const transcriptNote = meta?.raw_transcript ? `\n[TRANSCRIÇÃO DISPONÍVEL — trecho indexado abaixo]` : ''
+      return `[${idx + 1}] REUNIÃO | ${account} | ${date} | Tipo: ${type}${transcriptNote}\n${chunk.chunk_text}`
     } else {
       const meta = ticketMap.get(chunk.source_id)
       const accountsRaw = meta?.accounts as any
@@ -262,6 +293,59 @@ Promotores: ${promoters} | Neutros: ${passives} | Detratores: ${detractors}
 ${commentLines ? `\nÚltimos comentários:\n${commentLines}` : ''}`
   }
 
+  // 3.5 Journal de Esforço — fonte primária qualitativa: transcrições, relatos e notas de atividade
+  let effortJournalContext = ''
+  if (timeEntries && timeEntries.length > 0) {
+    const effortLines = timeEntries.map((e: any) => {
+      const typeMap: Record<string, string> = {
+        'preparation': 'PREPARAÇÃO',
+        'environment-analysis': 'ANÁLISE DE AMBIENTE',
+        'strategy': 'ESTRATÉGIA',
+        'reporting': 'RELATÓRIO',
+        'internal-meeting': 'REUNIÃO INTERNA',
+        'meeting': 'REUNIÃO COM CLIENTE',
+        'onboarding': 'ONBOARDING',
+        'qbr': 'QBR',
+        'other': 'OUTRA ATIVIDADE',
+      }
+      const type = typeMap[e.activity_type] || e.activity_type
+      let line = `- [${e.date}] ${type} | ${e.parsed_hours}h: ${e.parsed_description}`
+      if (e.natural_language_input && e.natural_language_input !== e.parsed_description) {
+        line += `\n  Nota original: "${e.natural_language_input}"`
+      }
+      return line
+    }).join('\n')
+    effortJournalContext = `\n\n## JOURNAL DE ESFORÇO E INTERAÇÕES (Fonte Primária Qualitativa)
+${effortLines}`
+  }
+
+  // 3.6 Health Score — Manual vs Shadow (sinaliza discrepância > 20)
+  let healthComparisonContext = ''
+  if (healthScores && healthScores.length > 0) {
+    const latest = healthScores[0]
+    const discAlert = latest.discrepancy_alert || (latest.discrepancy != null && Math.abs(latest.discrepancy) > 20)
+    healthComparisonContext = `\n\n## HEALTH SCORE: MANUAL vs SHADOW IA
+Última avaliação: ${latest.evaluated_at ?? 'N/A'}
+Score Manual (CSM): ${latest.manual_score ?? '—'} | Score Shadow (IA): ${latest.shadow_score ?? '—'} | Discrepância: ${latest.discrepancy != null ? `${latest.discrepancy} pts` : '—'}${discAlert ? ' ⚠️ ALERTA: discrepância > 20 pontos' : ''}
+Classificação: ${latest.classification ?? '—'}${latest.manual_notes ? `\nNotas do CSM: ${latest.manual_notes}` : ''}${latest.shadow_reasoning ? `\nRaciocínio IA: ${latest.shadow_reasoning}` : ''}`
+  }
+
+  // 3.7 Financeiro — MRR, ARR, status contratual e SLA
+  let financialContext = ''
+  if (contracts && contracts.length > 0) {
+    const c = contracts[0]
+    const statusMap: Record<string, string> = {
+      'active': 'ATIVO',
+      'at-risk': 'EM RISCO',
+      'churned': 'CHURN',
+      'in-negotiation': 'EM NEGOCIAÇÃO',
+    }
+    financialContext = `\n\n## FINANCEIRO E CONTRATO
+MRR: R$ ${c.mrr?.toLocaleString('pt-BR') ?? '—'} | ARR: R$ ${c.arr?.toLocaleString('pt-BR') ?? '—'}
+Status: ${statusMap[c.status] ?? c.status} | Plano: ${c.service_type ?? '—'}
+Renovação: ${c.renewal_date ?? '—'} | Horas Contratadas/Mês: ${c.contracted_hours_monthly ?? '—'}h${c.notes ? `\nObservações contratuais: ${c.notes}` : ''}`
+  }
+
   let stakeholderContext = ''
   if (contacts && contacts.length > 0) {
     const contactLines = contacts.map((c: any) =>
@@ -271,28 +355,42 @@ ${commentLines ? `\nÚltimos comentários:\n${commentLines}` : ''}`
   }
 
   // 4. Gera resposta com Gemini Pro
-  const scopeDescription = accountId
-    ? 'sobre um LOGO específico'
-    : 'sobre o portfólio completo de CS'
-
-  const prompt = `Você é o "Cerebro do CS", um assistente de elite para Customer Success Managers. 
-Sua missão é extrair insights acionáveis do contexto abaixo.
+  const RAG_SYSTEM_INSTRUCTION = `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
+Sua missão é realizar uma AUDITORIA EXAUSTIVA cruzando TODAS as fontes de dados disponíveis e extrair insights acionáveis.
 
 REGRAS CRÍTICAS DE IDIOMA E SEGURANÇA:
-1. RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. 
-2. É TERMINANTEMENTE PROIBIDO: 
+1. RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL.
+2. É TERMINANTEMENTE PROIBIDO:
    - Usar caracteres chineses, japoneses, coreanos ou qualquer outro alfabeto não-latino.
    - Incluir exemplos de treinamento internos do modelo ou frases de teste (ex: "Pequim é a capital...").
    - Inventar fatos fora do contexto fornecido.
 3. Se a informação não existir, diga: "Não encontrei informações suficientes nos registros para responder a isso com precisão."
 
+INSTRUÇÕES DE SÍNTESE 360°:
+- NÃO OMITA DETALHES. Se houver uma transcrição, nota de reunião ou relato no Journal de Esforço, sintetize-a na resposta.
+- Cruze obrigatoriamente as quatro dimensões quando disponíveis:
+  1. Journal de Esforço e Interações — transcrições de reuniões, relatos de atividades, notas de contato (FONTE PRIMÁRIA QUALITATIVA)
+  2. Power Map — decisores, influenciadores e nível de engajamento por stakeholder
+  3. Financeiro/SLA — MRR, status contratual, renovação e conformidade de prazos
+  4. Saúde — Health Score Manual vs Shadow IA (sinalize discrepância > 20 como sinal de alerta)
+- Priorize evidências concretas do Journal de Esforço sobre dados estruturados quando houver conflito.
+
 CLASSIFICAÇÃO DE SAÚDE (HEALTH SCORE):
 - 0-39: Vermelho (Risco Crítico)
 - 40-69: Amarelo (Atenção)
-- 70-100: Verde (Saudável)
+- 70-100: Verde (Saudável)`
 
-## Contexto disponível (${scopeDescription})
+  const scopeDescription = accountId
+    ? 'sobre um LOGO específico'
+    : 'sobre o portfólio completo de CS'
+
+  const userContent = `## Contexto disponível (${scopeDescription})
+
+### 1. Reuniões, Transcrições e Tickets (Busca Semântica)
 ${contextBlocks || 'Nenhum dado de interação/tickets recente.'}
+${effortJournalContext}
+${healthComparisonContext}
+${financialContext}
 ${adoptionContext}
 ${planRiskContext}
 ${npsContext}
@@ -303,8 +401,11 @@ ${extraAccountContext}
 ## Pergunta do CSM
 ${question}`
 
-  // 4. Gera resposta via LLM Gateway (Ollama ou Gemini com fallback)
-  const { result: answer, provider } = await generateText(prompt, { allowFallback: true })
+  // 4. Gera resposta via LLM Gateway
+  const { result: answer, provider } = await generateText(userContent, {
+    systemInstruction: RAG_SYSTEM_INSTRUCTION,
+    allowFallback: true,
+  })
   if (provider !== 'ollama') {
     console.log(`[RAG] Resposta gerada via: ${provider}`)
   }

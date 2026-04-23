@@ -15,7 +15,7 @@ export async function GET() {
   if (authError || !data?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const user = data.user
 
-  const { data, error } = await supabase
+  const { data: plansData, error } = await supabase
     .from('subscription_plans')
     .select(`
       *,
@@ -27,7 +27,7 @@ export async function GET() {
     .order('name')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(plansData)
 }
 
 export async function POST(request: Request) {

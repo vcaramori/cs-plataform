@@ -97,6 +97,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | `text-content-primary` | `--content-primary` | Navy `#2d3558` | white | Títulos, métricas, valores |
 | `text-content-secondary` | `--content-secondary` | Grey `#5c5b5b` | slate-400 | Labels, captions, apoio |
 | `border-border-divider` | `--border-divider` | slate-200 | slate-800 | Bordas de card/seção |
+| `bg-white/90` / `bg-slate-900/90` | - | - | - | Glassmorphism (máx 15% transparência) + `backdrop-blur-md` para Overlays (Select, Tooltip, Modais) |
 
 ### Componentes Guardiões (src/components/ui/)
 
@@ -125,6 +126,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 3 Inputs | `dialog.tsx` overlay, `checkbox.tsx` (estados checked/focus), `switch.tsx` (unchecked + thumb), `button.tsx secondary` | ✅ Concluída 2026-04-23 |
 | Sessão 4 Typography | Padronização global de tabelas: **11px font-black sans-serif** para dados técnicos + Hover `bg-muted/40` | ✅ Concluída 2026-04-23 |
 | Sessão 5 Inteligência | Migração `@google/genai`, Estabilização Gemini 2.5 Flash, Refatoração Gateway (Exclusive Mode) | ✅ Concluída 2026-04-23 |
+| Sessão 6 Ergonomia | Otimização de Espaço Suporte: Removido banner SLA (movido para Tooltip); Scroll automático para fim da thread; Padrão Glassmorphism (máx 15% transparência) em Portals | ✅ Concluída 2026-04-23 |
 
 ### Convenção de Variantes de Button
 
@@ -216,11 +218,22 @@ Gestão completa de contas. Cada logo possui:
 Interface de chat com o motor RAG. O CSM digita uma pergunta em português e o sistema:
 
 1. Gera embedding da pergunta (Gemini `text-embedding-004`)
-2. Busca os chunks mais relevantes no pgvector (limiar 0.4, relaxado para 0.2 se necessário)
-3. Enriquece com metadados: data da reunião, prioridade do ticket, adoção, NPS, stakeholders
+2. Busca os chunks mais relevantes no pgvector (limiar 0.4, relaxado para 0.2 se necessário), incluindo transcrições de reuniões indexadas
+3. Enriquece com metadados estruturados: data da reunião, prioridade do ticket, adoção, NPS, stakeholders
 4. Detecta automaticamente o cliente mencionado na pergunta (entity detection)
-5. Monta o prompt com todo o contexto e chama Gemini 2.5 Flash
+5. Monta o prompt com contexto 360° (ver abaixo) e chama Gemini 2.5 Flash
 6. Retorna resposta em PT-BR com citação das fontes
+
+**Visão 360° — Auditoria Exaustiva (4 dimensões cruzadas):**
+
+| Dimensão | Fonte | Descrição |
+|----------|-------|-----------|
+| **Journal de Esforço** | `time_entries` | Transcrições de reuniões, relatos de atividades e notas de contato — fonte primária qualitativa |
+| **Power Map** | `contacts` | Decisores, influenciadores e nível de engajamento por stakeholder |
+| **Financeiro/SLA** | `contracts` | MRR, ARR, status contratual, data de renovação e horas contratadas |
+| **Saúde** | `health_scores` | Health Score Manual (CSM) vs Shadow IA — discrepância > 20 sinalizada como alerta |
+
+A IA nunca omite detalhes: se houver transcrição ou nota no Journal de Esforço, ela é obrigatoriamente sintetizada na resposta.
 
 ---
 
@@ -243,13 +256,30 @@ Painel executivo de inteligência de lealdade com design "High-Density":
 
 Rastreamento de horas do CSM por tipo de atividade. O input é em linguagem natural (ex: "Passei 2h preparando o QBR do cliente X") e o Gemini 2.5 Flash extrai horas e descrição automaticamente.
 
+**Qualidade de Relato — `confidence_score`:** Cada entrada parseada recebe um score de confiança (0.0–1.0). Se `confidence_score < 0.8`, a entrada é salva com `status: 'pending_review'` para revisão humana antes de ser contabilizada.
+
 ---
 
 ### Suporte (`/suporte`, `/suporte/[id]` e `/suporte/dashboard`)
 
 Módulo completo de suporte com SLA, ciclo de vida de ticket e CSAT.
 
-**Revisão de resposta (Padrão Plannera):** Botão "Avalie a resposta" na área de composição do ticket. Submete o rascunho ao Gemini que avalia sentimento, reescreve a mensagem no Padrão Plannera e calcula a nota final.
+**Revisão de resposta (Padrão Plannera):** Botão "Avaliar e Enviar" na área de composição do ticket. Submete o rascunho ao Gemini que avalia sentimento, reescreve a mensagem no Padrão Plannera e calcula a nota final.
+
+**Avaliação Context-Aware:** A IA usa TODO o histórico do chamado para avaliar o rascunho. Os 5 critérios (Tom, Estrutura, Empatia, Clareza, Alinhamento) são julgados no contexto do problema original e do sentimento acumulado do cliente.
+
+**Nota Final — Média Harmônica dos 5 Critérios (escala 0–100):**
+```
+nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
+```
+`show_alert = true` quando `nota_final < 60`.
+
+**Interface de Detalhe do Ticket (`/suporte/[id]`):** Reconstruída no Vibrant Light Mode com os Componentes Guardiões. `TicketDetailClient` usa `<PageContainer noPadding>` como backbone, tokens semânticos (`bg-surface-background`, `bg-surface-card`, `border-border-divider`) em todas as zonas, e `<Text>` para título e metadados. Todas as classes `dark:` foram removidas da estrutura base. Layout "Full Page Fit": o container preenche a altura disponível sem scroll horizontal; o header (`z-20`) e a área de composição no rodapé (`z-10`) são fixos, enquanto a thread de mensagens e o sidebar lateral (em `xl+`) possuem scrolls internos independentes. A thread de mensagens agora inicia automaticamente pelo final (mensagens mais recentes). Alertas de SLA ausente foram movidos para um tooltip informativo no sidebar para maximizar o espaço de leitura. O tema padrão da aplicação foi alterado para `light` (`defaultTheme="light"` em `app/layout.tsx`) alinhando o tema default com o design system Vibrant Light Mode.
+
+**Indicadores 360° (Performance em Tempo Real):** Modal disparado pela sidebar que consolida a saúde do atendimento em três dimensões:
+1. **Qualidade**: Média harmônica atualizada dos 5 pilares (Tom, Estrutura, Empatia, Clareza, Alinhamento).
+2. **Compromisso (ETA)**: Monitoramento proativo de promessas de retorno no histórico ("volto em Xh"). A quebra de um ETA gera penalidade automática no score de Alinhamento e alerta visual no dashboard.
+3. **Eficiência**: Cálculo de latência média de resposta considerando apenas a janela de horário útil (09:00 - 18:00).
 
 ---
 
