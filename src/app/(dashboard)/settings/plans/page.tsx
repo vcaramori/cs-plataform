@@ -81,7 +81,7 @@ export default function PlansSettingsPage() {
               ))
             ) : plans.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-surface-card border border-border-divider rounded-2xl">
-                <p className="text-content-secondary text-[10px] font-black uppercase tracking-widest opacity-30">Nenhum plano cadastrado.</p>
+                <p className="text-content-secondary text-[10px] font-extrabold uppercase tracking-widest opacity-30">Nenhum plano cadastrado.</p>
               </div>
             ) : (
               plans.map((plan, idx) => (
@@ -127,9 +127,9 @@ export default function PlansSettingsPage() {
                       <div className="mt-6 flex items-center justify-between pt-4 border-t border-border-divider">
                         <div className="flex items-center gap-1.5">
                           {plan.is_active ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-black uppercase">Ativo</Badge>
+                            <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-extrabold uppercase">Ativo</Badge>
                           ) : (
-                            <Badge className="bg-content-secondary/10 text-content-secondary border-none text-[8px] font-black uppercase">Inativo</Badge>
+                            <Badge className="bg-content-secondary/10 text-content-secondary border-none text-[8px] font-extrabold uppercase">Inativo</Badge>
                           )}
                         </div>
                         <span className="text-[9px] font-mono text-content-secondary">PLAN_ID: {plan.id.split('-')[0].toUpperCase()}</span>

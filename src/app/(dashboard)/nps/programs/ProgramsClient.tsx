@@ -330,7 +330,7 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
       <DialogContent aria-describedby={undefined}
         className="bg-surface-card border-border-divider max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-content-primary font-black uppercase tracking-tight">
+          <DialogTitle className="text-content-primary font-extrabold uppercase tracking-tight">
             {step === 'form' ? 'Criar Programa NPS' : 'Configurar Questionário'}
           </DialogTitle>
         </DialogHeader>
@@ -512,7 +512,7 @@ function QuestionBuilderDialog({ program, onSaved }: { program: any; onSaved: ()
   return (
     <DialogContent aria-describedby={undefined} className="bg-surface-card border-border-divider max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="text-content-primary font-black uppercase tracking-tight flex items-center gap-2">
+        <DialogTitle className="text-content-primary font-extrabold uppercase tracking-tight flex items-center gap-2">
           {program.account_id ? <Building2 className="w-4 h-4 text-content-secondary" /> : <Globe className="w-4 h-4 text-indigo-400" />}
           {program.name ?? program.accounts?.name ?? 'Global'} — Questionário
         </DialogTitle>
@@ -665,7 +665,7 @@ export function ProgramsClient({ accounts }: Props) {
             <ListChecks className="w-5 h-5 text-orange-400" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-tighter uppercase">Programas</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-content-primary tracking-tighter uppercase">Programas</h1>
             <p className="text-content-secondary text-xs font-bold uppercase tracking-wide flex items-center gap-2">
               Configuração e Distribuição de Pesquisas NPS
             </p>
@@ -678,7 +678,7 @@ export function ProgramsClient({ accounts }: Props) {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-black uppercase tracking-wide">Meus Programas ({programs.length})</CardTitle>
+          <CardTitle className="text-sm font-extrabold uppercase tracking-wide">Meus Programas ({programs.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
@@ -703,7 +703,7 @@ export function ProgramsClient({ accounts }: Props) {
                         {p.name ?? p.accounts?.name ?? 'Global — Todos os Clientes'}
                       </p>
                       {p.is_default && (
-                        <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-[10px] font-black uppercase shrink-0">
+                        <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-[10px] font-extrabold uppercase shrink-0">
                           Default
                         </Badge>
                       )}
@@ -723,12 +723,12 @@ export function ProgramsClient({ accounts }: Props) {
 
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0 sm:justify-end">
                   {!p.is_active && (
-                    <Badge className="bg-content-secondary/10 text-content-secondary border-content-secondary/30 text-[10px] font-black uppercase">
+                    <Badge className="bg-content-secondary/10 text-content-secondary border-content-secondary/30 text-[10px] font-extrabold uppercase">
                       Inativo
                     </Badge>
                   )}
                   {p.is_test_mode && (
-                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse text-[10px] font-black uppercase">
+                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse text-[10px] font-extrabold uppercase">
                       Em Teste
                     </Badge>
                   )}

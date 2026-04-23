@@ -235,7 +235,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
                                   <span className="truncate max-w-[80px]">{s.account_name}</span>
                                   <span className="opacity-30">•</span>
                                   <span>{s.date}</span>
-                                  <span className="ml-auto text-indigo-600 dark:text-indigo-400 font-black">{Math.round(s.similarity * 100)}% Match</span>
+                                  <span className="ml-auto text-indigo-600 dark:text-indigo-400 font-extrabold">{Math.round(s.similarity * 100)}% Match</span>
                                 </div>
                               </div>
                             </div>

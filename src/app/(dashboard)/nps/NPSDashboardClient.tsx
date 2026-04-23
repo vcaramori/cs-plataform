@@ -41,7 +41,7 @@ function ScoreBar({ label, count, total, color }: { label: string; count: number
         <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1 }}
           className={`h-full rounded-full ${color}`} />
       </div>
-      <span className="text-content-primary text-[10px] font-black w-8 text-right">{count}</span>
+      <span className="text-content-primary text-[10px] font-extrabold w-8 text-right">{count}</span>
       <span className="text-content-secondary text-[9px] font-bold w-10 text-right">{pct}%</span>
     </div>
   )
@@ -56,10 +56,10 @@ function NPSGauge({ score, goal }: { score: number, goal: number | null }) {
 
   return (
     <div className="flex flex-col items-center gap-1 group relative">
-      <div className={`text-6xl font-black tracking-tighter ${color} transition-transform group-hover:scale-105 duration-300`}>
+      <div className={`text-6xl font-extrabold tracking-tighter ${color} transition-transform group-hover:scale-105 duration-300`}>
         {c > 0 ? '+' : ''}{c}
       </div>
-      <div className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-card border border-border-divider shadow-sm">
+      <div className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-surface-card border border-border-divider shadow-sm">
         <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isMet ? "bg-emerald-500" : "bg-destructive")} />
         <span className={isMet ? 'text-emerald-500' : 'text-destructive'}>{label}</span>
       </div>
@@ -88,7 +88,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             <DialogTitle className="h2-section !text-xl !text-foreground">Feedback Detalhado</DialogTitle>
             <p className="label-premium opacity-60">{render.account_name}</p>
           </div>
-          <Badge className={`text-[10px] font-black border uppercase px-3 py-1 rounded-xl shadow-sm ${segColor}`}>
+          <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-xl shadow-sm ${segColor}`}>
             {seg || 'N/A'}
           </Badge>
         </DialogHeader>
@@ -99,10 +99,10 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             <div className="flex gap-4 items-center">
               <div className="w-12 h-12 rounded-2xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
                 <Input type="hidden" />
-                <span className="text-content-primary font-black text-xl">{render.user_email?.charAt(0).toUpperCase() || 'A'}</span>
+                <span className="text-content-primary font-extrabold text-xl">{render.user_email?.charAt(0).toUpperCase() || 'A'}</span>
               </div>
               <div>
-                <p className="text-content-primary text-sm font-black tracking-tight">{render.user_email || 'Anônimo'}</p>
+                <p className="text-content-primary text-sm font-extrabold tracking-tight">{render.user_email || 'Anônimo'}</p>
                 <p className="label-premium !text-[9px] opacity-50 lowercase tracking-tight font-medium">
                   {render.responded_at ? new Date(render.responded_at).toLocaleString('pt-BR') : 'Sem data'}
                 </p>
@@ -110,7 +110,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             </div>
             <div className="text-right">
               <p className="label-premium !text-[9px]">Nota NPS</p>
-              <p className={`text-3xl font-black tracking-tighter ${segColor.split(' ')[0]}`}>{render.score}<span className="text-xs opacity-30">/10</span></p>
+              <p className={`text-3xl font-extrabold tracking-tighter ${segColor.split(' ')[0]}`}>{render.score}<span className="text-xs opacity-30">/10</span></p>
             </div>
           </div>
 
@@ -138,18 +138,18 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
                 answers.map((ans: any) => (
                   <div key={ans.id} className="space-y-2 p-5 rounded-3xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
                     <p className="label-premium !text-[9px] opacity-40 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
-                    <div className="text-content-primary text-sm font-black tracking-tight leading-relaxed">
+                    <div className="text-content-primary text-sm font-extrabold tracking-tight leading-relaxed">
                       {ans.nps_questions?.type === 'nps_scale' ? (
                         <div className="flex items-center gap-3">
                           <div className="h-2 flex-1 bg-surface-background rounded-full overflow-hidden shadow-inner">
                             <div className="h-full bg-primary" style={{ width: `${(parseInt(ans.text_value) / 10) * 100}%` }} />
                           </div>
-                          <span className="text-primary font-black tracking-tighter">{ans.text_value}<span className="text-[10px] opacity-30">/10</span></span>
+                          <span className="text-primary font-extrabold tracking-tighter">{ans.text_value}<span className="text-[10px] opacity-30">/10</span></span>
                         </div>
                       ) : ans.nps_questions?.type === 'multiple_choice' ? (
                         <div className="flex flex-wrap gap-2">
                           {(ans.selected_options || []).map((opt: string) => (
-                            <Badge key={opt} variant="neutral" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase tracking-widest px-3">
+                            <Badge key={opt} variant="neutral" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-extrabold uppercase tracking-widest px-3">
                               {opt}
                             </Badge>
                           ))}
@@ -383,36 +383,36 @@ export function NPSDashboardClient({ accounts }: Props) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-card border border-border-divider p-5 rounded-2xl shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <Select value={programFilter} onValueChange={setProgramFilter}>
-            <SelectTrigger className="w-56 text-foreground text-[10px] font-black h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
+            <SelectTrigger className="w-56 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
               <Bookmark className="w-3.5 h-3.5 text-primary/50 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background border-border rounded-xl">
-              <SelectItem value="default" className="text-[10px] font-black uppercase">GLOBAL PORTFOLIO</SelectItem>
+              <SelectItem value="default" className="text-[10px] font-extrabold uppercase">GLOBAL PORTFOLIO</SelectItem>
               {programs.filter(p => p.is_active).map(p => (
-                <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
+                <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-extrabold uppercase">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Select value={accountFilter} onValueChange={setAccountFilter}>
-            <SelectTrigger className="w-48 text-foreground text-[10px] font-black h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
+            <SelectTrigger className="w-48 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
               <Building2 className="w-3.5 h-3.5 text-muted-foreground mr-2" />
               <SelectValue placeholder="CONTAS" />
             </SelectTrigger>
             <SelectContent className="bg-background border-border rounded-xl">
-              <SelectItem value="all" className="text-[10px] font-black uppercase">TODAS AS CONTAS</SelectItem>
-              {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase">{a.name}</SelectItem>)}
+              <SelectItem value="all" className="text-[10px] font-extrabold uppercase">TODAS AS CONTAS</SelectItem>
+              {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-extrabold uppercase">{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
 
           <Select value={periodDays} onValueChange={setPeriodDays}>
-            <SelectTrigger className="w-44 text-foreground text-[10px] font-black h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
+            <SelectTrigger className="w-44 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
               <CalendarRange className="w-3.5 h-3.5 text-muted-foreground mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background border-border rounded-xl">
-              {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-black uppercase">{v} DIAS</SelectItem>)}
+              {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-extrabold uppercase">{v} DIAS</SelectItem>)}
             </SelectContent>
           </Select>
 
@@ -425,7 +425,7 @@ export function NPSDashboardClient({ accounts }: Props) {
           <div className="flex items-center gap-5 px-5 py-2.5 rounded-2xl bg-primary/5 border border-primary/20 shadow-sm">
             <div className="flex flex-col">
               <span className="label-premium !text-[8px] opacity-60 leading-tight">Meta Portfólio</span>
-              <span className="text-xl font-black text-primary leading-none tracking-tighter">{goal ?? '—'}</span>
+              <span className="text-xl font-extrabold text-primary leading-none tracking-tighter">{goal ?? '—'}</span>
             </div>
             <Dialog>
               <DialogTrigger asChild>
@@ -437,19 +437,19 @@ export function NPSDashboardClient({ accounts }: Props) {
                 <DialogHeader><DialogTitle className="h2-section !text-2xl !text-foreground">Definir Meta NPS</DialogTitle></DialogHeader>
                 <div className="py-6 space-y-6">
                   <p className="label-premium normal-case opacity-60 font-medium">Estabeleça o benchmark de satisfação desejado para este programa ou período.</p>
-                  <Input type="number" value={newGoalValue} onChange={e => setNewGoalValue(e.target.value)} placeholder="Ex: 75" className="h-14 text-center text-3xl font-black rounded-2xl shadow-sm" />
-                  <Button onClick={handleSetGoal} disabled={isUpdatingGoal} className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-black rounded-2xl shadow-xl">ATUALIZAR TARGET</Button>
+                  <Input type="number" value={newGoalValue} onChange={e => setNewGoalValue(e.target.value)} placeholder="Ex: 75" className="h-14 text-center text-3xl font-extrabold rounded-2xl shadow-sm" />
+                  <Button onClick={handleSetGoal} disabled={isUpdatingGoal} className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-extrabold rounded-2xl shadow-xl">ATUALIZAR TARGET</Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-emerald-500 hover:bg-emerald-500/10 text-[10px] font-black uppercase tracking-widest rounded-xl px-6 shadow-sm">
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-emerald-500 hover:bg-emerald-500/10 text-[10px] font-extrabold uppercase tracking-widest rounded-xl px-6 shadow-sm">
             <Globe className="w-4 h-4 mr-2" /> Exportar Dados
           </Button>
 
           <Link href="/nps/programs">
-            <Button variant="premium" className="text-[10px] font-black uppercase tracking-widest px-6 rounded-xl shadow-lg">
+            <Button variant="premium" className="text-[10px] font-extrabold uppercase tracking-widest px-6 rounded-xl shadow-lg">
               Configurar
             </Button>
           </Link>
@@ -483,13 +483,13 @@ export function NPSDashboardClient({ accounts }: Props) {
                 <div className="grid grid-cols-2 gap-y-8">
                   <div className="space-y-2">
                     <p className="label-premium opacity-50">Volume Total</p>
-                    <p className="text-4xl font-black text-foreground tracking-tighter leading-none">{stats.total_responses}</p>
+                    <p className="text-4xl font-extrabold text-foreground tracking-tighter leading-none">{stats.total_responses}</p>
                   </div>
                   <div className="space-y-2 ml-4 border-l border-border-divider pl-6">
                     <p className="label-premium opacity-50">Média Global</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-4xl font-black text-primary tracking-tighter leading-none">{stats.avg_score}</p>
-                      <span className="text-xs font-black text-muted-foreground/30">/10</span>
+                      <p className="text-4xl font-extrabold text-primary tracking-tighter leading-none">{stats.avg_score}</p>
+                      <span className="text-xs font-extrabold text-muted-foreground/30">/10</span>
                     </div>
                   </div>
                 </div>
@@ -528,11 +528,11 @@ export function NPSDashboardClient({ accounts }: Props) {
                     return valB - valA
                   }).slice(0, 10).map((acc, i) => (
                     <div key={acc.name} className="flex items-center gap-5 group">
-                      <span className="w-5 text-[10px] font-black text-content-secondary/30 italic tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="w-5 text-[10px] font-extrabold text-content-secondary/30 italic tabular-nums">{String(i + 1).padStart(2, '0')}</span>
                       <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex items-center justify-between">
-                          <p className="text-content-primary text-xs font-black truncate group-hover:text-primary transition-all uppercase tracking-tight">{acc.name}</p>
-                          <div className={cn("text-xs font-black tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-emerald-500' : 'text-destructive/80')}>
+                          <p className="text-content-primary text-xs font-extrabold truncate group-hover:text-primary transition-all uppercase tracking-tight">{acc.name}</p>
+                          <div className={cn("text-xs font-extrabold tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-emerald-500' : 'text-destructive/80')}>
                             {acc.score > 0 ? '+' : ''}{acc.score}
                           </div>
                         </div>
@@ -569,14 +569,14 @@ export function NPSDashboardClient({ accounts }: Props) {
                 className="flex items-stretch gap-6 p-6 rounded-2xl bg-surface-card border border-border-divider cursor-pointer hover:bg-surface-background hover:border-primary/30 transition-all group overflow-hidden relative shadow-sm">
 
                 {/* Score Indicator */}
-                <div className={cn("flex flex-col items-center justify-center w-16 rounded-xl border font-black shrink-0 shadow-lg transition-transform group-hover:scale-105", segColor)}>
-                  <span className="text-[9px] opacity-40 uppercase leading-none mb-1 font-black">Score</span>
+                <div className={cn("flex flex-col items-center justify-center w-16 rounded-xl border font-extrabold shrink-0 shadow-lg transition-transform group-hover:scale-105", segColor)}>
+                  <span className="text-[9px] opacity-40 uppercase leading-none mb-1 font-extrabold">Score</span>
                   <span className="text-2xl leading-none tracking-tighter">{r.score}</span>
                 </div>
 
                 <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-content-primary text-sm font-black truncate group-hover:text-primary transition-all uppercase tracking-tight">{r.user_email || 'ANÔNIMO'}</span>
+                    <span className="text-content-primary text-sm font-extrabold truncate group-hover:text-primary transition-all uppercase tracking-tight">{r.user_email || 'ANÔNIMO'}</span>
                     <span className="label-premium !text-[9px] ml-auto shrink-0 flex items-center gap-2 opacity-50">
                       {r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '—'}
                     </span>

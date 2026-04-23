@@ -192,7 +192,7 @@ export function SuporteClient({
             </div>
             <div>
               <p className="label-premium mb-0.5 !text-[#5c5b5b] dark:!text-slate-400">{label}</p>
-              <p className={cn("text-2xl font-black tracking-tighter", color)}>{value}</p>
+              <p className={cn("text-2xl font-extrabold tracking-tighter", color)}>{value}</p>
             </div>
           </Card>
         ))}
@@ -214,7 +214,7 @@ export function SuporteClient({
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative z-10",
+                "px-6 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all relative z-10",
                 activeTab === tab ? "text-white shadow-lg" : "text-[#5c5b5b] hover:text-primary dark:text-slate-500 dark:hover:text-white"
               )}
             >
@@ -340,25 +340,25 @@ export function SuporteClient({
                               className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer h-16"
                             >
                               <TableCell className="p-4 pl-8 whitespace-nowrap">
-                                <span className="text-[11px] font-black uppercase tracking-tight text-content-primary">
+                                <span className="text-[11px] font-extrabold uppercase tracking-tight text-content-primary">
                                   {t.accounts?.name ?? '—'}
                                 </span>
                               </TableCell>
                               <TableCell className="pl-8 py-4">
-                                <span className="text-content-primary text-[13px] font-black tracking-tight line-clamp-1">{t.title}</span>
+                                <span className="text-content-primary text-[13px] font-extrabold tracking-tight line-clamp-1">{t.title}</span>
                               </TableCell>
                               <TableCell>
-                                <span className="text-[11px] font-black uppercase tracking-widest text-content-secondary line-clamp-1">
+                                <span className="text-[11px] font-extrabold uppercase tracking-widest text-content-secondary line-clamp-1">
                                   {t.category || 'Incidente Geral'}
                                 </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border border-current/10 shadow-sm", sConf.bg, sConf.color)}>
+                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest border border-current/10 shadow-sm", sConf.bg, sConf.color)}>
                                   {sConf.label}
                                 </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border border-current/10 shadow-sm", pConf.bg, pConf.color)}>
+                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest border border-current/10 shadow-sm", pConf.bg, pConf.color)}>
                                   {pConf.label}
                                 </span>
                               </TableCell>
@@ -368,7 +368,7 @@ export function SuporteClient({
                                   : <span className="text-muted-foreground/30 text-xs">—</span>}
                               </TableCell>
                               <TableCell className="pr-8 text-right">
-                                <span className="text-content-secondary font-black text-[11px] tracking-widest">
+                                <span className="text-content-secondary font-extrabold text-[11px] tracking-widest">
                                   {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
                                 </span>
                               </TableCell>
@@ -409,7 +409,7 @@ export function SuporteClient({
                       key={f}
                       onClick={() => { setFormat(f); setContent(''); setPdfFile(null) }}
                       className={cn(
-                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                        "px-6 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all",
                         format === f 
                           ? "bg-primary text-primary-foreground shadow-lg" 
                           : "text-muted-foreground hover:text-foreground"
@@ -452,7 +452,7 @@ export function SuporteClient({
                          type="file" 
                          accept="application/pdf"
                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPdfFile(e.target.files ? e.target.files[0] : null)}
-                         className="bg-accent/30 border-border/50 text-foreground file:bg-primary file:text-primary-foreground file:border-none file:font-black file:uppercase file:text-[10px] file:px-6 file:h-full file:mr-4 h-14 rounded-xl cursor-pointer shadow-inner pr-4" 
+                         className="bg-accent/30 border-border/50 text-foreground file:bg-primary file:text-primary-foreground file:border-none file:font-extrabold file:uppercase file:text-[10px] file:px-6 file:h-full file:mr-4 h-14 rounded-xl cursor-pointer shadow-inner pr-4" 
                        />
                        <p className="label-premium mt-4 leading-relaxed opacity-50 px-2 italic font-medium normal-case tracking-tight">
                          O motor de IA analisará o layout, identificará conversas e sugerirá ações automáticas baseadas no histórico.
@@ -499,14 +499,14 @@ export function SuporteClient({
                           ? <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                           : <AlertTriangle className="w-6 h-6 text-destructive" />}
                       </div>
-                      <span className="text-foreground text-lg font-black tracking-tighter uppercase">
+                      <span className="text-foreground text-lg font-extrabold tracking-tighter uppercase">
                         {result.created ?? 0} Incidentes Catalogados
                       </span>
                     </div>
                     {result.errors && result.errors.length > 0 && (
                       <div className="space-y-2 mt-2 border-t border-border/50 pt-4">
                         {result.errors.map((e: string, i: number) => (
-                          <div key={i} className="flex gap-3 text-destructive text-[11px] font-black uppercase tracking-tight leading-none">• {e}</div>
+                          <div key={i} className="flex gap-3 text-destructive text-[11px] font-extrabold uppercase tracking-tight leading-none">• {e}</div>
                         ))}
                       </div>
                     )}

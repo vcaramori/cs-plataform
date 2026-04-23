@@ -139,9 +139,9 @@ export default function SLASettingsPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-background">
-                      <th className="p-4 text-[10px] font-black text-content-secondary uppercase tracking-widest pl-8">Nível Interno</th>
-                      <th className="p-4 text-[10px] font-black text-content-secondary uppercase tracking-widest text-center">1ª Resposta (Min)</th>
-                      <th className="p-4 text-[10px] font-black text-content-secondary uppercase tracking-widest text-center pr-8">Resolução (Min)</th>
+                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest pl-8">Nível Interno</th>
+                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center">1ª Resposta (Min)</th>
+                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center pr-8">Resolução (Min)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-divider">
@@ -151,7 +151,7 @@ export default function SLASettingsPage() {
                     }).map((level) => (
                       <tr key={level.level} className="hover:bg-surface-background/60 transition-colors">
                         <td className="p-4 pl-8">
-                          <span className={cn("text-xs font-black uppercase tracking-wider", INTERNAL_LEVEL_COLORS[level.level])}>
+                          <span className={cn("text-xs font-extrabold uppercase tracking-wider", INTERNAL_LEVEL_COLORS[level.level])}>
                             {INTERNAL_LEVEL_LABELS[level.level]}
                           </span>
                         </td>

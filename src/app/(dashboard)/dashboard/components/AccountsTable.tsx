@@ -28,7 +28,7 @@ function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: bo
 
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("px-2.5 py-1 rounded-full text-[11px] font-black ring-1 ring-inset inline-flex items-center relative", color, bg, ring)}>
+      <div className={cn("px-2.5 py-1 rounded-full text-[11px] font-extrabold ring-1 ring-inset inline-flex items-center relative", color, bg, ring)}>
         {score}
       </div>
       {isDiscrepant && (
@@ -65,7 +65,7 @@ function SegmentBadge({ segment }: { segment: string }) {
     'MRO': 'bg-[#f8b967] text-[#8a5a15] border-[#f8b967]/20 dark:bg-[#f8b967]/20 dark:text-[#f8b967]',
     'Varejo': 'bg-[#d85d4b] text-white border-[#d85d4b]/20 dark:bg-[#d85d4b]/20 dark:text-[#d85d4b]',
   }
-  return <Badge variant="outline" className={cn("text-[11px] uppercase font-black tracking-widest px-3 py-1 border shadow-sm", colors[segment] ?? '')}>{segment}</Badge>
+  return <Badge variant="outline" className={cn("text-[11px] uppercase font-extrabold tracking-widest px-3 py-1 border shadow-sm", colors[segment] ?? '')}>{segment}</Badge>
 }
 
 export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }) {
@@ -84,7 +84,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
         <CardHeader className="pb-4 px-6 pt-6">
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div className="space-y-1">
-              <CardTitle className="text-xl font-heading font-black uppercase tracking-tight">Portfólio de LOGOS</CardTitle>
+              <CardTitle className="text-xl font-heading font-extrabold uppercase tracking-tight">Portfólio de LOGOS</CardTitle>
               <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">{filtered.length} Clientes Encontrados</p>
             </div>
 
@@ -105,7 +105,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                     key={s}
                     onClick={() => setSegmentFilter(s)}
                     className={cn(
-                      "px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                      "px-5 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all",
                       segmentFilter === s
                         ? "bg-primary text-primary-foreground shadow-lg"
                         : "text-content-secondary hover:text-content-primary"
@@ -164,33 +164,33 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: index * 0.05, duration: 0.3 }}
                         onClick={() => router.push(`/accounts/${account.id}`)}
-                        className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer"
+                        className="group border-b border-border-divider hover:bg-muted transition-all cursor-pointer"
                       >
                         <TableCell className="pl-6 py-4">
-                          <div className="w-10 h-10 rounded-xl bg-surface-background border border-border-divider flex items-center justify-center text-content-primary font-black shadow-sm group-hover:scale-105 transition-transform">
+                          <div className="w-10 h-10 rounded-xl bg-surface-background border border-border-divider flex items-center justify-center text-content-primary font-extrabold shadow-sm group-hover:scale-105 transition-transform">
                             {account.name.charAt(0)}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-content-primary font-black text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
+                          <p className="text-content-primary font-extrabold text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
                         </TableCell>
                         <TableCell>
-                          <p className="text-content-secondary text-[11px] font-black uppercase tracking-widest">{account.industry || 'Global'}</p>
+                          <p className="text-content-secondary text-[11px] font-extrabold uppercase tracking-widest">{account.industry || 'Global'}</p>
                         </TableCell>
                         <TableCell><SegmentBadge segment={account.segment} /></TableCell>
                         <TableCell className="text-right">
-                          <span className="text-content-primary font-black text-[11px]">
+                          <span className="text-content-primary font-extrabold text-[11px]">
                             {totalMRR > 0 ? formatCurrency(totalMRR) : '—'}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="text-content-secondary font-black text-[11px]">
+                          <span className="text-content-secondary font-extrabold text-[11px]">
                             {activeContracts.length}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="text-content-secondary font-black text-[11px]">
+                            <span className="text-content-secondary font-extrabold text-[11px]">
                               {nearestRenewal?.renewal_date
                                 ? new Date(nearestRenewal.renewal_date).toLocaleDateString('pt-BR')
                                 : '—'}
@@ -224,7 +224,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
           {filtered.length === 0 && (
             <div className="text-center py-12 bg-surface-background rounded-b-3xl border-t border-border-divider">
               <Building2 className="w-12 h-12 text-content-secondary/30 mx-auto mb-4" />
-              <p className="text-content-secondary font-black uppercase text-xs tracking-widest">Nenhum cliente mapeado nesta busca</p>
+              <p className="text-content-secondary font-extrabold uppercase text-xs tracking-widest">Nenhum cliente mapeado nesta busca</p>
             </div>
           )}
         </CardContent>

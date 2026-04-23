@@ -169,7 +169,7 @@ export default function UsersPage() {
                 <div className="space-y-4">
                   <AnimatePresence mode='popLayout'>
                     {users.length === 0 ? (
-                      <p className="text-content-secondary/40 text-[10px] font-black uppercase tracking-widest text-center py-20">Nenhum usuário cadastrado além de você.</p>
+                      <p className="text-content-secondary/40 text-[10px] font-extrabold uppercase tracking-widest text-center py-20">Nenhum usuário cadastrado além de você.</p>
                     ) : (
                       users.map((user, idx) => (
                         <motion.div

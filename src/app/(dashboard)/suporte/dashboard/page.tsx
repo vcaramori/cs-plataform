@@ -77,9 +77,9 @@ function formatMinutes(mins: number | null) {
 }
 
 function CompliancePill({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-content-secondary font-mono font-black text-[10px]">——</span>
+  if (value === null) return <span className="text-content-secondary font-mono font-extrabold text-[10px]">——</span>
   const color = value >= 90 ? 'text-emerald-600 dark:text-emerald-400' : value >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
-  return <span className={cn('font-mono font-black text-[10px]', color)}>{value}%</span>
+  return <span className={cn('font-mono font-extrabold text-[10px]', color)}>{value}%</span>
 }
 
 export default function SupportDashboardPage() {
@@ -166,7 +166,7 @@ export default function SupportDashboardPage() {
                 <Icon className="w-4 h-4" />
                 {label}
               </div>
-              <p className="text-3xl font-black text-content-primary">
+              <p className="text-3xl font-extrabold text-content-primary">
                 {loading ? '—' : (value ?? 0)}
               </p>
             </Card>
@@ -186,7 +186,7 @@ export default function SupportDashboardPage() {
           ].map(({ label, value }) => (
             <Card key={label} className="rounded-2xl p-4 space-y-1">
               <p className="text-xs text-content-secondary font-semibold">{label}</p>
-              <p className="text-2xl font-black text-content-primary">{loading ? '—' : (value ?? 0)}</p>
+              <p className="text-2xl font-extrabold text-content-primary">{loading ? '—' : (value ?? 0)}</p>
             </Card>
           ))}
         </div>
@@ -205,7 +205,7 @@ export default function SupportDashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-            <p className="text-center text-xs text-content-secondary mt-2 font-black tabular-nums">
+            <p className="text-center text-xs text-content-secondary mt-2 font-extrabold tabular-nums">
               {loading ? '—' : formatMinutes(periodData?.avg_first_response_minutes ?? null)}
             </p>
           </Card>
@@ -223,7 +223,7 @@ export default function SupportDashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-            <p className="text-center text-xs text-content-secondary mt-2 font-black tabular-nums">
+            <p className="text-center text-xs text-content-secondary mt-2 font-extrabold tabular-nums">
               {loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}
             </p>
           </Card>
@@ -257,17 +257,17 @@ export default function SupportDashboardPage() {
               <TableBody>
                 {agents.map(a => (
                   <TableRow key={a.agent_id}>
-                    <TableCell className="pl-6 text-[13px] font-black uppercase tracking-tight text-content-primary transition-colors">
+                    <TableCell className="pl-6 text-[13px] font-extrabold uppercase tracking-tight text-content-primary transition-colors">
                       {a.agent_id.slice(0, 8)}…
                     </TableCell>
-                    <TableCell className="text-right font-black text-[11px] text-content-primary">{a.received}</TableCell>
-                    <TableCell className="text-right font-black text-[11px] text-emerald-600 dark:text-emerald-400">{a.resolved}</TableCell>
+                    <TableCell className="text-right font-extrabold text-[11px] text-content-primary">{a.received}</TableCell>
+                    <TableCell className="text-right font-extrabold text-[11px] text-emerald-600 dark:text-emerald-400">{a.resolved}</TableCell>
                     <TableCell className="text-right"><CompliancePill value={a.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[11px] text-content-secondary">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right font-extrabold text-[11px] text-content-secondary">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
                     <TableCell className="text-right pr-6">
                       {a.avg_csat != null
-                        ? <span className={cn('font-black text-[11px]', a.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : a.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{a.avg_csat}/5</span>
-                        : <span className="text-content-secondary font-black text-[11px]">——</span>}
+                        ? <span className={cn('font-extrabold text-[11px]', a.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : a.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{a.avg_csat}/5</span>
+                        : <span className="text-content-secondary font-extrabold text-[11px]">——</span>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -307,21 +307,21 @@ export default function SupportDashboardPage() {
                     key={c.account_id}
                     onClick={() => window.location.href = `/accounts/${c.account_id}`}
                   >
-                    <TableCell className="pl-6 text-[13px] font-black uppercase tracking-tight text-content-primary transition-colors">
+                    <TableCell className="pl-6 text-[13px] font-extrabold uppercase tracking-tight text-content-primary transition-colors">
                       {c.account_name}
                     </TableCell>
-                    <TableCell className="text-right font-black text-[11px] text-content-primary">{c.tickets}</TableCell>
+                    <TableCell className="text-right font-extrabold text-[11px] text-content-primary">{c.tickets}</TableCell>
                     <TableCell className="text-right">
                       {c.critical_tickets > 0
-                        ? <span className="text-red-600 dark:text-red-400 font-black text-[11px]">{c.critical_tickets}</span>
-                        : <span className="text-content-secondary font-black text-[11px]">0</span>}
+                        ? <span className="text-red-600 dark:text-red-400 font-extrabold text-[11px]">{c.critical_tickets}</span>
+                        : <span className="text-content-secondary font-extrabold text-[11px]">0</span>}
                     </TableCell>
                     <TableCell className="text-right"><CompliancePill value={c.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[11px] text-content-secondary">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right font-extrabold text-[11px] text-content-secondary">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
                     <TableCell className="text-right pr-6">
                       {c.avg_csat != null
-                        ? <span className={cn('font-black text-[11px]', c.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : c.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{c.avg_csat}/5</span>
-                        : <span className="text-content-secondary font-black text-[11px]">——</span>}
+                        ? <span className={cn('font-extrabold text-[11px]', c.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : c.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{c.avg_csat}/5</span>
+                        : <span className="text-content-secondary font-extrabold text-[11px]">——</span>}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -44,7 +44,7 @@ function ScoreCard({ label, value }: { label: string; value: number }) {
       <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none whitespace-nowrap">
         {label}
       </span>
-      <span className={cn('text-[20px] font-black leading-none tabular-nums', g.text)}>
+      <span className={cn('text-[20px] font-extrabold leading-none tabular-nums', g.text)}>
         {value}
       </span>
       <div className="w-full h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
@@ -93,7 +93,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
               <>
                 {/* Nota Final */}
                 <div className={cn('flex items-baseline gap-1.5 px-3 py-1.5 rounded-xl border', sent.bg, sent.border)}>
-                  <span className={cn('text-[22px] font-black leading-none tabular-nums', ng.text)}>
+                  <span className={cn('text-[22px] font-extrabold leading-none tabular-nums', ng.text)}>
                     {review.nota_final.toFixed(1)}
                   </span>
                   <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Nota Final</span>

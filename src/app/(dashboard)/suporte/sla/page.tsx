@@ -66,7 +66,7 @@ export default function SLADashboard() {
         </div>
         
         <div className="flex items-center gap-3">
-           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900 px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase">
+           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900 px-4 py-1.5 rounded-full font-extrabold text-[10px] tracking-widest uppercase">
              Health: Stability
            </Badge>
         </div>
@@ -189,10 +189,10 @@ export default function SLADashboard() {
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl overflow-hidden">
         <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
            <div>
-              <CardTitle className="text-slate-900 dark:text-white text-lg font-black uppercase tracking-tight">Alertas de Violação</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white text-lg font-extrabold uppercase tracking-tight">Alertas de Violação</CardTitle>
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Top 10 incidentes recentes fora do prazo</p>
            </div>
-           <Button variant="outline" className="h-8 text-[9px] font-black uppercase tracking-widest border-slate-200">
+           <Button variant="outline" className="h-8 text-[9px] font-extrabold uppercase tracking-widest border-slate-200">
              Exportar Relatório
            </Button>
         </CardHeader>
@@ -215,7 +215,7 @@ export default function SLADashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className="bg-red-100 text-red-700 border-none text-[9px] font-black uppercase tracking-widest">
+                    <Badge className="bg-red-100 text-red-700 border-none text-[9px] font-extrabold uppercase tracking-widest">
                       Violado
                     </Badge>
                   </div>
@@ -247,7 +247,7 @@ function KpiCard({ title, value, label, icon, trend, color, isBad }: any) {
           </div>
           {trend && (
             <span className={cn(
-              "text-[10px] font-black uppercase tracking-widest",
+              "text-[10px] font-extrabold uppercase tracking-widest",
               trend.startsWith('+') ? "text-emerald-400" : "text-red-400"
             )}>
               {trend}
@@ -257,7 +257,7 @@ function KpiCard({ title, value, label, icon, trend, color, isBad }: any) {
         <div className="space-y-1">
           <p className="label-premium !text-[9px] opacity-60">{title}</p>
           <h3 className={cn(
-            "text-3xl font-black tracking-tight",
+            "text-3xl font-extrabold tracking-tight",
             isBad ? "text-red-600 dark:text-red-500" : "text-brand-primary dark:text-white"
           )}>
             {value}

@@ -281,7 +281,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <h1 className="text-2xl font-black text-foreground tracking-tighter uppercase whitespace-nowrap">
+              <h1 className="text-2xl font-extrabold text-foreground tracking-tighter uppercase whitespace-nowrap">
                 {mode === 'create' ? 'Nova Logo' : 'Editar Logo'}
               </h1>
             </div>
@@ -314,7 +314,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <Briefcase className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Identificação</CardTitle>
+                <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Identificação</CardTitle>
                 <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Dados principais da conta</p>
               </div>
             </div>
@@ -389,7 +389,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div className="space-y-0.5">
-                  <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Localização</CardTitle>
+                  <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Localização</CardTitle>
                   <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Endereço e presença física</p>
                 </div>
               </div>
@@ -455,7 +455,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   <FileText className="w-5 h-5" />
                 </div>
                 <div className="space-y-0.5">
-                  <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Gestão Comercial</CardTitle>
+                  <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Gestão Comercial</CardTitle>
                   <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Contratos e Acordos Atuais</p>
                 </div>
               </div>
@@ -475,7 +475,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   sla_use_global: true,
                   sla_levels: DEFAULT_SLA_LEVELS,
                 })}
-                className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                className="h-10 px-5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest gap-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
               >
                 <Plus className="w-4 h-4" /> Add Contrato
               </Button>
@@ -487,7 +487,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="p-4 rounded-full bg-accent/30">
                   <FileText className="w-10 h-10" />
                 </div>
-                <p className="text-xs font-black uppercase tracking-widest">Nenhum contrato cadastrado</p>
+                <p className="text-xs font-extrabold uppercase tracking-widest">Nenhum contrato cadastrado</p>
               </div>
             )}
 
@@ -550,7 +550,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   {/* Financial Engine */}
                   <div className="col-span-2 space-y-4 p-5 bg-accent/30 rounded-2xl border border-border">
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-black text-foreground uppercase tracking-widest">Financial Engine</Label>
+                      <Label className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">Financial Engine</Label>
                       <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
                         {(['standard', 'custom'] as const).map(type => (
                           <button
@@ -558,7 +558,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                             type="button"
                             onClick={() => setValue(`contracts.${index}.pricing_type`, type)}
                             className={cn(
-                              'px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all',
+                              'px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all',
                               watch(`contracts.${index}.pricing_type`) === type
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
@@ -575,7 +575,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         maskType="currency"
                         value={watch(`contracts.${index}.mrr`) || 0}
                         onValueChange={(v) => setValue(`contracts.${index}.mrr`, parseFloat(v) || 0)}
-                        className="h-11 text-lg font-black bg-background/50 border-border"
+                        className="h-11 text-lg font-extrabold bg-background/50 border-border"
                       />
                     </div>
                     <div className="space-y-3">
@@ -588,7 +588,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                               type="button"
                               onClick={() => setValue(`contracts.${index}.discount_type`, type)}
                               className={cn(
-                                'px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all',
+                                'px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all',
                                 watch(`contracts.${index}.discount_type`) === type
                                   ? 'bg-primary text-primary-foreground shadow-sm'
                                   : 'text-muted-foreground hover:text-foreground'
@@ -658,7 +658,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           type="button"
                           variant="premium"
                           onClick={() => saveContractIndividually(index)}
-                          className="h-9 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                          className="h-9 px-6 rounded-xl text-[10px] font-extrabold uppercase tracking-widest"
                         >
                           Salvar Contrato
                         </Button>
@@ -674,7 +674,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           <Shield className="w-5 h-5" />
                         </div>
                         <div className="space-y-0.5">
-                          <Label className="text-[10px] font-black text-foreground uppercase tracking-widest">SLA do Contrato</Label>
+                          <Label className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">SLA do Contrato</Label>
                           <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Prazos de resposta e resolução</p>
                         </div>
                       </div>
@@ -683,7 +683,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           type="button"
                           onClick={() => setValue(`contracts.${index}.sla_use_global`, true)}
                           className={cn(
-                            'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2',
+                            'px-4 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all flex items-center gap-2',
                             watch(`contracts.${index}.sla_use_global`)
                               ? 'bg-blue-600 text-white shadow-sm'
                               : 'text-muted-foreground hover:text-foreground'
@@ -699,7 +699,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                             if (cid) loadContractSLA(cid, index)
                           }}
                           className={cn(
-                            'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2',
+                            'px-4 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all flex items-center gap-2',
                             !watch(`contracts.${index}.sla_use_global`)
                               ? 'bg-primary text-primary-foreground shadow-sm'
                               : 'text-muted-foreground hover:text-foreground'
@@ -720,10 +720,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     ) : (
                       <div className="space-y-4">
                         <div className="grid grid-cols-[140px_1fr_100px_100px] gap-4 items-center px-2">
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Nível</span>
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Labels do Cliente</span>
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center">1ª Resp</span>
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center">Resolução</span>
+                          <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Nível</span>
+                          <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Labels do Cliente</span>
+                          <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest text-center">1ª Resp</span>
+                          <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest text-center">Resolução</span>
                         </div>
 
                         {(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS).map((lvl, li) => {
@@ -737,7 +737,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           return (
                             <Card key={lvl.level} className="grid grid-cols-[140px_1fr_100px_100px] gap-4 items-start p-4 rounded-xl bg-background/40 border-border group/sla">
                               <div className="pt-1.5">
-                                <span className={cn('text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border block text-center', levelMeta?.color)}>
+                                <span className={cn('text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-xl border block text-center', levelMeta?.color)}>
                                   {levelMeta?.label}
                                 </span>
                               </div>
@@ -747,7 +747,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   {(lvl.client_labels ?? []).map((label, labelIdx) => (
                                     <span
                                       key={labelIdx}
-                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent text-[9px] font-black text-foreground uppercase border border-border"
+                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent text-[9px] font-extrabold text-foreground uppercase border border-border"
                                     >
                                       {label}
                                       <button
@@ -793,7 +793,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   }}
                                   className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
                                 />
-                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter">Min</span>
+                                <span className="text-[8px] text-muted-foreground font-extrabold uppercase tracking-tighter">Min</span>
                               </div>
 
                               <div className="flex flex-col items-center gap-1">
@@ -808,7 +808,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   }}
                                   className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
                                 />
-                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter">Min</span>
+                                <span className="text-[8px] text-muted-foreground font-extrabold uppercase tracking-tighter">Min</span>
                               </div>
                             </Card>
                           )
@@ -831,7 +831,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <CreditCard className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Faturamento e Time</CardTitle>
+                <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Faturamento e Time</CardTitle>
                 <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Configurações administrativas</p>
               </div>
             </div>
@@ -867,7 +867,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <Users className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black text-foreground uppercase tracking-widest">Time Interno de Atendimento</span>
+                <span className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">Time Interno de Atendimento</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

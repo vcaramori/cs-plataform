@@ -63,7 +63,7 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
                unreadCount > 0 ? "text-plannera-orange" : "text-slate-500 group-hover:text-white"
             )} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-black text-white ring-2 ring-slate-950 animate-pulse">
+              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-extrabold text-white ring-2 ring-slate-950 animate-pulse">
                 {unreadCount}
               </span>
             )}
@@ -86,11 +86,11 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
       </SheetTrigger>
       <SheetContent className="bg-slate-950/95 backdrop-blur-2xl border-l border-white/5 text-white sm:max-w-md p-0 overflow-hidden flex flex-col">
         <SheetHeader className="p-6 border-b border-white/5 bg-white/5">
-          <SheetTitle className="text-xl font-black uppercase tracking-tight flex items-center justify-between">
+          <SheetTitle className="text-xl font-extrabold uppercase tracking-tight flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-white">Central de Alertas</span>
               {unreadCount > 0 && (
-                <Badge className="bg-plannera-orange text-white border-none font-black text-[10px]">
+                <Badge className="bg-plannera-orange text-white border-none font-extrabold text-[10px]">
                   {unreadCount} PENDENTES
                 </Badge>
               )}
@@ -140,7 +140,7 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-slate-300 font-black text-[10px] uppercase tracking-widest leading-none">
+                          <p className="text-slate-300 font-extrabold text-[10px] uppercase tracking-widest leading-none">
                             {n.type === 'stale_score' ? 'Health Score' : 
                              n.type === 'new_ticket' ? 'Suporte' :
                              'Discrepância IA'}

@@ -34,7 +34,7 @@ export function SLABadge({ status, label, className }: SLABadgeProps) {
 
   return (
     <span className={cn(
-      'inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest',
+      'inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-widest',
       bg, text, className
     )}>
       <Icon className="w-3 h-3" />

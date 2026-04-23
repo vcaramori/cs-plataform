@@ -71,7 +71,7 @@ export default function FeaturesSettingsPage() {
               ))
             ) : features.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-surface-card border border-border-divider rounded-2xl">
-                <p className="text-content-secondary text-[10px] font-black uppercase tracking-widest opacity-30">Nenhuma funcionalidade cadastrada.</p>
+                <p className="text-content-secondary text-[10px] font-extrabold uppercase tracking-widest opacity-30">Nenhuma funcionalidade cadastrada.</p>
               </div>
             ) : (
               features.map((feature, idx) => (

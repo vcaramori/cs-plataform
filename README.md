@@ -124,7 +124,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Onda 3 | Telas críticas: NPS Programs, Suporte Detalhe/Dashboard, Account Detail (16 componentes) | ✅ Concluída 2026-04-22 |
 | Sessão 2 Core UI | `tabs.tsx`, `table.tsx`, `button.tsx`, `badge.tsx` — variantes `glass` removidas, consumers migrados | ✅ Concluída 2026-04-23 |
 | Sessão 3 Inputs | `dialog.tsx` overlay, `checkbox.tsx` (estados checked/focus), `switch.tsx` (unchecked + thumb), `button.tsx secondary` | ✅ Concluída 2026-04-23 |
-| Sessão 4 Typography | Padronização global de tabelas: **11px font-black sans-serif** para dados técnicos + Hover `bg-muted/40` | ✅ Concluída 2026-04-23 |
+| Sessão 4 Typography | Padronização global de tabelas: **11px font-extrabold sans-serif** para dados técnicos + Hover `bg-muted/40` | ✅ Concluída 2026-04-23 |
 | Sessão 5 Inteligência | Migração `@google/genai`, Estabilização Gemini 2.5 Flash, Refatoração Gateway (Exclusive Mode) | ✅ Concluída 2026-04-23 |
 | Sessão 6 Ergonomia | Otimização de Espaço Suporte: Removido banner SLA (movido para Tooltip); Scroll automático para fim da thread; Padrão Glassmorphism (máx 15% transparência) em Portals | ✅ Concluída 2026-04-23 |
 

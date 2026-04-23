@@ -167,7 +167,7 @@ export function EsforcoClient({
                   { 
                     label: 'IDENTIFICAR POR I.A (RECOMENDADO)', 
                     value: 'all',
-                    className: "bg-white border border-slate-300 text-[#2d3558] dark:bg-slate-800 dark:text-white font-black"
+                    className: "bg-white border border-slate-300 text-[#2d3558] dark:bg-slate-800 dark:text-white font-extrabold"
                   },
                   ...accounts.map((a) => ({ label: a.name.toUpperCase(), value: a.id }))
                 ]}
@@ -183,7 +183,7 @@ export function EsforcoClient({
                 <button
                   type="button"
                   onClick={() => setText(examples[Math.floor(Math.random() * examples.length)])}
-                  className="text-[10px] font-black text-primary hover:text-foreground uppercase tracking-widest opacity-0 group-hover/label:opacity-100 transition-opacity"
+                  className="text-[10px] font-extrabold text-primary hover:text-foreground uppercase tracking-widest opacity-0 group-hover/label:opacity-100 transition-opacity"
                 >
                   Sugestão Aleatória
                 </button>
@@ -216,7 +216,7 @@ export function EsforcoClient({
                     transition={{ delay: idx * 0.05 }}
                     type="button"
                     onClick={() => setText(ex)}
-                    className="text-[10px] font-black text-[#5c5b5b] dark:text-slate-400 hover:text-primary bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 transition-all text-left uppercase tracking-tight shadow-sm"
+                    className="text-[10px] font-extrabold text-[#5c5b5b] dark:text-slate-400 hover:text-primary bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 transition-all text-left uppercase tracking-tight shadow-sm"
                   >
                     {ex.split(' ').slice(0, 4).join(' ')}...
                   </motion.button>
@@ -227,7 +227,7 @@ export function EsforcoClient({
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !text.trim()}
-              className="w-full h-16 bg-[#f7941e] text-white hover:bg-[#e0861b] shadow-xl shadow-[#f7941e]/20 group active:scale-[0.98] rounded-2xl font-black"
+              className="w-full h-16 bg-[#f7941e] text-white hover:bg-[#e0861b] shadow-xl shadow-[#f7941e]/20 group active:scale-[0.98] rounded-2xl font-extrabold"
             >
               {isSubmitting ? (
                 <><Loader2 className="w-6 h-6 animate-spin mr-3" /> Processando Inteligência...</>
@@ -269,13 +269,13 @@ export function EsforcoClient({
                     <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                       {paretoData.map((t, idx) => (
                         <div key={t.name} className="flex items-center gap-4 group">
-                          <span className="w-6 text-[10px] font-black text-content-secondary/30 italic tabular-nums">{String(idx + 1).padStart(2, '0')}</span>
+                          <span className="w-6 text-[10px] font-extrabold text-content-secondary/30 italic tabular-nums">{String(idx + 1).padStart(2, '0')}</span>
                           <div className="flex-1 space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-foreground text-xs font-black uppercase tracking-tight truncate max-w-[200px]">{t.name}</span>
+                              <span className="text-foreground text-xs font-extrabold uppercase tracking-tight truncate max-w-[200px]">{t.name}</span>
                               <div className="flex items-center gap-3">
                                 <span className="label-premium opacity-40 !text-[9px]">{t.percentage.toFixed(1)}%</span>
-                                <span className="text-primary font-black text-sm">{t.hours.toFixed(1)}H</span>
+                                <span className="text-primary font-extrabold text-sm">{t.hours.toFixed(1)}H</span>
                               </div>
                             </div>
                             <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-border-divider">
@@ -311,8 +311,8 @@ export function EsforcoClient({
                       className="group flex flex-col space-y-2 relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-foreground text-[10px] font-black uppercase tracking-tight truncate max-w-[120px] group-hover:text-primary transition-colors">{t.name}</span>
-                        <span className="text-primary font-black text-xs tabular-nums">
+                        <span className="text-foreground text-[10px] font-extrabold uppercase tracking-tight truncate max-w-[120px] group-hover:text-primary transition-colors">{t.name}</span>
+                        <span className="text-primary font-extrabold text-xs tabular-nums">
                            {t.hours.toFixed(1)}H
                         </span>
                       </div>
@@ -360,7 +360,7 @@ export function EsforcoClient({
               </CardTitle>
               <div className="flex items-center gap-3">
                 <span className="label-premium opacity-50">Produção Total Bruta:</span>
-                <Badge variant="neutral" className="text-primary border-primary/20 font-black text-xs px-4 py-1.5 rounded-xl">
+                <Badge variant="neutral" className="text-primary border-primary/20 font-extrabold text-xs px-4 py-1.5 rounded-xl">
                    {entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0).toFixed(1)} HORAS
                 </Badge>
               </div>
@@ -396,12 +396,12 @@ export function EsforcoClient({
                           onClick={() => setSelectedEntry(e)}
                         >
                            <TableCell className="p-4 pl-8">
-                              <span className="text-[13px] font-black uppercase tracking-tight text-content-primary">
+                              <span className="text-[13px] font-extrabold uppercase tracking-tight text-content-primary">
                                  {e.accounts?.name ?? '—'}
                               </span>
                            </TableCell>
                            <TableCell>
-                              <Badge variant="outline" className="bg-surface-background border-border-divider text-content-secondary text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-2xl">
+                              <Badge variant="outline" className="bg-surface-background border-border-divider text-content-secondary text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-2xl">
                                 {activityLabels[e.activity_type] || e.activity_type}
                               </Badge>
                            </TableCell>
@@ -410,11 +410,11 @@ export function EsforcoClient({
                            </TableCell>
                            <TableCell className="text-center">
                               <div className="inline-flex flex-col items-center">
-                                 <span className="text-content-primary font-black text-[11px] tracking-widest">{Number(e.parsed_hours).toFixed(1)}H</span>
+                                 <span className="text-content-primary font-extrabold text-[11px] tracking-widest">{Number(e.parsed_hours).toFixed(1)}H</span>
                               </div>
                            </TableCell>
                            <TableCell className="text-right pr-8">
-                              <span className="text-content-secondary font-black text-[11px] tracking-widest">
+                              <span className="text-content-secondary font-extrabold text-[11px] tracking-widest">
                                  {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
                               </span>
                            </TableCell>

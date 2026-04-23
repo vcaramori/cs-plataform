@@ -138,10 +138,10 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                  <Clock className="w-6 h-6 text-indigo-400" />
               </div>
               <div>
-                 <DialogTitle className="text-xl font-black uppercase tracking-tighter leading-none mb-1">
+                 <DialogTitle className="text-xl font-extrabold uppercase tracking-tighter leading-none mb-1">
                    {isEditing ? 'Configurar Inteligência' : 'Análise de Esforço'}
                  </DialogTitle>
-                 <DialogDescription className="text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-70 leading-none">
+                 <DialogDescription className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest opacity-70 leading-none">
                     Refinamento de Log Automático com I.A
                  </DialogDescription>
               </div>
@@ -153,7 +153,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                    variant="ghost" 
                    size="sm" 
                    onClick={() => setIsEditing(false)}
-                   className="text-slate-400 hover:text-white font-black uppercase tracking-widest text-[10px]"
+                   className="text-slate-400 hover:text-white font-extrabold uppercase tracking-widest text-[10px]"
                  >
                     Cancelar
                  </Button>
@@ -162,7 +162,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                    variant="outline" 
                    size="sm" 
                    onClick={() => setIsEditing(true)}
-                   className="bg-indigo-600/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white font-black uppercase tracking-widest text-[10px] h-9 gap-2"
+                   className="bg-indigo-600/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white font-extrabold uppercase tracking-widest text-[10px] h-9 gap-2"
                 >
                    <Edit2 className="w-3.5 h-3.5" /> Editar Log
                 </Button>
@@ -188,7 +188,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   
                   {/* Account Selector */}
                   <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
                        <Target className="w-3 h-3" /> LOGO Vinculado
                     </p>
                     {isEditing ? (
@@ -198,13 +198,13 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, account_id: val }))}
                       />
                     ) : (
-                      <p className="text-sm font-black text-white uppercase tracking-tight pl-1">{entry.accounts?.name ?? '—'}</p>
+                      <p className="text-sm font-extrabold text-white uppercase tracking-tight pl-1">{entry.accounts?.name ?? '—'}</p>
                     )}
                   </div>
 
                   {/* Date Picker */}
                   <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
                        <History className="w-3 h-3" /> Data de Registro
                     </p>
                     {isEditing ? (
@@ -215,7 +215,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         className="bg-slate-900/50 border-white/5 h-10 text-sm font-bold uppercase"
                       />
                     ) : (
-                      <p className="text-sm font-black text-white uppercase tracking-tight pl-1">
+                      <p className="text-sm font-extrabold text-white uppercase tracking-tight pl-1">
                         {format(new Date(entry.date + 'T12:00:00'), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                       </p>
                     )}
@@ -223,7 +223,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
                   {/* Activity Type */}
                   <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
                        <Zap className="w-3 h-3" /> Tipo de Atividade
                     </p>
                     {isEditing ? (
@@ -231,18 +231,18 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         value={editForm.activity_type}
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, activity_type: val }))}
                       >
-                        <SelectTrigger className="bg-slate-900/50 border-white/5 h-10 text-[11px] font-black uppercase tracking-widest text-indigo-400">
+                        <SelectTrigger className="bg-slate-900/50 border-white/5 h-10 text-[11px] font-extrabold uppercase tracking-widest text-indigo-400">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white">
                           {Object.entries(activityLabels).map(([val, label]) => (
-                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-black">{label}</SelectItem>
+                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-extrabold">{label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     ) : (
                       <div className="flex">
-                         <Badge className="bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 font-black uppercase tracking-widest text-[9px]">
+                         <Badge className="bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 font-extrabold uppercase tracking-widest text-[9px]">
                            {activityLabels[entry.activity_type] || entry.activity_type}
                          </Badge>
                       </div>
@@ -251,7 +251,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
                   {/* Hours */}
                   <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
                        <Clock className="w-3 h-3" /> Duração Ingerida
                     </p>
                     {isEditing ? (
@@ -260,14 +260,14 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                           maskType="decimal"
                           value={String(editForm.parsed_hours || 0)}
                           onValueChange={(val) => setEditForm(prev => ({ ...prev, parsed_hours: parseFloat(val) || 0 }))}
-                          className="bg-slate-900/50 border-white/5 h-10 text-sm font-black w-28"
+                          className="bg-slate-900/50 border-white/5 h-10 text-sm font-extrabold w-28"
                         />
-                        <span className="text-[10px] font-black text-slate-600 uppercase">Horas Decimais</span>
+                        <span className="text-[10px] font-extrabold text-slate-600 uppercase">Horas Decimais</span>
                       </div>
                     ) : (
                       <div className="flex items-baseline gap-1 pl-1">
-                         <span className="text-xl font-black text-indigo-400 leading-none">{entry.parsed_hours}</span>
-                         <span className="text-[10px] font-black text-slate-500 uppercase">hrs</span>
+                         <span className="text-xl font-extrabold text-indigo-400 leading-none">{entry.parsed_hours}</span>
+                         <span className="text-[10px] font-extrabold text-slate-500 uppercase">hrs</span>
                       </div>
                     )}
                   </div>
@@ -277,7 +277,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 ml-1">
                      <Activity className="w-4 h-4 text-indigo-400" />
-                     <p className="text-[11px] text-white uppercase font-black tracking-[0.2em]">Narrativa Estruturada (I.A)</p>
+                     <p className="text-[11px] text-white uppercase font-extrabold tracking-[0.2em]">Narrativa Estruturada (I.A)</p>
                   </div>
                   {isEditing ? (
                     <Textarea
@@ -296,7 +296,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                 {/* Grounding Info */}
                 {!isEditing && (
                   <div className="space-y-3 opacity-40 hover:opacity-100 transition-opacity">
-                    <p className="text-[9px] text-slate-500 uppercase font-black tracking-[0.2em] ml-1">Insight Original (Input de voz/texto)</p>
+                    <p className="text-[9px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">Insight Original (Input de voz/texto)</p>
                     <div className="bg-black/20 p-4 rounded-xl border border-white/5 text-slate-500 italic text-[11px] font-medium leading-relaxed">
                       &quot;{entry.natural_language_input}&quot;
                     </div>
@@ -313,7 +313,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                <Button 
                  variant="ghost" 
                  onClick={handleDelete}
-                 className="text-red-500/60 hover:text-red-500 hover:bg-red-500/10 font-black uppercase tracking-widest text-[10px] gap-2 h-10 px-4"
+                 className="text-red-500/60 hover:text-red-500 hover:bg-red-500/10 font-extrabold uppercase tracking-widest text-[10px] gap-2 h-10 px-4"
                >
                   <Trash2 className="w-4 h-4" /> Remover Registro
                </Button>
@@ -324,7 +324,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   <Button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.2em] h-11 px-8 shadow-[0_0_20px_rgba(99,102,241,0.4)] gap-2 group"
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold uppercase tracking-[0.2em] h-11 px-8 shadow-[0_0_20px_rgba(99,102,241,0.4)] gap-2 group"
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 group-hover:scale-125 transition-transform" />}
                     Sincronizar Inteligência

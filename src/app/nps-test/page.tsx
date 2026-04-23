@@ -23,7 +23,7 @@ function NPSScaleQuestion({ q, onChange }: { q: NPSQuestion; onChange: (a: Answe
           <button
             key={n}
             onClick={() => { setSelected(n); onChange({ question_id: q.id, text_value: String(n) }) }}
-            className={`flex-1 h-9 rounded-lg border text-xs font-black transition-all ${
+            className={`flex-1 h-9 rounded-lg border text-xs font-extrabold transition-all ${
               selected === n
                 ? 'bg-orange-500 border-orange-500 text-white'
                 : 'bg-transparent border-white/10 text-slate-500 hover:border-orange-500/40 hover:text-white'
@@ -208,7 +208,7 @@ export default function NPSTestPage() {
           ) : (
             <>
               <div className="flex items-center justify-between mb-5">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Pesquisa Rápida</p>
+                <p className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest">Pesquisa Rápida</p>
                 {loadingQ && <span className="text-slate-600 text-[10px]">Carregando...</span>}
               </div>
 
@@ -242,7 +242,7 @@ export default function NPSTestPage() {
                     Não agora
                   </button>
                   <button onClick={handleSubmit} disabled={!isValid() || loading}
-                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wide px-5 py-2 rounded-lg transition-colors">
+                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold uppercase tracking-wide px-5 py-2 rounded-lg transition-colors">
                     {loading ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>

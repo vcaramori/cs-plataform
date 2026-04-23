@@ -80,7 +80,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         onClick={onMobileClose}
       >
         <div className={cn(
-          "group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all relative border border-transparent",
+          "group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all relative border border-transparent",
           active
             ? "text-brand-primary bg-slate-100 border-slate-200 shadow-sm dark:text-white dark:bg-white/10 dark:border-white/20"
             : "text-brand-grey/70 hover:text-brand-primary hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
@@ -159,7 +159,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col whitespace-nowrap"
             >
-              <p className="text-[#2d3558] dark:text-white font-black text-sm tracking-[0.1em] uppercase leading-none">
+              <p className="text-[#2d3558] dark:text-white font-extrabold text-sm tracking-[0.1em] uppercase leading-none">
                 CS-Continuum
               </p>
               <p className="label-premium !text-[9px] opacity-60 mt-1.5 text-[#5c5b5b] dark:text-white/60">
@@ -186,7 +186,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
             type="button"
             onClick={() => { if (!isCollapsed) setSettingsOpen(o => !o) }}
             className={cn(
-              "w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border border-transparent",
+              "w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all border border-transparent",
               settingsOpen && !isCollapsed
                 ? "text-[#2d3558] bg-slate-100 dark:text-white dark:bg-white/10"
                 : "text-[#5c5b5b]/50 hover:text-[#2d3558] hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
@@ -240,7 +240,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         )}>
           <Avatar className="w-10 h-10 border-2 border-border/50 flex-shrink-0 shadow-md">
             <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-black">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-extrabold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -251,7 +251,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               className="flex-1 min-w-0"
             >
-              <p className="text-brand-primary dark:text-white text-[10px] font-black uppercase truncate tracking-tight leading-none">
+              <p className="text-brand-primary dark:text-white text-[10px] font-extrabold uppercase truncate tracking-tight leading-none">
                 {user.email?.split('@')[0]}
               </p>
               <p className="label-premium !text-[8px] opacity-60 mt-1.5 text-brand-grey dark:text-white/60">

@@ -76,7 +76,7 @@ function KPICard({
         <CardContent className="p-4 relative z-10 h-full flex flex-col justify-between">
           {/* Cabeçalho: Título e Ícone */}
           <div className="flex justify-between items-start w-full gap-2">
-            <p className="text-[#2d3558] dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight opacity-90 dark:opacity-80 min-h-[2rem] whitespace-pre-line">
+            <p className="text-[#2d3558] dark:text-slate-400 text-[10px] font-extrabold uppercase tracking-widest leading-tight opacity-90 dark:opacity-80 min-h-[2rem] whitespace-pre-line">
               {label}
             </p>
             <div className={cn("w-10 h-10 rounded-xl shadow-sm dark:shadow-glow transition-all duration-300 group-hover:scale-110 shrink-0 flex items-center justify-center border border-slate-100 dark:border-white/5", bgClass, textClass)}>
@@ -86,7 +86,7 @@ function KPICard({
 
           {/* Centro: Valor Principal */}
           <div className="flex-1 flex items-center py-2">
-            <h3 className="text-3xl font-black text-[#2d3558] dark:text-white tracking-tighter">
+            <h3 className="text-3xl font-extrabold text-[#2d3558] dark:text-white tracking-tighter">
               <Odometer value={value} prefix={prefix} suffix={suffix} decimal={decimal} />
             </h3>
           </div>
