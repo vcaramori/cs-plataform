@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,7 +24,7 @@ import {
   Lock, CheckCircle2, AlertTriangle, RefreshCw, UserCheck,
   Settings2, Send, Loader2, ChevronRight,
   ExternalLink, GitBranch, Star, Save,
-  Mail, FileText, Zap, ClipboardCheck
+  Mail, FileText, Zap, ClipboardCheck, Paperclip, Image as ImageIcon
 } from 'lucide-react'
 import {
   Select,
@@ -187,6 +188,10 @@ const eventMeta: Record<string, { icon: React.ElementType; label: string; color:
   sla_breach:         { icon: AlertTriangle,label: 'SLA violado',              color: 'text-red-600' },
 }
 
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB - System limit
+const EMAIL_ATTACHMENT_LIMIT = 20 * 1024 * 1024 // 20MB - Email limit
+
 function fmtTs(ts: string, dateOnly = false) {
   try {
     const d = new Date(ts)
@@ -196,6 +201,26 @@ function fmtTs(ts: string, dateOnly = false) {
   } catch {
     return ts
   }
+}
+
+const markdownComponents = {
+  p: ({ children }: any) => <p className="leading-relaxed mb-3 last:mb-0">{children}</p>,
+  ul: ({ children }: any) => <ul className="list-disc ml-4 mb-3 last:mb-0 space-y-1">{children}</ul>,
+  ol: ({ children }: any) => <ol className="list-decimal ml-4 mb-3 last:mb-0 space-y-1">{children}</ol>,
+  li: ({ children }: any) => <li className="leading-relaxed">{children}</li>,
+  strong: ({ children }: any) => <strong className="font-bold">{children}</strong>,
+  em: ({ children }: any) => <em className="italic">{children}</em>,
+  code: ({ children }: any) => <code className="bg-black/10 dark:bg-white/10 px-1 rounded font-mono text-[0.9em]">{children}</code>,
+  img: ({ src, alt }: any) => (
+    <a href={src} target="_blank" rel="noopener noreferrer" className="block my-3">
+      <img 
+        src={src} 
+        alt={alt} 
+        className="rounded-lg border border-black/10 dark:border-white/10 max-w-full h-auto hover:opacity-90 transition-opacity" 
+        loading="lazy"
+      />
+    </a>
+  ),
 }
 
 // ─── Thread components ────────────────────────────────────────────────────────
@@ -212,7 +237,9 @@ function ClientMessage({ text, ts }: { text: string; ts: string }) {
           <span className="text-content-secondary text-[11px]">{fmtTs(ts)}</span>
         </div>
         <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4">
-          <p className="text-content-primary text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
+          <div className="text-content-primary text-sm">
+            <ReactMarkdown components={markdownComponents}>{text}</ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>
@@ -229,11 +256,13 @@ function AgentReply({ event, agents }: { event: SLAEvent; agents: Agent[] }) {
       </div>
       <div className="flex-1 max-w-2xl flex flex-col items-end">
         <div className="flex items-center gap-2 mb-1.5">
-          <Text variant="secondary" className="text-[11px]">{fmtTs(event.occurred_at)}</Text>
-          <Text variant="primary" className="text-xs font-semibold text-indigo-600">{shortName}</Text>
+          <span className="text-content-secondary text-[11px]">{fmtTs(event.occurred_at)}</span>
+          <span className="text-xs font-bold uppercase tracking-tight text-indigo-500 dark:text-indigo-400">{shortName}</span>
         </div>
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl rounded-tr-sm p-4 w-full">
-          <p className="text-content-primary text-sm leading-relaxed whitespace-pre-wrap">{event.metadata?.body}</p>
+        <div className="bg-indigo-600 border border-indigo-500 rounded-2xl rounded-tr-sm p-4 w-full shadow-premium">
+          <div className="text-white text-sm prose-invert">
+            <ReactMarkdown components={markdownComponents}>{event.metadata?.body}</ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>
@@ -256,8 +285,10 @@ function InternalNote({ event }: { event: SLAEvent }) {
           </span>
           <Text variant="secondary" className="text-[11px] ml-auto">{fmtTs(event.occurred_at)}</Text>
         </div>
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl rounded-tl-sm p-4">
-          <p className="text-amber-900/80 text-sm leading-relaxed whitespace-pre-wrap">{event.metadata?.body}</p>
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 rounded-2xl rounded-tl-sm p-4">
+          <div className="text-amber-950 dark:text-amber-200 text-sm">
+            <ReactMarkdown components={markdownComponents}>{event.metadata?.body}</ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>
@@ -308,6 +339,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const [reviewResult, setReviewResult] = useState<ReplyReviewResult | null>(null)
   const [indicatorsOpen, setIndicatorsOpen] = useState(false)
   const [indicators, setIndicators] = useState<SupportIndicators | null>(null)
+
+  // Attachments
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -590,6 +625,72 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     }
   }
 
+  async function uploadFile(file: File) {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`Arquivo muito pesado. O limite máximo do sistema é 500MB.`)
+      return
+    }
+
+    const isLarge = file.size > EMAIL_ATTACHMENT_LIMIT
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const fileName = `${crypto.randomUUID()}.${ext}`
+      // Organização em pastas para política de expiração diferenciada
+      const folder = isLarge ? 'temporary' : 'permanent'
+      const filePath = `${folder}/${ticket.id}/${fileName}`
+
+      const res = await fetch(`/api/storage/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bucket: 'ticket-attachments',
+          path: filePath,
+          fileType: file.type,
+          fileName: file.name
+        })
+      })
+
+      if (!res.ok) throw new Error('Falha ao obter URL de upload')
+      const { uploadUrl, publicUrl } = await res.json()
+
+      // Upload direto para o S3/Supabase Storage via URL assinada ou Proxy
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }
+      })
+
+      if (!uploadRes.ok) throw new Error('Erro no upload do arquivo')
+
+      const isImage = file.type.startsWith('image/')
+      const suffix = isLarge ? ' *(Expira em 7 dias)*' : ''
+      const markdown = isImage 
+        ? `\n![${file.name}](${publicUrl})${suffix}\n`
+        : `\n[📎 Anexo: ${file.name}](${publicUrl})${suffix}\n`
+      
+      setComposeBody(prev => prev + markdown)
+      toast.success('Arquivo anexado')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao fazer upload')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile()
+        if (file) uploadFile(file)
+      }
+    }
+  }
+
+  const handleFileClick = () => fileInputRef.current?.click()
+
   return (
     <PageContainer noPadding className="flex flex-col h-full min-h-0">
 
@@ -796,32 +897,81 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               </button>
             </div>
 
-            {/* Context indicator */}
-            {tab === 'note' && (
-              <p className="text-amber-600 text-[10px] mb-2 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Visível apenas para a equipe interna — não será enviado ao cliente
-              </p>
-            )}
-            {tab === 'reply' && (
-              <p className="text-indigo-600 text-[10px] mb-2 flex items-center gap-1">
-                <Mail className="w-3 h-3" /> Resposta registrada no histórico do chamado
-              </p>
-            )}
-
-            <Textarea
-              value={composeBody}
-              onChange={e => { setComposeBody(e.target.value); if (reviewApproved) setReviewApproved(false) }}
-              placeholder={
-                tab === 'reply'
-                  ? 'Escreva a resposta ao cliente...'
-                  : 'Adicione uma nota interna para a equipe...'
-              }
-              rows={4}
-              className={cn(
-                'bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-xl resize-none border transition-colors',
-                tab === 'reply' ? 'border-indigo-200 focus:border-indigo-400' : 'border-amber-200 focus:border-amber-400'
-              )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) uploadFile(file)
+              }}
             />
+
+            <div className="relative group">
+              <Textarea
+                value={composeBody}
+                onChange={e => { setComposeBody(e.target.value); if (reviewApproved) setReviewApproved(false) }}
+                onPaste={handlePaste}
+                placeholder={
+                  tab === 'reply'
+                    ? 'Escreva a resposta ao cliente...'
+                    : 'Adicione uma nota interna para a equipe...'
+                }
+                className={cn(
+                  'min-h-[140px] pb-12 bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-xl resize-none border transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
+                  tab === 'reply' ? 'border-indigo-200' : 'border-amber-200'
+                )}
+                disabled={sending || uploading}
+              />
+
+              {/* Attachment Actions */}
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                        onClick={handleFileClick}
+                        disabled={sending || uploading}
+                      >
+                        <Paperclip className="w-4 h-4 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Anexar Arquivo (Máx 20MB)</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                        onClick={handleFileClick}
+                        disabled={sending || uploading}
+                      >
+                        <ImageIcon className="w-4 h-4 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Inserir Imagem (ou Cole)</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {uploading && (
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-500 animate-pulse bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Subindo arquivo...
+                  </div>
+                )}
+              </div>
+
+              {/* Expire Notice */}
+              <div className="absolute bottom-3 right-3">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/40">
+                  Expira em 7 dias (se {'>'} 20MB)
+                </span>
+              </div>
+            </div>
 
             <div className="flex items-center justify-between mt-3">
               {/* Outcome Selector — only when review is approved */}

@@ -18,7 +18,7 @@ interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement> {
 const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps>(
   ({ className, noPadding = false, animate = true, children, ...props }, ref) => {
     const baseClass = cn(
-      "w-full bg-surface-background text-content-primary",
+      "w-full bg-surface-background bg-honeycomb text-content-primary",
       !noPadding && "container mx-auto px-4 py-6 md:px-8 space-y-6",
       className
     )

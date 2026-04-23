@@ -123,15 +123,20 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 
-    /* Gradientes adaptativos: Quase imperceptíveis para foco total no conteúdo */
-    background-image:
-      radial-gradient(at 0% 0%, hsla(var(--primary), 0.01) 0, transparent 40%),
-      radial-gradient(at 100% 0%, hsla(var(--secondary), 0.01) 0, transparent 40%);
+    /* Padrão Honeycomb Wireframe - Teste Sugerido */
+    background-color: var(--background);
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%232d3558' stroke-width='1' opacity='0.08'/%3E%3C/svg%3E"),
+      radial-gradient(at 0% 0%, hsla(var(--primary), 0.02) 0, transparent 40%),
+      radial-gradient(at 100% 0%, hsla(var(--secondary), 0.02) 0, transparent 40%);
     background-attachment: fixed;
+    background-size: 56px 100px, 100% 100%, 100% 100%;
   }
 
   .dark body {
-    background-image:
+    background-color: #000b1a; /* Fundo sugerido para o teste */
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23004d99' stroke-width='1' opacity='0.25'/%3E%3C/svg%3E"),
       radial-gradient(at 0% 0%, hsla(229, 32%, 15%, 1) 0, transparent 50%),
       radial-gradient(at 100% 0%, hsla(33, 92%, 10%, 0.2) 0, transparent 50%);
   }
@@ -219,5 +224,18 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgba(255,255,255,0.05);
     border-radius: 2px;
+  }
+
+  /* ─── Padrão Honeycomb Elegante (Wireframe) ──────────────────── */
+  .bg-honeycomb {
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%232d3558' stroke-width='1' opacity='0.08'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 56px 100px;
+  }
+
+  .dark .bg-honeycomb {
+    background-image: 
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23004d99' stroke-width='1' opacity='0.25'/%3E%3C/svg%3E");
   }
 }

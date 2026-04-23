@@ -5,10 +5,37 @@ export async function POST(request: Request) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  // We allow authenticated users to upload logos
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    const contentType = request.headers.get('content-type')
+    
+    // Pattern 1: JSON request for Signed Upload URL (Recommended for large files)
+    if (contentType?.includes('application/json')) {
+      const { bucket, path } = await request.json()
+      
+      if (!bucket || !path) {
+        return NextResponse.json({ error: 'Bucket and Path are required' }, { status: 400 })
+      }
+
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUploadUrl(path)
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path)
+
+      return NextResponse.json({ 
+        uploadUrl: data.signedUrl, 
+        token: data.token,
+        publicUrl 
+      })
+    }
+
+    // Pattern 2: FormData (Legacy/Small files)
     const formData = await request.formData()
     const file = formData.get('file') as File
     const bucket = formData.get('bucket') as string || 'client-logos'
