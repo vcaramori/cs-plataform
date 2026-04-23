@@ -53,3 +53,7 @@ scripts/email-sync-loop.mjs
 
 # Arquivos temporários de agentes IA
 /scratch/
+
+# Playwright
+/test-results/
+/playwright-report/

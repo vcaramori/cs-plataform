@@ -52,13 +52,21 @@ Instruções:
 - date: use ${today} se nenhuma data for mencionada; interprete "ontem", "segunda", etc. relativos à data de hoje`
 
   const { result: raw } = await generateText(prompt, { allowFallback: true })
-  const json = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+  
+  // Extração robusta de JSON (procura o primeiro { e o último })
+  const jsonMatch = raw.match(/\{[\s\S]*\}/)
+  const json = jsonMatch ? jsonMatch[0] : raw
 
-  const parsed = JSON.parse(json) as ParsedTimeEntry
+  try {
+    const parsed = JSON.parse(json) as ParsedTimeEntry
+    
+    // Garantias de segurança
+    if (!parsed.parsed_hours || parsed.parsed_hours <= 0) parsed.parsed_hours = 1.0
+    if (!parsed.date) parsed.date = today
 
-  // Garantias de segurança
-  if (!parsed.parsed_hours || parsed.parsed_hours <= 0) parsed.parsed_hours = 1.0
-  if (!parsed.date) parsed.date = today
-
-  return parsed
+    return parsed
+  } catch (err) {
+    console.error('[Gemini] Erro ao parsear JSON:', json)
+    throw new Error('IA retornou formato inválido')
+  }
 }

@@ -368,7 +368,7 @@ export function SuporteClient({
                               </TableCell>
                               <TableCell className="pr-8 text-right">
                                 <span className="text-content-secondary font-black text-[11px] tracking-widest">
-                                  {format(new Date(t.created_at), 'dd/MM/yyyy')}
+                                  {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
                                 </span>
                               </TableCell>
                             </motion.tr>
