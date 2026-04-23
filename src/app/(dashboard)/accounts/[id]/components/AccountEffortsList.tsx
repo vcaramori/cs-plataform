@@ -29,9 +29,9 @@ export function AccountEffortsList({ entries, accounts }: { entries: any[], acco
 
   return (
     <div className="space-y-4">
-      <Card className="bg-slate-900 border-slate-800">
+      <Card>
         <CardHeader className="pb-3 px-6 pt-6">
-          <CardTitle className="text-white text-base flex items-center gap-2">
+          <CardTitle className="text-content-primary text-base flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-400" /> Histórico de Esforços
           </CardTitle>
         </CardHeader>
@@ -39,38 +39,38 @@ export function AccountEffortsList({ entries, accounts }: { entries: any[], acco
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-800">
-                  <th className="py-3 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</th>
-                  <th className="py-3 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo</th>
-                  <th className="py-3 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Descrição</th>
-                  <th className="py-3 px-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Horas</th>
+                <tr className="border-b border-border-divider">
+                  <th className="py-3 px-2 text-[10px] font-black text-content-secondary uppercase tracking-widest">Data</th>
+                  <th className="py-3 px-2 text-[10px] font-black text-content-secondary uppercase tracking-widest">Tipo</th>
+                  <th className="py-3 px-2 text-[10px] font-black text-content-secondary uppercase tracking-widest">Descrição</th>
+                  <th className="py-3 px-2 text-[10px] font-black text-content-secondary uppercase tracking-widest text-right">Horas</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
+              <tbody className="divide-y divide-border-divider">
                 {localEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-slate-600 text-sm">
+                    <td colSpan={4} className="py-12 text-center text-content-secondary text-sm">
                       Nenhum esforço registrado para esta conta.
                     </td>
                   </tr>
                 ) : (
                   localEntries.map((e) => (
-                    <tr 
-                      key={e.id} 
+                    <tr
+                      key={e.id}
                       onClick={() => setSelectedEntry(e)}
-                      className="group hover:bg-slate-800/40 cursor-pointer transition-colors"
+                      className="group hover:bg-surface-background cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-2 text-sm text-slate-400 font-medium">
+                      <td className="py-3 px-2 text-sm text-content-secondary font-medium">
                         {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
                       </td>
                       <td className="py-3 px-2">
-                        <Badge className="bg-slate-800/50 text-slate-500 border-slate-700/50 text-[10px] font-medium py-0">
+                        <Badge className="bg-surface-background text-content-secondary border-border-divider text-[10px] font-medium py-0">
                           {activityLabels[e.activity_type] ?? e.activity_type}
                         </Badge>
                       </td>
                       <td className="py-3 px-2">
                         <div className="flex items-center gap-2 max-w-[400px]">
-                          <p className="text-sm text-slate-200 truncate">{e.parsed_description}</p>
+                          <p className="text-sm text-content-primary truncate">{e.parsed_description}</p>
                           <Eye className="w-3.5 h-3.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </td>
@@ -86,7 +86,7 @@ export function AccountEffortsList({ entries, accounts }: { entries: any[], acco
         </CardContent>
       </Card>
 
-      <EffortEditModal 
+      <EffortEditModal
         entry={selectedEntry}
         onClose={() => setSelectedEntry(null)}
         onUpdate={handleUpdate}

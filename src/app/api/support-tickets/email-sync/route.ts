@@ -153,8 +153,8 @@ ${contentToProcess.substring(0, 25000)}
 
         // Se o ticket está fechado, novo reply cria ticket filho
         if (existingTicket.status === 'closed') {
-          const intent = await classifyIntent(t.message_content || t.title)
-          if (intent === 'question_or_issue' || intent === 'unclear') {
+          const intent = await classifyIntent(existingTicket.title, existingTicket.description || '', t.message_content || t.title)
+          if (intent === 'new_issue' || intent === 'follow_up') {
             await createFromClosed(existingTicket.id, {
               account_id: finalAccountId,
               title: `[Reabertura] ${existingTicket.title}`,
@@ -176,8 +176,8 @@ ${contentToProcess.substring(0, 25000)}
 
         // Se o ticket está resolvido, classificar intenção para reabrir ou ignorar
         if (existingTicket.status === 'resolved') {
-          const intent = await classifyIntent(t.message_content || t.title)
-          if (intent === 'question_or_issue' || intent === 'unclear') {
+          const intent = await classifyIntent(existingTicket.title, existingTicket.description || '', t.message_content || t.title)
+          if (intent === 'new_issue' || intent === 'follow_up') {
             await reopenTicket(existingTicket.id)
             await supabase.from('support_tickets').update({ thread_content: updatedThread }).eq('id', existingTicket.id)
             updated++

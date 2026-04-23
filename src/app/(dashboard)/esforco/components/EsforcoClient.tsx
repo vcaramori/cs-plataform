@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Label } from '@/components/ui/label'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
-import { Clock, Loader2, Sparkles, ChevronDown, Eye, Target, Zap, TrendingUp, History, ListFilter, ChevronRight } from 'lucide-react'
+import { Clock, Loader2, Sparkles, ChevronDown, Eye, Target, Zap, TrendingUp, History, ListFilter, ChevronRight, Building2, Maximize2, BarChart3 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -123,72 +124,90 @@ export function EsforcoClient({
     {}
   )
 
+  const sortedAccounts = Object.values(totalsByAccount).sort((a, b) => b.hours - a.hours)
+  const totalHours = sortedAccounts.reduce((acc, curr) => acc + curr.hours, 0)
+  
+  // Pareto Data
+  let cumulativeHours = 0
+  const paretoData = sortedAccounts.map(acc => {
+    cumulativeHours += acc.hours
+    return {
+      ...acc,
+      percentage: (acc.hours / totalHours) * 100,
+      cumulativePercentage: (cumulativeHours / totalHours) * 100
+    }
+  })
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Logger Column */}
-      <div className="lg:col-span-3 space-y-6">
-        <Card className="glass-card border-none shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.03] to-transparent pointer-events-none" />
+      <div className="lg:col-span-3 space-y-8">
+        <Card variant="glass" className="border-border shadow-2xl relative overflow-hidden group rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent pointer-events-none" />
           
-          <CardHeader className="pb-4 pt-8 px-8">
-            <CardTitle className="text-white text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-indigo-600/10 border border-indigo-500/20 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
+          <CardHeader className="pb-4 pt-10 px-10">
+            <CardTitle className="h2-section !text-xl !text-foreground flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5 text-primary" />
               </div>
               Inteligência de Esforço
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-8 px-8 pb-8 relative z-10">
-            <div className="space-y-3">
+          <CardContent className="space-y-10 px-10 pb-10 relative z-10">
+            <div className="space-y-4">
               <div className="flex items-center gap-2 mb-1 ml-1">
-                <Target className="w-3.5 h-3.5 text-indigo-400" />
-                <Label className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none">Contexto de LOGO</Label>
+                <Target className="w-4 h-4 text-primary" />
+                <Label className="label-premium">Contexto do Cliente</Label>
               </div>
               <SearchableSelect
                 value={selectedAccountId}
                 onValueChange={setSelectedAccountId}
                 options={[
-                  { label: 'IDENTIFICAR POR I.A (RECOMENDADO)', value: 'all' },
+                  { 
+                    label: 'IDENTIFICAR POR I.A (RECOMENDADO)', 
+                    value: 'all',
+                    className: "bg-white border border-slate-300 text-[#2d3558] dark:bg-slate-800 dark:text-white font-black"
+                  },
                   ...accounts.map((a) => ({ label: a.name.toUpperCase(), value: a.id }))
                 ]}
               />
             </div>
 
-            <div className="space-y-3 relative">
+            <div className="space-y-4 relative">
               <div className="flex items-center justify-between mb-1 ml-1 group/label">
                 <div className="flex items-center gap-2">
-                   <Zap className="w-3.5 h-3.5 text-indigo-400" />
-                   <Label className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Relato de Atividade</Label>
+                   <Zap className="w-4 h-4 text-primary" />
+                   <Label className="label-premium">Relato de Atividade</Label>
                 </div>
                 <button
                   type="button"
                   onClick={() => setText(examples[Math.floor(Math.random() * examples.length)])}
-                  className="text-[9px] font-black text-indigo-400 hover:text-white uppercase tracking-widest opacity-0 group-hover/label:opacity-100 transition-opacity"
+                  className="text-[10px] font-black text-primary hover:text-foreground uppercase tracking-widest opacity-0 group-hover/label:opacity-100 transition-opacity"
                 >
                   Sugestão Aleatória
                 </button>
               </div>
               
               <div className="relative group/input">
-                 <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-600/20 rounded-2xl blur opacity-0 group-focus-within/input:opacity-100 transition-opacity pointer-events-none animate-pulse" />
+                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within/input:opacity-100 transition-opacity pointer-events-none animate-pulse" />
                  <Textarea
                    value={text}
                    onChange={(e) => setText(e.target.value)}
-                   placeholder="Descreva o que foi feito... ex: 'Passei 45min em reunião de estratégia com a Empresa X'"
+                   placeholder="Descreva o que foi feito em liguagem natural... ex: 'Passei 45min em reunião de estratégia com a Empresa X'"
                    rows={4}
-                   className="relative bg-black/40 border-white/5 text-slate-100 placeholder:text-slate-700 font-bold tracking-tight text-base p-6 rounded-2xl focus-visible:ring-indigo-500/50 resize-none transition-all shadow-inner"
+                    className="relative bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-foreground placeholder:text-muted-foreground/30 font-bold tracking-tight text-base p-6 rounded-2xl focus-visible:ring-primary/30 resize-none transition-all shadow-sm"
                  />
               </div>
             </div>
 
             {/* Smart Suggestions */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center gap-2 ml-1">
-                 <ListFilter className="w-3 h-3 text-slate-600" />
-                 <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Atividades Frequentes:</span>
+                 <ListFilter className="w-4 h-4 text-muted-foreground/50" />
+                 <span className="label-premium opacity-50">Explorações sugeridas:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {examples.map((ex, idx) => (
                   <motion.button
                     key={ex}
@@ -197,7 +216,7 @@ export function EsforcoClient({
                     transition={{ delay: idx * 0.05 }}
                     type="button"
                     onClick={() => setText(ex)}
-                    className="text-[10px] font-bold text-slate-400 hover:text-indigo-300 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 transition-all text-left uppercase tracking-tight"
+                    className="text-[10px] font-black text-[#5c5b5b] dark:text-slate-400 hover:text-primary bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 transition-all text-left uppercase tracking-tight shadow-sm"
                   >
                     {ex.split(' ').slice(0, 4).join(' ')}...
                   </motion.button>
@@ -208,14 +227,14 @@ export function EsforcoClient({
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !text.trim()}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[0_0_30px_rgba(99,102,241,0.3)] group transition-all active:scale-95"
+              className="w-full h-16 bg-[#f7941e] text-white hover:bg-[#e0861b] shadow-xl shadow-[#f7941e]/20 group active:scale-[0.98] rounded-2xl font-black"
             >
               {isSubmitting ? (
-                <><Loader2 className="w-5 h-5 animate-spin mr-3" /> Processando Inteligência...</>
+                <><Loader2 className="w-6 h-6 animate-spin mr-3" /> Processando Inteligência...</>
               ) : (
-                <span className="flex items-center gap-3">
-                   Publicar Registro
-                   <ChevronRight className="w-4 h-4 text-indigo-300 group-hover:translate-x-1 transition-transform" />
+                <span className="flex items-center gap-4 text-xs tracking-[0.2em]">
+                   REGISTRAR PRODUÇÃO
+                   <ChevronRight className="w-5 h-5 text-white/50 group-hover:translate-x-1 transition-transform" />
                 </span>
               )}
             </Button>
@@ -224,147 +243,192 @@ export function EsforcoClient({
       </div>
 
       {/* Telemetry Column */}
-      <div className="lg:col-span-1">
-        <Card className="glass-card border-none shadow-2xl h-full flex flex-col">
-          <CardHeader className="pb-4 pt-8 px-8">
-            <CardTitle className="text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 opacity-60">
-              <TrendingUp className="w-4 h-4 text-indigo-400" />
-              Telemetry Analytics
-            </CardTitle>
+      <div className="lg:col-span-1 h-full">
+        <Card variant="glass" className="border-border shadow-2xl h-full flex flex-col rounded-2xl overflow-hidden">
+          <CardHeader className="pb-4 pt-10 px-8">
+            <div className="flex items-center justify-between">
+              <CardTitle className="h2-section !text-[11px] flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                Curva de Esforço
+              </CardTitle>
+              
+              {paretoData.length > 5 && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 text-primary transition-all">
+                      <Maximize2 className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-surface-card border-border-divider max-w-2xl rounded-2xl shadow-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="h2-section flex items-center gap-3">
+                        <Building2 className="w-6 h-6 text-primary" />
+                        Visão Pareto de Esforço (Todos os Clientes)
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                      {paretoData.map((t, idx) => (
+                        <div key={t.name} className="flex items-center gap-4 group">
+                          <span className="w-6 text-[10px] font-black text-content-secondary/30 italic tabular-nums">{String(idx + 1).padStart(2, '0')}</span>
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-foreground text-xs font-black uppercase tracking-tight truncate max-w-[200px]">{t.name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="label-premium opacity-40 !text-[9px]">{t.percentage.toFixed(1)}%</span>
+                                <span className="text-primary font-black text-sm">{t.hours.toFixed(1)}H</span>
+                              </div>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-border-divider">
+                              <div 
+                                className="h-full bg-primary shadow-[0_0_8px_var(--primary)]"
+                                style={{ width: `${t.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="flex-1 px-4 pb-8 space-y-3 overflow-y-auto scrollbar-thin scrollbar-thumb-white/5">
+          <CardContent className="flex-1 px-5 pb-8 space-y-6 overflow-y-auto custom-scrollbar">
             <AnimatePresence mode='popLayout'>
-              {Object.values(totalsByAccount).length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center opacity-20 py-12">
-                   <Clock className="w-10 h-10 mb-2" />
-                   <p className="text-[9px] font-black uppercase tracking-widest">Sem Métricas</p>
+              {paretoData.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
+                   <Clock className="w-12 h-12 mb-4" />
+                   <p className="label-premium">Sem métricas hoje</p>
                 </div>
               ) : (
-                Object.values(totalsByAccount)
-                  .sort((a, b) => b.hours - a.hours)
-                  .map((t, idx) => (
+                <div className="space-y-6">
+                  {paretoData.slice(0, 8).map((t, idx) => (
                     <motion.div 
                       key={t.name}
-                      initial={{ opacity: 0, x: 20 }}
+                      initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="group flex flex-col p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] transition-all relative overflow-hidden"
+                      transition={{ delay: idx * 0.05 }}
+                      className="group flex flex-col space-y-2 relative"
                     >
-                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest truncate max-w-[120px]">{t.name}</span>
-                        <Badge className="bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 font-black text-[10px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-foreground text-[10px] font-black uppercase tracking-tight truncate max-w-[120px] group-hover:text-primary transition-colors">{t.name}</span>
+                        <span className="text-primary font-black text-xs tabular-nums">
                            {t.hours.toFixed(1)}H
-                        </Badge>
+                        </span>
                       </div>
-                      <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                         <motion.div 
+                      
+                      <div className="relative h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-border-divider/50">
+                        <motion.div 
                            initial={{ width: 0 }}
-                           animate={{ width: `${Math.min(100, (t.hours / 10) * 100)}%` }}
+                           animate={{ width: `${t.percentage}%` }}
                            transition={{ duration: 1, delay: idx * 0.1 }}
-                           className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400"
+                           className={cn(
+                             "h-full rounded-full transition-all",
+                             idx < 3 ? "bg-primary shadow-[0_0_10px_var(--primary)]" : "bg-primary/40"
+                           )}
                          />
                       </div>
+                      
+                      {idx < 8 && (
+                         <div className="flex justify-between items-center px-0.5">
+                            <span className="text-[8px] font-bold text-muted-foreground/40 uppercase">Pareto Acumulado</span>
+                            <span className="text-[8px] font-bold text-muted-foreground/60">{t.cumulativePercentage.toFixed(0)}%</span>
+                         </div>
+                      )}
                     </motion.div>
-                  ))
+                  ))}
+                </div>
               )}
             </AnimatePresence>
           </CardContent>
-          <div className="p-4 border-t border-white/5 text-center">
-             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Baseado em Entradas Indiretas</span>
+          <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
+             <span className="label-premium !text-[8px] opacity-40 uppercase tracking-widest">Distribuição por Pareto (Volume 80/20)</span>
           </div>
         </Card>
       </div>
 
       {/* History Area */}
-      <div className="lg:col-span-4 mt-4">
-        <Card className="glass-card border-none shadow-2xl overflow-hidden">
-          <CardHeader className="pb-8 pt-8 px-10 border-b border-white/5 bg-white/[0.01]">
+      <div className="lg:col-span-4 mt-8">
+        <Card variant="glass" className="border-border shadow-2xl rounded-2xl overflow-hidden">
+          <CardHeader className="pb-8 pt-8 px-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-white/5 border border-white/10">
-                  <History className="w-5 h-5 text-slate-400" />
+              <CardTitle className="h2-section !text-xl !text-foreground flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                  <History className="w-6 h-6 text-primary" />
                 </div>
-                Journal de Recentes
+                Journal de Atividades Recentes
               </CardTitle>
-              <div className="flex items-center gap-2 opacity-40">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tempo Total Logs:</span>
-                <Badge variant="outline" className="text-white border-white/10 font-bold">
-                   {entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0).toFixed(1)} Horas
+              <div className="flex items-center gap-3">
+                <span className="label-premium opacity-50">Produção Total Bruta:</span>
+                <Badge variant="neutral" className="text-primary border-primary/20 font-black text-xs px-4 py-1.5 rounded-xl">
+                   {entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0).toFixed(1)} HORAS
                 </Badge>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             {entries.length === 0 ? (
-              <div className="text-center py-24 opacity-20">
-                <Clock className="w-12 h-12 mx-auto mb-4" />
-                <p className="text-xs font-black uppercase tracking-widest">Histórico Vazio</p>
+              <div className="text-center py-32 opacity-20 bg-slate-50/50 dark:bg-slate-900/50">
+                <Clock className="w-16 h-16 mx-auto mb-6" />
+                <p className="label-premium !text-sm">Histórico aguardando novos registros</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                 <Table>
-                    <TableHeader>
-                       <TableRow className="border-white/5 hover:bg-transparent">
-                          <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px] pl-10">Contexto / LOGO</TableHead>
-                          <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Atividade Linkada</TableHead>
-                          <TableHead className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Detalhamento Analítico</TableHead>
-                          <TableHead className="text-center text-slate-500 font-black uppercase tracking-widest text-[10px]">Esforço (H)</TableHead>
-                          <TableHead className="text-right text-slate-500 font-black uppercase tracking-widest text-[10px] pr-10">Data Registro</TableHead>
-                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <AnimatePresence mode='popLayout'>
-                        {entries.map((e, index) => (
-                          <motion.tr 
-                            key={e.id} 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="group border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                            onClick={() => setSelectedEntry(e)}
-                          >
-                            <TableCell className="py-5 pl-10">
-                               <span className="text-white font-black text-sm tracking-tight group-hover:text-indigo-400 transition-colors uppercase">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                       <TableHead className="pl-8 text-[11px]">Logo / Conta</TableHead>
+                       <TableHead className="text-[11px]">Tipo de Atividade</TableHead>
+                       <TableHead className="text-[11px]">Detalhamento Analítico</TableHead>
+                       <TableHead className="text-center text-[11px]">Horas</TableHead>
+                       <TableHead className="text-right pr-8 text-[11px]">Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AnimatePresence mode='popLayout'>
+                      {entries.map((e, index) => (
+                        <motion.tr 
+                          key={e.id} 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.02 }}
+                          className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer h-16"
+                          onClick={() => setSelectedEntry(e)}
+                        >
+                           <TableCell className="p-4 pl-8">
+                              <span className="text-[13px] font-black uppercase tracking-tight text-content-primary">
                                  {e.accounts?.name ?? '—'}
-                               </span>
-                            </TableCell>
-                            <TableCell>
-                               <Badge variant="outline" className="bg-white/5 border-white/10 text-slate-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
-                                 {activityLabels[e.activity_type] || e.activity_type}
-                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                               <span className="text-slate-400 text-sm font-bold tracking-tight line-clamp-1">{e.parsed_description}</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                               <div className="inline-flex flex-col items-center">
-                                  <span className="text-indigo-400 font-black text-base tracking-tighter">{Number(e.parsed_hours).toFixed(1)}</span>
-                                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-tighter">Hrs</span>
-                               </div>
-                            </TableCell>
-                            <TableCell className="text-right pr-10">
-                               <span className="text-slate-500 text-[10px] font-black font-mono">
-                                  {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
-                               </span>
-                            </TableCell>
-                          </motion.tr>
-                        ))}
-                      </AnimatePresence>
-                    </TableBody>
-                 </Table>
+                              </span>
+                           </TableCell>
+                           <TableCell>
+                              <Badge variant="outline" className="bg-surface-background border-border-divider text-content-secondary text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-2xl">
+                                {activityLabels[e.activity_type] || e.activity_type}
+                              </Badge>
+                           </TableCell>
+                           <TableCell>
+                              <span className="text-content-secondary text-sm font-medium tracking-tight line-clamp-1 group-hover:text-foreground transition-colors">{e.parsed_description}</span>
+                           </TableCell>
+                           <TableCell className="text-center">
+                              <div className="inline-flex flex-col items-center">
+                                 <span className="text-content-primary font-black text-[11px] tracking-widest">{Number(e.parsed_hours).toFixed(1)}H</span>
+                              </div>
+                           </TableCell>
+                           <TableCell className="text-right pr-8">
+                              <span className="text-content-secondary font-black text-[11px] tracking-widest">
+                                 {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
+                              </span>
+                           </TableCell>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <EffortEditModal 
-        entry={selectedEntry}
-        onClose={() => setSelectedEntry(null)}
-        onUpdate={handleUpdate}
-        accounts={accounts}
-      />
     </div>
   )
 }

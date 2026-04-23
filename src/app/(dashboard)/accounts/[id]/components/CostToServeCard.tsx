@@ -19,7 +19,7 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
   const warn = env.thresholds.costToServeWarn
   const critical = env.thresholds.costToServeCritical
 
-  const statusColor = ratio === 0 ? 'text-slate-400' :
+  const statusColor = ratio === 0 ? 'text-content-secondary' :
     ratio < warn ? 'text-emerald-400' :
     ratio < critical ? 'text-yellow-400' :
     'text-red-400'
@@ -33,11 +33,11 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
   const barColor = ratio < warn ? 'bg-emerald-500' : ratio < critical ? 'bg-yellow-500' : 'bg-red-500'
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-white text-base flex items-center gap-2">
+        <CardTitle className="text-content-primary text-base flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-indigo-400" /> Cost-to-Serve
-          <span className="text-xs font-normal text-slate-400 ml-auto">mês atual</span>
+          <span className="text-xs font-normal text-content-secondary ml-auto">mês atual</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -49,10 +49,10 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
         </div>
 
         <div className="space-y-1">
-          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-surface-background rounded-full overflow-hidden">
             <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${barWidth}%` }} />
           </div>
-          <div className="flex justify-between text-xs text-slate-500">
+          <div className="flex justify-between text-xs text-content-secondary">
             <span>0%</span>
             <span className="text-yellow-600">{(warn * 100).toFixed(0)}%</span>
             <span className="text-red-600">{(critical * 100).toFixed(0)}%+</span>
@@ -61,21 +61,21 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
 
         <div className="space-y-2 pt-1">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Direto</span>
-            <span className="text-white font-medium">{formatNumber(directHours)}h</span>
+            <span className="text-content-secondary flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Direto</span>
+            <span className="text-content-primary font-medium">{formatNumber(directHours)}h</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Indireto</span>
-            <span className="text-white font-medium">{formatNumber(indirectHours)}h</span>
+            <span className="text-content-secondary flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Indireto</span>
+            <span className="text-content-primary font-medium">{formatNumber(indirectHours)}h</span>
           </div>
-          <div className="flex justify-between text-sm border-t border-slate-800 pt-2">
-            <span className="text-slate-300 font-medium">Total</span>
-            <span className="text-white font-bold">{formatNumber(totalHours)}h</span>
+          <div className="flex justify-between text-sm border-t border-border-divider pt-2">
+            <span className="text-content-primary font-medium">Total</span>
+            <span className="text-content-primary font-bold">{formatNumber(totalHours)}h</span>
           </div>
           {csmHourCost > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Custo Total</span>
-              <span className="text-white font-medium">{formatCurrency(totalHours * csmHourCost)}</span>
+              <span className="text-content-secondary">Custo Total</span>
+              <span className="text-content-primary font-medium">{formatCurrency(totalHours * csmHourCost)}</span>
             </div>
           )}
         </div>

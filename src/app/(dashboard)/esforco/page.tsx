@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
+import { Coffee } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { PageContainer } from '@/components/ui/page-container'
 import { EsforcoClient } from './components/EsforcoClient'
 
 export default async function EsforcoPage() {
@@ -21,11 +23,17 @@ export default async function EsforcoPage() {
   ])
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Esforço Back-office</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Registre tempo indireto em linguagem natural — a IA extrai conta, tipo e duração automaticamente
+    <PageContainer>
+      <div className="flex flex-col gap-2 relative">
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
+            <Coffee className="w-5 h-5 text-content-primary" />
+          </div>
+          <h1 className="h1-page">Esforço Back-office</h1>
+        </div>
+        <p className="label-premium flex items-center gap-2">
+          Registro de produtividade indireta via I.A — Processamento autônomo de conta, tipo e duração.
         </p>
       </div>
 
@@ -33,6 +41,6 @@ export default async function EsforcoPage() {
         accounts={accounts ?? []}
         initialEntries={(entries ?? []) as any}
       />
-    </div>
+    </PageContainer>
   )
 }

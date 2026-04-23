@@ -73,8 +73,6 @@ CREATE TABLE public.interactions (
   title                TEXT        NOT NULL,
   date                 DATE        NOT NULL,
   direct_hours         NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (direct_hours >= 0),
-  pinecone_vector_id   TEXT,
-  raw_transcript       TEXT,
   sentiment_score      NUMERIC(4,3) CHECK (sentiment_score >= -1 AND sentiment_score <= 1),
   alert_triggered      BOOLEAN     NOT NULL DEFAULT false,
   source               TEXT        NOT NULL DEFAULT 'manual' CHECK (source IN ('readai', 'manual', 'csv')),
@@ -123,7 +121,6 @@ CREATE TABLE public.support_tickets (
   resolved_at          DATE,
   source               TEXT        NOT NULL DEFAULT 'manual' CHECK (source IN ('csv', 'manual')),
   csv_filename         TEXT,
-  pinecone_vector_id   TEXT,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -201,7 +201,7 @@ export async function processAgentInteraction(
     // Normal reply - ensure no longer pending if column exists
     await supabase.from('support_tickets').update({
       pending_reason: 'none'
-    }).eq('id', ticketId).catch(() => {})
+    }).eq('id', ticketId)
   }
 
   // 3. AI Analysis for promised follow-up
@@ -304,5 +304,5 @@ async function createNotification(userId: string, type: string, ticketId: string
     metadata: { ticket_id: ticketId },
     read: false,
     created_at: new Date().toISOString()
-  }).catch(err => console.error('[Lifecycle] Notification insert failed:', err))
+  })
 }

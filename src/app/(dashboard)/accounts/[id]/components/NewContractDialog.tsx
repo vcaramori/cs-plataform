@@ -81,10 +81,10 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
           <Plus className="w-3.5 h-3.5" />
         </button>
       </DialogTrigger>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
+      <DialogContent className="bg-surface-card border-border-divider text-content-primary max-w-lg">
         <DialogHeader>
           <DialogTitle>Registrar Novo Produto/Contrato</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-content-secondary">
             Adicione uma nova solução (ex: S&OP, Abast) contendo seu próprio histórico e vigência. Para aditivar um contrato existente, clique no botão &quot;Atualizar / Aditivo&quot; no card correspondente.
           </DialogDescription>
         </DialogHeader>
@@ -122,12 +122,12 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>MRR (R$)</Label>
-              <Input {...register('mrr')} type="number" step="0.01" className="bg-slate-800 border-slate-700" />
+              <Input {...register('mrr')} type="number" step="0.01" className="bg-surface-background border-border-divider" />
               {errors.mrr && <p className="text-red-400 text-xs">{errors.mrr.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Horas Contratadas/Mês</Label>
-              <Input {...register('contracted_hours_monthly')} type="number" step="0.5" className="bg-slate-800 border-slate-700" />
+              <Input {...register('contracted_hours_monthly')} type="number" step="0.5" className="bg-surface-background border-border-divider" />
               {errors.contracted_hours_monthly && <p className="text-red-400 text-xs">{errors.contracted_hours_monthly.message}</p>}
             </div>
           </div>
@@ -135,25 +135,25 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Data de Início</Label>
-              <Input {...register('start_date')} type="date" className="bg-slate-800 border-slate-700" />
+              <Input {...register('start_date')} type="date" className="bg-surface-background border-border-divider" />
               {errors.start_date && <p className="text-red-400 text-xs">{errors.start_date.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Data de Renovação</Label>
-              <Input {...register('renewal_date')} type="date" className="bg-slate-800 border-slate-700" />
+              <Input {...register('renewal_date')} type="date" className="bg-surface-background border-border-divider" />
               {errors.renewal_date && <p className="text-red-400 text-xs">{errors.renewal_date.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Produto / Descrição</Label>
-            <Input {...register('description')} placeholder="Ex: S&OP, S&OE, Abast..." className="bg-slate-800 border-slate-700" />
+            <Input {...register('description')} placeholder="Ex: S&OP, S&OE, Abast..." className="bg-surface-background border-border-divider" />
             {errors.description && <p className="text-red-400 text-xs">{errors.description.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label>Notas do Aditivo</Label>
-            <Textarea {...register('notes')} placeholder="Detalhes adicionais..." className="bg-slate-800 border-slate-700" />
+            <Textarea {...register('notes')} placeholder="Detalhes adicionais..." className="bg-surface-background border-border-divider" />
             {errors.notes && <p className="text-red-400 text-xs">{errors.notes.message}</p>}
           </div>
 

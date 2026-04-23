@@ -7,7 +7,6 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import {
   LayoutDashboard,
-  Building2,
   Clock,
   TicketCheck,
   MessageSquareText,
@@ -27,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { ThemeSelector } from './ThemeSelector'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
@@ -80,16 +80,16 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         onClick={onMobileClose}
       >
         <div className={cn(
-          "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all relative",
+          "group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all relative border border-transparent",
           active
-            ? "text-white bg-plannera-sop/10 border border-plannera-sop/20"
-            : "text-slate-400 hover:text-white hover:bg-white/5 border border-transparent"
+            ? "text-brand-primary bg-slate-100 border-slate-200 shadow-sm dark:text-white dark:bg-white/10 dark:border-white/20"
+            : "text-brand-grey/70 hover:text-brand-primary hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
         )}>
           <Icon className={cn(
             "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
             active
-              ? "text-plannera-orange"
-              : "text-slate-500 group-hover:text-plannera-orange/60"
+              ? "text-brand-primary dark:text-white"
+              : "text-brand-grey/40 dark:text-white/40 group-hover:text-brand-primary dark:group-hover:text-white"
           )} />
 
           {!isCollapsed && (
@@ -105,18 +105,18 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
           {active && (
             <motion.div
               layoutId="active-pill"
-              className="absolute inset-0 bg-plannera-orange/5 rounded-xl -z-10"
+              className="absolute inset-0 bg-primary/5 rounded-2xl -z-10"
               transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
             />
           )}
 
           {active && !isCollapsed && (
-            <ChevronRight className="w-3 h-3 text-plannera-orange/50" />
+            <ChevronRight className="w-4 h-4 text-white/40" />
           )}
 
           {/* Barra lateral do item ativo */}
           {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-plannera-orange rounded-full blur-sm" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-accent rounded-full shadow-[0_0_15px_rgba(var(--accent),0.5)]" />
           )}
         </div>
       </Link>
@@ -126,36 +126,31 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 260 }}
+      animate={{ width: isCollapsed ? 80 : 280 }}
       className={cn(
-        "h-screen flex-shrink-0 bg-slate-950/50 backdrop-blur-2xl",
-        "border-r border-white/5 flex flex-col relative z-50",
-        "shadow-[10px_0_30px_rgba(0,0,0,0.5)]"
+        "h-screen flex-shrink-0 bg-white dark:bg-slate-950 dark:backdrop-blur-3xl",
+        "border-r border-slate-200 dark:border-white/5 flex flex-col relative z-50",
+        "shadow-[10px_0_40px_rgba(0,0,0,0.03)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.15)]"
       )}
     >
-      {/*
-        Botão de colapso — visível apenas em desktop (md+).
-        No mobile a sidebar abre como drawer via ClientDashboardLayout,
-        então o botão de posição absoluta causaria overflow fora do drawer.
-      */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-12 w-6 h-6 rounded-full bg-plannera-orange hover:bg-plannera-orange/90 border-none text-white z-50 shadow-lg hidden md:flex items-center justify-center"
+        className="absolute -right-4 top-12 w-8 h-8 rounded-2xl bg-primary hover:bg-primary/90 border-primary/30 text-primary-foreground z-50 shadow-xl hidden md:flex items-center justify-center p-0 transition-all hover:scale-110 active:scale-95"
         aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
       >
         {isCollapsed
-          ? <PanelLeftOpen  className="w-3 h-3" />
-          : <PanelLeftClose className="w-3 h-3" />
+          ? <PanelLeftOpen  className="w-4 h-4" />
+          : <PanelLeftClose className="w-4 h-4" />
         }
       </Button>
 
       {/* ── Logo ─────────────────────────────────────────── */}
-      <div className="p-5 border-b border-white/5">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-plannera-primary to-plannera-sop flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(45,53,88,0.4)]">
-            <Sparkles className="w-4 h-4 text-plannera-orange" />
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center gap-4 overflow-hidden">
+          <div className="w-11 h-11 rounded-2xl bg-accent flex items-center justify-center flex-shrink-0 shadow-lg border border-accent/20">
+            <Sparkles className="w-5 h-5 text-accent-foreground" />
           </div>
 
           {!isCollapsed && (
@@ -164,10 +159,10 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col whitespace-nowrap"
             >
-              <p className="text-white font-bold text-sm tracking-tight uppercase leading-tight">
+              <p className="text-[#2d3558] dark:text-white font-black text-sm tracking-[0.1em] uppercase leading-none">
                 CS-Continuum
               </p>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wide leading-none mt-0.5">
+              <p className="label-premium !text-[9px] opacity-60 mt-1.5 text-[#5c5b5b] dark:text-white/60">
                 Control Tower
               </p>
             </motion.div>
@@ -176,40 +171,40 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </div>
 
       {/* ── Navegação ────────────────────────────────────── */}
-      <nav className="flex-1 p-3 space-y-8 mt-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <nav className="flex-1 p-4 space-y-10 mt-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Main Section */}
-        <div className="space-y-1">
+        <div className="space-y-2">
           {navItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </div>
 
         {/* Settings Section */}
-        <div className={cn("space-y-1", isCollapsed && "pt-4 border-t border-white/5")}>
+        <div className={cn("space-y-2", isCollapsed && "pt-6 border-t border-white/10")}>
           {/* Configurações — botão expansível */}
           <button
             type="button"
             onClick={() => { if (!isCollapsed) setSettingsOpen(o => !o) }}
             className={cn(
-              "w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all border border-transparent",
+              "w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border border-transparent",
               settingsOpen && !isCollapsed
-                ? "text-white bg-white/5"
-                : "text-slate-500 hover:text-white hover:bg-white/5"
+                ? "text-[#2d3558] bg-slate-100 dark:text-white dark:bg-white/10"
+                : "text-[#5c5b5b]/50 hover:text-[#2d3558] hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
             )}
           >
             <Layers className={cn(
               "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
-              settingsOpen ? "text-plannera-orange/70" : "text-slate-600 group-hover:text-plannera-orange/60"
+              settingsOpen ? "text-[#2d3558] dark:text-white" : "text-[#5c5b5b]/40 dark:text-white/40 group-hover:text-[#2d3558]/70 dark:group-hover:text-white/70"
             )} />
             {!isCollapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 text-left whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                Configurações
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 text-left whitespace-nowrap opacity-70 dark:opacity-60">
+                Governance
               </motion.span>
             )}
             {!isCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <ChevronRight className={cn(
-                  "w-3.5 h-3.5 text-slate-600 transition-transform duration-200",
+                  "w-4 h-4 text-muted-foreground/40 transition-transform duration-300",
                   settingsOpen && "rotate-90"
                 )} />
               </motion.div>
@@ -222,7 +217,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15 }}
-              className={cn("space-y-1", !isCollapsed && "pl-3")}
+              className={cn("space-y-2", !isCollapsed && "pl-4")}
             >
               {settingsItems.map((item) => (
                 <NavLink key={item.href} {...item} />
@@ -233,19 +228,19 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </nav>
 
       {/* ── Notificações e Alertas ──────────────────────── */}
-      <div className="px-3 py-2 border-t border-white/5 bg-black/10">
+      <div className="px-4 py-3 border-t border-white/10 bg-white/5">
         <NotificationCenter isCollapsed={isCollapsed} />
       </div>
 
       {/* ── Rodapé do usuário ─────────────────────────────── */}
-      <div className="p-3 border-t border-white/5 bg-black/20">
+      <div className="p-4 border-t border-white/10 bg-white/5">
         <div className={cn(
-          "flex items-center gap-3 p-2 rounded-xl transition-all",
+          "flex items-center gap-4 p-3 rounded-2xl transition-all",
           !isCollapsed ? "hover:bg-white/5" : "justify-center"
         )}>
-          <Avatar className="w-8 h-8 border-2 border-white/5 flex-shrink-0">
+          <Avatar className="w-10 h-10 border-2 border-border/50 flex-shrink-0 shadow-md">
             <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
-            <AvatarFallback className="bg-plannera-sop text-white text-xs font-bold">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-black">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -256,20 +251,21 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               className="flex-1 min-w-0"
             >
-              {/* text-xs = 12px mínimo legível */}
-              <p className="text-white text-xs font-bold uppercase truncate leading-tight">
+              <p className="text-brand-primary dark:text-white text-[10px] font-black uppercase truncate tracking-tight leading-none">
                 {user.email?.split('@')[0]}
               </p>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wide leading-tight mt-0.5">
-                CSM Representative
+              <p className="label-premium !text-[8px] opacity-60 mt-1.5 text-brand-grey dark:text-white/60">
+                Executive Representative
               </p>
             </motion.div>
           )}
 
+          {!isCollapsed && <ThemeSelector />}
+
           {!isCollapsed && (
             <button
               onClick={handleSignOut}
-              className="text-slate-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+              className="text-white/40 hover:text-destructive transition-all p-2 flex-shrink-0 hover:bg-destructive/10 rounded-xl"
               aria-label="Sair da conta"
             >
               <LogOut className="w-4 h-4" />

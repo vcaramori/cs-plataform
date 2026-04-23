@@ -20,17 +20,17 @@ import { format as formatDate } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
-  open: { label: 'Aberto', color: 'text-plannera-demand', bg: 'bg-plannera-demand/10' },
-  'in-progress': { label: 'Em Progresso', color: 'text-plannera-orange', bg: 'bg-plannera-orange/10' },
-  resolved: { label: 'Resolvido', color: 'text-plannera-ds', bg: 'bg-plannera-ds/10' },
-  closed: { label: 'Fechado', color: 'text-slate-400', bg: 'bg-slate-500/10' },
+  open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
+  'in-progress': { label: 'Em Progresso', color: 'text-accent', bg: 'bg-accent/10' },
+  resolved: { label: 'Resolvido', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-slate-500/10' },
 }
 
 const priorityConfig: Record<string, { label: string, color: string, bg: string }> = {
-  critical: { label: 'Crítico', color: 'text-plannera-demand', bg: 'bg-plannera-demand/10' },
-  high: { label: 'Alto', color: 'text-plannera-orange', bg: 'bg-plannera-orange/10' },
-  medium: { label: 'Médio', color: 'text-plannera-operations', bg: 'bg-plannera-operations/10' },
-  low: { label: 'Baixo', color: 'text-slate-400', bg: 'bg-slate-500/10' },
+  critical: { label: 'Crítico', color: 'text-destructive', bg: 'bg-destructive/10' },
+  high: { label: 'Alto', color: 'text-accent', bg: 'bg-accent/10' },
+  medium: { label: 'Médio', color: 'text-secondary', bg: 'bg-secondary/10' },
+  low: { label: 'Baixo', color: 'text-content-secondary', bg: 'bg-slate-500/10' },
 }
 
 type Account = { id: string; name: string }
@@ -171,55 +171,57 @@ export function SuporteClient({
     return true
   }))
 
-  const openTickets = tickets.filter(t => ['open', 'in_progress', 'reopened'].includes(t.status))
+  const openTickets = tickets.filter(t => ['open', 'in-progress', 'reopened'].includes(t.status))
   const breachedCount = openTickets.filter(t => t.sla_status_resolution === 'vencido' || t.sla_status_first_response === 'vencido').length
   const attentionCount = openTickets.filter(t => t.sla_status_resolution === 'atencao' || t.sla_status_first_response === 'atencao').length
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* KPI Strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Abertos', value: openTickets.length, color: 'text-indigo-400', icon: TicketCheck },
-          { label: 'SLA Vencido', value: breachedCount, color: 'text-red-400', icon: AlertTriangle },
-          { label: 'SLA Atenção', value: attentionCount, color: 'text-amber-400', icon: AlertTriangle },
-          { label: 'Total', value: tickets.length, color: 'text-slate-400', icon: CheckCircle2 },
+          { label: 'Abertos', value: openTickets.length, color: 'text-primary', icon: TicketCheck },
+          { label: 'SLA Vencido', value: breachedCount, color: 'text-destructive', icon: AlertTriangle },
+          { label: 'SLA Atenção', value: attentionCount, color: 'text-amber-500', icon: AlertTriangle },
+          { label: 'Histórico Total', value: tickets.length, color: 'text-muted-foreground', icon: CheckCircle2 },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-            <Icon className={`w-4 h-4 ${color}`} />
-            <div>
-              <p className="text-xs text-slate-500 font-semibold">{label}</p>
-              <p className={`text-xl font-black ${color}`}>{value}</p>
+          <Card key={label} className="bg-surface-card border border-border-divider shadow-sm p-4 flex items-center gap-4">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", color.replace('text-', 'bg-').replace('-500', '/10').replace('primary', 'primary/10').replace('destructive', 'destructive/10'), color.replace('text-', 'border-').replace('-500', '/20').replace('primary', 'primary/20').replace('destructive', 'destructive/20'))}>
+              <Icon className={cn("w-5 h-5", color)} />
             </div>
-          </div>
+            <div>
+              <p className="label-premium mb-0.5 !text-[#5c5b5b] dark:!text-slate-400">{label}</p>
+              <p className={cn("text-2xl font-black tracking-tighter", color)}>{value}</p>
+            </div>
+          </Card>
         ))}
       </div>
 
       {/* Link para Dashboard executivo */}
       <div className="flex justify-end">
-        <Link href="/suporte/dashboard" className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+        <Link href="/suporte/dashboard" className="label-premium text-primary hover:opacity-80 transition-opacity flex items-center gap-2">
           <LayoutDashboard className="w-3.5 h-3.5" />
-          Ver Dashboard Executivo
+          Analytics de Atendimento
         </Link>
       </div>
 
       {/* Premium Tabs */}
-      <div className="flex justify-between items-center border-b border-white/5 pb-2">
-        <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+      <div className="flex justify-between items-center border-b border-border/50 pb-2">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-border-divider">
           {(['list', 'import'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all relative",
-                activeTab === tab ? "text-white shadow-lg" : "text-slate-500 hover:text-white"
+                "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative z-10",
+                activeTab === tab ? "text-white shadow-lg" : "text-[#5c5b5b] hover:text-primary dark:text-slate-500 dark:hover:text-white"
               )}
             >
-              {tab === 'list' ? `Tickets (${tickets.length})` : 'Ingestão IA'}
+              {tab === 'list' ? `Fila de Chamados (${tickets.length})` : 'Ingestão Inteligente'}
               {activeTab === tab && (
                 <motion.div 
                   layoutId="active-tab"
-                  className="absolute inset-0 bg-plannera-orange rounded-lg -z-10"
+                  className="absolute inset-0 bg-primary rounded-lg -z-10"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -229,7 +231,8 @@ export function SuporteClient({
         
         {activeTab === 'list' && (
           <Button 
-            variant="ghost" 
+            variant="premium" 
+            size="sm"
             disabled={isSubmitting}
             onClick={async () => {
               setIsSubmitting(true)
@@ -249,14 +252,14 @@ export function SuporteClient({
                 setIsSubmitting(false)
               }
             }}
-            className="bg-plannera-ds/10 text-plannera-ds hover:bg-plannera-ds/20 hover:text-white border border-plannera-ds/20 rounded-xl h-9 gap-2 font-bold uppercase tracking-tighter text-[10px]"
+            className="rounded-xl h-9 gap-2 shadow-lg hover:scale-105"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            Sync E-mails
+            Sincronizar E-mails
           </Button>
         )}
       </div>
@@ -265,15 +268,15 @@ export function SuporteClient({
       {activeTab === 'list' && (
         <div className="space-y-4">
           {/* Filtros */}
-          <div className="flex gap-3 items-center flex-wrap bg-slate-900/40 p-3 rounded-2xl border border-white/5">
+          <div className="flex gap-4 items-center flex-wrap bg-surface-background border border-border-divider p-4 rounded-2xl">
             <div className="flex items-center gap-2 pl-1 shrink-0">
-              <Filter className="w-3.5 h-3.5 text-plannera-orange" />
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wide">Filtros:</span>
+              <Filter className="w-3.5 h-3.5 text-primary" />
+              <span className="label-premium">Filtrar Visão:</span>
             </div>
             <SearchableSelect
               value={filterStatus}
               onValueChange={setFilterStatus}
-              className="h-8 w-40"
+              className="h-9 w-44 rounded-xl border-border/50 shadow-sm"
               options={[
                 { label: 'Todos os Status', value: 'all' },
                 ...Object.entries(statusConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -282,7 +285,7 @@ export function SuporteClient({
             <SearchableSelect
               value={filterPriority}
               onValueChange={setFilterPriority}
-              className="h-8 w-44"
+              className="h-9 w-48 rounded-xl border-border/50 shadow-sm"
               options={[
                 { label: 'Todas as Prioridades', value: 'all' },
                 ...Object.entries(priorityConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -293,31 +296,32 @@ export function SuporteClient({
                 variant="ghost"
                 size="sm"
                 onClick={() => { setFilterStatus('all'); setFilterPriority('all') }}
-                className="text-plannera-orange hover:text-white h-9 text-[10px] font-bold uppercase tracking-widest"
+                className="label-premium text-primary hover:bg-primary/10 transition-all"
               >
                 Limpar Busca
               </Button>
             )}
           </div>
 
-          <Card className="glass-card border-none shadow-2xl overflow-hidden">
+          <Card className="border-border-divider shadow-2xl overflow-hidden bg-surface-card">
             <CardContent className="p-0">
               {filteredTickets.length === 0 ? (
-                <div className="text-center py-24 opacity-20">
-                  <TicketCheck className="w-12 h-12 mx-auto mb-4" />
-                  <p className="text-xs font-black uppercase tracking-widest">Nenhum ticket encontrado</p>
+                <div className="text-center py-24 border-dashed border-2 border-border/50 m-4 rounded-3xl">
+                  <TicketCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground/20" />
+                  <p className="label-premium opacity-40">Nenhum chamado pendente nesta visão</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-white/5 hover:bg-transparent">
-                        <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] pl-8">Cliente / LOGO</TableHead>
-                        <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Título do Chamado</TableHead>
-                        <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">Status</TableHead>
-                        <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">Prioridade</TableHead>
-                        <TableHead className="text-center text-slate-500 font-bold uppercase tracking-widest text-[10px]">SLA</TableHead>
-                        <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[10px] pr-8 text-right">Abertura</TableHead>
+                      <TableRow>
+                        <TableHead className="pl-8 text-[11px]">Ticket</TableHead>
+                        <TableHead className="text-[11px]">Categoria</TableHead>
+                        <TableHead className="text-[11px]">Responsável</TableHead>
+                        <TableHead className="text-[11px]">Prioridade</TableHead>
+                        <TableHead className="text-[11px]">Status</TableHead>
+                        <TableHead className="text-[11px]">SLA Resolução</TableHead>
+                        <TableHead className="pr-8 text-right text-[11px]">Abertura</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -332,37 +336,39 @@ export function SuporteClient({
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.03 }}
                               onClick={() => router.push(`/suporte/${t.id}`)}
-                              className="group border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                              className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer h-16"
                             >
                               <TableCell className="p-4 pl-8 whitespace-nowrap">
-                                <span className="text-white font-black text-sm tracking-tight group-hover:text-indigo-400 transition-colors uppercase">
+                                <span className="text-[11px] font-black uppercase tracking-tight text-content-primary">
                                   {t.accounts?.name ?? '—'}
                                 </span>
                               </TableCell>
-                              <TableCell className="py-4">
-                                <div className="flex flex-col">
-                                  <span className="text-slate-200 text-sm font-bold tracking-tight line-clamp-1">{t.title}</span>
-                                  <span className="text-slate-500 text-[10px] font-medium uppercase tracking-widest line-clamp-1">{t.category || 'Suporte Geral'}</span>
-                                </div>
+                              <TableCell className="pl-8 py-4">
+                                <span className="text-content-primary text-[13px] font-black tracking-tight line-clamp-1">{t.title}</span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-[11px] font-black uppercase tracking-widest text-content-secondary line-clamp-1">
+                                  {t.category || 'Incidente Geral'}
+                                </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide", sConf.bg, sConf.color)}>
+                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border border-current/10 shadow-sm", sConf.bg, sConf.color)}>
                                   {sConf.label}
                                 </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide", pConf.bg, pConf.color)}>
+                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border border-current/10 shadow-sm", pConf.bg, pConf.color)}>
                                   {pConf.label}
                                 </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
                                 {t.sla_status_resolution
                                   ? <SLABadge status={t.sla_status_resolution as any} />
-                                  : <span className="text-slate-600 text-xs">—</span>}
+                                  : <span className="text-muted-foreground/30 text-xs">—</span>}
                               </TableCell>
                               <TableCell className="pr-8 text-right">
-                                <span className="text-slate-400 text-[10px] font-black font-mono">
-                                  {formatDate(new Date(t.opened_at + 'T12:00:00'), 'dd/MM/yyyy')}
+                                <span className="text-content-secondary font-black text-[11px] tracking-widest">
+                                  {format(new Date(t.created_at), 'dd/MM/yyyy')}
                                 </span>
                               </TableCell>
                             </motion.tr>
@@ -381,90 +387,87 @@ export function SuporteClient({
 
       {/* Importar */}
       {activeTab === 'import' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <Card className="glass-card border-none shadow-xl">
-              <CardHeader className="pb-6 pt-8 px-8">
-                <CardTitle className="text-white text-lg font-heading font-extrabold uppercase tracking-tight flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-plannera-sop/10 border border-plannera-sop/20">
-                    <Upload className="w-5 h-5 text-plannera-orange" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="border-border-divider shadow-xl bg-surface-card">
+              <CardHeader className="p-8 pb-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
+                    <Upload className="w-6 h-6 text-primary" />
                   </div>
-                  Portal de Ingestão Inteligente
-                </CardTitle>
+                  <div>
+                    <h2 className="h2-section !text-lg !text-foreground">Portal de Ingestão Inteligente</h2>
+                    <p className="label-premium mt-1 opacity-60">Processamento de incidentes via Gemini Pro & RAG</p>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-8 px-8 pb-8">
-                <div className="flex bg-black/20 p-1 rounded-xl border border-white/5 w-fit">
+              <CardContent className="p-8 space-y-8">
+                <div className="flex bg-accent/30 p-1 rounded-xl border border-border/50 w-fit">
                   {(['csv', 'text', 'pdf'] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => { setFormat(f); setContent(''); setPdfFile(null) }}
                       className={cn(
-                        "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
                         format === f 
-                          ? "bg-plannera-orange text-white shadow-lg" 
-                          : "text-slate-500 hover:text-white"
+                          ? "bg-primary text-primary-foreground shadow-lg" 
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
-                      {f === 'csv' ? 'CSV Estático' : f === 'text' ? 'Texto Livre' : 'PDF Assistido (IA)'}
+                      {f === 'csv' ? 'Dataset CSV' : f === 'text' ? 'Texto Livre' : 'Escaneamento PDF'}
                     </button>
                   ))}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-slate-400 text-[10px] font-black uppercase tracking-widest ml-1">
-                    Atribuir ao LOGO <span className="text-slate-600 italic">(Opcional)</span>
-                  </Label>
+                <div className="space-y-3">
+                  <Label className="label-premium ml-1">Atribuir ao LOGO (Opcional)</Label>
                   <SearchableSelect
                     value={selectedAccountId}
                     onValueChange={setSelectedAccountId}
+                    className="h-11 rounded-xl bg-accent/30 border-border/50 shadow-inner"
                     options={[
-                      { label: 'MAPEAR AUTOMATICAMENTE POR IA', value: 'all' },
+                      { label: 'AUTO-MAPEAR POR CONTEXTO IA', value: 'all' },
                       ...accounts.map(a => ({ label: a.name.toUpperCase(), value: a.id }))
                     ]}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between ml-1">
-                    <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{format === 'pdf' ? 'Arquivo PDF' : 'Conteúdo para Análise'}</Label>
+                    <Label className="label-premium">{format === 'pdf' ? 'Arquivo Digital' : 'Estrutura de Dados'}</Label>
                     {format !== 'pdf' && (
                       <button
                         onClick={() => setContent(format === 'csv' ? csvExample : textExample)}
-                        className="text-[9px] font-bold text-plannera-orange hover:text-white uppercase tracking-widest"
+                        className="label-premium text-primary hover:opacity-80 transition-opacity"
                       >
-                        Carregar Template
+                        Carregar Exemplo
                       </button>
                     )}
                   </div>
                   
                   {format === 'pdf' ? (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="relative group"
-                    >
-                       <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="relative group">
                        <Input 
                          type="file" 
                          accept="application/pdf"
                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPdfFile(e.target.files ? e.target.files[0] : null)}
-                         className="relative bg-black/40 border-white/5 text-slate-300 file:bg-indigo-600 file:text-white file:border-none file:font-black file:uppercase file:text-[10px] file:px-4 file:h-10 file:mr-4 h-12 rounded-xl cursor-pointer" 
+                         className="bg-accent/30 border-border/50 text-foreground file:bg-primary file:text-primary-foreground file:border-none file:font-black file:uppercase file:text-[10px] file:px-6 file:h-full file:mr-4 h-14 rounded-xl cursor-pointer shadow-inner pr-4" 
                        />
-                       <p className="text-slate-600 text-[10px] font-medium mt-3 leading-relaxed uppercase tracking-tight">
-                         A IA processará o documento, extrairá threads de conversa e categorizará o risco automaticamente.
+                       <p className="label-premium mt-4 leading-relaxed opacity-50 px-2 italic font-medium normal-case tracking-tight">
+                         O motor de IA analisará o layout, identificará conversas e sugerirá ações automáticas baseadas no histórico.
                        </p>
-                    </motion.div>
+                    </div>
                   ) : (
                     <Textarea
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder={
                         format === 'csv'
-                          ? 'nome_logo,titulo,descricao,status,prioridade...'
-                          : 'Cole aqui o histórico do e-mail ou chat...'
+                          ? 'logo, titulo, descricao, status...'
+                          : 'Cole aqui logs de e-mail, transcrições ou textos extraídos...'
                       }
-                      rows={10}
-                      className="bg-black/40 border-white/5 text-slate-200 placeholder:text-slate-700 font-mono text-xs rounded-xl focus-visible:ring-indigo-500 p-4"
+                      rows={12}
+                      className="bg-accent/30 border-border/50 text-foreground placeholder:text-muted-foreground/30 font-mono text-sm rounded-2xl focus-visible:ring-primary shadow-inner p-5"
                     />
                   )}
                 </div>
@@ -472,34 +475,37 @@ export function SuporteClient({
                 <Button
                   onClick={handleIngest}
                   disabled={isSubmitting || (format === 'pdf' ? !pdfFile : !content.trim())}
-                  className="w-full bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold uppercase tracking-[0.2em] h-12 shadow-[0_0_20px_rgba(247,148,30,0.3)] transition-all active:scale-95"
+                  variant="premium"
+                  className="w-full h-14 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                   {isSubmitting
-                    ? <><Loader2 className="w-5 h-5 animate-spin mr-3 text-white" />Processando Inteligência...</>
-                    : 'Processar e Vetorizar'}
+                    ? <><Loader2 className="w-5 h-5 animate-spin mr-3" />Processando Redes Neurais...</>
+                    : 'Ingerir e Treinar RAG'}
                 </Button>
 
                 {result && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     className={cn(
-                      "p-5 rounded-2xl border flex flex-col gap-3",
-                      (result.created ?? 0) > 0 ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'
+                      "p-6 rounded-2xl border-2 flex flex-col gap-4 shadow-lg",
+                      (result.created ?? 0) > 0 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-destructive/5 border-destructive/10'
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      {(result.created ?? 0) > 0
-                        ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        : <AlertTriangle className="w-5 h-5 text-red-500" />}
-                      <span className="text-white text-xs font-black uppercase tracking-widest">
-                        {result.created ?? 0} Tickets Ingeridos com Sucesso
+                    <div className="flex items-center gap-4">
+                      <div className={cn("p-2 rounded-xl border", (result.created ?? 0) > 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-destructive/10 border-destructive/20')}>
+                        {(result.created ?? 0) > 0
+                          ? <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                          : <AlertTriangle className="w-6 h-6 text-destructive" />}
+                      </div>
+                      <span className="text-foreground text-lg font-black tracking-tighter uppercase">
+                        {result.created ?? 0} Incidentes Catalogados
                       </span>
                     </div>
                     {result.errors && result.errors.length > 0 && (
-                      <div className="space-y-1 mt-1 border-t border-white/5 pt-3">
+                      <div className="space-y-2 mt-2 border-t border-border/50 pt-4">
                         {result.errors.map((e: string, i: number) => (
-                          <div key={i} className="flex gap-2 text-red-400 text-[10px] font-bold uppercase tracking-tight">• {e}</div>
+                          <div key={i} className="flex gap-3 text-destructive text-[11px] font-black uppercase tracking-tight leading-none">• {e}</div>
                         ))}
                       </div>
                     )}
@@ -510,41 +516,56 @@ export function SuporteClient({
           </div>
 
           {/* Guia de formatos */}
-          <div className="space-y-4">
-            <Card className="glass-card border-none shadow-lg">
-              <CardHeader className="pb-4 pt-8 px-8">
-                <CardTitle className="text-white text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                   <Sparkles className="w-4 h-4 text-indigo-400" />
-                   Protocolo de Dados
-                </CardTitle>
+          <div className="space-y-6">
+            <Card className="border-border-divider shadow-lg bg-surface-card">
+              <CardHeader className="p-8 pb-4">
+                <h3 className="h2-section flex items-center gap-2">
+                   <Sparkles className="w-4 h-4 text-primary" />
+                   Protocolo IA
+                </h3>
               </CardHeader>
-              <CardContent className="space-y-6 px-8 pb-8">
-                <div className="space-y-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+              <CardContent className="p-8 space-y-8">
+                <div className="space-y-6">
                   {format === 'pdf' ? (
-                    <div className="space-y-4">
-                      <p className="text-plannera-orange/80">O processador <strong className="text-white">Gemini IA</strong> realiza:</p>
-                      <ul className="space-y-2">
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> OCR e Leitura Estruturada</li>
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Segmentação de Eventos</li>
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Inferência de Sentimento</li>
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Linkage Automático de CRM</li>
+                    <div className="space-y-6">
+                      <p className="label-premium normal-case text-foreground opacity-80 leading-relaxed">Capacidades do Agente Gemini:</p>
+                      <ul className="space-y-4">
+                        {[
+                          'Visão Computacional p/ OCR',
+                          'Análise de Sentimento Recurrente',
+                          'Mapeamento de Entidades CRM',
+                          'Sugestão de Resolução p/ CS'
+                        ].map(item => (
+                          <li key={item} className="flex items-center gap-3 label-premium !text-foreground/60">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary)]" />
+                            {item}
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   ) : format === 'csv' ? (
-                    <div className="space-y-4">
-                      <p className="text-indigo-400/80">Esquema Requerido:</p>
-                      <div className="bg-black/20 p-3 rounded-lg border border-white/5 font-mono text-[9px] lowercase opacity-70">
-                        account_name, title, description, status, priority, date
+                    <div className="space-y-6">
+                      <p className="label-premium normal-case text-foreground opacity-80 leading-relaxed">Estrutura Requerida:</p>
+                      <div className="bg-accent/40 p-4 rounded-xl border border-border/50 font-mono text-[10px] break-all opacity-70 shadow-inner">
+                        account_name, title, desc, status, priority
                       </div>
-                      <p className="text-[9px] italic opacity-50">UTF-8 Encoding Recomendado</p>
+                      <p className="label-premium !text-[9px] italic opacity-40">Encoding: UTF-8 / RFC 4180</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <p className="text-plannera-orange/80">Capacidades Gen-AI:</p>
-                      <ul className="space-y-2">
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Limpeza de Ruído de Texto</li>
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Identificação de Entidades</li>
-                        <li className="flex items-center gap-2"><div className="w-1 h-1 bg-plannera-orange rounded-full" /> Sumarização de Tickets</li>
+                    <div className="space-y-6">
+                      <p className="label-premium normal-case text-foreground opacity-80 leading-relaxed">Gen-AI Pipeline:</p>
+                      <ul className="space-y-4">
+                        {[
+                          'Deduplicação Inteligente',
+                          'Identificação de Contas por Contexto',
+                          'Criação de Thread Histórica',
+                          'Priorização Automática (SLA)'
+                        ].map(item => (
+                          <li key={item} className="flex items-center gap-3 label-premium !text-foreground/60">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary)]" />
+                            {item}
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   )}
@@ -557,3 +578,4 @@ export function SuporteClient({
     </div>
   )
 }
+

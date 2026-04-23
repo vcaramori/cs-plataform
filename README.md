@@ -21,6 +21,12 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 >
 > ---
 >
+> **ESTADO DA STACK - NOTA IMPORTANTE**
+>
+> O projeto está atualmente em uma fase de transição documentada. Embora o objetivo de longo prazo seja a migração para **Azure SQL (SQL Server)**, a implementação **atual** e funcional utiliza **Supabase (PostgreSQL + pgvector)**. Documentações que referenciem Azure SQL como "atual" devem ser lidas como "alvo futuro".
+>
+> ---
+>
 > **REGRA DE DOCUMENTAÇÃO DE PRODUTO**
 >
 > Além do README, toda **nova regra de negócio** deve ser documentada em `docs/product/`. Isso inclui:
@@ -63,9 +69,10 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 | Linguagem | TypeScript | 5 |
 | UI | React | 19.2.0 |
 | Estilo | Tailwind CSS + Radix UI | 3.4.1 |
-| Banco de dados | Azure SQL (SQL Server — relacional + vetores nativos) | — |
-| Vetores | VECTOR nativo do Azure SQL (SQL Server 2022+) | — |
-| Auth | NextAuth.js (credentials — roles `csm` / `client`) | — |
+| Banco de dados | Supabase (PostgreSQL — Relacional + RLS) | — |
+| Vetores | pgvector no Supabase (extensão nativa) | — |
+| Alvo Futuro | Azure SQL (SQL Server + VECTOR nativo) | — |
+| Auth | Supabase Auth (JWT + roles `csm` / `client`) | — |
 | LLM principal | Ollama local (qwen2.5) | — |
 | LLM fallback | Google Gemini + Anthropic Claude | — |
 | State | TanStack React Query | 5.95.2 |
@@ -74,6 +81,62 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 | Ícones | Lucide React | 1.8.0 |
 | Notificações | Sonner | 2.0.7 |
 | E-mail | imap-simple + mailparser + nodemailer | — |
+
+---
+
+## Design System — Fundação Semântica de UI
+
+A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consistência automática de tema (Light/Dark) sem `dark:` inline nos componentes. Toda view deve usar os tokens abaixo — jamais classes Tailwind fixas como `bg-slate-900` ou `text-gray-500`.
+
+### Tokens Semânticos (globals.css + tailwind.config.ts)
+
+| Token Tailwind | CSS Var | Light | Dark | Uso obrigatório |
+|----------------|---------|-------|------|-----------------|
+| `bg-surface-background` | `--surface-background` | slate-50 | slate-950 | Fundo do `<PageContainer>` |
+| `bg-surface-card` | `--surface-card` | white | slate-900 | Cards, painéis, modais |
+| `text-content-primary` | `--content-primary` | Navy `#2d3558` | white | Títulos, métricas, valores |
+| `text-content-secondary` | `--content-secondary` | Grey `#5c5b5b` | slate-400 | Labels, captions, apoio |
+| `border-border-divider` | `--border-divider` | slate-200 | slate-800 | Bordas de card/seção |
+
+### Componentes Guardiões (src/components/ui/)
+
+| Componente | Arquivo | Responsabilidade |
+|------------|---------|-----------------|
+| `<PageContainer>` | `page-container.tsx` | Força `bg-surface-background` + padding da view |
+| `<Card>` | `card.tsx` | Força `bg-surface-card` + `border-border-divider` |
+| `<Text>` | `typography.tsx` | Força `variant="primary\|secondary\|accent\|destructive"` |
+
+### Regras de Implementação
+
+1. **Nunca use classes de cor fixas** (`bg-white`, `bg-slate-900`, `text-gray-500`) para estrutura. Use os tokens semânticos.
+2. **Toda view começa com `<PageContainer>`** — ele gerencia fundo e padding.
+3. **Painéis e cards usam `<Card>`** — que já inclui borda e sombra corretas.
+4. **Textos informativos usam `<Text variant="secondary">`** — elimina `text-muted-foreground` espalhado.
+5. **Dark Mode**: É automático via CSS vars — não é necessário `dark:` inline nos componentes guardiões.
+
+### Status da Migração
+
+| Sessão | Escopo | Status |
+|--------|--------|--------|
+| Onda 1 | 5 telas simples (Users, Settings, Accounts lista) | ✅ Concluída 2026-04-22 |
+| Onda 2 | 5 telas médias (Esforço, Perguntar, Dashboard, Suporte lista, NPS) | ✅ Concluída 2026-04-22 |
+| Onda 3 | Telas críticas: NPS Programs, Suporte Detalhe/Dashboard, Account Detail (16 componentes) | ✅ Concluída 2026-04-22 |
+| Sessão 2 Core UI | `tabs.tsx`, `table.tsx`, `button.tsx`, `badge.tsx` — variantes `glass` removidas, consumers migrados | ✅ Concluída 2026-04-23 |
+| Sessão 3 Inputs | `dialog.tsx` overlay, `checkbox.tsx` (estados checked/focus), `switch.tsx` (unchecked + thumb), `button.tsx secondary` | ✅ Concluída 2026-04-23 |
+| Sessão 4 Typography | Padronização global de tabelas: **11px font-black sans-serif** para dados técnicos + Hover `bg-muted/40` | ✅ Concluída 2026-04-23 |
+
+### Convenção de Variantes de Button
+
+| Variante | Uso correto |
+|----------|-------------|
+| `default` | CTA primário isolado (salvar, confirmar em modais) |
+| `premium` | CTA principal em headers e forms — ações de alto impacto |
+| `outline` | Ações secundárias, botões de edição, triggers de modal |
+| `secondary` | Botões de suporte (cancelar, voltar) — fundo sutil |
+| `ghost` | Ações dentro de tabelas ou listas — mínimo visual |
+| `destructive` | Excluir, remover — vermelho explícito |
+
+> Roadmap detalhado: `docs/ui-refactor-roadmap.md`
 
 ---
 
@@ -97,10 +160,10 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 └──────────┬──────────────────────────────────┬───────────────┘
            │                                  │
 ┌──────────▼──────┐                 ┌─────────▼───────────────┐
-│  Azure SQL      │                 │  LLM Providers          │
-│  (relacional +  │                 │  Ollama (local)         │
-│   VECTOR nativo)│                 │  ↓ Gemini (fallback)    │
-│  NextAuth.js    │                 │  ↓ Claude (fallback)    │
+│  Supabase       │                 │  LLM Providers          │
+│  (PostgreSQL +  │                 │  Ollama (local)         │
+│   pgvector)     │                 │  ↓ Gemini (fallback)    │
+│  Supabase Auth  │                 │  ↓ Claude (fallback)    │
 └─────────────────┘                 └─────────────────────────┘
 ```
 

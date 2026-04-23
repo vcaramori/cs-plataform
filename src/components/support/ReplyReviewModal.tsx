@@ -76,7 +76,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
           {/* Brand */}
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="text-[13px] font-bold text-white uppercase tracking-widest">
+            <span className="text-[13px] font-bold text-brand-primary dark:text-white uppercase tracking-widest">
               Revisão da Resposta
             </span>
             {review?.show_alert && (
@@ -107,7 +107,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
               </>
             )}
 
-            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-brand-primary dark:text-white hover:bg-white/5 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -158,7 +158,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
                   </div>
                   <button
                     onClick={() => setShowEval(v => !v)}
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-colors text-slate-400 border-white/10 hover:text-white hover:border-white/20"
+                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border transition-colors text-slate-400 border-white/10 hover:text-brand-primary dark:text-white hover:border-white/20"
                   >
                     {showEval ? 'Ocultar' : 'Ver detalhes'}
                   </button>
@@ -214,7 +214,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
                   onClick={onSelectOriginal}
                   variant="outline"
                   size="sm"
-                  className="mt-3 shrink-0 w-full border-white/10 text-slate-400 hover:text-white hover:border-white/20 text-[10px] font-bold uppercase tracking-widest h-9"
+                  className="mt-3 shrink-0 w-full border-white/10 text-slate-400 hover:text-brand-primary dark:text-white hover:border-white/20 text-[10px] font-bold uppercase tracking-widest h-9"
                 >
                   Usar minha versão
                 </Button>
@@ -234,7 +234,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
                 <Button
                   onClick={onSelectRecommended}
                   size="sm"
-                  className="mt-3 shrink-0 w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest gap-1.5 h-9"
+                  className="mt-3 shrink-0 w-full bg-indigo-600 hover:bg-indigo-500 text-brand-primary dark:text-white text-[10px] font-bold uppercase tracking-widest gap-1.5 h-9"
                 >
                   <Sparkles className="w-3 h-3" /> Usar versão da IA
                 </Button>
@@ -262,3 +262,4 @@ export function ReplyReviewModal(props: Props) {
     document.body,
   )
 }
+

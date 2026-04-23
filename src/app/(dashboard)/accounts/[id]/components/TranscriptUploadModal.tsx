@@ -116,9 +116,9 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!isSubmitting && step !== 'ingesting') onOpenChange(v) }}>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-2xl">
+      <DialogContent className="bg-surface-card border-border-divider text-content-primary max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
+          <DialogTitle className="flex items-center gap-2 text-content-primary">
             <FileText className="w-5 h-5 text-indigo-400" />
             Nova Interação
           </DialogTitle>
@@ -128,37 +128,37 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-slate-300 text-sm">Título</Label>
+                <Label className="text-content-primary text-sm">Título</Label>
                 <Input
                   {...register('title')}
                   placeholder="Ex: QBR Q1 2026"
-                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                  className="bg-surface-background border-border-divider text-content-primary placeholder:text-content-secondary"
                 />
                 {errors.title && <p className="text-red-400 text-xs">{errors.title.message}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-slate-300 text-sm">Data</Label>
+                <Label className="text-content-primary text-sm">Data</Label>
                 <Input
                   type="date"
                   {...register('date')}
-                  className="bg-slate-800 border-slate-700 text-white"
+                  className="bg-surface-background border-border-divider text-content-primary"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-slate-300 text-sm">Tipo</Label>
+              <Label className="text-content-primary text-sm">Tipo</Label>
               <Select
                 defaultValue="meeting"
                 onValueChange={(v) => setValue('type', v as FormValues['type'])}
               >
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="bg-surface-background border-border-divider text-content-primary">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-surface-card border-border-divider">
                   {Object.entries(typeLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value} className="text-white hover:bg-slate-700">
+                    <SelectItem key={value} value={value} className="text-content-primary">
                       {label}
                     </SelectItem>
                   ))}
@@ -168,18 +168,18 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-slate-300 text-sm">
-                  Transcrição <span className="text-slate-500">(opcional — cole o texto do Read.ai)</span>
+                <Label className="text-content-primary text-sm">
+                  Transcrição <span className="text-content-secondary">(opcional — cole o texto do Read.ai)</span>
                 </Label>
                 {wordCount > 0 && (
-                  <span className="text-slate-500 text-xs">{wordCount.toLocaleString()} palavras</span>
+                  <span className="text-content-secondary text-xs">{wordCount.toLocaleString()} palavras</span>
                 )}
               </div>
               <Textarea
                 {...register('raw_transcript')}
                 placeholder="Cole aqui a transcrição da reunião..."
                 rows={8}
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 font-mono text-xs resize-none"
+                className="bg-surface-background border-border-divider text-content-primary placeholder:text-content-secondary font-mono text-xs resize-none"
               />
               {wordCount > 50 && (
                 <p className="text-indigo-400 text-xs flex items-center gap-1">
@@ -217,8 +217,8 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
           <div className="py-10 flex flex-col items-center gap-4 text-center">
             <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
             <div>
-              <p className="text-white font-medium">Processando transcrição</p>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-content-primary font-medium">Processando transcrição</p>
+              <p className="text-content-secondary text-sm mt-1">
                 Gerando embeddings e analisando sentimento...
               </p>
             </div>
@@ -234,8 +234,8 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
             )}
 
             <div>
-              <p className="text-white font-medium text-lg">Interação processada</p>
-              <p className="text-slate-400 text-sm mt-1">Transcrição vetorizada com sucesso</p>
+              <p className="text-content-primary font-medium text-lg">Interação processada</p>
+              <p className="text-content-secondary text-sm mt-1">Transcrição vetorizada com sucesso</p>
             </div>
 
             <div className="flex gap-3 flex-wrap justify-center">

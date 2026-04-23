@@ -7,6 +7,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { closed } = await runAutoClose()
-  return NextResponse.json({ closed, ran_at: new Date().toISOString() })
+  const result = await runAutoClose()
+  return NextResponse.json({ 
+    success: true, 
+    closed: result.closedCount,
+    ran_at: new Date().toISOString() 
+  })
 }

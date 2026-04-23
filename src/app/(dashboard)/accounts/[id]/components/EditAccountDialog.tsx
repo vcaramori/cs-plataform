@@ -119,45 +119,47 @@ export function EditAccountDialog({ account }: { account: Account }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-slate-900 border-slate-800 text-slate-400 hover:text-white">
+        <Button variant="outline" size="sm" className="bg-background border-border text-muted-foreground hover:text-foreground">
           <Settings2 className="w-4 h-4 mr-2" />
           Editar Conta
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-2xl">
+      <DialogContent className="glass border-border text-foreground max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar Informações da Conta</DialogTitle>
-          <DialogDescription className="text-slate-400">
-            Atualize os dados primários da empresa e o logotipo.
+          <DialogTitle className="text-xl font-black tracking-tight">Editar Conta</DialogTitle>
+          <DialogDescription className="label-premium opacity-50 !text-[10px]">
+            Atualize os dados primários da organização e identidade visual.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="space-y-1.5 text-center">
-                <Label className="text-slate-300 w-full text-left">Logotipo</Label>
-                <ImageUpload
-                  value={watch('logo_url') ?? undefined}
-                  onChange={(url) => setValue('logo_url', url)}
-                />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="space-y-2 text-center">
+                <Label className="label-premium w-full text-left">Logotipo</Label>
+                <div className="bg-accent/20 rounded-2xl p-4 border border-border/50 shadow-inner">
+                  <ImageUpload
+                    value={watch('logo_url') ?? undefined}
+                    onChange={(url) => setValue('logo_url', url)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-name" className="text-slate-300">Nome da Empresa *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-name" className="label-premium">Nome da Empresa</Label>
                 <Input
                   id="edit-name"
                   {...register('name')}
                   placeholder="Ex: General Mills"
-                  className="bg-slate-900 border-slate-800 text-white"
+                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
                 />
-                {errors.name && <p className="text-red-500 text-xs">{errors.name.message}</p>}
+                {errors.name && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.name.message}</p>}
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Segmento *</Label>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label className="label-premium">Segmento</Label>
                 <SearchableSelect
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
@@ -169,29 +171,29 @@ export function EditAccountDialog({ account }: { account: Account }) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-industry" className="text-slate-300">Setor / Indústria</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-industry" className="label-premium">Setor / Indústria</Label>
                 <Input
                   id="edit-industry"
                   {...register('industry')}
                   placeholder="Ex: Bens de Consumo"
-                  className="bg-slate-900 border-slate-800 text-white"
+                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-website" className="text-slate-300">Website</Label>
+              <div className="space-y-2">
+                <Label htmlFor="edit-website" className="label-premium">Website Executive</Label>
                 <Input
                   id="edit-website"
                   {...register('website')}
                   placeholder="https://exemplo.com"
-                  className="bg-slate-900 border-slate-800 text-white"
+                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
                 />
-                {errors.website && <p className="text-red-500 text-xs">{errors.website.message}</p>}
+                {errors.website && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.website.message}</p>}
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">CNPJ / TAX ID</Label>
+              <div className="space-y-2">
+                <Label className="label-premium">CNPJ / TAX ID</Label>
                 <MaskedInput 
                   maskType="tax_id"
                   value={watch('tax_id') ?? ''}
@@ -200,41 +202,42 @@ export function EditAccountDialog({ account }: { account: Account }) {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-slate-300">Plano de Assinatura</Label>
+              <div className="space-y-2">
+                <Label className="label-premium">Plano Estratégico</Label>
                 <SearchableSelect
                   value={watch('plan_id') || ''}
                   onValueChange={(v) => setValue('plan_id', v)}
                   options={[
-                    { label: 'Nenhum Plano', value: '' },
+                    { label: 'Portfolio (Nenhum)', value: '' },
                     ...plans.map(p => ({ label: p.name, value: p.id }))
                   ]}
                 />
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Define as funcionalidades liberadas contratualmente.</p>
+                <p className="label-premium !text-[8px] opacity-30 mt-2">Define as capacidades operacionais contratadas.</p>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-white"
+              className="label-premium !text-[10px] opacity-60 hover:opacity-100"
             >
-              Cancelar
+              Descartar
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white min-w-[120px]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] min-w-[160px] shadow-lg shadow-primary/20"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Salvar Alterações
+              Confirmar Update
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
   )
 }

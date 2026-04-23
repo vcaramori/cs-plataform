@@ -81,7 +81,7 @@ export function HealthScoreEditModal({ isOpen, onClose, account, onSuccess }: Pr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] glass-card border-white/10 text-white">
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-white/10 text-white">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold uppercase tracking-tight">
             Atualizar Saúde: <span className="text-plannera-orange">{account.name}</span>

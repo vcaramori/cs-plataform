@@ -1,10 +1,10 @@
--- Sprint 3: pgvector — substitui Pinecone
+-- Sprint 3: pgvector
 -- Tabela unificada de embeddings com busca por similaridade
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ==============================================================================
--- EMBEDDINGS (substitui Pinecone — chunks de interactions + support_tickets)
+-- EMBEDDINGS (chunks de interactions + support_tickets)
 -- ==============================================================================
 CREATE TABLE public.embeddings (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

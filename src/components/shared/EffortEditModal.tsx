@@ -127,7 +127,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
   return (
     <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="glass-card border-none text-white max-w-2xl overflow-hidden p-0 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-none text-white max-w-2xl overflow-hidden p-0 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,0,0,0.6)]">
         
         {/* Header Area with Subtle Glow */}
         <div className="relative h-24 bg-gradient-to-r from-indigo-900/40 to-black/40 border-b border-white/5 flex items-center px-8 justify-between">

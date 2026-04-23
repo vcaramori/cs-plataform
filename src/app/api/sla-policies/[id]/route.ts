@@ -11,10 +11,10 @@ const patchSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id } = params
+  const { id } = await params
   const body = await request.json()
 
   const parsed = patchSchema.safeParse(body)

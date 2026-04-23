@@ -104,13 +104,13 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
       {/* Editors */}
       {!tableError && currentPolicy?.id && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <section className="glass-card p-6 rounded-2xl border-none">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-2xl border-none">
             <SLAPolicyEditor
               policyId={currentPolicy.id}
               initialLevels={currentPolicy.levels || []}
             />
           </section>
-          <section className="glass-card p-6 rounded-2xl border-none">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-2xl border-none">
             <LevelMappingEditor
               policyId={currentPolicy.id}
               initialMappings={currentPolicy.mappings || []}

@@ -7,10 +7,11 @@ Este projeto é o **CS-Continuum**, plataforma interna de Customer Success da Pl
 | Item | Valor |
 |------|------|
 | Stack | Next.js 16 + React 19 + TypeScript + Tailwind + Radix UI |
-| Banco | Azure SQL (SQL Server — relacional + VECTOR nativo) |
-| Auth | NextAuth.js (roles: `csm` / `client`) |
+| Banco | Supabase (PostgreSQL + pgvector) |
+| Auth | Supabase Auth (JWT + roles `csm` / `client`) |
 | LLM | Ollama (qwen2.5) → Gemini → Claude (fallback em cascata) |
-| Docs Oficial | https://nextjs.org, https://learn.microsoft.com/azure/azure-sql |
+| Alvo Futuro | Azure SQL (SQL Server — relacional + VECTOR nativo) |
+| Docs Oficial | https://nextjs.org, https://supabase.com |
 
 ## Estrutura de Arquivos
 
@@ -40,7 +41,7 @@ csplataform/
 5. Prefira `use()` hook para data fetching em vez de useEffect
 6. Use Radix UI + Tailwind para componentes (não MUI/chakra)
 7. Implemente fallback em cascata para LLM (OLLAMA → GEMINI → CLAUDE)
-8. Use Azure SQL via `src/lib/azure-sql/client.ts` — não Supabase
+8. Use Supabase via `src/lib/supabase/` — Azure SQL é o alvo futuro.
 9. Use .env para todas as chaves (não comitar)
 10. **Leia `.claude/napkin.md` para regras de execução (lido automaticamente por napkin)**
 11. **SEGURANÇA DE CÓDIGO: NUNCA execute `git restore .`, `git reset --hard` ou qualquer comando que descarte alterações não trabalhadas sem permissão explícita do usuário.** O trabalho não commitado é sagrado.
@@ -102,11 +103,16 @@ csplataform/
 Verifique `.env.example` para lista completa:
 
 ```bash
-# Azure SQL
-AZURE_SQL_SERVER=
-AZURE_SQL_DATABASE=cscontinuum
-AZURE_SQL_USER=
-AZURE_SQL_PASSWORD=
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# Azure SQL (Futuro)
+# AZURE_SQL_SERVER=
+# AZURE_SQL_DATABASE=cscontinuum
+# AZURE_SQL_USER=
+# AZURE_SQL_PASSWORD=
 
 # NextAuth
 NEXTAUTH_SECRET=

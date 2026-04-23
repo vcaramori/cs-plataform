@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { runSLAPolling } from '../../../lib/support/polling'
+import { runSLAPolling } from '@/lib/support/polling'
 
 export const maxDuration = 300 // Allow up to 5 minutes for cron jobs on Vercel
 

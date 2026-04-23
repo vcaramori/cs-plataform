@@ -22,24 +22,24 @@ import {
 type AccountWithContracts = Account & { contracts: Contract[], discrepancy_alert?: boolean }
 
 function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: boolean }) {
-  const color = score >= 70 ? 'text-plannera-ds' : score >= 40 ? 'text-plannera-orange' : 'text-plannera-demand'
-  const bg = score >= 70 ? 'bg-plannera-ds/10' : score >= 40 ? 'bg-plannera-orange/10' : 'bg-plannera-demand/10'
-  const ring = score >= 70 ? 'ring-plannera-ds/20' : score >= 40 ? 'ring-plannera-orange/20' : 'ring-plannera-demand/20'
-  
+  const color = score >= 70 ? 'text-emerald-500' : score >= 40 ? 'text-primary' : 'text-destructive'
+  const bg = score >= 70 ? 'bg-emerald-500/10' : score >= 40 ? 'bg-primary/10' : 'bg-destructive/10'
+  const ring = score >= 70 ? 'ring-emerald-500/20' : score >= 40 ? 'ring-primary/20' : 'ring-destructive/20'
+
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset inline-flex items-center relative", color, bg, ring)}>
+      <div className={cn("px-2.5 py-1 rounded-full text-[11px] font-black ring-1 ring-inset inline-flex items-center relative", color, bg, ring)}>
         {score}
       </div>
       {isDiscrepant && (
         <TooltipProvider>
           <Tooltip delayDuration={100}>
             <TooltipTrigger>
-              <div className="w-5 h-5 rounded-full bg-plannera-orange/10 flex items-center justify-center animate-pulse">
-                <AlertTriangle className="w-3 h-3 text-plannera-orange" />
+              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                <AlertTriangle className="w-3 h-3 text-primary" />
               </div>
             </TooltipTrigger>
-            <TooltipContent className="bg-slate-900 border-white/10 text-white">
+            <TooltipContent className="bg-card border-border text-foreground">
               <p className="text-[10px] font-bold uppercase tracking-tight">Discrepância Detectada vs IA ({'>'} 20p)</p>
             </TooltipContent>
           </Tooltip>
@@ -51,21 +51,21 @@ function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: bo
 
 function TrendIcon({ trend }: { trend: string }) {
   const trends: any = {
-    up: <TrendingUp className="w-4 h-4 text-plannera-ds" />,
-    down: <TrendingDown className="w-4 h-4 text-plannera-demand" />,
-    critical: <AlertTriangle className="w-4 h-4 text-plannera-demand animate-pulse" />,
-    stable: <Minus className="w-4 h-4 text-slate-500" />
+    up: <TrendingUp className="w-4 h-4 text-emerald-500" />,
+    down: <TrendingDown className="w-4 h-4 text-destructive" />,
+    critical: <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />,
+    stable: <Minus className="w-4 h-4 text-muted-foreground" />
   }
   return trends[trend] || trends.stable
 }
 
 function SegmentBadge({ segment }: { segment: string }) {
   const colors: Record<string, string> = {
-    'Indústria': 'bg-plannera-sop/10 text-plannera-sop border-plannera-sop/20',
-    'MRO': 'bg-plannera-operations/10 text-plannera-operations border-plannera-operations/20',
-    'Varejo': 'bg-plannera-orange/10 text-plannera-orange border-plannera-orange/20',
+    'Indústria': 'bg-[#2ba09d] text-white dark:bg-[#2ba09d]/20 dark:text-[#2ba09d] border-[#2ba09d]/20',
+    'MRO': 'bg-[#f8b967] text-[#8a5a15] border-[#f8b967]/20 dark:bg-[#f8b967]/20 dark:text-[#f8b967]',
+    'Varejo': 'bg-[#d85d4b] text-white border-[#d85d4b]/20 dark:bg-[#d85d4b]/20 dark:text-[#d85d4b]',
   }
-  return <Badge variant="outline" className={cn("text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 border", colors[segment] ?? '')}>{segment}</Badge>
+  return <Badge variant="outline" className={cn("text-[11px] uppercase font-black tracking-widest px-3 py-1 border shadow-sm", colors[segment] ?? '')}>{segment}</Badge>
 }
 
 export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }) {
@@ -80,35 +80,35 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
 
   return (
     <>
-      <Card className="glass-card shadow-2xl border-none">
-        <CardHeader className="pb-6 px-10 pt-10">
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4 px-6 pt-6">
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div className="space-y-1">
-              <CardTitle className="text-white text-xl font-heading font-bold uppercase tracking-tight">Portfólio de LOGOS</CardTitle>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{filtered.length} Clientes Encontrados</p>
+              <CardTitle className="text-xl font-heading font-black uppercase tracking-tight">Portfólio de LOGOS</CardTitle>
+              <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">{filtered.length} Clientes Encontrados</p>
             </div>
-            
-            <div className="flex items-center gap-4 flex-wrap">
+
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-hover:text-plannera-sop transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary group-focus-within:text-content-primary transition-colors" />
                 <Input
                   placeholder="Buscar cliente..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="pl-9 w-64 bg-black/20 border-white/5 text-white placeholder:text-slate-600 focus-visible:ring-plannera-sop h-10 rounded-xl"
+                  className="pl-10 w-72 h-11 rounded-xl"
                 />
               </div>
 
-              <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+              <div className="flex bg-surface-background p-1 rounded-xl border border-border-divider">
                 {['all', 'Indústria', 'MRO', 'Varejo'].map(s => (
                   <button
                     key={s}
                     onClick={() => setSegmentFilter(s)}
                     className={cn(
-                      "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-all",
-                      segmentFilter === s 
-                        ? "bg-plannera-sop text-white shadow-lg" 
-                        : "text-slate-500 hover:text-white"
+                      "px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                      segmentFilter === s
+                        ? "bg-primary text-primary-foreground shadow-lg"
+                        : "text-content-secondary hover:text-content-primary"
                     )}
                   >
                     {s === 'all' ? 'Tudo' : s}
@@ -117,33 +117,29 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               </div>
 
               <Link href="/accounts/new">
-                <Button className={cn(
-                  "h-9 rounded-lg px-4 gap-2 font-bold uppercase tracking-widest text-[10px] transition-all duration-300",
-                  "bg-gradient-to-br from-plannera-orange to-[#f59e0b] text-white",
-                  "shadow-[0_2px_10px_rgba(245,158,11,0.2)] hover:shadow-[0_4px_15px_rgba(245,158,11,0.3)]",
-                  "hover:scale-[1.02] active:scale-[0.98] border-none",
-                  "relative overflow-hidden group"
-                )}>
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Plus className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10">Novo LOGO</span>
+                <Button className="px-6 gap-2 rounded-xl font-bold uppercase tracking-widest text-[10px] active:scale-95 transition-all">
+                  <Plus className="w-4 h-4" />
+                  <span>Novo LOGO</span>
                 </Button>
               </Link>
             </div>
           </div>
         </CardHeader>
-        
-        <CardContent className="p-0 border-t border-white/5">
+
+        <CardContent className="p-0 border-t border-border-divider">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-white/5 hover:bg-transparent px-10">
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px] pl-10">Cliente</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">Segmento</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px] text-right pr-10">Financial (MRR)</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">Renovação</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px] text-center">Saúde</TableHead>
-                  <TableHead className="text-slate-500 font-bold uppercase tracking-widest text-[9px] text-center pr-10">Trend</TableHead>
+                <TableRow>
+                  <TableHead className="pl-6 w-12"></TableHead>
+                  <TableHead className="text-[11px]">Cliente</TableHead>
+                  <TableHead className="text-[11px]">Indústria</TableHead>
+                  <TableHead className="text-[11px]">Segmento</TableHead>
+                  <TableHead className="text-right text-[11px]">MRR</TableHead>
+                  <TableHead className="text-center text-[11px]">Qtd</TableHead>
+                  <TableHead className="text-[11px]">Renovação</TableHead>
+                  <TableHead className="text-center text-[11px]">Saúde</TableHead>
+                  <TableHead className="text-center pr-6 text-[11px]">Trend</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,33 +164,33 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: index * 0.05, duration: 0.3 }}
                         onClick={() => router.push(`/accounts/${account.id}`)}
-                        className="group border-white/5 hover:bg-white/[0.03] transition-colors cursor-pointer"
+                        className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer"
                       >
-                        <TableCell className="pl-10">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-plannera-sop/10 border border-plannera-sop/20 flex items-center justify-center text-plannera-sop font-bold shadow-lg">
-                              {account.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-white font-bold text-sm tracking-tight group-hover:text-plannera-orange transition-colors uppercase">{account.name}</p>
-                              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{account.industry || 'Global'}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell><SegmentBadge segment={account.segment} /></TableCell>
-                        <TableCell className="text-right pr-10">
-                          <div className="flex flex-col items-end">
-                            <span className="text-white text-sm font-bold tracking-tight">
-                              {totalMRR > 0 ? formatCurrency(totalMRR) : '—'}
-                            </span>
-                            <span className="text-slate-600 text-[10px] font-bold uppercase tracking-widest">
-                              {activeContracts.length} {activeContracts.length === 1 ? 'Produto' : 'Produtos'}
-                            </span>
+                        <TableCell className="pl-6 py-4">
+                          <div className="w-10 h-10 rounded-xl bg-surface-background border border-border-divider flex items-center justify-center text-content-primary font-black shadow-sm group-hover:scale-105 transition-transform">
+                            {account.name.charAt(0)}
                           </div>
                         </TableCell>
                         <TableCell>
+                          <p className="text-content-primary font-black text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-content-secondary text-[11px] font-black uppercase tracking-widest">{account.industry || 'Global'}</p>
+                        </TableCell>
+                        <TableCell><SegmentBadge segment={account.segment} /></TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-content-primary font-black text-[11px]">
+                            {totalMRR > 0 ? formatCurrency(totalMRR) : '—'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-content-secondary font-black text-[11px]">
+                            {activeContracts.length}
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-300 text-xs font-bold font-mono">
+                            <span className="text-content-secondary font-black text-[11px]">
                               {nearestRenewal?.renewal_date
                                 ? new Date(nearestRenewal.renewal_date).toLocaleDateString('pt-BR')
                                 : '—'}
@@ -207,7 +203,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="w-8 h-8 rounded-lg opacity-0 group-hover/health:opacity-100 hover:bg-white/5 text-slate-500 hover:text-plannera-orange transition-all"
+                              className="w-8 h-8 rounded-lg opacity-0 group-hover/health:opacity-100 hover:bg-accent text-muted-foreground hover:text-primary transition-all"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/accounts/${account.id}/edit`);
@@ -217,7 +213,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center pr-10"><TrendIcon trend={account.health_trend} /></TableCell>
+                        <TableCell className="text-center pr-6"><TrendIcon trend={account.health_trend} /></TableCell>
                       </motion.tr>
                     )
                   })}
@@ -226,14 +222,13 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
             </Table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-20 bg-black/5 rounded-b-3xl border-t border-white/5">
-                <Building2 className="w-12 h-12 text-slate-800 mx-auto mb-4" />
-                <p className="text-slate-600 font-black uppercase text-xs tracking-widest">Nenhum cliente mapeado nesta busca</p>
+            <div className="text-center py-12 bg-surface-background rounded-b-3xl border-t border-border-divider">
+              <Building2 className="w-12 h-12 text-content-secondary/30 mx-auto mb-4" />
+              <p className="text-content-secondary font-black uppercase text-xs tracking-widest">Nenhum cliente mapeado nesta busca</p>
             </div>
           )}
         </CardContent>
       </Card>
-
     </>
   )
 }

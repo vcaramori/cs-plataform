@@ -244,6 +244,7 @@ When user's prompt is NOT in English:
 | ------------ | ------------------------------- |
 | Web UI/UX    | `.agent/frontend-specialist.md` |
 | Mobile UI/UX | `.agent/mobile-developer.md`    |
+| **Brand/DS** | `.agent/rules/DESIGN_SYSTEM_RULES.md` |
 
 **These agents contain:**
 

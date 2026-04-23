@@ -6,6 +6,7 @@ import { z } from 'zod'
 const Schema = z.object({
   body: z.string().min(1).max(10000),
   outcome: z.enum(['solution', 'pending_client', 'pending_product', 'none']).default('none'),
+  close_after: z.boolean().optional().default(false),
 })
 
 export async function POST(
@@ -43,7 +44,7 @@ export async function POST(
     user.id,
     parsed.data.body,
     finalOutcome
-  ).catch(console.error)
+  )
 
   // 2. Store message in history
   const { error: msgError } = await supabase
@@ -54,6 +55,7 @@ export async function POST(
       author_email: user.email,
       type: 'reply',
       body: parsed.data.body,
+      created_at: new Date().toISOString()
     })
 
   if (msgError) {

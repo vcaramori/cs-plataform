@@ -11,8 +11,9 @@ const FeatureSchema = z.object({
 
 export async function GET() {
   const supabase = await getSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data, error: authError } = await supabase.auth.getUser()
+  if (authError || !data?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = data.user
 
   const { data, error } = await supabase
     .from('product_features')
@@ -25,8 +26,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = await getSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data, error: authError } = await supabase.auth.getUser()
+  if (authError || !data?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = data.user
 
   const body = await request.json()
   const parsed = FeatureSchema.safeParse(body)

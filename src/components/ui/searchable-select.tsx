@@ -22,6 +22,7 @@ import {
 export type Option = {
   label: string
   value: string
+  className?: string
 }
 
 export interface SearchableSelectProps {
@@ -55,8 +56,8 @@ export function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between bg-slate-800/80 border-white/8 text-white hover:bg-slate-700 hover:text-white",
-            "text-[10px] font-bold uppercase tracking-wide",
+            "w-full justify-between bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-[#2d3558] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700",
+            "text-[10px] font-bold uppercase tracking-widest shadow-sm",
             className
           )}
         >
@@ -68,11 +69,14 @@ export function SearchableSelect({
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-40" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-slate-900 border-slate-800">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl">
         <Command className="bg-transparent">
-          <CommandInput placeholder="Pesquisar..." className="text-white border-0 focus:ring-0" />
+          <CommandInput 
+            placeholder="Pesquisar..." 
+            className="text-[#2d3558] dark:text-white border-0 focus:ring-0 placeholder:text-slate-400" 
+          />
           <CommandList className="max-h-[250px] overflow-auto">
-            <CommandEmpty className="py-4 text-center text-sm text-slate-400">{emptyMessage}</CommandEmpty>
+            <CommandEmpty className="py-4 text-center text-xs font-bold uppercase tracking-widest text-slate-400">{emptyMessage}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
@@ -82,12 +86,15 @@ export function SearchableSelect({
                     onValueChange(option.value)
                     setOpen(false)
                   }}
-                  className="text-white data-[selected='true']:bg-slate-800 cursor-pointer"
+                  className={cn(
+                    "text-[#2d3558] dark:text-white data-[selected='true']:bg-slate-50 dark:data-[selected='true']:bg-slate-800 cursor-pointer font-bold uppercase tracking-widest text-[9px] py-3",
+                    option.className
+                  )}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100 text-indigo-400" : "opacity-0"
+                      value === option.value ? "opacity-100 text-indigo-600 dark:text-indigo-400" : "opacity-0"
                     )}
                   />
                   {option.label}

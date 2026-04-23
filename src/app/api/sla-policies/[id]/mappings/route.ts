@@ -4,10 +4,10 @@ import { z } from 'zod'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id } = params
+  const { id } = await params
 
   const { data, error } = await supabase
     .from('sla_level_mappings')
@@ -27,10 +27,10 @@ const postSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id } = params
+  const { id } = await params
   const body = await request.json()
 
   const parsed = postSchema.safeParse(body)

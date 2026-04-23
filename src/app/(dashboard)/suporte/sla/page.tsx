@@ -58,15 +58,15 @@ export default function SLADashboard() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              Control Tower <span className="text-plannera-orange">SLA</span>
-            </h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-1">Portfolio Intelligence Dashboard</p>
+            <h1 className="h1-page">Control Tower SLA</h1>
+            <p className="label-premium flex items-center gap-2">
+              Portfolio Intelligence & Operational Excellence
+            </p>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
-           <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-none px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase">
+           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900 px-4 py-1.5 rounded-full font-black text-[10px] tracking-widest uppercase">
              Health: Stability
            </Badge>
         </div>
@@ -110,17 +110,17 @@ export default function SLADashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Priority Breakdown */}
-        <Card className="xl:col-span-2 glass-card border-none p-6 rounded-3xl">
+        <Card className="xl:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl">
           <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-white text-lg font-black uppercase tracking-tight">Performance por Prioridade</CardTitle>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Percentual de conformidade por nível de sla</p>
+              <CardTitle className="h2-section !text-[#2d3558] dark:!text-white">Performance por Prioridade</CardTitle>
+              <p className="label-premium !text-[9px] opacity-60">Percentual de conformidade por nível de sla</p>
             </div>
           </CardHeader>
           <CardContent className="px-0 pt-6 h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data?.priority_breakdown}>
-                <CartGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis 
                   dataKey="priority" 
                   stroke="#64748b" 
@@ -130,8 +130,8 @@ export default function SLADashboard() {
                 />
                 <YAxis stroke="#64748b" fontSize={10} fontWeight="bold" />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                  contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '12px' }}
+                  cursor={{ fill: '#f1f5f9' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
                 />
                 <Bar 
                   dataKey="pct" 
@@ -149,10 +149,10 @@ export default function SLADashboard() {
         </Card>
 
         {/* Global Distribution Pie */}
-        <Card className="glass-card border-none p-6 rounded-3xl">
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl">
           <CardHeader className="px-0 pt-0">
-            <CardTitle className="text-white text-lg font-black uppercase tracking-tight">Status de Saúde</CardTitle>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Proporção total de atendimento</p>
+            <CardTitle className="h2-section !text-[#2d3558] dark:!text-white">Status de Saúde</CardTitle>
+            <p className="label-premium !text-[9px] opacity-60">Proporção total de atendimento</p>
           </CardHeader>
           <CardContent className="px-0 pt-6 h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -168,11 +168,11 @@ export default function SLADashboard() {
                   animationDuration={1500}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="fixed" />
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
                 />
                 <Legend 
                   verticalAlign="bottom" 
@@ -186,13 +186,13 @@ export default function SLADashboard() {
       </div>
 
       {/* Recent Breaches */}
-      <Card className="glass-card border-none p-6 rounded-3xl overflow-hidden">
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl overflow-hidden">
         <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
            <div>
-              <CardTitle className="text-white text-lg font-black uppercase tracking-tight">Alertas de Violação</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white text-lg font-black uppercase tracking-tight">Alertas de Violação</CardTitle>
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Top 10 incidentes recentes fora do prazo</p>
            </div>
-           <Button variant="outline" className="h-8 text-[9px] font-black uppercase tracking-widest border-white/5 bg-white/5">
+           <Button variant="outline" className="h-8 text-[9px] font-black uppercase tracking-widest border-slate-200">
              Exportar Relatório
            </Button>
         </CardHeader>
@@ -204,18 +204,18 @@ export default function SLADashboard() {
               </div>
             ) : (
               data?.recent_breaches.map((t: any) => (
-                <div key={t.id} className="group flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all">
+                <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
                     </div>
                     <div>
-                      <h4 className="text-white text-sm font-bold group-hover:text-plannera-orange transition-colors">{t.title}</h4>
+                      <h4 className="text-slate-900 dark:text-white text-sm font-bold">{t.title}</h4>
                       <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">Prioridade: {t.priority}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className="bg-red-500/20 text-red-400 border-none text-[9px] font-black uppercase tracking-widest">
+                    <Badge className="bg-red-100 text-red-700 border-none text-[9px] font-black uppercase tracking-widest">
                       Violado
                     </Badge>
                   </div>
@@ -231,18 +231,18 @@ export default function SLADashboard() {
 
 function KpiCard({ title, value, label, icon, trend, color, isBad }: any) {
   const colorMap: any = {
-    indigo: 'from-indigo-500/20 to-indigo-900/10 text-indigo-400',
-    emerald: 'from-emerald-500/20 to-emerald-900/10 text-emerald-400',
-    orange: 'from-orange-500/20 to-orange-900/10 text-orange-400',
-    amber: 'from-amber-500/20 to-amber-900/10 text-amber-400',
+    indigo: 'from-primary/10 to-transparent text-primary',
+    emerald: 'from-emerald-500/10 to-transparent text-emerald-600 dark:text-emerald-400',
+    orange: 'from-orange-500/10 to-transparent text-orange-600 dark:text-orange-400',
+    amber: 'from-amber-500/10 to-transparent text-amber-600 dark:text-amber-400',
   }
 
   return (
-    <Card className="glass-card border-none rounded-3xl overflow-hidden relative group">
+    <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-none rounded-3xl overflow-hidden relative group">
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50", colorMap[color])} />
       <CardContent className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-slate-400 group-hover:text-white transition-colors">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-black/40 border border-white/5 text-slate-400 group-hover:text-brand-primary dark:text-white transition-colors">
             {icon}
           </div>
           {trend && (
@@ -255,16 +255,17 @@ function KpiCard({ title, value, label, icon, trend, color, isBad }: any) {
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
+          <p className="label-premium !text-[9px] opacity-60">{title}</p>
           <h3 className={cn(
             "text-3xl font-black tracking-tight",
-            isBad ? "text-red-500" : "text-white"
+            isBad ? "text-red-600 dark:text-red-500" : "text-brand-primary dark:text-white"
           )}>
             {value}
           </h3>
-          <p className="text-slate-500 text-[10px] font-bold uppercase opacity-60">{label}</p>
+          <p className="label-premium !text-[9px] opacity-60">{label}</p>
         </div>
       </CardContent>
     </Card>
   )
 }
+

@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation'
+import { PageContainer } from '@/components/ui/page-container'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { SuporteClient } from './components/SuporteClient'
+import { redirect } from 'next/navigation'
 import { TicketCheck } from 'lucide-react'
+import { SuporteClient } from './components/SuporteClient'
 
 export default async function SuportePage() {
   const supabase = await getSupabaseServerClient()
@@ -22,14 +23,17 @@ export default async function SuportePage() {
   ])
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <TicketCheck className="w-6 h-6 text-indigo-400" />
-          Suporte
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Importe chamados via CSV ou texto livre — cada ticket é vetorizado para o RAG
+    <PageContainer>
+      <div className="flex flex-col gap-2 relative">
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
+            <TicketCheck className="w-5 h-5 text-content-primary" />
+          </div>
+          <h1 className="h1-page">Suporte & Chamados</h1>
+        </div>
+        <p className="label-premium flex items-center gap-2">
+          Gestão de Incidentes, Vetorização para RAG e SLA de Atendimento
         </p>
       </div>
 
@@ -37,6 +41,6 @@ export default async function SuportePage() {
         accounts={accounts ?? []}
         initialTickets={(tickets ?? []) as any}
       />
-    </div>
+    </PageContainer>
   )
 }

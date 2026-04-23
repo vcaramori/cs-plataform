@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PageContainer } from '@/components/layout/PageContainer'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { ImageUpload } from '@/components/ui/image-upload'
@@ -114,8 +115,8 @@ interface AccountFormProps {
   mode?: 'create' | 'edit'
 }
 
-const INPUT = 'bg-white/[0.03] border-white/8 text-white h-10 rounded-xl text-sm'
-const LABEL = 'text-[10px] font-bold text-slate-500 uppercase tracking-widest'
+const INPUT = 'bg-accent/30 border-border text-foreground h-10 rounded-xl text-sm focus-visible:ring-primary'
+const LABEL = 'text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest'
 
 export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) {
   const router = useRouter()
@@ -268,45 +269,57 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   }
 
   return (
-    <div className="w-full min-h-screen bg-[#020617] font-sans pb-24">
-
+    <PageContainer>
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="w-full px-4 pt-6 pb-8 flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
-              <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
+            <Button variant="outline" size="icon" className="w-10 h-10 rounded-xl">
+              <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <Target className="w-5 h-5 text-plannera-orange shrink-0" />
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            {mode === 'create' ? 'Nova Logo' : 'Editar Logo'}
-          </h1>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <h1 className="text-2xl font-black text-foreground tracking-tighter uppercase whitespace-nowrap">
+                {mode === 'create' ? 'Nova Logo' : 'Editar Logo'}
+              </h1>
+            </div>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+              Gestão estratégica de clientes plannera
+            </p>
+          </div>
         </div>
-        <Button
-          onClick={handleSubmit(onSubmit)}
-          disabled={loading}
-          className="h-10 px-6 rounded-xl font-bold uppercase tracking-widest text-xs gap-2 bg-gradient-to-r from-plannera-orange to-[#f59e0b] text-white border-none shadow-md hover:shadow-lg transition-all active:scale-95"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeCheck className="w-4 h-4" />}
-          {loading ? 'Salvando...' : 'Efetivar Cadastro'}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            disabled={loading}
+            variant="premium"
+            className="h-11 px-8 rounded-xl font-bold uppercase tracking-widest text-xs gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeCheck className="w-4 h-4" />}
+            {loading ? 'Salvando...' : 'Efetivar Cadastro'}
+          </Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full px-4 space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 
         {/* ── BLOCO 1: IDENTIFICAÇÃO ─────────────────────────────── */}
-        <Card className="bg-slate-900/40 border-white/5 rounded-2xl overflow-hidden">
-          <div className="h-[3px] bg-gradient-to-r from-indigo-500 to-plannera-sop" />
-          <CardHeader className="px-8 pt-6 pb-4">
+        <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+          <div className="h-[2px] bg-gradient-to-r from-primary/80 to-secondary/80" />
+          <CardHeader className="px-8 pt-8 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
-                <Briefcase className="w-4 h-4" />
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner">
+                <Briefcase className="w-5 h-5" />
               </div>
-              <CardTitle className="text-white text-base font-bold uppercase tracking-wide">Identificação</CardTitle>
+              <div className="space-y-0.5">
+                <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Identificação</CardTitle>
+                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Dados principais da conta</p>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-6">
+          <CardContent className="px-8 pb-10 space-y-8">
             {/* Logo upload */}
             <div className="flex justify-center">
               <ImageUpload
@@ -315,28 +328,28 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               />
             </div>
 
-            {/* Razão Social + Nome da Logo — destaque no topo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+            {/* Razão Social + Nome da Logo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
                 <Label className={LABEL}>Razão Social *</Label>
                 <Input {...register('company_name')} placeholder="Ex: General Mills Brasil Ltda" className={INPUT} />
-                {errors.company_name && <p className="text-red-500 text-[10px] font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.company_name.message}</p>}
+                {errors.company_name && <p className="text-destructive text-[10px] font-bold flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" />{errors.company_name.message}</p>}
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Nome da Logo *</Label>
                 <Input {...register('account_name')} placeholder="Ex: Yoki" className={INPUT} />
-                {errors.account_name && <p className="text-red-500 text-[10px] font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.account_name.message}</p>}
+                {errors.account_name && <p className="text-destructive text-[10px] font-bold flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" />{errors.account_name.message}</p>}
               </div>
             </div>
 
-            {/* Demais campos de identificação — 1 linha */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1.5">
+            {/* Demais campos de identificação */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="space-y-2">
                 <Label className={LABEL}>Segmento *</Label>
                 <SearchableSelect
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
-                  className="h-10"
+                  className="h-10 rounded-xl bg-accent/30 border-border"
                   options={[
                     { label: 'Indústria', value: 'Indústria' },
                     { label: 'MRO', value: 'MRO' },
@@ -344,15 +357,15 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   ]}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Setor de Atuação</Label>
                 <Input {...register('industry')} placeholder="Ex: Bens de Consumo" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Website</Label>
                 <Input {...register('website')} placeholder="https://exemplo.com" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>CNPJ / Tax ID</Label>
                 <MaskedInput
                   maskType="tax_id"
@@ -367,18 +380,21 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </Card>
 
         {/* ── BLOCO 2: LOCALIZAÇÃO ───────────────────────────────── */}
-        <Card className="bg-slate-900/40 border-white/5 rounded-2xl overflow-hidden">
-          <div className="h-[3px] bg-emerald-500/50" />
-          <CardHeader className="px-8 pt-6 pb-4">
+        <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+          <div className="h-[2px] bg-gradient-to-r from-emerald-500/80 to-teal-500/80" />
+          <CardHeader className="px-8 pt-8 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
-                  <MapPin className="w-4 h-4" />
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 shadow-inner">
+                  <MapPin className="w-5 h-5" />
                 </div>
-                <CardTitle className="text-white text-base font-bold uppercase tracking-wide">Localização</CardTitle>
+                <div className="space-y-0.5">
+                  <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Localização</CardTitle>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Endereço e presença física</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                <Label className={cn(LABEL, 'mb-0')}>Internacional</Label>
+              <div className="flex items-center gap-3 bg-accent/30 px-3 py-1.5 rounded-xl border border-border">
+                <Label className={cn(LABEL, 'mb-0')}>Inter</Label>
                 <Switch
                   checked={isInternational}
                   onCheckedChange={(v) => setValue('is_international', v)}
@@ -387,11 +403,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-4">
-            {/* Linha 1: CEP + Logradouro */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <CardContent className="px-8 pb-10 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {!isInternational && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className={LABEL}>CEP</Label>
                   <div className="relative">
                     <Input {...register('cep')} placeholder="00000-000" className={INPUT} />
@@ -399,31 +414,30 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
                 </div>
               )}
-              <div className={cn('space-y-1.5', isInternational ? 'md:col-span-4' : 'md:col-span-3')}>
+              <div className={cn('space-y-2', isInternational ? 'md:col-span-4' : 'md:col-span-3')}>
                 <Label className={LABEL}>Logradouro / Rua</Label>
                 <Input {...register('street')} placeholder="Av. Paulista..." className={INPUT} />
               </div>
             </div>
 
-            {/* Linha 2: Número + Complemento + Bairro + Cidade + UF — 1 linha */}
-            <div className="grid grid-cols-2 md:grid-cols-[80px_1fr_120px_1fr_80px] gap-4">
-              <div className="space-y-1.5">
-                <Label className={LABEL}>Número</Label>
+            <div className="grid grid-cols-2 md:grid-cols-[100px_1fr_150px_1fr_100px] gap-6">
+              <div className="space-y-2">
+                <Label className={LABEL}>Num</Label>
                 <Input {...register('number')} placeholder="1000" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Complemento</Label>
-                <Input {...register('complement')} placeholder="Sala 42, Bloco B..." className={INPUT} />
+                <Input {...register('complement')} placeholder="Sala 42..." className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Bairro</Label>
                 <Input {...register('neighborhood')} placeholder="Centro" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>Cidade</Label>
                 <Input {...register('city')} placeholder="São Paulo" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className={LABEL}>UF</Label>
                 <Input {...register('state')} placeholder="SP" className={INPUT} />
               </div>
@@ -432,18 +446,22 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </Card>
 
         {/* ── BLOCO 3: GESTÃO COMERCIAL ──────────────────────────── */}
-        <Card className="bg-slate-900/40 border-white/5 rounded-2xl overflow-hidden">
-          <div className="h-[3px] bg-gradient-to-r from-plannera-orange to-[#f59e0b]" />
-          <CardHeader className="px-8 pt-6 pb-4">
+        <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+          <div className="h-[2px] bg-gradient-to-r from-primary/80 to-amber-500/80" />
+          <CardHeader className="px-8 pt-8 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-plannera-orange/10 text-plannera-orange">
-                  <FileText className="w-4 h-4" />
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner">
+                  <FileText className="w-5 h-5" />
                 </div>
-                <CardTitle className="text-white text-base font-bold uppercase tracking-wide">Gestão Comercial</CardTitle>
+                <div className="space-y-0.5">
+                  <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Gestão Comercial</CardTitle>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Contratos e Acordos Atuais</p>
+                </div>
               </div>
               <Button
                 type="button"
+                variant="outline"
                 onClick={() => append({
                   mrr: 0,
                   status: 'active',
@@ -457,53 +475,55 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   sla_use_global: true,
                   sla_levels: DEFAULT_SLA_LEVELS,
                 })}
-                className="h-9 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest gap-1.5"
+                className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Contrato
+                <Plus className="w-4 h-4" /> Add Contrato
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-4">
+          <CardContent className="px-8 pb-10 space-y-6">
             {fields.length === 0 && (
-              <div className="py-10 border-2 border-dashed border-white/5 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-600">
-                <FileText className="w-8 h-8" />
-                <p className="text-[10px] font-bold uppercase tracking-widest">Nenhum contrato cadastrado</p>
+              <div className="py-20 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-4 text-muted-foreground/30">
+                <div className="p-4 rounded-full bg-accent/30">
+                  <FileText className="w-10 h-10" />
+                </div>
+                <p className="text-xs font-black uppercase tracking-widest">Nenhum contrato cadastrado</p>
               </div>
             )}
 
             {fields.map((field, index) => (
-              <Card key={field.id} className="bg-black/20 border-white/5 rounded-xl p-5 relative group/card">
-                <div className="absolute -top-2.5 -right-2.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                  <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="h-7 w-7 rounded-full shadow-lg">
-                    <Trash2 className="w-3.5 h-3.5" />
+              <Card key={field.id} className="bg-accent/20 border-border rounded-2xl p-6 relative group/card shadow-sm hover:shadow-md transition-all">
+                <div className="absolute -top-3 -right-3 opacity-0 group-hover/card:opacity-100 transition-opacity z-20">
+                  <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="h-8 w-8 rounded-full shadow-lg">
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-bold text-slate-500 uppercase">Código</Label>
-                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-white/5 border-none" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label className={LABEL}>Código</Label>
+                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-accent/30 border-border" />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-bold text-slate-500 uppercase">Status</Label>
+                  <div className="space-y-2">
+                    <Label className={LABEL}>Status</Label>
                     <SearchableSelect
                       value={watch(`contracts.${index}.status`)}
                       onValueChange={(v) => setValue(`contracts.${index}.status`, v as any)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
                       options={[
-                        { label: 'Ativo', value: 'active' },
+                        { label: 'Ativa', value: 'active' },
                         { label: 'Em Negociação', value: 'in-negotiation' },
                         { label: 'Em Risco', value: 'at-risk' },
                         { label: 'Churn', value: 'churned' }
                       ]}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-bold text-slate-500 uppercase">Tipo</Label>
+                  <div className="space-y-2">
+                    <Label className={LABEL}>Tipo</Label>
                     <SearchableSelect
                       value={watch(`contracts.${index}.contract_type`)}
                       onValueChange={(v) => setValue(`contracts.${index}.contract_type`, v as any)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
                       options={[
                         { label: 'Inicial', value: 'initial' },
                         { label: 'Aditivo', value: 'additive' },
@@ -512,12 +532,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                       ]}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-bold text-slate-500 uppercase">Plano</Label>
+                  <div className="space-y-2">
+                    <Label className={LABEL}>Plano</Label>
                     <SearchableSelect
                       value={watch(`contracts.${index}.service_type`)}
                       onValueChange={(v) => setValue(`contracts.${index}.service_type`, v as any)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
                       options={[
                         { label: 'Basic', value: 'Basic' },
                         { label: 'Professional', value: 'Professional' },
@@ -528,21 +548,20 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* Financial Engine */}
-                  <div className="col-span-2 space-y-3 p-4 bg-black/40 rounded-xl border border-white/5">
+                  <div className="col-span-2 space-y-4 p-5 bg-accent/30 rounded-2xl border border-border">
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase">Financial Engine</Label>
-                      {/* Standard / Custom toggle */}
-                      <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 border border-white/8">
+                      <Label className="text-[10px] font-black text-foreground uppercase tracking-widest">Financial Engine</Label>
+                      <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
                         {(['standard', 'custom'] as const).map(type => (
                           <button
                             key={type}
                             type="button"
                             onClick={() => setValue(`contracts.${index}.pricing_type`, type)}
                             className={cn(
-                              'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all',
+                              'px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all',
                               watch(`contracts.${index}.pricing_type`) === type
-                                ? 'bg-plannera-orange text-white shadow'
-                                : 'text-slate-500 hover:text-white'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                             )}
                           >
                             {type}
@@ -550,30 +569,29 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-bold text-slate-500 uppercase">MRR Base</Label>
+                    <div className="space-y-2">
+                      <Label className={LABEL}>MRR Base</Label>
                       <MaskedInput
                         maskType="currency"
                         value={watch(`contracts.${index}.mrr`) || 0}
                         onValueChange={(v) => setValue(`contracts.${index}.mrr`, parseFloat(v) || 0)}
-                        className="h-10 text-base font-bold"
+                        className="h-11 text-lg font-black bg-background/50 border-border"
                       />
                     </div>
-                    {/* Desconto: toggle % / R$ */}
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Desconto</Label>
-                        <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
+                        <Label className={LABEL}>Desconto</Label>
+                        <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
                           {(['percentage', 'fixed'] as const).map(type => (
                             <button
                               key={type}
                               type="button"
                               onClick={() => setValue(`contracts.${index}.discount_type`, type)}
                               className={cn(
-                                'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all',
+                                'px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all',
                                 watch(`contracts.${index}.discount_type`) === type
-                                  ? 'bg-plannera-orange text-white shadow'
-                                  : 'text-slate-500 hover:text-white'
+                                  ? 'bg-primary text-primary-foreground shadow-sm'
+                                  : 'text-muted-foreground hover:text-foreground'
                               )}
                             >
                               {type === 'percentage' ? '%' : 'R$'}
@@ -581,92 +599,97 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           ))}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
                           {watch(`contracts.${index}.discount_type`) === 'percentage' ? (
                             <>
-                              <Label className="text-[9px] font-bold text-slate-500 uppercase">% Desconto</Label>
-                              <Input {...register(`contracts.${index}.discount_percentage`, { valueAsNumber: true })} type="number" min="0" max="100" className="h-9" />
+                              <Label className={LABEL}>% Desc</Label>
+                              <Input {...register(`contracts.${index}.discount_percentage`, { valueAsNumber: true })} type="number" min="0" max="100" className="h-10 bg-background/50" />
                             </>
                           ) : (
                             <>
-                              <Label className="text-[9px] font-bold text-slate-500 uppercase">Valor R$</Label>
+                              <Label className={LABEL}>Valor R$</Label>
                               <MaskedInput
                                 maskType="currency"
                                 value={watch(`contracts.${index}.discount_value_brl`) || 0}
                                 onValueChange={(v) => setValue(`contracts.${index}.discount_value_brl`, parseFloat(v) || 0)}
-                                className="h-9"
+                                className="h-10 bg-background/50"
                               />
                             </>
                           )}
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[9px] font-bold text-slate-500 uppercase">Meses</Label>
-                          <Input {...register(`contracts.${index}.discount_duration_months`, { valueAsNumber: true })} type="number" className="h-9" />
+                        <div className="space-y-2">
+                          <Label className={LABEL}>Meses</Label>
+                          <Input {...register(`contracts.${index}.discount_duration_months`, { valueAsNumber: true })} type="number" className="h-10 bg-background/50" />
                         </div>
                       </div>
                     </div>
                     {watch(`contracts.${index}.pricing_type`) === 'custom' && (
-                      <div className="space-y-1.5 pt-1 border-t border-white/5">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Justificativa do Preço Custom</Label>
+                      <div className="space-y-2 pt-2 border-t border-border">
+                        <Label className={LABEL}>Justificativa Custom</Label>
                         <Textarea
                           {...register(`contracts.${index}.pricing_explanation`)}
-                          placeholder="Descreva a composição e justificativa do pricing customizado..."
-                          className="min-h-[72px] text-xs bg-white/5 border-white/8"
+                          placeholder="Justificativa do pricing..."
+                          className="min-h-[80px] text-xs bg-background/50 border-border"
                         />
                       </div>
                     )}
                   </div>
 
                   {/* Datas + Notas */}
-                  <div className="col-span-2 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Início</Label>
-                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs" />
+                  <div className="col-span-2 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className={LABEL}>Início</Label>
+                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs bg-accent/30 border-border" />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-bold text-slate-500 uppercase">Renovação</Label>
-                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs" />
+                      <div className="space-y-2">
+                        <Label className={LABEL}>Renovação</Label>
+                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs bg-accent/30 border-border" />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-bold text-slate-500 uppercase">Notas Rápidas</Label>
-                      <Textarea {...register(`contracts.${index}.notes`)} className="min-h-[60px] text-xs bg-white/5 border-none" placeholder="Observações do contrato..." />
+                    <div className="space-y-2">
+                      <Label className={LABEL}>Notas Rápidas</Label>
+                      <Textarea {...register(`contracts.${index}.notes`)} className="min-h-[80px] text-xs bg-accent/30 border-border" placeholder="Observações do contrato..." />
                     </div>
                     {mode === 'edit' && (
-                      <div className="flex justify-end pt-1">
+                      <div className="flex justify-end pt-2">
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="premium"
                           onClick={() => saveContractIndividually(index)}
-                          className="h-8 px-4 rounded-lg text-[9px] font-bold uppercase tracking-widest border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                          className="h-9 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest"
                         >
-                          Salvar Unidade
+                          Salvar Contrato
                         </Button>
                       </div>
                     )}
                   </div>
 
                   {/* SLA do Contrato */}
-                  <div className="col-span-2 md:col-span-4 space-y-4 p-4 bg-black/40 rounded-xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5 text-indigo-400" />
-                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SLA do Contrato</Label>
+                  <div className="col-span-2 md:col-span-4 space-y-6 p-5 bg-accent/30 rounded-2xl border border-border mt-2">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                          <Shield className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <Label className="text-[10px] font-black text-foreground uppercase tracking-widest">SLA do Contrato</Label>
+                          <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Prazos de resposta e resolução</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/8">
+                      <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
                         <button
                           type="button"
                           onClick={() => setValue(`contracts.${index}.sla_use_global`, true)}
                           className={cn(
-                            'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-1',
+                            'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2',
                             watch(`contracts.${index}.sla_use_global`)
-                              ? 'bg-indigo-500 text-white shadow'
-                              : 'text-slate-500 hover:text-white'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          <ShieldCheck className="w-3 h-3" /> Padrão Plannera
+                          <ShieldCheck className="w-3.5 h-3.5" /> Padrão Plannera
                         </button>
                         <button
                           type="button"
@@ -676,61 +699,60 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                             if (cid) loadContractSLA(cid, index)
                           }}
                           className={cn(
-                            'px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-1',
+                            'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2',
                             !watch(`contracts.${index}.sla_use_global`)
-                              ? 'bg-plannera-orange text-white shadow'
-                              : 'text-slate-500 hover:text-white'
+                              ? 'bg-primary text-primary-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          <ShieldOff className="w-3 h-3" /> Customizado
+                          <ShieldOff className="w-3.5 h-3.5" /> Customizado
                         </button>
                       </div>
                     </div>
 
                     {watch(`contracts.${index}.sla_use_global`) ? (
-                      <p className="text-[9px] text-slate-600 font-medium italic px-1">
-                        Este contrato herda os prazos do SLA Padrão Plannera. Para customizar, selecione "Customizado".
-                      </p>
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                        <AlertCircle className="w-4 h-4 text-blue-500" />
+                        <p className="text-[10px] text-blue-500/80 font-bold uppercase tracking-wider">
+                          Herdando diretrizes da Política Global Plannera.
+                        </p>
+                      </div>
                     ) : (
-                      <div className="space-y-3">
-                        {/* Header da tabela */}
-                        <div className="grid grid-cols-[120px_1fr_80px_80px_auto] gap-2 items-center px-2">
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Nível Interno</span>
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Labels do Cliente (De)</span>
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">1ª Resp (min)</span>
-                          <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest text-center">Resolução (min)</span>
-                          <span />
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-[140px_1fr_100px_100px] gap-4 items-center px-2">
+                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Nível</span>
+                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Labels do Cliente</span>
+                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center">1ª Resp</span>
+                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center">Resolução</span>
                         </div>
 
                         {(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS).map((lvl, li) => {
                           const levelMeta = {
-                            critical: { label: 'Crítico', color: 'text-red-400 border-red-500/20 bg-red-500/5' },
-                            high:     { label: 'Alto',    color: 'text-orange-400 border-orange-500/20 bg-orange-500/5' },
-                            medium:   { label: 'Médio',   color: 'text-amber-400 border-amber-500/20 bg-amber-500/5' },
-                            low:      { label: 'Baixo',   color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' },
+                            critical: { label: 'Crítico', color: 'text-red-500 border-red-500/20 bg-red-500/10' },
+                            high:     { label: 'Alto',    color: 'text-orange-500 border-orange-500/20 bg-orange-500/10' },
+                            medium:   { label: 'Médio',   color: 'text-amber-500 border-amber-500/20 bg-amber-500/10' },
+                            low:      { label: 'Baixo',   color: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10' },
                           }[lvl.level]
 
                           return (
-                            <div key={lvl.level} className="grid grid-cols-[120px_1fr_80px_80px_auto] gap-2 items-start p-2 rounded-lg bg-white/[0.02] border border-white/5">
-                              {/* Nível badge */}
-                              <div className="pt-1">
-                                <span className={cn('text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full border', levelMeta?.color)}>
+                            <Card key={lvl.level} className="grid grid-cols-[140px_1fr_100px_100px] gap-4 items-start p-4 rounded-xl bg-background/40 border-border group/sla">
+                              <div className="pt-1.5">
+                                <span className={cn('text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border block text-center', levelMeta?.color)}>
                                   {levelMeta?.label}
                                 </span>
                               </div>
 
-                              {/* Labels do cliente (tags) */}
-                              <div className="space-y-1.5">
-                                <div className="flex flex-wrap gap-1">
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap gap-1.5">
                                   {(lvl.client_labels ?? []).map((label, labelIdx) => (
                                     <span
                                       key={labelIdx}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-slate-300"
+                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent text-[9px] font-black text-foreground uppercase border border-border"
                                     >
                                       {label}
                                       <button
                                         type="button"
-                                        className="text-slate-500 hover:text-red-400 transition-colors"
+                                        className="text-muted-foreground hover:text-destructive transition-colors"
                                         onClick={() => {
                                           const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
                                           levels[li] = { ...levels[li], client_labels: levels[li].client_labels.filter((_, i) => i !== labelIdx) }
@@ -741,8 +763,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   ))}
                                 </div>
                                 <Input
-                                  placeholder="Ex: Bug Blocker, P0 — Enter para adicionar"
-                                  className="h-7 text-xs bg-white/5 border-none placeholder:text-slate-700"
+                                  placeholder="Add label (P0, Urgente...)"
+                                  className="h-9 text-xs bg-accent/30 border-border placeholder:text-muted-foreground/50 rounded-lg"
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ',') {
                                       e.preventDefault()
@@ -759,40 +781,38 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                 />
                               </div>
 
-                              {/* 1ª Resposta */}
-                              <Input
-                                type="number"
-                                min="1"
-                                value={lvl.first_response_minutes}
-                                onChange={(e) => {
-                                  const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
-                                  levels[li] = { ...levels[li], first_response_minutes: parseInt(e.target.value) || 1 }
-                                  setValue(`contracts.${index}.sla_levels`, levels)
-                                }}
-                                className="h-8 text-xs text-center bg-white/5 border-none font-mono"
-                              />
+                              <div className="flex flex-col items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={lvl.first_response_minutes}
+                                  onChange={(e) => {
+                                    const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                    levels[li] = { ...levels[li], first_response_minutes: parseInt(e.target.value) || 1 }
+                                    setValue(`contracts.${index}.sla_levels`, levels)
+                                  }}
+                                  className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
+                                />
+                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter">Min</span>
+                              </div>
 
-                              {/* Resolução */}
-                              <Input
-                                type="number"
-                                min="1"
-                                value={lvl.resolution_minutes}
-                                onChange={(e) => {
-                                  const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
-                                  levels[li] = { ...levels[li], resolution_minutes: parseInt(e.target.value) || 1 }
-                                  setValue(`contracts.${index}.sla_levels`, levels)
-                                }}
-                                className="h-8 text-xs text-center bg-white/5 border-none font-mono"
-                              />
-
-                              <div />
-                            </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={lvl.resolution_minutes}
+                                  onChange={(e) => {
+                                    const levels = [...(watch(`contracts.${index}.sla_levels`) ?? DEFAULT_SLA_LEVELS)]
+                                    levels[li] = { ...levels[li], resolution_minutes: parseInt(e.target.value) || 1 }
+                                    setValue(`contracts.${index}.sla_levels`, levels)
+                                  }}
+                                  className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
+                                />
+                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-tighter">Min</span>
+                              </div>
+                            </Card>
                           )
                         })}
-
-                        <p className="text-[8px] text-slate-700 px-1 pt-1">
-                          Digite o label do cliente e pressione <kbd className="px-1 py-0.5 rounded bg-white/5 text-slate-500">Enter</kbd> para adicionar. O agente verá o nível interno; o cliente verá seu próprio label.
-                        </p>
                       </div>
                     )}
                   </div>
@@ -803,72 +823,73 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </Card>
 
         {/* ── BLOCO 4: FATURAMENTO E TIME ────────────────────────── */}
-        <Card className="bg-slate-900/40 border-white/5 rounded-2xl overflow-hidden">
-          <div className="h-[3px] bg-sky-500/50" />
-          <CardHeader className="px-8 pt-6 pb-4">
+        <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+          <div className="h-[2px] bg-gradient-to-r from-blue-500/80 to-indigo-500/80" />
+          <CardHeader className="px-8 pt-8 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400">
-                <CreditCard className="w-4 h-4" />
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 shadow-inner">
+                <CreditCard className="w-5 h-5" />
               </div>
-              <CardTitle className="text-white text-base font-bold uppercase tracking-wide">Faturamento e Time</CardTitle>
+              <div className="space-y-0.5">
+                <CardTitle className="text-foreground text-sm font-black uppercase tracking-widest">Faturamento e Time</CardTitle>
+                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Configurações administrativas</p>
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8 space-y-6">
-
-            {/* Faturamento — 1 linha */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1.5">
-                <Label className={LABEL}>Dia de Vencimento</Label>
+          <CardContent className="px-8 pb-10 space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <Label className={LABEL}>Vencimento</Label>
                 <Input {...register('billing_day', { valueAsNumber: true })} type="number" min="1" max="31" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
-                <Label className={LABEL}>Contato de Faturamento</Label>
+              <div className="space-y-2">
+                <Label className={LABEL}>Responsável Fin</Label>
                 <Input {...register('billing_contact_name')} placeholder="Nome do Responsável" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
-                <Label className={LABEL}>E-mail de Faturamento</Label>
+              <div className="space-y-2">
+                <Label className={LABEL}>E-mail Fin</Label>
                 <Input {...register('billing_contact_email')} placeholder="financeiro@empresa.com" className={INPUT} />
               </div>
-              <div className="space-y-1.5">
-                <Label className={LABEL}>Telefone de Faturamento</Label>
+              <div className="space-y-2">
+                <Label className={LABEL}>Telefone Fin</Label>
                 <Input {...register('billing_contact_phone')} placeholder="(00) 00000-0000" className={INPUT} />
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className={LABEL}>Regras de Faturamento</Label>
-              <Textarea {...register('billing_rules')} className="min-h-[80px] bg-white/[0.03] border-white/8 text-sm" placeholder="Descreva acordos específicos..." />
+              <Textarea {...register('billing_rules')} className="min-h-[100px] bg-accent/30 border-border text-sm rounded-xl" placeholder="Descreva acordos específicos e particularidades de faturamento..." />
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-white/5" />
+            <div className="h-px bg-border/50" />
 
-            {/* Time Interno */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-4 h-4 text-indigo-400" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Time Interno</span>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Users className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black text-foreground uppercase tracking-widest">Time Interno de Atendimento</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <Label className={LABEL}>CSM Responsável</Label>
                   <SearchableSelect
                     placeholder="Selecionar CSM..."
                     value={watch('csm_owner_id') || ''}
                     onValueChange={(v) => setValue('csm_owner_id', v === 'none' ? null : v)}
-                    className="h-10"
+                    className="h-11 rounded-xl bg-accent/30 border-border"
                     options={[
                       { label: 'Não Atribuído', value: 'none' },
                       ...users.map(u => ({ label: u.email, value: u.id }))
                     ]}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className={LABEL}>Executivo Comercial</Label>
                   <SearchableSelect
                     placeholder="Selecionar Executivo..."
                     value={watch('sales_executive_id') || ''}
                     onValueChange={(v) => setValue('sales_executive_id', v === 'none' ? null : v)}
-                    className="h-10"
+                    className="h-11 rounded-xl bg-accent/30 border-border"
                     options={[
                       { label: 'Não Atribuído', value: 'none' },
                       ...users.map(u => ({ label: u.email, value: u.id }))
@@ -881,6 +902,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </Card>
 
       </form>
-    </div>
+    </PageContainer>
   )
 }
+
+export default AccountForm;

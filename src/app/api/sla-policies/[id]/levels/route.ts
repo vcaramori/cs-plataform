@@ -4,10 +4,10 @@ import { z } from 'zod'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id } = params
+  const { id } = await params
 
   const { data, error } = await supabase
     .from('sla_policy_levels')
@@ -29,10 +29,10 @@ const bulkPutSchema = z.array(levelItemSchema)
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id } = params
+  const { id } = await params
   const body = await request.json()
 
   const parsed = bulkPutSchema.safeParse(body)
@@ -50,6 +50,32 @@ export async function PUT(
   // We can't do true upsert across RLS easily without unique conflits defined correctly inside the schema.
   // The schema has UNIQUE(policy_id, level) so upsert works!
   
+  const upserts = parsed.data.map(item => ({
+    policy_id: id,
+    ...item
+  }))
+
+  const { data, error } = await supabase
+    .from('sla_policy_levels')
+    .upsert(upserts, { onConflict: 'policy_id, level' })
+    .select()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json(data)
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await getSupabaseServerClient()
+  const { id } = await params
+  const body = await request.json()
+
+  const parsed = bulkPutSchema.safeParse(body)
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 })
+
   const upserts = parsed.data.map(item => ({
     policy_id: id,
     ...item

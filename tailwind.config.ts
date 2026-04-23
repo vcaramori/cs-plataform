@@ -17,6 +17,14 @@ const config: Config = {
     },
     extend: {
       colors: {
+        /* ─── Semantic tokens (usar esses em componentes novos) ─────────── */
+        'surface-background': 'hsl(var(--surface-background))',
+        'surface-card':       'hsl(var(--surface-card))',
+        'content-primary':    'hsl(var(--content-primary))',
+        'content-secondary':  'hsl(var(--content-secondary))',
+        'border-divider':     'hsl(var(--border-divider))',
+
+        /* ─── shadcn/Radix compatibility (mantidos) ─────────────────────── */
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -51,15 +59,19 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         plannera: {
-          primary: "#2d3558",    // Fundo Principal
-          orange: "#f7941e",     // Action / Plannera
-          sop: "#3a4c8a",        // S&OP Blue
-          operations: "#f8b967", // Operations Gold
-          demand: "#d85d4b",     // Demand Red (Risk)
-          soee: "#ea724a",       // S&OE Orange
-          ds: "#2ba09d",         // Data Science Teal (Success)
-          grey: "#5c5b5b",       // Grey
-        }
+          primary: "hsl(var(--primary))",
+          secondary: "hsl(var(--secondary))",
+          orange: "hsl(var(--accent))",
+          sop: "hsl(var(--secondary))",
+          navy: "hsl(var(--primary))",
+          operations: "#f8b967", 
+          demand: "#d85d4b",
+          soee: "#ea724a",
+          ds: "#2ba09d",
+          grey: "#5c5b5b",
+        },
+        'brand-primary': "hsl(var(--primary))",
+        'brand-grey': "#5c5b5b",
       },
       borderRadius: {
         lg: "var(--radius)",

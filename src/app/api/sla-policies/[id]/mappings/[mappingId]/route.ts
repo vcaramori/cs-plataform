@@ -3,10 +3,10 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string, mappingId: string } }
+  { params }: { params: Promise<{ id: string; mappingId: string }> }
 ) {
   const supabase = await getSupabaseServerClient()
-  const { id, mappingId } = params
+  const { id, mappingId } = await params
 
   const { error } = await supabase
     .from('sla_level_mappings')

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PageContainer } from '@/components/ui/page-container'
 import {
   ListChecks, AlignLeft, Hash, ToggleLeft, ToggleRight, Pencil,
   Play, StopCircle, CalendarRange, BookmarkCheck, Bookmark,
@@ -76,16 +77,16 @@ function QuestionRow({
   const Icon = meta.icon
 
   return (
-    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 space-y-3">
+    <div className="rounded-xl border border-border-divider bg-surface-background p-4 space-y-3">
       <div className="flex items-start gap-3">
-        <GripVertical className="w-4 h-4 text-slate-700 mt-0.5 shrink-0" />
+        <GripVertical className="w-4 h-4 text-content-secondary/40 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className={`text-[10px] font-bold border ${meta.color} gap-1`}>
               <Icon className="w-3 h-3" /> {meta.label}
             </Badge>
             <button onClick={() => setRequired(!required)}
-              className="flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-400 transition-colors">
+              className="flex items-center gap-1 text-[10px] font-bold text-content-secondary hover:text-content-primary transition-colors">
               {required ? <ToggleRight className="w-3.5 h-3.5 text-orange-400" /> : <ToggleLeft className="w-3.5 h-3.5" />}
               {required ? 'Obrigatória' : 'Opcional'}
             </button>
@@ -93,9 +94,9 @@ function QuestionRow({
 
           {editing ? (
             <Input value={title} onChange={e => setTitle(e.target.value)}
-              className="bg-white/5 border-white/10 text-white text-sm mb-2" autoFocus />
+              className="text-sm mb-2" autoFocus />
           ) : (
-            <p className="text-white text-sm">{q.title}</p>
+            <p className="text-content-primary text-sm">{q.title}</p>
           )}
 
           {q.type === 'multiple_choice' && editing && (
@@ -103,17 +104,17 @@ function QuestionRow({
               {options.map((opt, i) => (
                 <div key={i} className="flex gap-2 items-center">
                   <Input value={opt} onChange={e => setOptions(prev => prev.map((o, j) => j === i ? e.target.value : o))}
-                    className="bg-white/5 border-white/10 text-white text-xs h-7" />
+                    className="text-xs h-7" />
                   <button onClick={() => setOptions(prev => prev.filter((_, j) => j !== i))}>
-                    <Trash2 className="w-3.5 h-3.5 text-slate-600 hover:text-red-400" />
+                    <Trash2 className="w-3.5 h-3.5 text-content-secondary hover:text-red-400" />
                   </button>
                 </div>
               ))}
               <div className="flex gap-2">
                 <Input placeholder="Nova opção..." value={newOption} onChange={e => setNewOption(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && newOption.trim()) { setOptions(p => [...p, newOption.trim()]); setNewOption('') } }}
-                  className="bg-white/5 border-white/10 text-white text-xs h-7 placeholder:text-slate-600" />
-                <Button size="sm" variant="outline" className="border-white/10 h-7 text-xs"
+                  className="text-xs h-7" />
+                <Button size="sm" variant="outline" className="h-7 text-xs"
                   onClick={() => { if (newOption.trim()) { setOptions(p => [...p, newOption.trim()]); setNewOption('') } }}>+</Button>
               </div>
             </div>
@@ -122,17 +123,17 @@ function QuestionRow({
           {q.type === 'multiple_choice' && !editing && options.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {options.map((o, i) => (
-                <span key={i} className="text-[10px] text-slate-500 border border-white/5 rounded-md px-1.5 py-0.5">{o}</span>
+                <span key={i} className="text-[10px] text-content-secondary border border-border-divider rounded-md px-1.5 py-0.5">{o}</span>
               ))}
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => move(-1)} disabled={index === 0} className="text-slate-700 hover:text-slate-400 disabled:opacity-20 transition-colors">
+          <button onClick={() => move(-1)} disabled={index === 0} className="text-content-secondary hover:text-content-primary disabled:opacity-20 transition-colors">
             <ChevronUp className="w-4 h-4" />
           </button>
-          <button onClick={() => move(1)} disabled={index === total - 1} className="text-slate-700 hover:text-slate-400 disabled:opacity-20 transition-colors">
+          <button onClick={() => move(1)} disabled={index === total - 1} className="text-content-secondary hover:text-content-primary disabled:opacity-20 transition-colors">
             <ChevronDown className="w-4 h-4" />
           </button>
           {editing ? (
@@ -141,11 +142,11 @@ function QuestionRow({
               {saving ? '...' : 'Ok'}
             </Button>
           ) : (
-            <button onClick={() => setEditing(true)} className="text-slate-600 hover:text-slate-300 transition-colors ml-1">
+            <button onClick={() => setEditing(true)} className="text-content-secondary hover:text-content-primary transition-colors ml-1">
               <Pencil className="w-3.5 h-3.5" />
             </button>
           )}
-          <button onClick={del} className="text-slate-700 hover:text-red-400 transition-colors">
+          <button onClick={del} className="text-content-secondary hover:text-red-400 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -154,7 +155,7 @@ function QuestionRow({
   )
 }
 
-// ─── Add Question Form (inline, sem API até confirmar) ───────────────────────
+// ─── Add Question Form ───────────────────────────────────────────────────────
 
 function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: () => void }) {
   const [type, setType] = useState<NPSQuestionType>('nps_scale')
@@ -183,8 +184,8 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
   }
 
   return (
-    <div className="rounded-xl border border-dashed border-white/10 p-4 space-y-3 bg-white/[0.01]">
-      <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Nova Pergunta</p>
+    <div className="rounded-xl border border-dashed border-border-divider p-4 space-y-3 bg-surface-background">
+      <p className="text-content-secondary text-[10px] font-bold uppercase tracking-wider">Nova Pergunta</p>
       <div className="flex flex-wrap gap-2">
         {(Object.keys(TYPE_META) as NPSQuestionType[]).map(t => {
           const m = TYPE_META[t]
@@ -192,7 +193,7 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
           return (
             <button key={t} onClick={() => setType(t)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
-                type === t ? m.color + ' border-opacity-100' : 'border-white/5 text-slate-600 hover:text-slate-400'
+                type === t ? m.color + ' border-opacity-100' : 'border-border-divider text-content-secondary hover:text-content-primary'
               }`}>
               <MIcon className="w-3 h-3" /> {m.label}
             </button>
@@ -207,7 +208,7 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
         }
         value={title} onChange={e => setTitle(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') add() }}
-        className="bg-white/5 border-white/10 text-white placeholder:text-slate-600 text-sm"
+        className="text-sm"
       />
 
       {type === 'multiple_choice' && (
@@ -215,17 +216,17 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
           {options.map((opt, i) => (
             <div key={i} className="flex gap-2 items-center">
               <Input value={opt} onChange={e => setOptions(prev => prev.map((o, j) => j === i ? e.target.value : o))}
-                className="bg-white/5 border-white/10 text-white text-xs h-7" />
+                className="text-xs h-7" />
               <button onClick={() => setOptions(prev => prev.filter((_, j) => j !== i))}>
-                <Trash2 className="w-3.5 h-3.5 text-slate-600 hover:text-red-400" />
+                <Trash2 className="w-3.5 h-3.5 text-content-secondary hover:text-red-400" />
               </button>
             </div>
           ))}
           <div className="flex gap-2">
             <Input placeholder="Opção... (Enter)" value={newOption} onChange={e => setNewOption(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && newOption.trim()) { setOptions(p => [...p, newOption.trim()]); setNewOption('') } }}
-              className="bg-white/5 border-white/10 text-white text-xs h-7 placeholder:text-slate-600" />
-            <Button size="sm" variant="outline" className="border-white/10 h-7 text-xs"
+              className="text-xs h-7" />
+            <Button size="sm" variant="outline" className="h-7 text-xs"
               onClick={() => { if (newOption.trim()) { setOptions(p => [...p, newOption.trim()]); setNewOption('') } }}>+</Button>
           </div>
         </div>
@@ -233,7 +234,7 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
 
       <div className="flex items-center justify-between">
         <button onClick={() => setRequired(!required)}
-          className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${required ? 'text-orange-400' : 'text-slate-600'}`}>
+          className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${required ? 'text-orange-400' : 'text-content-secondary'}`}>
           {required ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
           {required ? 'Obrigatória' : 'Opcional'}
         </button>
@@ -246,11 +247,10 @@ function AddQuestionForm({ programId, onAdded }: { programId: string; onAdded: (
   )
 }
 
-// ─── Create + Configure Program Dialog (modal unificado) ────────────────────
+// ─── Create + Configure Program Dialog ──────────────────────────────────────
 
 function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; name: string }[]; onCreated: () => void }) {
   const [open, setOpen] = useState(false)
-  // Step 1: dados básicos
   const [step, setStep] = useState<'form' | 'questions'>('form')
   const [createdProgram, setCreatedProgram] = useState<any>(null)
   const [questions, setQuestions] = useState<NPSQuestion[]>([])
@@ -328,32 +328,30 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
       </DialogTrigger>
 
       <DialogContent aria-describedby={undefined}
-        className="bg-slate-900 border border-white/10 max-w-2xl max-h-[90vh] overflow-y-auto">
+        className="bg-surface-card border-border-divider max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-white font-black uppercase tracking-tight">
+          <DialogTitle className="text-content-primary font-black uppercase tracking-tight">
             {step === 'form' ? 'Criar Programa NPS' : 'Configurar Questionário'}
           </DialogTitle>
         </DialogHeader>
 
         {step === 'form' && (
           <div className="space-y-5">
-            {/* Nome */}
             <div>
-              <Label className="text-slate-400 text-xs font-bold uppercase mb-1.5 block">Nome do programa</Label>
+              <Label className="text-content-secondary text-xs font-bold uppercase mb-1.5 block">Nome do programa</Label>
               <Input value={name} onChange={e => setName(e.target.value)}
                 placeholder="Ex: Pesquisa de satisfação Q2 2025"
-                className="bg-white/5 border-white/10 text-white placeholder:text-slate-600 text-sm" />
+                className="text-sm" />
             </div>
 
-            {/* Escopo */}
             <div>
-              <Label className="text-slate-400 text-xs font-bold uppercase mb-2 block">Escopo</Label>
+              <Label className="text-content-secondary text-xs font-bold uppercase mb-2 block">Escopo</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => setScope('global')}
                   className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all ${
                     scope === 'global'
                       ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-400'
-                      : 'border-white/5 text-slate-600 hover:text-slate-400'
+                      : 'border-border-divider text-content-secondary hover:text-content-primary'
                   }`}>
                   <Globe className="w-4 h-4" /> Global
                 </button>
@@ -361,12 +359,12 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
                   className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all ${
                     scope === 'account'
                       ? 'border-orange-500/40 bg-orange-500/10 text-orange-400'
-                      : 'border-white/5 text-slate-600 hover:text-slate-400'
+                      : 'border-border-divider text-content-secondary hover:text-content-primary'
                   }`}>
                   <Building2 className="w-4 h-4" /> Por Conta
                 </button>
               </div>
-              <p className="text-slate-600 text-[10px] mt-2">
+              <p className="text-content-secondary text-[10px] mt-2">
                 {scope === 'global'
                   ? 'O programa vale para todos os seus clientes.'
                   : 'O programa é restrito a um único cliente.'}
@@ -375,50 +373,46 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
 
             {scope === 'account' && (
               <div>
-                <Label className="text-slate-400 text-xs font-bold uppercase mb-1.5 block">Conta</Label>
+                <Label className="text-content-secondary text-xs font-bold uppercase mb-1.5 block">Conta</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Selecione a conta" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/10">
+                  <SelectContent className="bg-background border-border">
                     {accounts.map(a => (
-                      <SelectItem key={a.id} value={a.id} className="text-white">{a.name}</SelectItem>
+                      <SelectItem key={a.id} value={a.id} className="text-foreground">{a.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            {/* Período de vigência */}
             <div>
-              <Label className="text-slate-400 text-xs font-bold uppercase mb-2 block flex items-center gap-1.5">
+              <Label className="text-content-secondary text-xs font-bold uppercase mb-2 block flex items-center gap-1.5">
                 <CalendarRange className="w-3.5 h-3.5" /> Período de vigência (opcional)
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-slate-600 text-[10px] mb-1">Início</p>
-                  <Input type="date" value={activeFrom} onChange={e => setActiveFrom(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white text-sm" />
+                  <p className="text-content-secondary text-[10px] mb-1">Início</p>
+                  <Input type="date" value={activeFrom} onChange={e => setActiveFrom(e.target.value)} className="text-sm" />
                 </div>
                 <div>
-                  <p className="text-slate-600 text-[10px] mb-1">Término</p>
-                  <Input type="date" value={activeUntil} onChange={e => setActiveUntil(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white text-sm" />
+                  <p className="text-content-secondary text-[10px] mb-1">Término</p>
+                  <Input type="date" value={activeUntil} onChange={e => setActiveUntil(e.target.value)} className="text-sm" />
                 </div>
               </div>
-              <p className="text-slate-600 text-[10px] mt-1.5">
+              <p className="text-content-secondary text-[10px] mt-1.5">
                 Sem datas: pesquisa ativa indefinidamente enquanto estiver ativa.
               </p>
             </div>
-            {/* Meta NPS (Opcional) */}
+
             <div>
-              <Label className="text-slate-400 text-xs font-bold uppercase mb-1.5 block flex items-center gap-1.5">
+              <Label className="text-content-secondary text-xs font-bold uppercase mb-1.5 block flex items-center gap-1.5">
                 <Target className="w-3.5 h-3.5" /> Meta NPS do Programa (Opcional)
               </Label>
               <Input type="number" value={targetScore} onChange={e => setTargetScore(e.target.value)}
-                placeholder="Ex: 75"
-                className="bg-white/5 border-white/10 text-white text-sm" />
-              <p className="text-slate-600 text-[10px] mt-1.5">
+                placeholder="Ex: 75" className="text-sm" />
+              <p className="text-content-secondary text-[10px] mt-1.5">
                 Se vazio, herdará a meta padrão da empresa válida para o período.
               </p>
             </div>
@@ -433,22 +427,20 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
 
         {step === 'questions' && createdProgram && (
           <div className="space-y-6">
-            {/* Info do programa criado */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
               <Check className="w-4 h-4 text-emerald-400 shrink-0" />
               <div>
                 <p className="text-emerald-400 text-xs font-bold">Programa criado com sucesso!</p>
-                <p className="text-slate-500 text-[10px] font-mono">{createdProgram.program_key}</p>
+                <p className="text-content-secondary text-[10px] font-mono">{createdProgram.program_key}</p>
               </div>
             </div>
 
-            {/* Lista de perguntas (ao vivo) */}
             <div className="space-y-2">
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+              <p className="text-content-secondary text-[10px] font-bold uppercase tracking-wider">
                 Questionário ({questions.length} {questions.length === 1 ? 'pergunta' : 'perguntas'})
               </p>
               {questions.length === 0 ? (
-                <div className="text-slate-600 text-xs py-3 text-center">
+                <div className="text-content-secondary text-xs py-3 text-center">
                   Adicione perguntas abaixo — elas aparecerão aqui imediatamente.
                 </div>
               ) : (
@@ -464,12 +456,10 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
               )}
             </div>
 
-            {/* Formulário de nova pergunta */}
             <AddQuestionForm programId={createdProgram.id} onAdded={() => { fetchQuestions(); onCreated() }} />
 
-            {/* Embed code + Salvar */}
-            <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 space-y-2">
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Código de Embed</p>
+            <div className="rounded-xl border border-border-divider bg-surface-background p-4 space-y-2">
+              <p className="text-content-secondary text-[10px] font-bold uppercase tracking-wider">Código de Embed</p>
               <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto">
 {`<script src="${origin}/embed.js"
   data-program-key="${createdProgram.program_key}"
@@ -478,14 +468,14 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
   data-base-url="${origin}">
 </script>`}
               </pre>
-              <Button onClick={copy} size="sm" variant="outline" className="border-white/10 text-slate-400 hover:text-white gap-2 h-7 text-xs">
+              <Button onClick={copy} size="sm" variant="outline" className="gap-2 h-7 text-xs">
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                 {copied ? 'Copiado!' : 'Copiar código'}
               </Button>
             </div>
 
             <Button onClick={() => { setOpen(false); reset() }}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold">
+              className="w-full font-bold">
               Salvar Pesquisa e Fechar
             </Button>
           </div>
@@ -520,34 +510,32 @@ function QuestionBuilderDialog({ program, onSaved }: { program: any; onSaved: ()
   }
 
   return (
-    <DialogContent aria-describedby={undefined} className="bg-slate-900 border border-white/10 max-w-2xl max-h-[90vh] overflow-y-auto">
+    <DialogContent aria-describedby={undefined} className="bg-surface-card border-border-divider max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="text-white font-black uppercase tracking-tight flex items-center gap-2">
-          {program.account_id ? <Building2 className="w-4 h-4 text-slate-500" /> : <Globe className="w-4 h-4 text-indigo-400" />}
+        <DialogTitle className="text-content-primary font-black uppercase tracking-tight flex items-center gap-2">
+          {program.account_id ? <Building2 className="w-4 h-4 text-content-secondary" /> : <Globe className="w-4 h-4 text-indigo-400" />}
           {program.name ?? program.accounts?.name ?? 'Global'} — Questionário
         </DialogTitle>
       </DialogHeader>
 
       <div className="space-y-6">
-        {/* Embed code */}
-        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2">Código de Embed</p>
+        <div className="rounded-xl border border-border-divider bg-surface-background p-4">
+          <p className="text-content-secondary text-[10px] font-bold uppercase tracking-wider mb-2">Código de Embed</p>
           <pre className="text-[10px] text-emerald-400 font-mono overflow-x-auto mb-2">{snippet}</pre>
-          <Button onClick={copy} size="sm" variant="outline" className="border-white/10 text-slate-400 hover:text-white gap-2 h-7 text-xs">
+          <Button onClick={copy} size="sm" variant="outline" className="gap-2 h-7 text-xs">
             {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             {copied ? 'Copiado!' : 'Copiar código'}
           </Button>
         </div>
 
-        {/* Lista de perguntas */}
         <div className="space-y-2">
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+          <p className="text-content-secondary text-[10px] font-bold uppercase tracking-wider">
             Perguntas ({questions.length})
           </p>
           {loading ? (
-            <div className="text-slate-600 text-xs py-4 text-center">Carregando...</div>
+            <div className="text-content-secondary text-xs py-4 text-center">Carregando...</div>
           ) : questions.length === 0 ? (
-            <div className="text-slate-600 text-xs py-4 text-center">Nenhuma pergunta ainda. Adicione abaixo.</div>
+            <div className="text-content-secondary text-xs py-4 text-center">Nenhuma pergunta ainda. Adicione abaixo.</div>
           ) : (
             <AnimatePresence>
               {questions.map((q, i) => (
@@ -607,7 +595,7 @@ export function ProgramsClient({ accounts }: Props) {
   }
 
   async function handleToggleDefault(programId: string, currentStatus: boolean) {
-    if (currentStatus) return // não permite remover default sem definir outro
+    if (currentStatus) return
     setDefaultLoading(programId)
     const res = await fetch(`/api/nps/programs?id=${programId}`, {
       method: 'PATCH',
@@ -667,18 +655,18 @@ export function ProgramsClient({ accounts }: Props) {
   }
 
   return (
-    <div className="space-y-8 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <PageContainer className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/nps" className="mr-2 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+          <Link href="/nps" className="mr-2 p-2 rounded-xl bg-surface-card border border-border-divider hover:bg-surface-background text-content-secondary hover:text-content-primary transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="w-10 h-10 rounded-xl bg-orange-600/10 border border-orange-500/20 flex items-center justify-center">
             <ListChecks className="w-5 h-5 text-orange-400" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tighter uppercase">Programas</h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-tighter uppercase">Programas</h1>
+            <p className="text-content-secondary text-xs font-bold uppercase tracking-wide flex items-center gap-2">
               Configuração e Distribuição de Pesquisas NPS
             </p>
           </div>
@@ -688,30 +676,30 @@ export function ProgramsClient({ accounts }: Props) {
         </div>
       </div>
 
-      <Card className="glass-card">
+      <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-white text-sm font-black uppercase tracking-wide">Meus Programas ({programs.length})</CardTitle>
+          <CardTitle className="text-sm font-black uppercase tracking-wide">Meus Programas ({programs.length})</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            <div className="animate-pulse bg-white/5 h-20 rounded-xl" />
+            <div className="animate-pulse bg-surface-background h-20 rounded-xl" />
           ) : programs.length === 0 ? (
-            <div className="text-center py-20 text-slate-600">
+            <div className="text-center py-20 text-content-secondary">
               <ListChecks className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p className="text-sm font-bold uppercase tracking-wide">Nenhum programa configurado</p>
               <p className="text-xs mt-1">Crie seu primeiro programa clicando no botão acima.</p>
             </div>
           ) : (
             programs.map((p: any) => (
-              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 gap-4 shadow-sm hover:bg-white/10 transition-colors">
+              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-background border border-border-divider gap-4 shadow-sm hover:bg-surface-background/80 transition-colors">
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0 ${p.is_active ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0 ${p.is_active ? 'bg-emerald-500' : 'bg-content-secondary/40'}`} />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       {p.account_id
-                        ? <Building2 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                        ? <Building2 className="w-3.5 h-3.5 text-content-secondary shrink-0" />
                         : <Globe className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
-                      <p className="text-white text-sm font-bold truncate">
+                      <p className="text-content-primary text-sm font-bold truncate">
                         {p.name ?? p.accounts?.name ?? 'Global — Todos os Clientes'}
                       </p>
                       {p.is_default && (
@@ -721,9 +709,9 @@ export function ProgramsClient({ accounts }: Props) {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <code className="text-slate-500 bg-black/20 px-1.5 py-0.5 rounded text-[10px] uppercase font-mono tracking-wider">{p.program_key}</code>
+                      <code className="text-content-secondary bg-surface-card px-1.5 py-0.5 rounded text-[10px] uppercase font-mono tracking-wider border border-border-divider">{p.program_key}</code>
                       {p.active_from && (
-                        <p className="text-slate-400 text-[11px] flex items-center gap-1">
+                        <p className="text-content-secondary text-[11px] flex items-center gap-1">
                           <CalendarRange className="w-3 h-3" />
                           {new Date(p.active_from).toLocaleDateString('pt-BR')} →{' '}
                           {p.active_until ? new Date(p.active_until).toLocaleDateString('pt-BR') : 'sem fim'}
@@ -733,11 +721,9 @@ export function ProgramsClient({ accounts }: Props) {
                   </div>
                 </div>
 
-                {/* Ações (Responsivas para Mobile) */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0 sm:justify-end">
-                  {/* Badges de status */}
                   {!p.is_active && (
-                    <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30 text-[10px] font-black uppercase">
+                    <Badge className="bg-content-secondary/10 text-content-secondary border-content-secondary/30 text-[10px] font-black uppercase">
                       Inativo
                     </Badge>
                   )}
@@ -746,34 +732,29 @@ export function ProgramsClient({ accounts }: Props) {
                       Em Teste
                     </Badge>
                   )}
-                  <Badge variant="outline" className="border-white/10 text-slate-500 text-[10px]">
+                  <Badge variant="outline" className="border-border-divider text-content-secondary text-[10px]">
                     {p.nps_questions?.length ?? 0} perguntas
                   </Badge>
                   <Badge variant="outline"
-                    className={`text-[10px] ${(p.response_count ?? 0) > 0 ? 'border-indigo-500/20 text-indigo-400' : 'border-white/10 text-slate-600'}`}>
+                    className={`text-[10px] ${(p.response_count ?? 0) > 0 ? 'border-indigo-500/20 text-indigo-400' : 'border-border-divider text-content-secondary/60'}`}>
                     {p.response_count ?? 0} respostas
                   </Badge>
 
                   <div className="w-full sm:w-auto flex flex-wrap gap-2 mt-2 sm:mt-0 justify-end">
-                    {/* Botão Default */}
                     {p.is_active && (
                       <Button size="sm" variant="outline"
                         disabled={defaultLoading === p.id || p.is_default}
                         onClick={() => handleToggleDefault(p.id, p.is_default)}
-                        title={p.is_default ? 'Programa default atual' : 'Definir como default'}
                         className={`gap-1.5 text-xs h-8 flex-1 sm:flex-none transition-all ${
                           p.is_default
                             ? 'border-indigo-500/40 text-indigo-400 cursor-default bg-indigo-500/5'
-                            : 'border-white/10 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30'
+                            : 'border-border-divider text-content-secondary hover:text-indigo-400 hover:border-indigo-500/30'
                         }`}>
-                        {p.is_default
-                          ? <BookmarkCheck className="w-3.5 h-3.5" />
-                          : <Bookmark className="w-3.5 h-3.5" />}
-                        {p.is_default ? 'Default' : 'Default'}
+                        {p.is_default ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                        Default
                       </Button>
                     )}
 
-                    {/* Botão Teste */}
                     {p.is_active && (
                       <Button size="sm" variant="outline"
                         disabled={testLoading === p.id}
@@ -781,41 +762,35 @@ export function ProgramsClient({ accounts }: Props) {
                         className={`gap-1.5 text-xs h-8 flex-1 sm:flex-none transition-all ${
                           p.is_test_mode
                             ? 'border-orange-500/40 text-orange-400 hover:bg-orange-500/10'
-                            : 'border-white/10 text-slate-400 hover:text-white'
+                            : 'border-border-divider text-content-secondary hover:text-content-primary'
                         }`}>
                         {p.is_test_mode ? <StopCircle className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                         {p.is_test_mode ? 'Parar Teste' : 'Testar'}
                       </Button>
                     )}
 
-                    {/* Botão Editar Questionário */}
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline"
-                          className="border-white/10 text-slate-400 hover:text-white gap-1.5 text-xs h-8 flex-1 sm:flex-none">
+                          className="border-border-divider text-content-secondary hover:text-content-primary gap-1.5 text-xs h-8 flex-1 sm:flex-none">
                           <Pencil className="w-3.5 h-3.5" /> Editar
                         </Button>
                       </DialogTrigger>
                       <QuestionBuilderDialog program={p} onSaved={fetchData} />
                     </Dialog>
 
-                    {/* Botão Inativar / Reativar */}
                     <Button size="sm" variant="outline"
                       disabled={activeLoading === p.id}
                       onClick={() => handleToggleActive(p.id, p.is_active, p.name ?? p.accounts?.name ?? 'Global', p.is_default)}
-                      title={p.is_active ? 'Inativar programa' : 'Reativar programa'}
                       className={`gap-1.5 text-xs h-8 flex-1 sm:flex-none transition-all ${
                         p.is_active
-                          ? 'border-white/10 text-slate-500 hover:text-yellow-400 hover:border-yellow-500/30'
+                          ? 'border-border-divider text-content-secondary hover:text-amber-400 hover:border-amber-500/30'
                           : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'
                       }`}>
-                      {p.is_active
-                        ? <PowerOff className="w-3.5 h-3.5" />
-                        : <Power className="w-3.5 h-3.5" />}
+                      {p.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                       {p.is_active ? 'Inativar' : 'Reativar'}
                     </Button>
 
-                    {/* Botão Excluir */}
                     {(p.response_count ?? 0) === 0 && (
                       <Button size="sm" variant="outline"
                         disabled={deleteLoading === p.id}
@@ -832,6 +807,6 @@ export function ProgramsClient({ accounts }: Props) {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

@@ -102,34 +102,38 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
     }
   }
 
+  const INPUT = "h-11 rounded-xl bg-accent/30 border-border focus-visible:ring-primary shadow-inner"
+  const LABEL = "text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {triggerText ? (
-          <Button size="sm" variant="outline" className="text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/10 gap-2">
+          <Button variant="premium" size="sm" className="gap-2 h-9 px-4 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95">
             <Pencil className="w-4 h-4" /> {triggerText}
           </Button>
         ) : (
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-indigo-400">
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all">
             <Pencil className="w-4 h-4" />
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Editar Contrato</DialogTitle>
-          <DialogDescription className="text-slate-400">
-            Corrija as informações deste registro contratual.
+      <DialogContent className="bg-background border-border text-foreground max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter">Editar Contrato</DialogTitle>
+          <DialogDescription className="text-muted-foreground text-xs font-medium">
+            Atualize os parâmetros financeiros e operacionais deste registro.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-6 py-6 overflow-y-auto max-h-[70vh]">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Tipo de Registro</Label>
+              <Label className={LABEL}>Tipo de Registro</Label>
               <SearchableSelect
                 value={watch('contract_type')}
                 onValueChange={(v) => setValue('contract_type', v as any)}
+                className={INPUT}
                 options={[
                   { label: 'Inicial', value: 'initial' },
                   { label: 'Aditivo', value: 'additive' },
@@ -139,10 +143,11 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
               />
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label className={LABEL}>Status</Label>
               <SearchableSelect
                 value={watch('status')}
                 onValueChange={(v) => setValue('status', v as any)}
+                className={INPUT}
                 options={[
                   { label: 'Ativo', value: 'active' },
                   { label: 'Em Risco', value: 'at-risk' },
@@ -153,12 +158,13 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Plano de Serviço</Label>
+              <Label className={LABEL}>Plano de Serviço</Label>
               <SearchableSelect
                 value={watch('service_type')}
                 onValueChange={(v) => setValue('service_type', v as any)}
+                className={INPUT}
                 options={[
                   { label: 'Basic', value: 'Basic' },
                   { label: 'Professional', value: 'Professional' },
@@ -168,70 +174,74 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
               />
             </div>
             <div className="space-y-2">
-              <Label>MRR</Label>
+              <Label className={LABEL}>MRR</Label>
               <MaskedInput 
                 maskType="currency"
                 value={watch('mrr')}
                 onValueChange={(v) => setValue('mrr', parseFloat(v) || 0)}
+                className={INPUT}
               />
-              {errors.mrr && <p className="text-red-400 text-xs">{errors.mrr.message}</p>}
+              {errors.mrr && <p className="text-destructive text-[10px] font-bold ml-1">{errors.mrr.message}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Data de Início</Label>
-              <Input {...register('start_date')} type="date" className="bg-slate-800 border-slate-700" />
-              {errors.start_date && <p className="text-red-400 text-xs">{errors.start_date.message}</p>}
+              <Label className={LABEL}>Data de Início</Label>
+              <Input {...register('start_date')} type="date" className={INPUT} />
+              {errors.start_date && <p className="text-destructive text-[10px] font-bold ml-1">{errors.start_date.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Data de Renovação</Label>
-              <Input {...register('renewal_date')} type="date" className="bg-slate-800 border-slate-700" />
-              {errors.renewal_date && <p className="text-red-400 text-xs">{errors.renewal_date.message}</p>}
+              <Label className={LABEL}>Data de Renovação</Label>
+              <Input {...register('renewal_date')} type="date" className={INPUT} />
+              {errors.renewal_date && <p className="text-destructive text-[10px] font-bold ml-1">{errors.renewal_date.message}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Horas Contratadas (Mês)</Label>
+              <Label className={LABEL}>Horas Contratadas (Mês)</Label>
               <MaskedInput 
                 maskType="decimal"
                 value={watch('contracted_hours_monthly')}
                 onValueChange={(v) => setValue('contracted_hours_monthly', parseFloat(v) || 0)}
+                className={INPUT}
               />
-              {errors.contracted_hours_monthly && <p className="text-red-400 text-xs">{errors.contracted_hours_monthly.message}</p>}
+              {errors.contracted_hours_monthly && <p className="text-destructive text-[10px] font-bold ml-1">{errors.contracted_hours_monthly.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Custo Hora CSM</Label>
+              <Label className={LABEL}>Custo Hora CSM</Label>
               <MaskedInput 
                 maskType="currency"
                 value={watch('csm_hour_cost')}
                 onValueChange={(v) => setValue('csm_hour_cost', parseFloat(v) || 0)}
+                className={INPUT}
               />
-              {errors.csm_hour_cost && <p className="text-red-400 text-xs">{errors.csm_hour_cost.message}</p>}
+              {errors.csm_hour_cost && <p className="text-destructive text-[10px] font-bold ml-1">{errors.csm_hour_cost.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Produto / Descrição</Label>
-            <Input {...register('description')} className="bg-slate-800 border-slate-700" />
-            {errors.description && <p className="text-red-400 text-xs">{errors.description.message}</p>}
+            <Label className={LABEL}>Produto / Descrição</Label>
+            <Input {...register('description')} className={INPUT} placeholder="Ex: Licenciamento Enterprise + Suporte Premium" />
+            {errors.description && <p className="text-destructive text-[10px] font-bold ml-1">{errors.description.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label>Notas</Label>
-            <Textarea {...register('notes')} className="bg-slate-800 border-slate-700" />
-            {errors.notes && <p className="text-red-400 text-xs">{errors.notes.message}</p>}
+            <Label className={LABEL}>Notas Estratégicas</Label>
+            <Textarea {...register('notes')} className="min-h-[100px] bg-accent/30 border-border rounded-xl shadow-inner text-sm" placeholder="Detalhes específicos da negociação ou do contrato..." />
+            {errors.notes && <p className="text-destructive text-[10px] font-bold ml-1">{errors.notes.message}</p>}
           </div>
-
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">
-              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter className="p-6 bg-accent/30 border-t border-border flex items-center justify-between">
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-xl font-bold">
+            Descartar
+          </Button>
+          <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)} variant="premium" className="px-6 rounded-xl shadow-lg">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Salvar Alterações"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

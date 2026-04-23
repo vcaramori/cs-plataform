@@ -46,12 +46,9 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
 
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir este registro de histórico? Esta ação não pode ser desfeita.')) return
-    
+
     setDeletingId(id)
     try {
-      // Usaremos a rota de contracts, mas ideal seria uma rota especifica para contract_history se quisermos deletar o historico.
-      // Vou focar apenas na exclusão de vigências indevidas. Se precisar, podemos criar DELETE /api/history.
-      // Por agora, o usuário principal edita o atual. Excluir historico não é tão critico, mas vamos deixar inativo por segurança.
       toast.info('Função de exclusão de revisão desabilitada nesta versão.')
     } finally {
       setDeletingId(null)
@@ -75,17 +72,17 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="text-slate-400 hover:text-white gap-2">
+        <Button size="sm" variant="ghost" className="text-content-secondary hover:text-content-primary gap-2">
           <History className="w-4 h-4" /> Histórico de Vigências
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="bg-surface-card border-border-divider text-content-primary max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-400" />
             <DialogTitle>Histórico de Vigências: {contractName}</DialogTitle>
           </div>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-content-secondary">
             Revisões passadas deste produto (Aditivos e Renovações).
           </DialogDescription>
         </DialogHeader>
@@ -96,32 +93,32 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-800 hover:bg-transparent">
-                  <TableHead className="text-slate-400">Data Início</TableHead>
-                  <TableHead className="text-slate-400">Data Fim</TableHead>
-                  <TableHead className="text-slate-400">Ação Relatada</TableHead>
-                  <TableHead className="text-slate-400">Plano</TableHead>
-                  <TableHead className="text-slate-400">MRR</TableHead>
-                  <TableHead className="text-slate-400">Status</TableHead>
-                  <TableHead className="text-slate-400 text-right">Data Modificação</TableHead>
+                <TableRow className="border-border-divider hover:bg-transparent">
+                  <TableHead className="text-content-secondary">Data Início</TableHead>
+                  <TableHead className="text-content-secondary">Data Fim</TableHead>
+                  <TableHead className="text-content-secondary">Ação Relatada</TableHead>
+                  <TableHead className="text-content-secondary">Plano</TableHead>
+                  <TableHead className="text-content-secondary">MRR</TableHead>
+                  <TableHead className="text-content-secondary">Status</TableHead>
+                  <TableHead className="text-content-secondary text-right">Data Modificação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {history.map((c) => (
-                  <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/30 group">
-                    <TableCell className="text-slate-300">
+                  <TableRow key={c.id} className="border-border-divider hover:bg-surface-background group">
+                    <TableCell className="text-content-primary">
                       {c.start_date ? new Date(c.start_date).toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
-                    <TableCell className="text-slate-400 italic">
+                    <TableCell className="text-content-secondary italic">
                       {c.end_date ? new Date(c.end_date).toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-slate-700 bg-slate-800/50">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-border-divider bg-surface-background">
                         {typeLabels[c.contract_type ?? 'initial'] ?? c.contract_type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-slate-300">{c.service_type}</TableCell>
-                    <TableCell className="font-medium text-white">
+                    <TableCell className="text-content-primary">{c.service_type}</TableCell>
+                    <TableCell className="font-medium text-content-primary">
                       R$ {Number(c.mrr).toLocaleString('pt-BR')}
                     </TableCell>
                     <TableCell>
@@ -129,14 +126,14 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
                         Antigo
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-slate-500 text-xs">
+                    <TableCell className="text-right text-content-secondary text-xs">
                        {new Date(c.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
                   </TableRow>
                 ))}
                 {history.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500 italic">
+                    <TableCell colSpan={7} className="text-center py-8 text-content-secondary italic">
                       Nenhuma versão anterior encontrada para este contrato.
                     </TableCell>
                   </TableRow>

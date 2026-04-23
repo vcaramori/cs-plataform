@@ -50,3 +50,6 @@ Responda APENAS com uma das palavras-chave: gratitude, new_issue ou follow_up.
     return 'follow_up'
   }
 }
+
+// Alias para compatibilidade com código legado
+export const classifyIntent = classifyTicketIntent

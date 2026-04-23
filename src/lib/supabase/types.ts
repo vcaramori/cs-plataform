@@ -138,6 +138,7 @@ export type SupportTicket = {
   assigned_to: string | null
   first_assigned_to: string | null
   parent_ticket_id: string | null
+  pending_reason: 'client' | 'product' | 'none' | null
   sla_breach_first_response: boolean
   sla_breach_resolution: boolean
   sla_status_first_response: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
@@ -338,4 +339,24 @@ export type CSATToken = {
   created_at: string
 }
 
+export type Notification = {
+  id: string
+  user_id: string
+  type: string
+  message: string
+  metadata: any | null
+  read: boolean
+  created_at: string
+}
 
+export type SupportSchedule = {
+  id: string
+  ticket_id: string
+  created_by: string
+  target_time: string
+  reason: string
+  completed_at: string | null
+  created_at: string
+}
+
+export type Database = any

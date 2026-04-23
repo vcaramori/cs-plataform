@@ -51,3 +51,4 @@ export function SLATimer({ deadline, resolvedAt, className }: SLATimerProps) {
     </span>
   )
 }
+

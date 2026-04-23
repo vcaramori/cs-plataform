@@ -1,9 +1,10 @@
+import { PageContainer } from "@/components/layout/PageContainer"
+import { Sparkles, LayoutDashboard } from "lucide-react"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { getNPSSegment } from "@/lib/supabase/types"
 import { PortfolioHealthCard } from "./components/PortfolioHealthCard"
 import { AccountsTable } from "./components/AccountsTable"
-import { Sparkles, LayoutDashboard } from "lucide-react"
-import { getNPSSegment } from "@/lib/supabase/types"
 import { NPSTestLoader } from "./components/NPSTestLoader"
 
 export default async function DashboardPage() {
@@ -83,7 +84,7 @@ export default async function DashboardPage() {
     .maybeSingle()
 
   return (
-    <div className="space-y-10 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <PageContainer>
       {/* Script de teste NPS se ativo */}
       {testProgram && user?.email && (
         <NPSTestLoader
@@ -93,18 +94,18 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Premium Header ... */}
+      {/* Premium Header */}
       <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-indigo-500/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 dark:bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-             <LayoutDashboard className="w-5 h-5 text-indigo-400" />
+          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 flex items-center justify-center shadow-sm">
+             <LayoutDashboard className="w-5 h-5 text-[#2d3558] dark:text-primary" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">Portfolio Control</h1>
+          <h1 className="h1-page">Portfolio Control</h1>
         </div>
-        <p className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wide flex items-center gap-2">
+        <p className="label-premium flex items-center gap-2">
           Visão Executiva de Clientes e Receita Recorrente
-          <Sparkles className="w-3.5 h-3.5 text-indigo-500/50" />
+          <Sparkles className="w-3.5 h-3.5 text-[#2d3558]/40 dark:text-primary/50" />
         </p>
       </div>
 
@@ -123,9 +124,9 @@ export default async function DashboardPage() {
 
       {/* Main Table Section */}
       <section className="relative pb-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent pointer-events-none rounded-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none rounded-3xl" />
         <AccountsTable accounts={safeAccounts as any} />
       </section>
-    </div>
+    </PageContainer>
   )
 }

@@ -77,8 +77,8 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold text-zinc-100">Matriz de Prazos (Minutos Úteis)</h3>
-          <p className="text-sm text-zinc-400">Configure os prazos máximos exigidos contratualmente.</p>
+          <h3 className="text-lg font-semibold text-brand-primary dark:text-white">Matriz de Prazos (Minutos Úteis)</h3>
+          <p className="text-sm text-brand-grey dark:text-slate-400">Configure os prazos máximos exigidos contratualmente.</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving} size="sm">
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
@@ -86,25 +86,25 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
         </Button>
       </div>
 
-      <div className="border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         <table className="w-full text-sm text-left">
-          <thead className="bg-zinc-800/50 text-zinc-400">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 text-brand-grey dark:text-slate-400">
             <tr>
               <th className="px-4 py-3 font-medium">Nível de Severidade</th>
               <th className="px-4 py-3 font-medium">Primeira Resposta (min)</th>
               <th className="px-4 py-3 font-medium">Resolução (min)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800 bg-zinc-900/50">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/50">
             {(['critical', 'high', 'medium', 'low'] as const).map(lev => (
-               <tr key={lev} className="hover:bg-zinc-800/30 transition-colors">
-                 <td className="px-4 py-3 font-medium text-zinc-200">
+               <tr key={lev} className="transition-colors">
+                 <td className="px-4 py-3 font-medium text-brand-primary dark:text-slate-200">
                    {lbls[lev]}
                  </td>
                  <td className="px-4 py-3">
                    <Input 
                      type="number" 
-                     className="w-32 bg-black/40"
+                     className="w-32"
                      value={levels[lev]?.first_response_minutes || ''}
                      onChange={e => handleUpdate(lev, 'first_response_minutes', e.target.value)}
                    />
@@ -112,7 +112,7 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
                  <td className="px-4 py-3">
                    <Input 
                      type="number" 
-                     className="w-32 bg-black/40"
+                     className="w-32"
                      value={levels[lev]?.resolution_minutes || ''}
                      onChange={e => handleUpdate(lev, 'resolution_minutes', e.target.value)}
                    />
@@ -125,3 +125,4 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
     </div>
   )
 }
+

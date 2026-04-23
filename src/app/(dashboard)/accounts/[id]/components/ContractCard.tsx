@@ -20,7 +20,7 @@ export function ContractCard({ activeContract, allContracts, accountId }: {
 }) {
   const contract = activeContract
   const days = daysUntil(contract.renewal_date)
-  const renewalColor = days === null ? 'text-slate-400' : days < 30 ? 'text-red-400' : days < 90 ? 'text-yellow-400' : 'text-emerald-400'
+  const renewalColor = days === null ? 'text-content-secondary' : days < 30 ? 'text-red-400' : days < 90 ? 'text-yellow-400' : 'text-emerald-400'
 
   const statusColors: Record<string, string> = {
     active: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
@@ -30,10 +30,10 @@ export function ContractCard({ activeContract, allContracts, accountId }: {
   }
 
   return (
-    <Card className="bg-slate-900 border-slate-800">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white text-base flex items-center gap-2">
+          <CardTitle className="text-content-primary text-base flex items-center gap-2">
             <FileText className="w-4 h-4 text-indigo-400" /> {contract.description || 'Contrato Ativo'}
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -50,23 +50,23 @@ export function ContractCard({ activeContract, allContracts, accountId }: {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-800/50 rounded-lg p-3">
+          <div className="bg-surface-background rounded-lg p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-slate-400 text-xs">MRR</span>
+              <span className="text-content-secondary text-xs">MRR</span>
             </div>
-            <p className="text-white font-bold text-lg">R$ {Number(contract.mrr).toLocaleString('pt-BR')}</p>
-            <p className="text-slate-500 text-xs">ARR: R$ {Number(contract.arr).toLocaleString('pt-BR')}</p>
+            <p className="text-content-primary font-bold text-lg">R$ {Number(contract.mrr).toLocaleString('pt-BR')}</p>
+            <p className="text-content-secondary text-xs">ARR: R$ {Number(contract.arr).toLocaleString('pt-BR')}</p>
           </div>
-          <div className="bg-slate-800/50 rounded-lg p-3">
+          <div className="bg-surface-background rounded-lg p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <CalendarDays className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="text-slate-400 text-xs">Renovação</span>
+              <span className="text-content-secondary text-xs">Renovação</span>
             </div>
             <p className={`font-bold text-lg ${renewalColor}`}>
               {contract.renewal_date ? new Date(contract.renewal_date).toLocaleDateString('pt-BR') : 'N/A'}
             </p>
-            <p className="text-slate-500 text-xs">
+            <p className="text-content-secondary text-xs">
               {days === null ? 'Sem data' : days > 0 ? `em ${days} dias` : `${Math.abs(days)} dias atrás`}
             </p>
           </div>

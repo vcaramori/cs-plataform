@@ -46,7 +46,7 @@ export function TicketLifecycleBar({ status, className }: TicketLifecycleBarProp
               <span className={cn(
                 'text-[10px] whitespace-nowrap',
                 isDone ? 'text-emerald-400' :
-                isCurrent ? 'text-white font-semibold' : 'text-slate-600'
+                isCurrent ? 'text-brand-primary dark:text-white font-semibold' : 'text-slate-600'
               )}>
                 {isCurrent && isReopened && step.key === 'in_progress' ? 'Reaberto' : step.label}
               </span>
@@ -63,3 +63,4 @@ export function TicketLifecycleBar({ status, className }: TicketLifecycleBarProp
     </div>
   )
 }
+

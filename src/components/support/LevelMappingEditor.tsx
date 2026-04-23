@@ -62,20 +62,20 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-zinc-100">Mapeamento de Prioridades Externas</h3>
-        <p className="text-sm text-zinc-400">Traduza rótulos vindos de e-mails (IMAP) ou integrações para os níveis de SLA internos.</p>
+        <h3 className="text-lg font-semibold text-brand-primary dark:text-white">Mapeamento de Prioridades Externas</h3>
+        <p className="text-sm text-brand-grey dark:text-slate-400">Traduza rótulos vindos de e-mails (IMAP) ou integrações para os níveis de SLA internos.</p>
       </div>
 
-      <div className="flex gap-2 items-center bg-zinc-900/50 p-4 border border-zinc-800 rounded-lg">
+      <div className="flex gap-2 items-center bg-white dark:bg-slate-900/50 p-4 border border-slate-200 dark:border-slate-800 rounded-lg">
         <Input 
           placeholder="Ex: Urgent, P1" 
           value={newLabel}
           onChange={e => setNewLabel(e.target.value)}
-          className="flex-1 bg-black/40"
+          className="flex-1"
         />
-        <ArrowRight className="w-4 h-4 text-zinc-500" />
+        <ArrowRight className="w-4 h-4 text-brand-grey dark:text-slate-500" />
         <select 
-          className="h-9 px-3 py-1 bg-black/40 border border-zinc-800 rounded-md text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="h-9 px-3 py-1 bg-white dark:bg-black/40 border border-slate-200 dark:border-slate-800 rounded-md text-sm text-brand-primary dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           value={newLevel}
           onChange={e => setNewLevel(e.target.value as any)}
         >
@@ -89,25 +89,25 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
         </Button>
       </div>
 
-      <div className="border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         {mappings.length === 0 ? (
-          <div className="p-6 text-center text-sm text-zinc-500 bg-zinc-900/50">
+          <div className="p-6 text-center text-sm text-brand-grey dark:text-slate-500 bg-white dark:bg-slate-900/50">
             Nenhum mapeamento configurado. Os tickets não mapeados assumirão "Médio" por padrão.
           </div>
         ) : (
           <table className="w-full text-sm text-left">
-            <tbody className="divide-y divide-zinc-800 bg-zinc-900/50">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/50">
               {mappings.map(m => (
-                <tr key={m.id} className="hover:bg-zinc-800/30 transition-colors">
-                  <td className="px-4 py-3 font-medium text-zinc-200">
+                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-brand-primary dark:text-slate-200">
                     "{m.external_label}"
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 w-10 text-center">→</td>
+                  <td className="px-4 py-3 text-brand-grey dark:text-slate-400 w-10 text-center">→</td>
                   <td className="px-4 py-3 text-indigo-400 font-medium whitespace-nowrap w-24">
                     {lbls[m.internal_level]}
                   </td>
                   <td className="px-4 py-3 text-right w-16">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-red-400" onClick={() => handleDelete(m.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-brand-grey dark:text-slate-500 hover:text-red-400" onClick={() => handleDelete(m.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>
@@ -120,3 +120,4 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
     </div>
   )
 }
+

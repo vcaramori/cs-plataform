@@ -88,17 +88,17 @@ export function AddContactModal({ open, onClose, accountId }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
+      <DialogContent className="bg-surface-card border-border-divider text-content-primary max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-9 h-9 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
               <UserPlus className="w-4 h-4 text-plannera-orange" />
             </div>
             <div>
-              <DialogTitle className="text-white text-base font-bold uppercase tracking-tight">
+              <DialogTitle className="text-content-primary text-base font-bold uppercase tracking-tight">
                 Adicionar Stakeholder
               </DialogTitle>
-              <DialogDescription className="text-slate-500 text-[10px] font-bold uppercase tracking-wide mt-0">
+              <DialogDescription className="text-content-secondary text-[10px] font-bold uppercase tracking-wide mt-0">
                 Mapa de Influência
               </DialogDescription>
             </div>
@@ -110,19 +110,19 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* Nome e Sobrenome */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Nome *</Label>
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Nome *</Label>
               <Input
                 {...register('firstName')}
-                className="bg-slate-800 border-slate-700 text-white h-9"
+                className="bg-surface-background border-border-divider text-content-primary h-9"
                 placeholder="João"
               />
               {errors.firstName && <p className="text-red-400 text-[10px]">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Sobrenome *</Label>
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Sobrenome *</Label>
               <Input
                 {...register('lastName')}
-                className="bg-slate-800 border-slate-700 text-white h-9"
+                className="bg-surface-background border-border-divider text-content-primary h-9"
                 placeholder="Silva"
               />
               {errors.lastName && <p className="text-red-400 text-[10px]">{errors.lastName.message}</p>}
@@ -131,10 +131,10 @@ export function AddContactModal({ open, onClose, accountId }: {
 
           {/* Cargo */}
           <div className="space-y-1.5">
-            <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Cargo *</Label>
+            <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Cargo *</Label>
             <Input
               {...register('role')}
-              className="bg-slate-800 border-slate-700 text-white h-9"
+              className="bg-surface-background border-border-divider text-content-primary h-9"
               placeholder="Head de TI, CEO, Gerente de Projetos..."
             />
             {errors.role && <p className="text-red-400 text-[10px]">{errors.role.message}</p>}
@@ -143,7 +143,7 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* Senioridade e Nível de Influência */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Senioridade</Label>
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Senioridade</Label>
               <SearchableSelect
                 value={watch('seniority')}
                 onValueChange={v => setValue('seniority', v as any)}
@@ -151,7 +151,7 @@ export function AddContactModal({ open, onClose, accountId }: {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Nível de Influência</Label>
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Nível de Influência</Label>
               <SearchableSelect
                 value={watch('influence_level')}
                 onValueChange={v => setValue('influence_level', v as any)}
@@ -168,18 +168,18 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* E-mail e Telefone */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">E-mail</Label>
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">E-mail</Label>
               <Input
                 {...register('email')}
                 type="email"
-                className="bg-slate-800 border-slate-700 text-white h-9"
+                className="bg-surface-background border-border-divider text-content-primary h-9"
                 placeholder="joao@empresa.com"
               />
               {errors.email && <p className="text-red-400 text-[10px]">{errors.email.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Telefone</Label>
-              <MaskedInput 
+              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Telefone</Label>
+              <MaskedInput
                 maskType="phone"
                 value={watch('phone')}
                 onValueChange={(v) => setValue('phone', v)}
@@ -191,13 +191,13 @@ export function AddContactModal({ open, onClose, accountId }: {
 
           {/* LinkedIn e Foto */}
           <div className="space-y-1.5">
-            <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">
+            <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">
               URL do LinkedIn
-              <span className="ml-1 text-slate-600 normal-case font-medium">— foto carregada automaticamente</span>
+              <span className="ml-1 text-content-secondary normal-case font-medium">— foto carregada automaticamente</span>
             </Label>
             <Input
               {...register('linkedin_url')}
-              className="bg-slate-800 border-slate-700 text-white h-9"
+              className="bg-surface-background border-border-divider text-content-primary h-9"
               placeholder="https://linkedin.com/in/joaosilva"
             />
             {errors.linkedin_url && <p className="text-red-400 text-[10px]">{errors.linkedin_url.message}</p>}
@@ -207,17 +207,17 @@ export function AddContactModal({ open, onClose, accountId }: {
           <label className="flex items-center gap-3 cursor-pointer group">
             <div
               onClick={() => setValue('decision_maker', !watch('decision_maker'))}
-              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-slate-700'}`}
+              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-border-divider'}`}
             >
               <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
             </div>
-            <span className="text-slate-300 text-sm font-bold group-hover:text-white transition-colors">
+            <span className="text-content-primary text-sm font-bold group-hover:text-content-primary transition-colors">
               Tomador de decisão
             </span>
           </label>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-            <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-divider">
+            <Button type="button" variant="ghost" onClick={onClose} className="text-content-secondary hover:text-content-primary">
               Cancelar
             </Button>
             <Button

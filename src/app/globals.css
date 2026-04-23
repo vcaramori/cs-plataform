@@ -32,35 +32,81 @@
 
 @layer base {
   :root {
-    --background: 231 32% 8%;    /* Dark Navy */
-    --foreground: 210 40% 98%;
+    /* ─── Semantic Surface Tokens ─────────────────────────────────────────── */
+    --surface-background: 210 40% 98%;       /* slate-50  → PageContainer bg */
+    --surface-card:       0 0% 100%;          /* white     → Card, Modal, Panel */
+    --content-primary:    229 32% 26%;        /* Navy #2d3558 → titles, metrics */
+    --content-secondary:  0 1% 36%;           /* Grey #5c5b5b → labels, captions */
+    --border-divider:     214.3 31.8% 91.4%; /* slate-200 → card/panel borders */
 
-    --card: 231 32% 12%;
-    --card-foreground: 210 40% 98%;
+    /* ─── shadcn/Radix compatibility (mantidos) ───────────────────────────── */
+    --background: 210 40% 98%;      /* bg-slate-50 */
+    --foreground: 229 32% 17%;    /* Primary Deep Blue #2d3558 (aproximado) */
 
-    --popover: 231 32% 10%;
-    --popover-foreground: 210 40% 98%;
+    --card: 0 0% 100%;            /* bg-white */
+    --card-foreground: 229 32% 17%;
 
-    --primary: 23 92% 54%;       /* Plannera Orange #f7941e */
+    --popover: 0 0% 100%;
+    --popover-foreground: 229 32% 17%;
+
+    --primary: 229 32% 26%;       /* Corporate Navy #2d3558 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 226 41% 38%;    /* S&OP Blue #3a4c8a */
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 231 20% 20%;
-    --muted-foreground: 215 20.2% 75.1%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* Grey #5c5b5b (aproximado) */
 
-    --accent: 231 32% 20%;
+    --accent: 33 92% 54%;        /* Plannera Orange #f7941e */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 8 66% 57%;    /* Demand Red #d85d4b */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 231 32% 18%;
-    --input: 231 32% 18%;
-    --ring: 23 92% 54%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 229 32% 26%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
+  }
+
+  .dark {
+    /* ─── Semantic Surface Tokens (dark) ─────────────────────────────────── */
+    --surface-background: 222.2 84% 4.9%;    /* slate-950 → PageContainer bg */
+    --surface-card:       222.2 84% 10%;      /* slate-900 → Card, Modal, Panel */
+    --content-primary:    0 0% 100%;           /* white     → titles, metrics */
+    --content-secondary:  215 20.2% 65.1%;    /* slate-400 → labels, captions */
+    --border-divider:     217.2 32.6% 17.5%;  /* slate-800 → card/panel borders */
+
+    /* ─── shadcn/Radix compatibility (mantidos) ───────────────────────────── */
+    --background: 222.2 84% 4.9%;  /* Slate 950 */
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 10%;        /* Slate 900 */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 229 32% 26%;       /* Corporate Navy #2d3558 */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 226 41% 38%;    /* S&OP Blue #3a4c8a */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 75.1%;
+
+    --accent: 33 92% 54%;        /* Plannera Orange #f7941e */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 8 66% 57%;    /* Demand Red #d85d4b */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 33 92% 54%;
   }
 }
 
@@ -70,20 +116,24 @@
   }
 
   body {
-    @apply bg-background text-foreground selection:bg-plannera-orange/30;
-    font-family: "Yu Gothic", "Yu Gothic UI", "YuGothic", "Hiragino Sans", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+    @apply bg-background text-foreground selection:bg-primary/30;
+    font-family: var(--font-inter), "Inter", "Yu Gothic", "Yu Gothic UI", "YuGothic", "Hiragino Sans", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /*
-      antialiased em fundo escuro com Yu Gothic produz renderização limpa.
-      Evitar subpixel-antialiased que causa o efeito de "contorno" percebido
-      especialmente em Windows com fontes de traço fino.
-    */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+
+    /* Gradientes adaptativos: Quase imperceptíveis para foco total no conteúdo */
     background-image:
-      radial-gradient(at 0% 0%, hsla(231,32%,15%,1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(23,92%,10%,0.2) 0, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(var(--primary), 0.01) 0, transparent 40%),
+      radial-gradient(at 100% 0%, hsla(var(--secondary), 0.01) 0, transparent 40%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(at 0% 0%, hsla(229, 32%, 15%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(33, 92%, 10%, 0.2) 0, transparent 50%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -102,11 +152,18 @@
 
 @layer utilities {
   .glass {
-    @apply bg-[#2d3558]/30 backdrop-blur-xl border border-white/10;
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm;
   }
 
   .glass-card {
-    @apply bg-[#2d3558]/10 backdrop-blur-md border border-[#3a4c8a]/20 shadow-2xl;
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-premium;
+  }
+
+  .shadow-premium {
+    box-shadow: 
+      0 1px 2px rgba(0,0,0,0.05),
+      0 4px 6px -1px rgba(0,0,0,0.02),
+      0 10px 15px -3px rgba(0,0,0,0.01);
   }
 
   /*
@@ -118,13 +175,26 @@
     text-shadow: 0 0 6px rgba(247, 148, 30, 0.15);
   }
 
-  /* Utilities de label padronizadas — tamanho mínimo 11px legível */
+  /* Utilities de tipografia mestre — Padronização 2026 */
+  .h1-page {
+    @apply text-2xl md:text-3xl font-black uppercase tracking-tighter font-heading text-[#2d3558] dark:text-white;
+  }
+
+  .h2-section {
+    @apply text-[10px] font-black uppercase tracking-widest text-[#5c5b5b] dark:text-muted-foreground/80 font-sans;
+  }
+
+  .label-premium {
+    @apply text-[10px] font-black uppercase tracking-[0.2em] text-[#5c5b5b]/80 dark:text-muted-foreground/60 font-sans;
+  }
+
+  /* Utilities de label legadas (manter por compatibilidade temporária) */
   .label-xs {
-    @apply text-xs font-bold uppercase tracking-wide text-slate-400;
+    @apply text-xs font-bold uppercase tracking-wide text-muted-foreground;
   }
 
   .label-2xs {
-    @apply text-[11px] font-bold uppercase tracking-wide text-slate-500;
+    @apply text-[11px] font-bold uppercase tracking-wide text-muted-foreground;
   }
 
   /* Scroll sem scrollbar visível */

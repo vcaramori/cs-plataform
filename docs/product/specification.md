@@ -38,10 +38,26 @@ Plataforma interna de Customer Success para gestão de clientes (LOGOs), contrat
 | Camada | Tecnologia |
 |--------|------------|
 | Frontend | Next.js 16, React 19, TypeScript |
-| UI | Tailwind CSS, Radix UI |
+| UI | Tailwind CSS, Radix UI, CVA (class-variance-authority) |
 | Banco | Supabase (PostgreSQL + pgvector) |
 | Auth | Supabase Auth (JWT + RLS) |
 | LLM | Ollama → Gemini → Claude (fallback) |
+
+### Fundação de UI — Tokens Semânticos
+
+Todos os componentes devem utilizar os tokens semânticos definidos em `globals.css` e expostos no `tailwind.config.ts`. Proibido usar classes de cor fixas (`bg-slate-*`, `text-gray-*`) para estrutura de layout.
+
+| Token | Uso |
+|-------|-----|
+| `bg-surface-background` | Fundo da view (`<PageContainer>`) |
+| `bg-surface-card` | Cards, modais, painéis (`<Card>`) |
+| `text-content-primary` | Títulos, métricas, valores principais |
+| `text-content-secondary` | Labels, captions, placeholders |
+| `border-border-divider` | Bordas de cards e seções |
+
+**Componentes guardiões:** `<PageContainer>`, `<Card>`, `<Text>` em `src/components/ui/`.
+
+**Status da migração:** Ondas 1, 2 e 3 concluídas em 2026-04-22. Todos os 41 arquivos do `(dashboard)` foram migrados para tokens semânticos. Sessão 2 (2026-04-23): `tabs.tsx`, `table.tsx`, `button.tsx`, `badge.tsx` refatorados; variantes `glass` removidas e consumers migrados. Sessão 3 (2026-04-23): `dialog.tsx`, `checkbox.tsx`, `switch.tsx`, `button.tsx secondary` corrigidos para tokens semânticos. Ver `docs/ui-refactor-roadmap.md` para histórico completo.
 
 ---
 
@@ -73,13 +89,14 @@ Plataforma interna de Customer Success para gestão de clientes (LOGOs), contrat
 
 **Fórmula:** `((promotores - detratores) / total) * 100`
 
-### Contratos
-| Status | Descrição |
-|--------|-----------|
-| `active` | Em vigor |
-| `at-risk` | Em risco de churn |
-| `churned` | Perdido |
 | `in-negotiation` | Em renovação |
+
+### Padrão Visual (Vibrant Light Mode)
+- **Fundo**: `bg-white` (Cards) e `bg-slate-50` (Backgrounds)
+- **Texto**: `#2d3558` (Navy) para conteúdo; `#5c5b5b` (Grey) para labels
+- **Ação**: `#f7941e` (Orange) para botões primários
+- **Bordas**: `border-slate-200` obrigatório para containers
+- **Legibilidade**: Proibido fundos escuros/chumbo em caixas de texto no modo claro.
 
 ---
 

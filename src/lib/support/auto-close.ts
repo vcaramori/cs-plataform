@@ -1,11 +1,11 @@
-import { createAdminClient } from '../supabase/admin'
+import { getSupabaseAdminClient as createAdminClient } from '@/lib/supabase/admin'
 import { closeTicket } from './lifecycle'
 
 /**
  * Scans for resolved tickets that have exceeded their auto-close threshold.
  * This should be called by a cron job (/api/cron/ticket-auto-close).
  */
-export async function runAutoCloseCheck(): Promise<{ closedCount: number }> {
+export async function runAutoClose(): Promise<{ closedCount: number }> {
   const supabase = createAdminClient()
   const now = new Date()
 

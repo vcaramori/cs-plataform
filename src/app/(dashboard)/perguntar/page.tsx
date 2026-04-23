@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { MessageSquare, Sparkles } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PerguntarClient } from './components/PerguntarClient'
 
@@ -15,10 +16,17 @@ export default async function PerguntarPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Perguntar</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Faça perguntas em linguagem natural sobre LOGOS ou sobre o portfólio inteiro
+      <div className="flex flex-col gap-2 relative">
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 flex items-center justify-center shadow-sm">
+             <MessageSquare className="w-5 h-5 text-[#2d3558] dark:text-primary" />
+          </div>
+          <h1 className="h1-page">Perguntar</h1>
+        </div>
+        <p className="label-premium flex items-center gap-2">
+          Inteligência de Portfólio em Linguagem Natural
+          <Sparkles className="w-3.5 h-3.5 text-[#2d3558]/40 dark:text-primary/50" />
         </p>
       </div>
       <PerguntarClient accounts={accounts ?? []} />

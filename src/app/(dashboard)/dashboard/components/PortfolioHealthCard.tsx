@@ -57,7 +57,8 @@ function KPICard({
   decimal?: number
 }) {
   const [bgClass, textClass] = color.split(' ')
-  const barClass = textClass?.replace('text-', 'bg-') ?? 'bg-slate-400'
+  // Versão saturada para Light Mode (removendo o /10 e ajustando tons se necessário)
+  const barClass = textClass?.replace('text-', 'bg-') ?? 'bg-muted'
 
   return (
     <motion.div
@@ -66,33 +67,41 @@ function KPICard({
       transition={{ delay: index * 0.1, duration: 0.5 }}
       className="h-full"
     >
-      <Card className="glass-card group overflow-hidden relative h-full">
+      <Card variant="premium" className="group overflow-hidden relative h-full border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/50 dark:shadow-none min-h-[165px]">
         <div className={cn(
-          "absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-[0.12] transition-opacity group-hover:opacity-25 pointer-events-none",
+          "absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-[0.03] dark:opacity-10 transition-opacity group-hover:opacity-10 dark:group-hover:opacity-20 pointer-events-none",
           barClass
         )} />
 
-        <CardContent className="p-5 relative z-10 h-full flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wide leading-none mb-2">{label}</p>
-              <h3 className="text-2xl font-black text-white tracking-tighter">
-                <Odometer value={value} prefix={prefix} suffix={suffix} decimal={decimal} />
-              </h3>
-              {sub && <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wide opacity-70 mt-1 whitespace-nowrap">{sub}</p>}
-            </div>
-            <div className={cn("p-2.5 rounded-xl shadow-lg transition-transform group-hover:scale-110 shrink-0", bgClass, textClass)}>
+        <CardContent className="p-4 relative z-10 h-full flex flex-col justify-between">
+          {/* Cabeçalho: Título e Ícone */}
+          <div className="flex justify-between items-start w-full gap-2">
+            <p className="text-[#2d3558] dark:text-slate-400 text-[10px] font-black uppercase tracking-widest leading-tight opacity-90 dark:opacity-80 min-h-[2rem] whitespace-pre-line">
+              {label}
+            </p>
+            <div className={cn("w-10 h-10 rounded-xl shadow-sm dark:shadow-glow transition-all duration-300 group-hover:scale-110 shrink-0 flex items-center justify-center border border-slate-100 dark:border-white/5", bgClass, textClass)}>
               <Icon className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 1.5, delay: 0.5 + (index * 0.1) }}
-              className={cn("h-full opacity-60 rounded-full", barClass)}
-            />
+          {/* Centro: Valor Principal */}
+          <div className="flex-1 flex items-center py-2">
+            <h3 className="text-3xl font-black text-[#2d3558] dark:text-white tracking-tighter">
+              <Odometer value={value} prefix={prefix} suffix={suffix} decimal={decimal} />
+            </h3>
+          </div>
+
+          {/* Rodapé: Texto de Apoio e Barra Inferior */}
+          <div className="space-y-3">
+            {sub && <p className="text-[#5c5b5b] dark:text-slate-500 text-[10px] font-bold uppercase tracking-wide opacity-90 dark:opacity-80 whitespace-nowrap">{sub}</p>}
+            <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 1.5, delay: 0.5 + (index * 0.1) }}
+                className={cn("h-full rounded-full", barClass)}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -113,27 +122,26 @@ export function PortfolioHealthCard({
   const isArrMillion = (totalMRR * 12) >= 1000000
 
   const npsColor = npsScore === null
-    ? 'bg-slate-800/10 text-slate-500'
-    : npsScore >= 50 ? 'bg-emerald-600/10 text-emerald-400'
-    : npsScore >= 0 ? 'bg-yellow-600/10 text-yellow-400'
-    : 'bg-red-600/10 text-red-400'
+    ? 'bg-muted/50 text-muted-foreground'
+    : npsScore >= 50 ? 'bg-emerald-600/10 text-emerald-500'
+    : npsScore >= 0 ? 'bg-yellow-600/10 text-yellow-500'
+    : 'bg-destructive/10 text-destructive'
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       <KPICard
         index={0}
         icon={Building2}
-        label="TOTAL DE LOGOS"
+        label={"TOTAL DE\nLOGOS"}
         value={totalAccounts}
         sub={`${totalActiveContracts === 1 ? 'Conta' : 'Contas'}: ${totalActiveContracts}`}
-        color="bg-indigo-600/10 text-indigo-400"
+        color="bg-primary/10 text-primary"
       />
       <KPICard
         index={1}
         icon={DollarSign}
-        label="MRR Total"
+        label={"MRR TOTAL\n(R$)"}
         value={isMrrMillion ? totalMRR / 1000000 : totalMRR}
-        prefix="R$ "
         decimal={isMrrMillion ? 3 : 0}
         suffix={isMrrMillion ? ' Mi' : ''}
         sub={
@@ -141,37 +149,37 @@ export function PortfolioHealthCard({
             ? `ARR: R$ ${((totalMRR * 12) / 1000000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} Mi`
             : `ARR: R$ ${(totalMRR * 12).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
         }
-        color="bg-emerald-600/10 text-emerald-400"
+        color="bg-emerald-600/10 text-emerald-500"
       />
       <KPICard
         index={2}
         icon={Heart}
-        label="Health Médio"
+        label={"HEALTH\nMÉDIO"}
         value={avgHealthScore}
         suffix="%"
         sub="Score Geral"
-        color={avgHealthScore >= 70 ? 'bg-emerald-600/10 text-emerald-400' : avgHealthScore >= 40 ? 'bg-yellow-600/10 text-yellow-400' : 'bg-red-600/10 text-red-400'}
+        color={avgHealthScore >= 70 ? 'bg-emerald-600/10 text-emerald-500' : avgHealthScore >= 40 ? 'bg-yellow-600/10 text-yellow-500' : 'bg-destructive/10 text-destructive'}
       />
       <KPICard
         index={3}
         icon={AlertTriangle}
-        label="LOGOS em Risco"
+        label={"LOGOS EM\nRISCO"}
         value={atRisk}
         sub="Health Score < 40"
-        color={atRisk > 0 ? 'bg-red-600/10 text-red-500' : 'bg-slate-800/10 text-slate-500'}
+        color={atRisk > 0 ? 'bg-destructive/10 text-destructive' : 'bg-muted/50 text-muted-foreground'}
       />
       <KPICard
         index={4}
         icon={CalendarClock}
-        label="Renovações (30d)"
+        label={"RENOVAÇÕES\n(30D)"}
         value={renewalsSoon}
         sub="Cycle Monitor"
-        color={renewalsSoon > 0 ? 'bg-orange-600/10 text-orange-400' : 'bg-slate-800/10 text-slate-500'}
+        color={renewalsSoon > 0 ? 'bg-primary/10 text-primary' : 'bg-muted/50 text-muted-foreground'}
       />
       <KPICard
         index={5}
         icon={Star}
-        label="NPS Score"
+        label={"NPS\nSCORE"}
         value={npsScore ?? 0}
         prefix={npsScore !== null && npsScore > 0 ? '+' : ''}
         sub={npsScore === null ? 'Sem dados' : npsScore >= 50 ? 'Excelente' : npsScore >= 0 ? 'Bom' : 'Crítico'}

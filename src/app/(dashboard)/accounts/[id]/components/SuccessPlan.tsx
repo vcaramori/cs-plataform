@@ -17,15 +17,15 @@ const statusConfig = {
   completed: { label: 'Sucesso', color: 'text-plannera-ds', bg: 'bg-plannera-ds/10', icon: CheckCircle2, border: 'border-plannera-ds/20' },
   ongoing: { label: 'Foco', color: 'text-plannera-sop', bg: 'bg-plannera-sop/10', icon: Clock, border: 'border-plannera-sop/20' },
   delayed: { label: 'Atraso', color: 'text-plannera-demand', bg: 'bg-plannera-demand/10', icon: AlertCircle, border: 'border-plannera-demand/20' },
-  pending: { label: 'Pendente', color: 'text-slate-500', bg: 'bg-slate-500/10', icon: Target, border: 'border-slate-500/20' },
+  pending: { label: 'Pendente', color: 'text-content-secondary', bg: 'bg-surface-background', icon: Target, border: 'border-border-divider' },
 }
 
 export function SuccessPlan({ goals }: { goals: Goal[] }) {
   return (
     <div className="space-y-4">
       {goals.length === 0 ? (
-        <Card className="bg-slate-900/40 border-slate-800 border-dashed p-10 text-center">
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest">Nenhuma meta estratégica definida</p>
+        <Card className="border-dashed p-10 text-center">
+          <p className="text-content-secondary text-[10px] font-black uppercase tracking-widest">Nenhuma meta estratégica definida</p>
         </Card>
       ) : (
         goals.map((goal, idx) => {
@@ -39,13 +39,13 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
               transition={{ delay: idx * 0.1 }}
             >
               <Card className={cn(
-                "glass-card group hover:bg-white/5 transition-all duration-300 border-none relative overflow-hidden",
+                "group transition-all duration-300 relative overflow-hidden",
                 goal.status === 'completed' && "opacity-60 grayscale-[0.5]"
               )}>
                 {goal.status === 'completed' && (
                   <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />
                 )}
-                
+
                 <CardContent className="p-4 flex items-center justify-between gap-6">
                   <div className="flex items-center gap-4 overflow-hidden">
                     <div className={cn(
@@ -56,20 +56,20 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className={cn(
-                        "text-white text-sm font-black uppercase tracking-tight truncate",
-                        goal.status === 'completed' && "line-through text-slate-500"
+                        "text-content-primary text-sm font-black uppercase tracking-tight truncate",
+                        goal.status === 'completed' && "line-through text-content-secondary"
                       )}>{goal.title}</span>
                       {goal.target_date && (
                         <div className="flex items-center gap-1.5 mt-0.5">
-                           <Clock className="w-3 h-3 text-slate-600" />
-                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
+                           <Clock className="w-3 h-3 text-content-secondary" />
+                           <span className="text-[10px] text-content-secondary font-bold uppercase tracking-tighter">
                             Meta: {new Date(goal.target_date).toLocaleDateString('pt-BR')}
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Badge variant="outline" className={cn(
                       "text-[9px] font-black uppercase tracking-widest px-2 py-0 border-none h-5",
@@ -84,9 +84,9 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
           )
         })
       )}
-      
+
       {goals.length > 0 && (
-         <button className="w-full py-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group">
+         <button className="w-full py-3 rounded-xl border border-border-divider bg-surface-background hover:bg-surface-card text-content-secondary hover:text-content-primary transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group">
             Abrir Plano Completo
             <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
          </button>
