@@ -4,6 +4,13 @@ import { useState } from 'react'
 import { SLALevelMapping } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Trash2, Plus, ArrowRight } from 'lucide-react'
 
@@ -67,23 +74,24 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
       </div>
 
       <div className="flex gap-2 items-center bg-white dark:bg-slate-900/50 p-4 border border-slate-200 dark:border-slate-800 rounded-lg">
-        <Input 
-          placeholder="Ex: Urgent, P1" 
+        <Input
+          placeholder="Ex: Urgent, P1"
           value={newLabel}
           onChange={e => setNewLabel(e.target.value)}
           className="flex-1"
         />
         <ArrowRight className="w-4 h-4 text-brand-grey dark:text-slate-500" />
-        <select 
-          className="h-9 px-3 py-1 bg-white dark:bg-black/40 border border-slate-200 dark:border-slate-800 rounded-md text-sm text-brand-primary dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          value={newLevel}
-          onChange={e => setNewLevel(e.target.value as any)}
-        >
-          <option value="critical">Crítico</option>
-          <option value="high">Alto</option>
-          <option value="medium">Médio</option>
-          <option value="low">Baixo</option>
-        </select>
+        <Select value={newLevel} onValueChange={(v) => setNewLevel(v as any)}>
+          <SelectTrigger className="w-36 bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
+            <SelectItem value="critical">Crítico</SelectItem>
+            <SelectItem value="high">Alto</SelectItem>
+            <SelectItem value="medium">Médio</SelectItem>
+            <SelectItem value="low">Baixo</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={handleAdd} disabled={isAdding || !newLabel.trim()}>
           <Plus className="w-4 h-4 mr-1" /> Adicionar
         </Button>

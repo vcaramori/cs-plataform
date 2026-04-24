@@ -4,10 +4,19 @@ import { useState, useEffect } from 'react'
 import { SLAPolicyLevel } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2, Save } from 'lucide-react'
 
 type LevelMap = Record<'critical' | 'high' | 'medium' | 'low', SLAPolicyLevel | undefined>
+type UnitKey = `${'critical'|'high'|'medium'|'low'}_${'first'|'res'}`
+type UnitType = 'min' | 'h' | 'dia'
 
 interface Props {
   policyId: string
@@ -21,13 +30,27 @@ const DEFAULT_LEVELS: Array<{level: 'critical' | 'high' | 'medium' | 'low', firs
   { level: 'low', first: 1440, res: 4320 },   // 4320m = 72h
 ]
 
+function bestUnit(mins: number): UnitType {
+  if (mins >= 1440 && mins % 1440 === 0) return 'dia'
+  if (mins >= 60 && mins % 60 === 0) return 'h'
+  return 'min'
+}
+
+const FACTORS: Record<UnitType, number> = { min: 1, h: 60, dia: 1440 }
+
+function displayVal(mins: number, unit: UnitType) {
+  return mins === 0 ? '' : String(mins / FACTORS[unit])
+}
+
 export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
   const [levels, setLevels] = useState<LevelMap>({} as LevelMap)
+  const [units, setUnits] = useState<Record<UnitKey, UnitType>>({} as Record<UnitKey, UnitType>)
   const [isSaving, setIsSaving] = useState(false)
 
   // Initialize with initial or defaults
   useEffect(() => {
     const map = {} as LevelMap
+    const u = {} as Record<UnitKey, UnitType>
     DEFAULT_LEVELS.forEach(d => {
       const existing = initialLevels.find(l => l.level === d.level)
       map[d.level] = existing || {
@@ -35,16 +58,23 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
         first_response_minutes: d.first, resolution_minutes: d.res,
         created_at: '', updated_at: ''
       }
+      u[`${d.level}_first`] = bestUnit(existing?.first_response_minutes ?? d.first)
+      u[`${d.level}_res`] = bestUnit(existing?.resolution_minutes ?? d.res)
     })
     setLevels(map)
+    setUnits(u)
   }, [initialLevels, policyId])
 
-  const handleUpdate = (levelEnum: 'critical'|'high'|'medium'|'low', field: 'first_response_minutes'|'resolution_minutes', val: string) => {
-    const num = parseInt(val) || 0
+  const handleUpdate = (lev: 'critical'|'high'|'medium'|'low', field: 'first_response_minutes'|'resolution_minutes', val: string, unit: UnitType) => {
+    const num = (parseFloat(val) || 0) * FACTORS[unit]
     setLevels(prev => ({
       ...prev,
-      [levelEnum]: { ...prev[levelEnum]!, [field]: num }
+      [lev]: { ...prev[lev]!, [field]: Math.round(num) }
     }))
+  }
+
+  const handleUnitChange = (key: UnitKey, newUnit: UnitType) => {
+    setUnits(prev => ({ ...prev, [key]: newUnit }))
   }
 
   const handleSave = async () => {
@@ -91,8 +121,8 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
           <thead className="bg-slate-50 dark:bg-slate-800/50 text-brand-grey dark:text-slate-400">
             <tr>
               <th className="px-4 py-3 font-medium">Nível de Severidade</th>
-              <th className="px-4 py-3 font-medium">Primeira Resposta (min)</th>
-              <th className="px-4 py-3 font-medium">Resolução (min)</th>
+              <th className="px-4 py-3 font-medium">Primeira Resposta</th>
+              <th className="px-4 py-3 font-medium">Resolução</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/50">
@@ -102,20 +132,46 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
                    {lbls[lev]}
                  </td>
                  <td className="px-4 py-3">
-                   <Input 
-                     type="number" 
-                     className="w-32"
-                     value={levels[lev]?.first_response_minutes || ''}
-                     onChange={e => handleUpdate(lev, 'first_response_minutes', e.target.value)}
-                   />
+                   <div className="flex items-center gap-1.5">
+                     <Input
+                       type="number"
+                       min="1"
+                       className="w-20"
+                       value={displayVal(levels[lev]?.first_response_minutes ?? 0, units[`${lev}_first`])}
+                       onChange={e => handleUpdate(lev, 'first_response_minutes', e.target.value, units[`${lev}_first`])}
+                     />
+                     <Select value={units[`${lev}_first`]} onValueChange={v => handleUnitChange(`${lev}_first`, v as UnitType)}>
+                       <SelectTrigger className="w-20 h-9 text-xs bg-surface-card dark:bg-slate-900 border-border-divider">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
+                         <SelectItem value="min">min</SelectItem>
+                         <SelectItem value="h">h</SelectItem>
+                         <SelectItem value="dia">dia</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                  </td>
                  <td className="px-4 py-3">
-                   <Input 
-                     type="number" 
-                     className="w-32"
-                     value={levels[lev]?.resolution_minutes || ''}
-                     onChange={e => handleUpdate(lev, 'resolution_minutes', e.target.value)}
-                   />
+                   <div className="flex items-center gap-1.5">
+                     <Input
+                       type="number"
+                       min="1"
+                       className="w-20"
+                       value={displayVal(levels[lev]?.resolution_minutes ?? 0, units[`${lev}_res`])}
+                       onChange={e => handleUpdate(lev, 'resolution_minutes', e.target.value, units[`${lev}_res`])}
+                     />
+                     <Select value={units[`${lev}_res`]} onValueChange={v => handleUnitChange(`${lev}_res`, v as UnitType)}>
+                       <SelectTrigger className="w-20 h-9 text-xs bg-surface-card dark:bg-slate-900 border-border-divider">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
+                         <SelectItem value="min">min</SelectItem>
+                         <SelectItem value="h">h</SelectItem>
+                         <SelectItem value="dia">dia</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                  </td>
                </tr>
             ))}

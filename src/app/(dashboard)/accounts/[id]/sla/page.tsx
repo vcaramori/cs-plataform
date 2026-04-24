@@ -56,7 +56,7 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
   const tableError = policyFetchError?.message?.includes('does not exist')
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link
@@ -103,14 +103,14 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
 
       {/* Editors */}
       {!tableError && currentPolicy?.id && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-2xl border-none">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-8 rounded-2xl border-none">
             <SLAPolicyEditor
               policyId={currentPolicy.id}
               initialLevels={currentPolicy.levels || []}
             />
           </section>
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-2xl border-none">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-8 rounded-2xl border-none">
             <LevelMappingEditor
               policyId={currentPolicy.id}
               initialMappings={currentPolicy.mappings || []}
