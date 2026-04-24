@@ -164,7 +164,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: index * 0.05, duration: 0.3 }}
                         onClick={() => router.push(`/accounts/${account.id}`)}
-                        className="group border-b border-border-divider hover:bg-muted transition-all cursor-pointer"
+                        className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer"
                       >
                         <TableCell className="pl-6 py-4">
                           <div className="w-10 h-10 rounded-xl bg-surface-background border border-border-divider flex items-center justify-center text-content-primary font-extrabold shadow-sm group-hover:scale-105 transition-transform">

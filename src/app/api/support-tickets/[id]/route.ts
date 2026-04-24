@@ -7,7 +7,9 @@ import { sendCSATEmail } from '@/lib/support/csat-service'
 const PatchSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'closed', 'reopened']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  category: z.string().optional(),
+  category: z.string().nullable().optional(),
+  product: z.string().nullable().optional(),
+  internal_level: z.string().nullable().optional(),
   assigned_to: z.string().nullable().optional()
 })
 

@@ -82,14 +82,14 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         <div className={cn(
           "group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all relative border border-transparent",
           active
-            ? "text-brand-primary bg-slate-100 border-slate-200 shadow-sm dark:text-white dark:bg-white/10 dark:border-white/20"
-            : "text-brand-grey/70 hover:text-brand-primary hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
+            ? "text-brand-primary bg-muted border-border-divider shadow-sm dark:text-white"
+            : "text-content-secondary hover:text-content-primary hover:bg-muted/50 dark:hover:bg-white/5"
         )}>
           <Icon className={cn(
             "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
             active
               ? "text-brand-primary dark:text-white"
-              : "text-brand-grey/40 dark:text-white/40 group-hover:text-brand-primary dark:group-hover:text-white"
+              : "text-content-secondary/40 group-hover:text-brand-primary dark:group-hover:text-white"
           )} />
 
           {!isCollapsed && (
@@ -111,7 +111,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
           )}
 
           {active && !isCollapsed && (
-            <ChevronRight className="w-4 h-4 text-white/40" />
+            <ChevronRight className="w-4 h-4 text-content-secondary/40" />
           )}
 
           {/* Barra lateral do item ativo */}
@@ -128,9 +128,9 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       initial={false}
       animate={{ width: isCollapsed ? 80 : 280 }}
       className={cn(
-        "h-screen flex-shrink-0 bg-white dark:bg-slate-950 dark:backdrop-blur-3xl",
-        "border-r border-slate-200 dark:border-white/5 flex flex-col relative z-50",
-        "shadow-[10px_0_40px_rgba(0,0,0,0.03)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.15)]"
+        "h-screen flex-shrink-0 bg-surface-card",
+        "border-r border-border-divider flex flex-col relative z-50",
+        "shadow-sm dark:shadow-[10px_0_40px_rgba(0,0,0,0.15)]"
       )}
     >
       <Button
@@ -159,10 +159,10 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col whitespace-nowrap"
             >
-              <p className="text-[#2d3558] dark:text-white font-extrabold text-sm tracking-[0.1em] uppercase leading-none">
+              <p className="text-content-primary font-extrabold text-sm tracking-[0.1em] uppercase leading-none">
                 CS-Continuum
               </p>
-              <p className="label-premium !text-[9px] opacity-60 mt-1.5 text-[#5c5b5b] dark:text-white/60">
+              <p className="label-premium !text-[9px] opacity-60 mt-1.5">
                 Control Tower
               </p>
             </motion.div>
@@ -180,7 +180,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         </div>
 
         {/* Settings Section */}
-        <div className={cn("space-y-2", isCollapsed && "pt-6 border-t border-white/10")}>
+        <div className={cn("space-y-2", isCollapsed && "pt-6 border-t border-border-divider")}>
           {/* Configurações — botão expansível */}
           <button
             type="button"
@@ -188,13 +188,13 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
             className={cn(
               "w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all border border-transparent",
               settingsOpen && !isCollapsed
-                ? "text-[#2d3558] bg-slate-100 dark:text-white dark:bg-white/10"
-                : "text-[#5c5b5b]/50 hover:text-[#2d3558] hover:bg-slate-50 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5"
+                ? "text-content-primary bg-muted"
+                : "text-content-secondary/50 hover:text-content-primary hover:bg-muted/50"
             )}
           >
             <Layers className={cn(
               "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
-              settingsOpen ? "text-[#2d3558] dark:text-white" : "text-[#5c5b5b]/40 dark:text-white/40 group-hover:text-[#2d3558]/70 dark:group-hover:text-white/70"
+              settingsOpen ? "text-content-primary" : "text-content-secondary/40 group-hover:text-content-primary"
             )} />
             {!isCollapsed && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 text-left whitespace-nowrap opacity-70 dark:opacity-60">
@@ -228,15 +228,15 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </nav>
 
       {/* ── Notificações e Alertas ──────────────────────── */}
-      <div className="px-4 py-3 border-t border-white/10 bg-white/5">
+      <div className="px-4 py-3 border-t border-border-divider bg-muted/20">
         <NotificationCenter isCollapsed={isCollapsed} />
       </div>
 
       {/* ── Rodapé do usuário ─────────────────────────────── */}
-      <div className="p-4 border-t border-white/10 bg-white/5">
+      <div className="p-4 border-t border-border-divider bg-muted/20">
         <div className={cn(
           "flex items-center gap-4 p-3 rounded-2xl transition-all",
-          !isCollapsed ? "hover:bg-white/5" : "justify-center"
+          !isCollapsed ? "hover:bg-muted/50" : "justify-center"
         )}>
           <Avatar className="w-10 h-10 border-2 border-border/50 flex-shrink-0 shadow-md">
             <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
@@ -251,10 +251,10 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               className="flex-1 min-w-0"
             >
-              <p className="text-brand-primary dark:text-white text-[10px] font-extrabold uppercase truncate tracking-tight leading-none">
+              <p className="text-content-primary text-[10px] font-extrabold uppercase truncate tracking-tight leading-none">
                 {user.email?.split('@')[0]}
               </p>
-              <p className="label-premium !text-[8px] opacity-60 mt-1.5 text-brand-grey dark:text-white/60">
+              <p className="label-premium !text-[8px] opacity-60 mt-1.5">
                 Executive Representative
               </p>
             </motion.div>
@@ -265,7 +265,7 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
           {!isCollapsed && (
             <button
               onClick={handleSignOut}
-              className="text-white/40 hover:text-destructive transition-all p-2 flex-shrink-0 hover:bg-destructive/10 rounded-xl"
+              className="text-content-secondary/40 hover:text-destructive transition-all p-2 flex-shrink-0 hover:bg-destructive/10 rounded-xl"
               aria-label="Sair da conta"
             >
               <LogOut className="w-4 h-4" />

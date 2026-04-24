@@ -19,7 +19,7 @@ export async function PATCH(
   const parsed = Schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 })
 
-  const admin = getSupabaseAdminClient() as any
+  const admin = getSupabaseAdminClient()
   const { data: ticket } = await admin
     .from('support_tickets')
     .select('id, assigned_to')
@@ -28,23 +28,25 @@ export async function PATCH(
 
   if (!ticket) return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
 
+  // 1. Update Ticket
   await admin.from('support_tickets').update({ assigned_to: parsed.data.user_id }).eq('id', id)
 
+  // 2. Log SLA Event
   await logSLAEvent(id, 'assigned', {
     from: ticket.assigned_to,
     to: parsed.data.user_id,
     by: user.id
   })
 
-  // Notify new assignee
+  // 3. Create Notification
   await admin.from('notifications').insert({
     user_id: parsed.data.user_id,
     type: 'ticket_reassigned',
-    message: 'Ticket reatribuído a você',
-    metadata: { ticket_id: id },
+    message: `Ticket #${id.substring(0, 8)} reatribuído para você`,
+    metadata: { ticket_id: id, reassigned_by: user.id },
     read: false,
     created_at: new Date().toISOString()
-  }).catch(console.error)
+  })
 
   return NextResponse.json({ success: true })
 }
