@@ -448,3 +448,5 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Abr/2026 | Toolbar de formatação Teams-style (Negrito, Itálico, Código, Listas) abaixo da textarea — eliminado overlap de ícones |
 | Abr/2026 | Classificação (Prioridade, Produto, Categoria) movida de volta ao sidebar direito com auto-save via PATCH; compose footer mantém apenas Status |
 | Abr/2026 | Bypass de erro da IA: se revisão falhar, botão vira "Enviar sem Revisão" + "Tentar Revisão"; agente nunca fica bloqueado |
+| Abr/2026 | Tabs "Responder"/"Nota" movidas para a linha do botão de envio — compose mais compacto, mais espaço para a thread |
+| Abr/2026 | @menções: digitar @email em resposta ou nota notifica o usuário na Central de Alertas (evento `mention` em `sla_events`) |

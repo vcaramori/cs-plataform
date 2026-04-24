@@ -100,7 +100,8 @@ export async function GET() {
         description: `O ticket "${t.title}" requer ação imediata para evitar/mitigar atrasos.`,
         account_id: t.account_id,
         account_name: (t.accounts as any).name,
-        severity: isBreached ? 'critical' : 'warning'
+        severity: isBreached ? 'critical' : 'warning',
+        ticket_id: t.id
       })
     })
   }
@@ -124,7 +125,8 @@ export async function GET() {
         account_id: t.account_id,
         account_name: (t.accounts as any).name,
         severity: 'info',
-        created_at: t.created_at
+        created_at: t.created_at,
+        ticket_id: t.id
       })
     })
   }
@@ -151,7 +153,34 @@ export async function GET() {
         account_id: s.support_tickets.account_id,
         account_name: s.support_tickets.accounts.name,
         severity: 'info',
-        metadata: { ticket_id: s.ticket_id, schedule_id: s.id }
+        ticket_id: s.ticket_id,
+        metadata: { schedule_id: s.id }
+      })
+    })
+  }
+
+  // 6. Busca Menções (@email) dirigidas ao usuário atual
+  const { data: mentions } = await supabase
+    .from('sla_events')
+    .select('id, ticket_id, occurred_at, metadata, support_tickets!inner(title, account_id, accounts!inner(name))')
+    .eq('event_type', 'mention')
+    .filter('metadata->>mentioned_email', 'eq', user.email)
+    .gte('occurred_at', thirtyDaysAgo)
+    .order('occurred_at', { ascending: false })
+    .limit(20)
+
+  if (mentions) {
+    mentions.forEach((m: any) => {
+      notifications.push({
+        id: `mention-${m.id}`,
+        type: 'mention',
+        title: 'Você foi mencionado',
+        description: `${m.metadata?.author_email ?? 'Alguém'} mencionou você no chamado "${m.support_tickets?.title ?? ''}"`,
+        account_id: m.support_tickets?.account_id,
+        account_name: m.support_tickets?.accounts?.name,
+        severity: 'info',
+        ticket_id: m.ticket_id,
+        created_at: m.occurred_at,
       })
     })
   }

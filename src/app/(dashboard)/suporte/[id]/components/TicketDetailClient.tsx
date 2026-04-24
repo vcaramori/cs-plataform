@@ -896,33 +896,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           </div>
 
           {/* Compose area ─────────────────────────────────────────── */}
-          <div className="sticky bottom-0 z-10 border-t border-border-divider bg-surface-card p-4 shadow-lg">
-            {/* Tabs */}
-            <div className="flex items-center gap-1 mb-3 bg-surface-background p-1 rounded-xl border border-border-divider w-fit">
-              <button
-                onClick={() => setTab('reply')}
-                className={cn(
-                  'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
-                  tab === 'reply'
-                    ? 'bg-indigo-600 text-white shadow'
-                    : 'text-content-secondary hover:text-content-primary'
-                )}
-              >
-                <Mail className="w-3 h-3" /> Responder ao Cliente
-              </button>
-              <button
-                onClick={() => setTab('note')}
-                className={cn(
-                  'flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
-                  tab === 'note'
-                    ? 'bg-amber-100 text-amber-700 shadow border border-amber-200'
-                    : 'text-content-secondary hover:text-content-primary'
-                )}
-              >
-                <Lock className="w-3 h-3" /> Nota Interna
-              </button>
-            </div>
-
+          <div className="sticky bottom-0 z-10 border-t border-border-divider bg-surface-card p-3 shadow-lg">
             <input
               type="file"
               ref={fileInputRef}
@@ -1039,9 +1013,31 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
-              {/* Status — único campo de ciclo de vida no compose; classificação fica no sidebar com auto-save */}
-              {tab === 'reply' && (
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+              {/* Tabs inline + Status */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 bg-surface-background p-0.5 rounded-lg border border-border-divider">
+                  <button
+                    onClick={() => setTab('reply')}
+                    className={cn(
+                      'flex items-center gap-1 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all',
+                      tab === 'reply' ? 'bg-indigo-600 text-white shadow' : 'text-content-secondary hover:text-content-primary'
+                    )}
+                  >
+                    <Mail className="w-3 h-3" /> Responder
+                  </button>
+                  <button
+                    onClick={() => setTab('note')}
+                    className={cn(
+                      'flex items-center gap-1 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all',
+                      tab === 'note' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-content-secondary hover:text-content-primary'
+                    )}
+                  >
+                    <Lock className="w-3 h-3" /> Nota
+                  </button>
+                </div>
+
+                {tab === 'reply' && (
                 <Select value={editStatus} onValueChange={setEditStatus}>
                   <SelectTrigger className="w-[180px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
                     <SelectValue placeholder="Status" />
@@ -1055,6 +1051,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   </SelectContent>
                 </Select>
               )}
+              </div>{/* end tabs+status group */}
 
               {/* Send buttons */}
               <div className="flex items-center gap-2 ml-auto">
