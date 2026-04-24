@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from '@/lib/llm/gateway'
+import { env } from '@/lib/env'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -59,19 +60,19 @@ DIRETRIZES DE TOM:
 - Evitar formalismos excessivos, jargões e excessos de desculpas
 - Substituir "Permaneço à disposição." por "Permanecemos à disposição sempre que precisar."
 
-AVALIAÇÃO DOS 5 CRITÉRIOS DE QUALIDADE (notas de 0 a 100):
+AVALIAÇÃO DOS 5 CRITÉRIOS DE QUALIDADE (notas de 0 a 10):
 Avalie cada critério usando TODO o histórico do chamado como contexto — compare o rascunho com o que foi dito anteriormente, qual é o problema original e qual é o sentimento acumulado do cliente.
-- Tom (0-100): adequação emocional ao contexto do cliente, calor humano, linguagem apropriada à gravidade do chamado
-- Estrutura (0-100): sequência lógica, clareza de propósito, aderência ao Padrão Plannera (saudação → contexto → solução → próximos passos → fechamento)
-- Empatia (0-100): reconhecimento genuíno do sentimento do cliente, validação da dor, personalização baseada no histórico do chamado
-- Clareza (0-100): objetividade, linguagem simples e direta, ausência de ambiguidades ou jargões desnecessários
-- Alinhamento (0-100): conformidade plena com o Padrão Plannera, uso dos nomes reais, zero placeholders, assinatura correta
+- Tom (0-10): adequação emocional ao contexto do cliente, calor humano, linguagem apropriada à gravidade do chamado
+- Estrutura (0-10): sequência lógica, clareza de propósito, aderência ao Padrão Plannera (saudação → contexto → solução → próximos passos → fechamento)
+- Empatia (0-10): reconhecimento genuíno do sentimento do cliente, validação da dor, personalização baseada no histórico do chamado
+- Clareza (0-10): objetividade, linguagem simples e direta, ausência de ambiguidades ou jargões desnecessários
+- Alinhamento (0-10): conformidade plena com o Padrão Plannera, uso dos nomes reais, zero placeholders, assinatura correta
 
 CÁLCULO DA NOTA FINAL — Média Harmônica dos 5 Critérios:
 nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
-Escala de resultado: 0-100. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
+Escala de resultado: 0-10. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
 
-ALERTA: inclua show_alert=true se nota_final < 60.
+ALERTA: inclua show_alert=true se nota_final < 6.
 
 CLASSIFICAÇÃO DO STATUS SUGERIDO (campo "suggested_outcome"):
 Aplique as regras na ordem abaixo e use a PRIMEIRA que se encaixar:
@@ -96,17 +97,16 @@ export async function POST(req: NextRequest) {
     } = schema.parse(json)
 
     const contextBlock = [
-      clientName        && `NOME DO CLIENTE: ${clientName}`,
-      agentName         && `NOME DO AGENTE (use na assinatura): ${agentName}`,
-      ticketTitle       && `ASSUNTO DO CHAMADO: ${ticketTitle}`,
-      category          && `CATEGORIA DO CHAMADO: ${category}`,
+      clientName && `NOME DO CLIENTE: ${clientName}`,
+      agentName && `NOME DO AGENTE (use na assinatura): ${agentName}`,
+      ticketTitle && `ASSUNTO DO CHAMADO: ${ticketTitle}`,
+      category && `CATEGORIA DO CHAMADO: ${category}`,
       ticketDescription && `DESCRIÇÃO ORIGINAL DO CHAMADO: ${ticketDescription.slice(0, 500)}`,
     ].filter(Boolean).join('\n')
 
     const historyBlock = conversationHistory && conversationHistory.length > 0
-      ? `HISTÓRICO DE MENSAGENS ANTERIORES (do mais antigo para o mais recente):\n${
-          conversationHistory.map(m => `[${m.author}]: ${m.body}`).join('\n---\n')
-        }`
+      ? `HISTÓRICO DE MENSAGENS ANTERIORES (do mais antigo para o mais recente):\n${conversationHistory.map(m => `[${m.author}]: ${m.body}`).join('\n---\n')
+      }`
       : ''
 
     const userPrompt = `Avalie a seguinte mensagem de suporte usando TODO o histórico do chamado como contexto. Seu julgamento dos 5 critérios deve levar em conta o que foi dito antes, o problema original do cliente e o sentimento acumulado — não avalie o rascunho de forma isolada.
@@ -130,43 +130,80 @@ FORMATO DE SAÍDA OBRIGATÓRIO (JSON apenas, sem markdown):
   "sentiment": "Equilibrado" | "Neutro" | "Rígido",
   "feedback_summary": "Pontos fortes e de melhoria em 2-3 frases, referenciando o histórico do chamado quando relevante",
   "evaluation": {
-    "tom": <0-100>,
-    "estrutura": <0-100>,
-    "empatia": <0-100>,
-    "clareza": <0-100>,
-    "alinhamento": <0-100>
+    "tom": <0-10>,
+    "estrutura": <0-10>,
+    "empatia": <0-10>,
+    "clareza": <0-10>,
+    "alinhamento": <0-10>
   },
   "recommended_version": "Versão reescrita completa com nomes reais e contexto do chamado",
   "training_notes": "Breve explicação de aprendizado para o agente (1-2 frases)",
-  "pillar_scores": {
-    "habilidades_comunicacao": <0-100>,
-    "efetividade_respostas": <0-100>
-  },
-  "nota_final": <número com 1 casa decimal calculado pela fórmula: 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento), ou null se qualquer critério for 0>,
-  "show_alert": <true se nota_final < 60, caso contrário false>,
+  "nota_final": null,
+  "show_alert": false,
   "suggested_outcome": "solution" | "pending_client" | "pending_product" | "none",
   "outcome_reasoning": "Motivo em 1 frase curta"
-}`
+}
 
-    const { result, provider } = await generateText(userPrompt, {
+CRITICAL: Use a escala de 0 a 10. Se a mensagem for curta, genérica ("vou ver e te aviso") ou não profissional, atribua notas BAIXAS (2-4). O sistema é rigoroso.`
+
+    const result = await generateText(userPrompt, {
       systemInstruction: SYSTEM_PROMPT,
       temperature: 0.2,
       allowFallback: true,
+      model: env.gemini.flashModel,
+      maxOutputTokens: 2048,
+      disableThinking: true,
     })
 
-    console.log(`[ReplyReview] provider=${provider} raw_length=${result.length}`)
-
-    const jsonMatch = result.match(/\{[\s\S]*\}/)
+    const jsonMatch = result.result.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      console.error('[ReplyReview] JSON não encontrado na resposta:', result.slice(0, 300))
+      console.error('[ReplyReview] JSON não encontrado na resposta:', result.result.slice(0, 300))
       return NextResponse.json({ error: 'Resposta da IA não contém JSON válido' }, { status: 500 })
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as ReplyReviewResult
 
+    if (!parsed.evaluation) {
+      console.error('[ReplyReview] Campo evaluation ausente:', parsed)
+      return NextResponse.json({ error: 'IA não retornou scores de avaliação' }, { status: 500 })
+    }
+
+    // Normaliza para escala 0-10 (auto-corrige se IA retornar 0-100)
+    const normalize = (v: number) => {
+      const n = Number(v)
+      return Math.round((n > 10 ? n / 10 : n) * 10) / 10
+    }
+    const scores = {
+      tom:         normalize(parsed.evaluation.tom),
+      estrutura:   normalize(parsed.evaluation.estrutura),
+      empatia:     normalize(parsed.evaluation.empatia),
+      clareza:     normalize(parsed.evaluation.clareza),
+      alinhamento: normalize(parsed.evaluation.alinhamento),
+    }
+    parsed.evaluation = scores
+
+    const vals = Object.values(scores)
+    if (vals.every(s => s > 0)) {
+      const sumInv = vals.reduce((acc, s) => acc + (1 / s), 0)
+      parsed.nota_final = Math.round((vals.length / sumInv) * 10) / 10
+    } else {
+      parsed.nota_final = 0
+    }
+
+    parsed.show_alert = (parsed.nota_final ?? 0) < 6
+
+    parsed.pillar_scores = {
+      habilidades_comunicacao: Math.round(((scores.tom + scores.clareza + scores.empatia) / 3) * 10) / 10,
+      efetividade_respostas:   Math.round(((scores.estrutura + scores.alinhamento) / 2) * 10) / 10,
+    }
+
     return NextResponse.json(parsed)
-  } catch (err) {
-    console.error('[ReplyReview] Error:', err)
-    return NextResponse.json({ error: 'Erro ao revisar mensagem' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[ReplyReview] Error details:', err)
+    return NextResponse.json({
+      error: 'Erro ao revisar mensagem',
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 })
   }
 }

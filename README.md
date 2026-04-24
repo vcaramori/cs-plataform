@@ -74,7 +74,7 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 | Alvo Futuro | Azure SQL (SQL Server + VECTOR nativo) | — |
 | Auth | Supabase Auth (JWT + roles `csm` / `client`) | — |
 | LLM principal | Google Gemini (Exclusive) | — |
-| SDK de IA | @google/genai (Oficial) | 1.0.0+ |
+| SDK de IA | @google/genai (Oficial — migrado de @google/generative-ai) | 1.0.0+ |
 | State | TanStack React Query | 5.95.2 |
 | Validação | Zod | 4.3.6 |
 | Animações | Framer Motion | 12.38.0 |
@@ -97,7 +97,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | `text-content-primary` | `--content-primary` | Navy `#2d3558` | white | Títulos, métricas, valores |
 | `text-content-secondary` | `--content-secondary` | Grey `#5c5b5b` | slate-400 | Labels, captions, apoio |
 | `border-border-divider` | `--border-divider` | slate-200 | slate-800 | Bordas de card/seção |
-| `bg-white/90` / `bg-slate-900/90` | - | - | - | Glassmorphism (máx 15% transparência) + `backdrop-blur-md` para Overlays (Select, Tooltip, Modais) |
+| `bg-white` / `bg-slate-900` | - | - | - | Fundo sólido obrigatório em Modais, Sheets, Dropdowns, Selects, Popovers e Tooltips — qualquer container com texto, grid ou formulário deve ter opacidade 100% |
 
 ### Componentes Guardiões (src/components/ui/)
 
@@ -127,6 +127,9 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 4 Typography | Padronização global de tabelas: **11px font-extrabold sans-serif** para dados técnicos + Hover `bg-muted/40` | ✅ Concluída 2026-04-23 |
 | Sessão 5 Inteligência | Migração `@google/genai`, Estabilização Gemini 2.5 Flash, Refatoração Gateway (Exclusive Mode) | ✅ Concluída 2026-04-23 |
 | Sessão 6 Ergonomia | Otimização de Espaço Suporte: Removido banner SLA (movido para Tooltip); Scroll automático para fim da thread; Padrão Glassmorphism (máx 15% transparência) em Portals | ✅ Concluída 2026-04-23 |
+| Sessão 7 Transparência | Fundos sólidos em todos os containers com conteúdo: `dialog.tsx`, `sheet.tsx`, `command.tsx`, `dropdown-menu.tsx`, `select.tsx`, `popover.tsx`, `tooltip.tsx` — removido `bg-white/90 dark:bg-slate-900/90` e `backdrop-blur-md`; regra: máx 20% transparência apenas em elementos puramente decorativos | ✅ Concluída 2026-04-24 |
+| Sessão 8 Performance | Review-reply: forçado `gemini-2.5-flash` explicitamente (era selecionado `pro` por heurística); gateway migrado do SDK legado `@google/generative-ai` para `@google/genai` (SDK oficial); `maxOutputTokens` configurável por chamada; review-reply usa 800 tokens | ✅ Concluída 2026-04-24 |
+| Sessão 9 Suporte UX | Recovery: ReplyReviewModal fundo sólido (`bg-white dark:bg-slate-900`), escala 0-10 consistente no route+prompt+system, normalize() auto-corrige escala legada, threshold < 6. Features: auto-apply status IA (solution/pending_client/pending_product), status Aguardando Cliente/Produto (padrão mercado), toolbar formatação Teams-style abaixo da textarea | ✅ Concluída 2026-04-24 |
 
 ### Convenção de Variantes de Button
 
@@ -268,18 +271,24 @@ Módulo completo de suporte com SLA, ciclo de vida de ticket e CSAT.
 
 **Avaliação Context-Aware:** A IA usa TODO o histórico do chamado para avaliar o rascunho. Os 5 critérios (Tom, Estrutura, Empatia, Clareza, Alinhamento) são julgados no contexto do problema original e do sentimento acumulado do cliente.
 
-**Nota Final — Média Harmônica dos 5 Critérios (escala 0–100):**
+**Nota Final — Média Harmônica dos 5 Critérios (escala 0–10):**
 ```
 nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
 ```
-`show_alert = true` quando `nota_final < 60`.
+`show_alert = true` quando `nota_final < 6`. Qualquer critério com nota 0 resulta em nota_final = 0 (penalidade máxima — a harmônica é indefinida com divisor zero).
 
-**Interface de Detalhe do Ticket (`/suporte/[id]`):** Reconstruída no Vibrant Light Mode com os Componentes Guardiões. `TicketDetailClient` usa `<PageContainer noPadding>` como backbone, tokens semânticos (`bg-surface-background`, `bg-surface-card`, `border-border-divider`) em todas as zonas, e `<Text>` para título e metadados. Todas as classes `dark:` foram removidas da estrutura base. Layout "Full Page Fit": o container preenche a altura disponível sem scroll horizontal; o header (`z-20`) e a área de composição no rodapé (`z-10`) são fixos, enquanto a thread de mensagens e o sidebar lateral (em `xl+`) possuem scrolls internos independentes. A thread de mensagens agora inicia automaticamente pelo final (mensagens mais recentes). Alertas de SLA ausente foram movidos para um tooltip informativo no sidebar para maximizar o espaço de leitura. O tema padrão da aplicação foi alterado para `light` (`defaultTheme="light"` em `app/layout.tsx`) alinhando o tema default com o design system Vibrant Light Mode.
+**Interface de Detalhe do Ticket (`/suporte/[id]`):** Reconstruída no Vibrant Light Mode com os Componentes Guardiões. `TicketDetailClient` usa `<PageContainer noPadding>` como backbone, tokens semânticos (`bg-surface-background`, `bg-surface-card`, `border-border-divider`) em todas as zonas, e `<Text>` para título e metadados. Todas as classes `dark:` foram removidas da estrutura base. Layout "Full Page Fit": o container preenche a altura disponível sem scroll horizontal; o header (`z-20`) e a área de composição no rodapé (`z-10`) são fixos, enquanto a thread de mensagens e o sidebar lateral (em `xl+`) possuem scrolls internos independentes. A thread de mensagens agora inicia automaticamente pelo final (mensagens mais recentes). Alertas de SLA ausente foram movidos para um tooltip informativo no sidebar para maximizar o espaço de leitura. O tema padrão da aplicação foi alterado para `light` (`defaultTheme="light"` em `app/layout.tsx`) alinhando o tema default com o design system Vibrant Light Mode. O seletor de **Status** foi movido para a área de composição de resposta (junto ao botão de envio), garantindo que a atualização do ciclo de vida ocorra simultaneamente ao envio da mensagem. O campo **Produto** foi adicionado à classificação lateral.
 
 **Indicadores 360° (Performance em Tempo Real):** Modal disparado pela sidebar que consolida a saúde do atendimento em três dimensões:
 1. **Qualidade**: Média harmônica atualizada dos 5 pilares (Tom, Estrutura, Empatia, Clareza, Alinhamento).
 2. **Compromisso (ETA)**: Monitoramento proativo de promessas de retorno no histórico ("volto em Xh"). A quebra de um ETA gera penalidade automática no score de Alinhamento e alerta visual no dashboard.
 3. **Eficiência**: Cálculo de latência média de resposta considerando apenas a janela de horário útil (09:00 - 18:00).
+
+**Auto-apply de Status pela IA:** Ao aceitar a versão da IA (ou manter a própria) no `ReplyReviewModal`, o campo de status no compose é automaticamente definido conforme `suggested_outcome` — `solution` → Resolvido, `pending_client` → Aguardando Cliente, `pending_product` → Aguardando Produto.
+
+**Status de Ticket (padrão de mercado):** Seletor de status ampliado com "Aguardando Cliente" (`pending_client`) e "Aguardando Produto" (`pending_product`), seguindo o padrão osTicket/Zendesk/Freshdesk. No envio, estes são traduzidos para `status: 'in_progress'` + `outcome: 'pending_client|pending_product'` → backend define `pending_reason` via `processAgentInteraction`.
+
+**Toolbar de formatação Teams-style:** Barra de formatação ancorada abaixo do textarea (não sobreposta). Botões: Negrito (`**text**`), Itálico (`_text_`), Código (`` `text` ``), Lista com marcadores, Lista numerada, Paperclip, Imagem. A seleção de texto no textarea é preservada após aplicar a formatação via `requestAnimationFrame`.
 
 ---
 

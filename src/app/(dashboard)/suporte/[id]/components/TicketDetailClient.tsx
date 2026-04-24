@@ -24,7 +24,8 @@ import {
   Lock, CheckCircle2, AlertTriangle, RefreshCw, UserCheck,
   Settings2, Send, Loader2, ChevronRight,
   ExternalLink, GitBranch, Star, Save,
-  Mail, FileText, Zap, ClipboardCheck, Paperclip, Image as ImageIcon
+  Mail, FileText, Zap, ClipboardCheck, Paperclip, Image as ImageIcon,
+  Bold, Italic, Code, List, ListOrdered
 } from 'lucide-react'
 import {
   Select,
@@ -55,23 +56,25 @@ const CATEGORIES = [
 ]
 
 const STATUSES = [
-  { value: 'open',        label: 'Aberto' },
+  { value: 'open', label: 'Aberto' },
   { value: 'in_progress', label: 'Em Andamento' },
-  { value: 'resolved',    label: 'Resolvido' },
-  { value: 'closed',      label: 'Fechado' },
+  { value: 'pending_client', label: 'Aguardando Cliente' },
+  { value: 'pending_product', label: 'Aguardando Produto' },
+  { value: 'resolved', label: 'Resolvido' },
+  { value: 'closed', label: 'Fechado' },
 ]
 
 const PRIORITIES = [
-  { value: 'low',      label: 'Baixo' },
-  { value: 'medium',   label: 'Médio' },
-  { value: 'high',     label: 'Alto' },
+  { value: 'low', label: 'Baixo' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'high', label: 'Alto' },
   { value: 'critical', label: 'Crítico' },
 ]
 
 const LEVELS = [
-  { value: 'low',      label: 'Baixo' },
-  { value: 'medium',   label: 'Médio' },
-  { value: 'high',     label: 'Alto' },
+  { value: 'low', label: 'Baixo' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'high', label: 'Alto' },
   { value: 'critical', label: 'Crítico' },
 ]
 
@@ -88,13 +91,14 @@ interface Ticket {
   category?: string | null
   opened_at: string
   resolved_at?: string | null
+  product?: string | null
   first_response_at?: string | null
   closed_at?: string | null
   pending_reason: 'client' | 'product' | 'none' | null
   sla_breach_first_response: boolean
   sla_breach_resolution: boolean
-  sla_status_first_response: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
-  sla_status_resolution: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
+  sla_status_first_response: 'no_prazo' | 'atencao' | 'vencido' | 'cumprido' | 'violado' | null
+  sla_status_resolution: 'no_prazo' | 'atencao' | 'vencido' | 'cumprido' | 'violado' | null
   sla_policy_id?: string | null
   first_response_deadline?: string | null
   resolution_deadline?: string | null
@@ -162,30 +166,30 @@ interface Props {
 // ─── Status / Priority configs ────────────────────────────────────────────────
 
 const statusCfg: Record<string, { label: string; color: string; dot: string }> = {
-  open:        { label: 'Aberto',       color: 'text-destructive', dot: 'bg-destructive' },
-  in_progress: { label: 'Em Andamento', color: 'text-accent',      dot: 'bg-accent' },
-  reopened:    { label: 'Reaberto',     color: 'text-accent',      dot: 'bg-accent' },
-  resolved:    { label: 'Resolvido',    color: 'text-emerald-500', dot: 'bg-emerald-500' },
-  closed:      { label: 'Fechado',      color: 'text-content-secondary', dot: 'bg-border-divider' },
+  open: { label: 'Aberto', color: 'text-destructive', dot: 'bg-destructive' },
+  in_progress: { label: 'Em Andamento', color: 'text-accent', dot: 'bg-accent' },
+  reopened: { label: 'Reaberto', color: 'text-accent', dot: 'bg-accent' },
+  resolved: { label: 'Resolvido', color: 'text-emerald-500', dot: 'bg-emerald-500' },
+  closed: { label: 'Fechado', color: 'text-content-secondary', dot: 'bg-border-divider' },
 }
 
 const priorityCfg: Record<string, { label: string; color: string }> = {
   critical: { label: 'Crítico', color: 'text-destructive' },
-  high:     { label: 'Alto',    color: 'text-accent' },
-  medium:   { label: 'Médio',   color: 'text-secondary' },
-  low:      { label: 'Baixo',   color: 'text-content-secondary' },
+  high: { label: 'Alto', color: 'text-accent' },
+  medium: { label: 'Médio', color: 'text-secondary' },
+  low: { label: 'Baixo', color: 'text-content-secondary' },
 }
 
 const eventMeta: Record<string, { icon: React.ElementType; label: string; color: string }> = {
-  opened:             { icon: FileText,     label: 'Ticket criado',            color: 'text-indigo-600' },
-  ticket_open:        { icon: FileText,     label: 'Ticket aberto',            color: 'text-indigo-600' },
-  ticket_in_progress: { icon: Zap,          label: 'Em andamento',             color: 'text-amber-600' },
-  assigned:           { icon: UserCheck,    label: 'Ticket atribuído',         color: 'text-blue-600' },
-  first_response:     { icon: CheckCircle2, label: '1ª resposta registrada',   color: 'text-emerald-600' },
-  ticket_resolved:    { icon: CheckCircle2, label: 'Ticket resolvido',         color: 'text-emerald-600' },
-  ticket_closed:      { icon: CheckCircle2, label: 'Ticket fechado',           color: 'text-content-secondary' },
-  ticket_reopened:    { icon: RefreshCw,    label: 'Ticket reaberto',          color: 'text-orange-600' },
-  sla_breach:         { icon: AlertTriangle,label: 'SLA violado',              color: 'text-red-600' },
+  opened: { icon: FileText, label: 'Ticket criado', color: 'text-indigo-600' },
+  ticket_open: { icon: FileText, label: 'Ticket aberto', color: 'text-indigo-600' },
+  ticket_in_progress: { icon: Zap, label: 'Em andamento', color: 'text-amber-600' },
+  assigned: { icon: UserCheck, label: 'Ticket atribuído', color: 'text-blue-600' },
+  first_response: { icon: CheckCircle2, label: '1ª resposta registrada', color: 'text-emerald-600' },
+  ticket_resolved: { icon: CheckCircle2, label: 'Ticket resolvido', color: 'text-emerald-600' },
+  ticket_closed: { icon: CheckCircle2, label: 'Ticket fechado', color: 'text-content-secondary' },
+  ticket_reopened: { icon: RefreshCw, label: 'Ticket reaberto', color: 'text-orange-600' },
+  sla_breach: { icon: AlertTriangle, label: 'SLA violado', color: 'text-red-600' },
 }
 
 
@@ -213,10 +217,10 @@ const markdownComponents = {
   code: ({ children }: any) => <code className="bg-black/10 dark:bg-white/10 px-1 rounded font-mono text-[0.9em]">{children}</code>,
   img: ({ src, alt }: any) => (
     <a href={src} target="_blank" rel="noopener noreferrer" className="block my-3">
-      <img 
-        src={src} 
-        alt={alt} 
-        className="rounded-lg border border-black/10 dark:border-white/10 max-w-full h-auto hover:opacity-90 transition-opacity" 
+      <img
+        src={src}
+        alt={alt}
+        className="rounded-lg border border-black/10 dark:border-white/10 max-w-full h-auto hover:opacity-90 transition-opacity"
         loading="lazy"
       />
     </a>
@@ -318,15 +322,30 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const threadRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const [ticket] = useState(init)
+  const ticket = init
   const [events, setEvents] = useState(initEvents)
   const [messages, setMessages] = useState(initMessages)
+
+  // Sync props to state (required for router.refresh() to update client state)
+  useEffect(() => {
+    setEvents(initEvents)
+    setMessages(initMessages)
+  }, [initEvents, initMessages])
+
   const isInitialMount = useRef(true)
 
   // Compose state
   const [tab, setTab] = useState<'reply' | 'note'>('reply')
-  const [composeBody, setComposeBody] = useState('')
+  const [replyBody, setReplyBody] = useState('')
+  const [noteBody, setNoteBody] = useState('')
   const [sending, setSending] = useState(false)
+
+  // Helper to get current body
+  const composeBody = tab === 'reply' ? replyBody : noteBody
+  const setComposeBody = (val: string | ((prev: string) => string)) => {
+    if (tab === 'reply') setReplyBody(val)
+    else setNoteBody(val)
+  }
 
   // Reply Outcome & AI
   const [outcome, setOutcome] = useState<'solution' | 'pending_client' | 'pending_product' | 'none'>('none')
@@ -342,7 +361,21 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
   // Attachments
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [uploading, setUploading] = useState(false)
+
+  function applyMarkdown(prefix: string, suffix = '') {
+    const el = textareaRef.current
+    if (!el) return
+    const { selectionStart: s, selectionEnd: e, value } = el
+    const selected = value.substring(s, e)
+    const newVal = value.substring(0, s) + prefix + selected + suffix + value.substring(e)
+    setComposeBody(newVal)
+    requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(s + prefix.length, e + prefix.length)
+    })
+  }
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -368,7 +401,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         clareza: evalData.clarity || evalData.clareza || 0,
         alinhamento: evalData.alignment || evalData.alinhamento || 0
       }
-      
+
       const scores = [pillars.tom, pillars.estrutura, pillars.empatia, pillars.clareza, pillars.alinhamento]
       if (scores.every(s => s > 0)) {
         const sumInv = scores.reduce((acc, s) => acc + (1 / s), 0)
@@ -381,18 +414,18 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     // 2. ETA e Broken ETA
     let etaStatus: 'no_prazo' | 'atrasado' | 'nenhum' = 'nenhum'
     let brokenEta = false
-    
+
     const agentMessages = messages.filter(m => m.type === 'reply' || m.type === 'note')
-    
+
     for (const msg of agentMessages) {
       const text = msg.body.toLowerCase()
       const etaMatch = text.match(/(volto|retorno|respondo|até|compromisso|prazo)\s*(em|às|as)?\s*(\d{1,2})(:|h|min)/i)
-      
+
       if (etaMatch) {
         const msgDate = new Date(msg.created_at)
         const now = new Date()
         const diffHours = (now.getTime() - msgDate.getTime()) / (1000 * 60 * 60)
-        
+
         if (diffHours > 2 && ticket.status !== 'resolved' && ticket.status !== 'closed') {
           etaStatus = 'atrasado'
           brokenEta = true
@@ -406,11 +439,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     // 3. Latência Média (Fictício para demonstrador, usaria getBusinessMinutesBetween)
     let totalLatency = 0
     let interactionCount = 0
-    
+
     for (let i = 1; i < messages.length; i++) {
       const current = messages[i]
-      const prev = messages[i-1]
-      
+      const prev = messages[i - 1]
+
       if (prev.author_email !== ticket.accounts.name && current.type === 'reply') {
         const start = new Date(prev.created_at)
         const end = new Date(current.created_at)
@@ -429,70 +462,45 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     })
   }
 
-  // Inline editing
-  const [editStatus, setEditStatus]     = useState(ticket.status)
+  // Inline editing - simplified, values are synced on send
+  const [editStatus, setEditStatus] = useState(ticket.status)
   const [editPriority, setEditPriority] = useState(ticket.priority)
-  const [editLevel, setEditLevel]       = useState(ticket.internal_level ?? '')
+  const [editLevel, setEditLevel] = useState(ticket.internal_level ?? '')
   const [editCategory, setEditCategory] = useState(ticket.category ?? '')
-  const [savingProps, setSavingProps]   = useState(false)
-  const [propsChanged, setPropsChanged] = useState(false)
+  const [editProduct, setEditProduct] = useState(ticket.product ?? '')
+  const [savingProps, setSavingProps] = useState(false)
+
+  // Sync edit states if props update (e.g. after handleAssign)
+  useEffect(() => {
+    setEditStatus(ticket.status)
+    setEditPriority(ticket.priority)
+    setEditLevel(ticket.internal_level ?? '')
+    setEditCategory(ticket.category ?? '')
+    setEditProduct(ticket.product ?? '')
+    setSelectedAgent(ticket.assigned_to ?? '')
+  }, [ticket.status, ticket.priority, ticket.internal_level, ticket.category, ticket.product, ticket.assigned_to])
 
   // Assign
   const [selectedAgent, setSelectedAgent] = useState(ticket.assigned_to ?? '')
   const [assignLoading, setAssignLoading] = useState(false)
 
-  const hasSLA = !!(ticket.first_response_deadline || ticket.resolution_deadline || ticket.sla_policy_id)
   const sConf = statusCfg[ticket.status] ?? statusCfg.open
   const pConf = priorityCfg[ticket.priority] ?? priorityCfg.low
   const account = ticket.accounts
-
+  const hasSLA = !!(ticket.first_response_deadline || ticket.resolution_deadline || ticket.sla_policy_id)
   const isClosedOrResolved = ['resolved', 'closed'].includes(ticket.status)
   const currentAgentEmail = agents.find(a => a.id === ticket.assigned_to)?.email
 
-  // Scroll thread to bottom when events change
+  // Scroll thread to bottom when messages change
   useEffect(() => {
     if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ 
-        behavior: isInitialMount.current ? 'auto' : 'smooth' 
+      bottomRef.current.scrollIntoView({
+        behavior: isInitialMount.current ? 'auto' : 'smooth'
       })
       isInitialMount.current = false
     }
-  }, [events])
+  }, [messages])
 
-  // Detect property changes
-  useEffect(() => {
-    const changed =
-      editStatus !== ticket.status ||
-      editPriority !== ticket.priority ||
-      editLevel !== (ticket.internal_level ?? '') ||
-      editCategory !== (ticket.category ?? '')
-    setPropsChanged(changed)
-  }, [editStatus, editPriority, editLevel, editCategory, ticket])
-
-
-  async function handleSaveProps() {
-    setSavingProps(true)
-    try {
-      const body: any = {}
-      if (editStatus !== ticket.status)                   body.status = editStatus
-      if (editPriority !== ticket.priority)               body.priority = editPriority
-      if (editLevel !== (ticket.internal_level ?? ''))    body.internal_level = editLevel || null
-      if (editCategory !== (ticket.category ?? ''))       body.category = editCategory || null
-
-      const res = await fetch(`/api/support-tickets/${ticket.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error()
-      toast.success('Propriedades atualizadas')
-      router.refresh()
-    } catch {
-      toast.error('Erro ao salvar propriedades')
-    } finally {
-      setSavingProps(false)
-    }
-  }
 
   async function handleAssign() {
     if (!selectedAgent || selectedAgent === ticket.assigned_to) return
@@ -514,15 +522,30 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   }
 
   async function handleSend() {
-    if (!composeBody.trim()) return
+    const currentBody = composeBody.trim()
+    if (!currentBody) return
     setSending(true)
     try {
       const endpoint = tab === 'reply' ? 'reply' : 'notes'
+      // pending_client/pending_product são exibidos no dropdown mas o status real na API é in_progress;
+      // o outcome controla o pending_reason no backend via processAgentInteraction
+      const isPending = editStatus === 'pending_client' || editStatus === 'pending_product'
+      const statusForApi = isPending ? 'in_progress' : editStatus
+      const outcomeForApi = editStatus === 'pending_client' ? 'pending_client'
+        : editStatus === 'pending_product' ? 'pending_product'
+        : outcome
       const body = tab === 'reply'
-        ? { body: composeBody.trim(), outcome }
-        : { body: composeBody.trim() }
+        ? {
+          body: currentBody,
+          outcome: outcomeForApi,
+          status: statusForApi,
+          priority: editPriority,
+          category: editCategory,
+          product: editProduct
+        }
+        : { body: currentBody }
 
-      console.log(`[UI Reply] Sending to ticket ${ticket.id} with outcome: ${outcome}`)
+      console.log(`[UI Reply] Sending to ticket ${ticket.id} with outcome: ${outcomeForApi}`)
       const res = await fetch(`/api/support-tickets/${ticket.id}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -535,45 +558,32 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           const errData = await res.json()
           errorMsg = errData.error || errorMsg
         } catch {
-          // If JSON parse fails (e.g. HTML 404), use status code
-          if (res.status === 404) errorMsg = 'Endpoint não encontrado (404). Verifique as rotas do servidor.'
+          if (res.status === 404) errorMsg = 'Endpoint não encontrado (404)'
           else errorMsg = `Erro do servidor (${res.status})`
         }
-        console.error('[UI Reply] Server Error:', res.status, errorMsg)
         throw new Error(errorMsg)
       }
 
-      // Optimistic update for Messages
+      // Optimistic update
       const newMessage: SupportMessage = {
         id: crypto.randomUUID(),
         ticket_id: ticket.id,
         author_id: currentUserId,
         author_email: 'Você',
         type: tab === 'reply' ? 'reply' : 'note',
-        body: composeBody.trim(),
+        body: currentBody,
         created_at: new Date().toISOString(),
       }
 
       setMessages(prev => [...prev, newMessage])
-
-      // Also optimistic update for Lifecycle Events (Legacy support)
-      const newEvent: SLAEvent = {
-        id: crypto.randomUUID(),
-        ticket_id: ticket.id,
-        event_type: tab === 'reply' ? 'agent_reply' : 'internal_note',
-        occurred_at: new Date().toISOString(),
-        metadata: { body: composeBody.trim(), author_email: 'Você' },
-      }
-      setEvents(prev => [...prev, newEvent])
-
       setComposeBody('')
       setOutcome('none')
       setReviewApproved(false)
       toast.success(tab === 'reply' ? 'Resposta enviada' : 'Nota salva')
 
-      if (outcome === 'solution') router.refresh()
-    } catch {
-      toast.error('Erro ao enviar')
+      if (outcome === 'solution' || tab === 'reply') router.refresh()
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar')
     } finally {
       setSending(false)
     }
@@ -665,10 +675,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
       const isImage = file.type.startsWith('image/')
       const suffix = isLarge ? ' *(Expira em 7 dias)*' : ''
-      const markdown = isImage 
+      const markdown = isImage
         ? `\n![${file.name}](${publicUrl})${suffix}\n`
         : `\n[📎 Anexo: ${file.name}](${publicUrl})${suffix}\n`
-      
+
       setComposeBody(prev => prev + markdown)
       toast.success('Arquivo anexado')
     } catch (err) {
@@ -907,8 +917,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               }}
             />
 
-            <div className="relative group">
+            <div className="flex flex-col gap-0">
               <Textarea
+                ref={textareaRef}
                 value={composeBody}
                 onChange={e => { setComposeBody(e.target.value); if (reviewApproved) setReviewApproved(false) }}
                 onPaste={handlePaste}
@@ -918,25 +929,72 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     : 'Adicione uma nota interna para a equipe...'
                 }
                 className={cn(
-                  'min-h-[140px] pb-12 bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-xl resize-none border transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
+                  'min-h-[140px] bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-t-xl rounded-b-none resize-none border-x border-t border-b-0 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
                   tab === 'reply' ? 'border-indigo-200' : 'border-amber-200'
                 )}
                 disabled={sending || uploading}
               />
 
-              {/* Attachment Actions */}
-              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+              {/* Toolbar — abaixo da textarea, sem sobreposição */}
+              <div className={cn(
+                'flex items-center gap-0.5 px-2 py-1.5 rounded-b-xl border border-t-0 bg-surface-background',
+                tab === 'reply' ? 'border-indigo-200' : 'border-amber-200'
+              )}>
                 <TooltipProvider>
+                  {/* Formatação */}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
-                        onClick={handleFileClick}
-                        disabled={sending || uploading}
-                      >
-                        <Paperclip className="w-4 h-4 text-content-secondary" />
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={() => applyMarkdown('**', '**')} disabled={sending || uploading}>
+                        <Bold className="w-3.5 h-3.5 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Negrito</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={() => applyMarkdown('_', '_')} disabled={sending || uploading}>
+                        <Italic className="w-3.5 h-3.5 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Itálico</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={() => applyMarkdown('`', '`')} disabled={sending || uploading}>
+                        <Code className="w-3.5 h-3.5 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Código</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={() => applyMarkdown('\n- ')} disabled={sending || uploading}>
+                        <List className="w-3.5 h-3.5 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Lista com marcadores</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={() => applyMarkdown('\n1. ')} disabled={sending || uploading}>
+                        <ListOrdered className="w-3.5 h-3.5 text-content-secondary" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Lista numerada</TooltipContent>
+                  </Tooltip>
+
+                  {/* Divisor */}
+                  <div className="w-px h-4 bg-border-divider mx-1" />
+
+                  {/* Anexos */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={handleFileClick} disabled={sending || uploading}>
+                        <Paperclip className="w-3.5 h-3.5 text-content-secondary" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">Anexar Arquivo (Máx 20MB)</TooltipContent>
@@ -944,57 +1002,87 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
-                        onClick={handleFileClick}
-                        disabled={sending || uploading}
-                      >
-                        <ImageIcon className="w-4 h-4 text-content-secondary" />
+                      <Button variant="ghost" size="icon" className="w-7 h-7 rounded hover:bg-black/5 dark:hover:bg-white/5" onClick={handleFileClick} disabled={sending || uploading}>
+                        <ImageIcon className="w-3.5 h-3.5 text-content-secondary" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">Inserir Imagem (ou Cole)</TooltipContent>
                   </Tooltip>
+
+                  {uploading && (
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-indigo-500 animate-pulse bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 ml-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Subindo...
+                    </div>
+                  )}
+
+                  {/* Aviso de expiração */}
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-widest text-content-secondary/40">
+                    {'>'} 20MB expira em 7 dias
+                  </span>
                 </TooltipProvider>
-
-                {uploading && (
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-500 animate-pulse bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Subindo arquivo...
-                  </div>
-                )}
-              </div>
-
-              {/* Expire Notice */}
-              <div className="absolute bottom-3 right-3">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/40">
-                  Expira em 7 dias (se {'>'} 20MB)
-                </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-3">
-              {/* Outcome Selector — only when review is approved */}
-              {tab === 'reply' ? (
-                reviewApproved ? (
-                  <Select value={outcome} onValueChange={(v: any) => setOutcome(v)}>
-                    <SelectTrigger className="w-[190px] h-9 bg-surface-background border-border-divider text-content-primary text-[11px] font-bold uppercase tracking-widest">
-                      <SelectValue placeholder="Status do chamado..." />
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
+              {/* Classification Group - Persistent only on send */}
+              {tab === 'reply' && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={editPriority} onValueChange={setEditPriority}>
+                    <SelectTrigger className="w-[120px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                      <SelectValue placeholder="Prioridade" />
                     </SelectTrigger>
                     <SelectContent className="bg-surface-card border-border-divider">
-                      <SelectItem value="none"            className="text-[11px] font-bold uppercase">Manter Aberto</SelectItem>
-                      <SelectItem value="solution"        className="text-[11px] font-bold uppercase text-emerald-500">Resolver Chamado</SelectItem>
-                      <SelectItem value="pending_client"  className="text-[11px] font-bold uppercase text-amber-500">Aguardar Cliente</SelectItem>
-                      <SelectItem value="pending_product" className="text-[11px] font-bold uppercase text-indigo-500">Aguardar Produto</SelectItem>
+                      {PRIORITIES.map(p => (
+                        <SelectItem key={p.value} value={p.value} className="text-[10px] font-bold uppercase">
+                          {p.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <span className="text-[10px] text-content-secondary italic">Avalie a resposta para continuar</span>
-                )
-              ) : <div />}
+
+                  <Select value={editProduct} onValueChange={setEditProduct}>
+                    <SelectTrigger className="w-[140px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                      <SelectValue placeholder="Produto" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      <SelectItem value="none" className="text-[10px] font-bold uppercase">— Produto —</SelectItem>
+                      {['S&OP', 'S&OE', 'Abast', 'Middleware', 'HUB'].map(p => (
+                        <SelectItem key={p} value={p} className="text-[10px] font-bold uppercase">{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={editCategory} onValueChange={setEditCategory}>
+                    <SelectTrigger className="w-[160px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      <SelectItem value="none" className="text-[10px] font-bold uppercase">— Categoria —</SelectItem>
+                      {CATEGORIES.map(c => (
+                        <SelectItem key={c} value={c} className="text-[10px] font-bold uppercase">{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="w-px h-4 bg-border-divider mx-1" />
+
+                  <Select value={editStatus} onValueChange={setEditStatus}>
+                    <SelectTrigger className="w-[150px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      {STATUSES.map(s => (
+                        <SelectItem key={s.value} value={s.value} className="text-[10px] font-bold uppercase">
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Send buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-auto">
                 {tab === 'reply' && reviewApproved && (
                   <Button
                     onClick={() => { setReviewApproved(false); handleReviewReply() }}
@@ -1023,8 +1111,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   }
                   {tab === 'reply'
                     ? (reviewApproved
-                        ? (outcome === 'solution' ? 'Enviar e Resolver' : 'Enviar Resposta')
-                        : 'Avaliar e Enviar')
+                      ? (outcome === 'solution' ? 'Enviar e Resolver' : 'Enviar Resposta')
+                      : 'Avaliar e Enviar')
                     : 'Salvar Nota'
                   }
                 </Button>
@@ -1090,77 +1178,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             )}
           </section>
 
-          {/* ─ Classificação (inline editable) ──────────────── */}
-          <section className="border-b border-border-divider p-4 space-y-3">
-            <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Classificação</Text>
-
-            <div className="space-y-2.5">
-              <div>
-                <label className="text-[10px] text-content-secondary font-bold uppercase tracking-widest block mb-1">Status</label>
-                <Select value={editStatus} onValueChange={setEditStatus}>
-                  <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider text-content-primary">
-                    {STATUSES.map(s => (
-                      <SelectItem key={s.value} value={s.value} className="text-xs">
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-content-secondary font-black uppercase tracking-widest block mb-1">Prioridade / SLA</label>
-                <Select value={editPriority} onValueChange={(v) => { setEditPriority(v); setEditLevel(v); }}>
-                  <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
-                    <SelectValue placeholder="Prioridade" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider text-content-primary">
-                    {PRIORITIES.map(p => (
-                      <SelectItem key={p.value} value={p.value} className="text-xs">
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-content-secondary font-bold uppercase tracking-widest block mb-1">Categoria / Tópico</label>
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider text-content-primary">
-                    <SelectItem value="none" className="text-xs opacity-50 italic">— Sem categoria —</SelectItem>
-                    {CATEGORIES.map(c => (
-                      <SelectItem key={c} value={c} className="text-xs">
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <AnimatePresence>
-                {propsChanged && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                    <Button
-                      onClick={handleSaveProps}
-                      disabled={savingProps}
-                      size="sm"
-                      className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold uppercase tracking-widest text-[10px] gap-1.5"
-                    >
-                      {savingProps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                      Salvar Alterações
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </section>
+          {/* ─ Classificação removida daqui e movida para o footer conforme solicitação ─ */}
 
           {/* ─ Responsável ───────────────────────────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">
@@ -1220,7 +1238,12 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         originalText={composeBody}
         review={reviewResult}
         onSelectOriginal={() => {
-          if (reviewResult?.suggested_outcome) setOutcome(reviewResult.suggested_outcome as any)
+          if (reviewResult?.suggested_outcome) {
+            setOutcome(reviewResult.suggested_outcome as any)
+            if (reviewResult.suggested_outcome === 'solution') setEditStatus('resolved')
+            else if (reviewResult.suggested_outcome === 'pending_client') setEditStatus('pending_client')
+            else if (reviewResult.suggested_outcome === 'pending_product') setEditStatus('pending_product')
+          }
           setReviewApproved(true)
           setReviewOpen(false)
         }}
@@ -1228,6 +1251,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           if (reviewResult) {
             setComposeBody(reviewResult.recommended_version)
             setOutcome(reviewResult.suggested_outcome as any)
+            if (reviewResult.suggested_outcome === 'solution') setEditStatus('resolved')
+            else if (reviewResult.suggested_outcome === 'pending_client') setEditStatus('pending_client')
+            else if (reviewResult.suggested_outcome === 'pending_product') setEditStatus('pending_product')
           }
           setReviewApproved(true)
           setReviewOpen(false)
@@ -1246,24 +1272,24 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
 
 // ─── Indicators Modal ─────────────────────────────────────────────────────────
 
-function IndicatorsModal({ open, onClose, indicators }: { 
-  open: boolean, 
-  onClose: () => void, 
-  indicators: SupportIndicators | null 
+function IndicatorsModal({ open, onClose, indicators }: {
+  open: boolean,
+  onClose: () => void,
+  indicators: SupportIndicators | null
 }) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-2xl bg-surface-card border border-border-divider rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl bg-surface-card/90 backdrop-blur-xl border border-border-divider rounded-xl shadow-2xl overflow-hidden"
       >
-        <div className="p-6 border-b border-border-divider flex items-center justify-between bg-surface-background">
+        <div className="p-6 border-b border-border-divider flex items-center justify-between bg-surface-background/90">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-indigo-500" />
+            <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+              <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <Text as="h3" size="xl" weight="bold" className="text-content-primary">Indicadores 360°</Text>
@@ -1279,15 +1305,15 @@ function IndicatorsModal({ open, onClose, indicators }: {
           {/* Coluna 1: Qualidade */}
           <div className="space-y-4">
             <Text className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Métricas de Qualidade</Text>
-            
+
             <div className="bg-surface-background p-4 rounded-lg border border-border-divider">
               <div className="flex items-end justify-between mb-2">
                 <Text size="sm" variant="secondary">Média Harmônica</Text>
                 <Text className="text-3xl font-black text-indigo-500">{indicators?.harmonicMean || 'N/A'}</Text>
               </div>
               <div className="h-2 bg-border-divider rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-500 transition-all duration-500" 
+                <div
+                  className="h-full bg-indigo-500 transition-all duration-500"
                   style={{ width: `${(indicators?.harmonicMean || 0) * 10}%` }}
                 />
               </div>
@@ -1305,8 +1331,8 @@ function IndicatorsModal({ open, onClose, indicators }: {
                   <Text className="text-content-secondary">{p.label}</Text>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-1.5 bg-border-divider rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-indigo-400/50" 
+                      <div
+                        className="h-full bg-indigo-500/80"
                         style={{ width: `${(p.value || 0) * 10}%` }}
                       />
                     </div>
@@ -1320,7 +1346,7 @@ function IndicatorsModal({ open, onClose, indicators }: {
           {/* Coluna 2: Operacional */}
           <div className="space-y-4">
             <Text className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Métricas Operacionais</Text>
-            
+
             <div className="bg-surface-background p-4 rounded-lg border border-border-divider">
               <Text size="sm" variant="secondary" className="mb-1">Status do ETA</Text>
               <div className="flex items-center gap-2">
@@ -1356,15 +1382,15 @@ function IndicatorsModal({ open, onClose, indicators }: {
               </Text>
             </div>
 
-            <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
               <div className="flex gap-3">
-                <div className="shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <Star className="w-4 h-4 text-amber-600" />
+                <div className="shrink-0 w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-amber-700 dark:text-amber-500" />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-xs font-bold text-amber-900 leading-tight">Insight da IA</Text>
-                  <Text className="text-[11px] text-amber-800/80 leading-relaxed">
-                    {indicators?.brokenEta 
+                  <Text className="text-xs font-bold text-amber-900 dark:text-amber-100 leading-tight">Insight da IA</Text>
+                  <Text className="text-[11px] text-amber-800 dark:text-amber-200/80 leading-relaxed">
+                    {indicators?.brokenEta
                       ? "A quebra de compromisso de horário impactou severamente o score de Alinhamento. Priorize o fechamento deste ciclo para mitigar o atrito."
                       : "O atendimento mantém consistência tonal elevada. Recomenda-se manter a estrutura de tópicos adotada na última interação."}
                   </Text>
@@ -1374,7 +1400,7 @@ function IndicatorsModal({ open, onClose, indicators }: {
           </div>
         </div>
 
-        <div className="p-6 bg-surface-background border-t border-border-divider flex justify-end">
+        <div className="p-6 bg-surface-background/90 border-t border-border-divider flex justify-end">
           <Button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 shadow-lg shadow-indigo-500/20 transition-all active:scale-95">
             Entendido
           </Button>

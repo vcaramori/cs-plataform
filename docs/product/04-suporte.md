@@ -33,23 +33,20 @@ Layout de duas colunas:
 - Cada evento distinguido visualmente (cor de fundo, ícone, label)
 - Área de composição com abas "Responder ao Cliente" / "Nota Interna"
 
-**Área de composição — fluxo obrigatório de avaliação:**
+**Área de composição — fluxo de envio e classificação:**
 
 ```
 [Agente redige resposta no textarea]
          ↓
-[Botão "Avaliar e Enviar"]  ← único caminho normal
+[Seleciona Status do ticket (ao lado do botão)]
          ↓
-[POST /api/support-tickets/review-reply]
-  (chamada única ao Gemini — sem Ollama)
+[Botão "Avaliar e Enviar"]
          ↓
 [ReplyReviewModal abre com resultado]
          ↓
 [Agente escolhe: sua versão OU versão da IA]
          ↓
-[Seleciona status sugerido pela IA (editável)]
-         ↓
-[Botão "Enviar Resposta" (desbloqueado)]
+[Botão "Enviar Resposta" (Status persistido aqui)]
 ```
 
 **Caso de falha da IA (`reviewFailed = true`):**
@@ -60,19 +57,20 @@ Layout de duas colunas:
 
 | Estado | UI |
 |--------|----|
-| `!reviewApproved && !reviewFailed` | Botão "Avaliar e Enviar" (laranja) |
-| `reviewApproved` | Seletor de status + botão "Reavaliar" (ghost) + botão "Enviar Resposta" (verde) |
+| `!reviewApproved && !reviewFailed` | Seletor de Status + Botão "Avaliar e Enviar" (laranja) |
+| `reviewApproved` | Seletor de Status + botão "Reavaliar" (ghost) + botão "Enviar Resposta" (azul) |
 | `reviewFailed` | Botão "Tentar Novamente" + botão "Enviar sem Avaliação" (cinza) |
 
 Edição do textarea após aprovação reseta `reviewApproved = false` (força nova avaliação).
 
 **Sidebar (direita):**
-- Classificação inline: status, prioridade, nível SLA, categoria (9 tópicos predefinidos), agente responsável
+- Classificação inline: **produto** (S&OP, S&OE, etc), prioridade, nível SLA, categoria, agente responsável.
+- O campo **Status** foi movido para a área de composição de resposta para garantir que o ciclo de vida seja atualizado junto com o envio da mensagem.
 - Painel SLA com `SLATimer` e `SLABadge` — indicador visual (ícone de alerta) e tooltip informativo exibidos quando nenhuma política está configurada, liberando espaço na área de leitura central.
 - Info do cliente (nome da conta, link para detalhe)
 - Histórico de datas (criação, 1ª resposta, resolução)
 
-> **Removido:** seção "Ações" da sidebar (botões de 1ª resposta, resolver, reabrir) — essas ações foram integradas ao fluxo de envio de resposta ou ao seletor de status.
+> **Observação:** O Status agora só é persistido quando a mensagem é de fato enviada, evitando saltos de estado sem conteúdo explicativo.
 
 ---
 
@@ -174,7 +172,7 @@ Calculado em **minutos úteis** no fuso `America/Sao_Paulo` usando a tabela `bus
 - Rascunho da resposta do agente
 - Contexto: assunto, descrição original, histórico completo de respostas, categoria, nome da conta e nome do agente
 
-**Os 5 Critérios de Avaliação (0–100 cada):**
+**Os 5 Critérios de Avaliação (0–10 cada):**
 
 | Critério | O que avalia |
 |----------|-------------|
@@ -188,9 +186,11 @@ Calculado em **minutos úteis** no fuso `America/Sao_Paulo` usando a tabela `bus
 ```
 nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
 ```
-Escala: 0–100. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
+Escala: 0–10. Penaliza fortemente critérios fracos — um único critério com nota baixa reduz significativamente a nota final.
 
-**Regra de alerta:** `show_alert = true` quando `nota_final < 60`.
+**Regra de alerta:** `show_alert = true` quando `nota_final < 6`.
+
+**Normalização automática:** O backend aplica `normalize()` em todos os scores antes do cálculo. Se a IA retornar valores em escala 0-100, são automaticamente convertidos para 0-10. O campo `evaluation` sempre exibe valores normalizados.
 
 **Output (campo a campo):**
 
@@ -198,17 +198,17 @@ Escala: 0–100. Penaliza fortemente critérios fracos — um único critério c
 |-------|------|-----------|
 | `sentiment` | `'Equilibrado' \| 'Neutro' \| 'Rígido'` | Tom emocional detectado |
 | `feedback_summary` | string | Resumo em português do feedback, referenciando o histórico quando relevante |
-| `evaluation.tom` | 0–100 | Score de tom (context-aware) |
-| `evaluation.estrutura` | 0–100 | Score de estrutura |
-| `evaluation.empatia` | 0–100 | Score de empatia (context-aware) |
-| `evaluation.clareza` | 0–100 | Score de clareza |
-| `evaluation.alinhamento` | 0–100 | Alinhamento ao Padrão Plannera |
+| `evaluation.tom` | 0–10 | Score de tom (context-aware) |
+| `evaluation.estrutura` | 0–10 | Score de estrutura |
+| `evaluation.empatia` | 0–10 | Score de empatia (context-aware) |
+| `evaluation.clareza` | 0–10 | Score de clareza |
+| `evaluation.alinhamento` | 0–10 | Alinhamento ao Padrão Plannera |
 | `recommended_version` | string | Versão reescrita pela IA com nomes reais e contexto do chamado |
 | `training_notes` | string | Nota de treinamento para o agente (1-2 frases) |
-| `pillar_scores.habilidades_comunicacao` | 0–100 | Pilar agregado de comunicação |
-| `pillar_scores.efetividade_respostas` | 0–100 | Pilar agregado de efetividade |
-| `nota_final` | number \| null | Média harmônica dos 5 critérios; `null` se qualquer critério for 0 |
-| `show_alert` | boolean | `true` se `nota_final < 60` |
+| `pillar_scores.habilidades_comunicacao` | 0–10 | Pilar agregado de comunicação (tom + clareza + empatia) |
+| `pillar_scores.efetividade_respostas` | 0–10 | Pilar agregado de efetividade (estrutura + alinhamento) |
+| `nota_final` | number \| null | Média harmônica dos 5 critérios; `0` se qualquer critério for 0 |
+| `show_alert` | boolean | `true` se `nota_final < 6` |
 | `suggested_outcome` | `'solution' \| 'pending_client' \| 'pending_product' \| 'none'` | Status sugerido pela IA |
 | `outcome_reasoning` | string | Justificativa do status sugerido (1 frase) |
 
@@ -284,8 +284,21 @@ Classifica e-mails recebidos via IMAP/Power Automate:
 | Thread | Eventos `sla_events` ordenados por `created_at` |
 | Abas composição | "Responder ao Cliente" / "Nota Interna" |
 | Botão principal | "Avaliar e Enviar" → "Enviar Resposta" (após aprovação) |
-| Seletor de status | Aparece após aprovação da avaliação |
+| Seletor de status | Sempre visível na área de composição; inclui "Aguardando Cliente" e "Aguardando Produto" |
 | Botão Reavaliar | Reset de `reviewApproved` com nova chamada à IA |
+| Toolbar de formatação | Barra fixa abaixo do textarea: Negrito, Itálico, Código, Lista com marcadores, Lista numerada + Paperclip/Imagem |
+| Auto-apply IA status | Ao aceitar versão da IA (ou manter própria), `editStatus` é automaticamente definido conforme `suggested_outcome` |
+
+**Status disponíveis no dropdown (padrão de mercado — osTicket/Zendesk/Freshdesk):**
+
+| Valor | Label | Comportamento no envio |
+|-------|-------|------------------------|
+| `open` | Aberto | status = 'open' |
+| `in_progress` | Em Andamento | status = 'in_progress' |
+| `pending_client` | Aguardando Cliente | status = 'in_progress' + outcome = 'pending_client' → pending_reason = 'client' |
+| `pending_product` | Aguardando Produto | status = 'in_progress' + outcome = 'pending_product' → pending_reason = 'product' |
+| `resolved` | Resolvido | status = 'resolved' → resolveTicket() + dispara CSAT |
+| `closed` | Fechado | status = 'closed' → closeTicket() |
 
 ### 4.3.2 ReplyReviewModal
 
@@ -422,3 +435,7 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Abr/2026 | Refatoração visual completa para Vibrant Light Mode; layout responsivo com header/compose sticky e sidebar empilhável em mobile |
 | Abr/2026 | `defaultTheme` da aplicação alterado para `light` — alinhamento com design system |
 | Abr/2026 | Implementado **Indicadores 360°**: modal com monitoramento de ETA (promessas de retorno), Média Harmônica de qualidade e Latência em horário útil |
+| Abr/2026 | Escala de avaliação corrigida para 0-10 (era 0-100); threshold de alerta ajustado para < 6; normalização automática no backend |
+| Abr/2026 | Auto-apply do status sugerido pela IA: ao aceitar versão da IA ou a própria, `editStatus` é definido automaticamente |
+| Abr/2026 | Adicionado "Aguardando Cliente" e "Aguardando Produto" ao seletor de status (padrão osTicket/Zendesk/Freshdesk) |
+| Abr/2026 | Toolbar de formatação Teams-style (Negrito, Itálico, Código, Listas) abaixo da textarea — eliminado overlap de ícones |
