@@ -130,6 +130,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 7 Transparência | Fundos sólidos em todos os containers com conteúdo: `dialog.tsx`, `sheet.tsx`, `command.tsx`, `dropdown-menu.tsx`, `select.tsx`, `popover.tsx`, `tooltip.tsx` — removido `bg-white/90 dark:bg-slate-900/90` e `backdrop-blur-md`; regra: máx 20% transparência apenas em elementos puramente decorativos | ✅ Concluída 2026-04-24 |
 | Sessão 8 Performance | Review-reply: forçado `gemini-2.5-flash` explicitamente (era selecionado `pro` por heurística); gateway migrado do SDK legado `@google/generative-ai` para `@google/genai` (SDK oficial); `maxOutputTokens` configurável por chamada; review-reply usa 800 tokens | ✅ Concluída 2026-04-24 |
 | Sessão 9 Suporte UX | Recovery: ReplyReviewModal fundo sólido (`bg-white dark:bg-slate-900`), escala 0-10 consistente no route+prompt+system, normalize() auto-corrige escala legada, threshold < 6. Features: auto-apply status IA (solution/pending_client/pending_product), status Aguardando Cliente/Produto (padrão mercado), toolbar formatação Teams-style abaixo da textarea | ✅ Concluída 2026-04-24 |
+| Sessão 10 Suporte UX | Classificação (Prioridade, Produto, Categoria) movida para sidebar com auto-save via PATCH a cada alteração; compose footer mantém apenas Status. Bypass de erro da IA implementado: `reviewFailed=true` muda botão para "Enviar sem Revisão" (âmbar) + "Tentar Revisão" — agente nunca bloqueado por falha da IA | ✅ Concluída 2026-04-24 |
 
 ### Convenção de Variantes de Button
 

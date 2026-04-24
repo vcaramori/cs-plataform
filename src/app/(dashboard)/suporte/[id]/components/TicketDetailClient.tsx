@@ -502,6 +502,21 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   }, [messages])
 
 
+  async function handleAutoSave(field: 'priority' | 'category' | 'product', value: string) {
+    setSavingProps(true)
+    try {
+      await fetch(`/api/support-tickets/${ticket.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value === 'none' ? null : value }),
+      })
+    } catch {
+      toast.error('Erro ao salvar classificação')
+    } finally {
+      setSavingProps(false)
+    }
+  }
+
   async function handleAssign() {
     if (!selectedAgent || selectedAgent === ticket.assigned_to) return
     setAssignLoading(true)
@@ -628,7 +643,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
       setReviewResult(data)
     } catch (err) {
       console.error('[ReviewReply] fetch error:', err)
-      toast.error('Erro ao revisar resposta — verifique o console para detalhes')
+      toast.error('Revisão indisponível — você pode enviar sem revisão ou tentar novamente')
+      setReviewFailed(true)
       setReviewOpen(false)
     } finally {
       setReviewing(false)
@@ -1024,66 +1040,25 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
-              {/* Classification Group - Persistent only on send */}
+              {/* Status — único campo de ciclo de vida no compose; classificação fica no sidebar com auto-save */}
               {tab === 'reply' && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select value={editPriority} onValueChange={setEditPriority}>
-                    <SelectTrigger className="w-[120px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                      <SelectValue placeholder="Prioridade" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      {PRIORITIES.map(p => (
-                        <SelectItem key={p.value} value={p.value} className="text-[10px] font-bold uppercase">
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={editProduct} onValueChange={setEditProduct}>
-                    <SelectTrigger className="w-[140px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                      <SelectValue placeholder="Produto" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      <SelectItem value="none" className="text-[10px] font-bold uppercase">— Produto —</SelectItem>
-                      {['S&OP', 'S&OE', 'Abast', 'Middleware', 'HUB'].map(p => (
-                        <SelectItem key={p} value={p} className="text-[10px] font-bold uppercase">{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={editCategory} onValueChange={setEditCategory}>
-                    <SelectTrigger className="w-[160px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                      <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      <SelectItem value="none" className="text-[10px] font-bold uppercase">— Categoria —</SelectItem>
-                      {CATEGORIES.map(c => (
-                        <SelectItem key={c} value={c} className="text-[10px] font-bold uppercase">{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <div className="w-px h-4 bg-border-divider mx-1" />
-
-                  <Select value={editStatus} onValueChange={setEditStatus}>
-                    <SelectTrigger className="w-[150px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      {STATUSES.map(s => (
-                        <SelectItem key={s.value} value={s.value} className="text-[10px] font-bold uppercase">
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger className="w-[180px] h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-surface-card border-border-divider">
+                    {STATUSES.map(s => (
+                      <SelectItem key={s.value} value={s.value} className="text-[10px] font-bold uppercase">
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {/* Send buttons */}
               <div className="flex items-center gap-2 ml-auto">
-                {tab === 'reply' && reviewApproved && (
+                {tab === 'reply' && reviewApproved && !reviewFailed && (
                   <Button
                     onClick={() => { setReviewApproved(false); handleReviewReply() }}
                     disabled={reviewing || !composeBody.trim()}
@@ -1094,14 +1069,27 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     <ClipboardCheck className="w-3.5 h-3.5" /> Reavaliar
                   </Button>
                 )}
+                {tab === 'reply' && reviewFailed && (
+                  <Button
+                    onClick={() => { setReviewFailed(false); handleReviewReply() }}
+                    disabled={reviewing || !composeBody.trim()}
+                    size="sm"
+                    variant="outline"
+                    className="font-bold uppercase tracking-widest text-[10px] gap-1.5 border-amber-300 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Tentar Revisão
+                  </Button>
+                )}
                 <Button
-                  onClick={tab === 'reply' && !reviewApproved ? handleReviewReply : handleSend}
+                  onClick={tab === 'reply' && !reviewApproved && !reviewFailed ? handleReviewReply : handleSend}
                   disabled={(reviewing || sending) || !composeBody.trim()}
                   size="sm"
                   className={cn(
                     'font-bold uppercase tracking-widest text-[10px] gap-1.5',
                     tab === 'reply'
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      ? reviewFailed
+                        ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                       : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border border-amber-200'
                   )}
                 >
@@ -1110,9 +1098,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     : <Send className="w-3.5 h-3.5" />
                   }
                   {tab === 'reply'
-                    ? (reviewApproved
-                      ? (outcome === 'solution' ? 'Enviar e Resolver' : 'Enviar Resposta')
-                      : 'Avaliar e Enviar')
+                    ? (reviewFailed
+                      ? 'Enviar sem Revisão'
+                      : reviewApproved
+                        ? (outcome === 'solution' ? 'Enviar e Resolver' : 'Enviar Resposta')
+                        : 'Avaliar e Enviar')
                     : 'Salvar Nota'
                   }
                 </Button>
@@ -1178,7 +1168,52 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             )}
           </section>
 
-          {/* ─ Classificação removida daqui e movida para o footer conforme solicitação ─ */}
+          {/* ─ Classificação (auto-save) ─────────────────────── */}
+          <section className="border-b border-border-divider p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Classificação</Text>
+              {savingProps && (
+                <div className="flex items-center gap-1 text-[9px] text-indigo-500 font-bold uppercase tracking-widest animate-pulse">
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" /> Salvando...
+                </div>
+              )}
+            </div>
+
+            <Select value={editPriority} onValueChange={(v) => { setEditPriority(v); handleAutoSave('priority', v) }}>
+              <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface-card border-border-divider">
+                {PRIORITIES.map(p => (
+                  <SelectItem key={p.value} value={p.value} className="text-[10px] font-bold uppercase">{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={editProduct} onValueChange={(v) => { setEditProduct(v); handleAutoSave('product', v) }}>
+              <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                <SelectValue placeholder="Produto" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface-card border-border-divider">
+                <SelectItem value="none" className="text-[10px] font-bold uppercase">— Produto —</SelectItem>
+                {['S&OP', 'S&OE', 'Abast', 'Middleware', 'HUB'].map(p => (
+                  <SelectItem key={p} value={p} className="text-[10px] font-bold uppercase">{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={editCategory} onValueChange={(v) => { setEditCategory(v); handleAutoSave('category', v) }}>
+              <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface-card border-border-divider">
+                <SelectItem value="none" className="text-[10px] font-bold uppercase">— Categoria —</SelectItem>
+                {CATEGORIES.map(c => (
+                  <SelectItem key={c} value={c} className="text-[10px] font-bold uppercase">{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </section>
 
           {/* ─ Responsável ───────────────────────────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">

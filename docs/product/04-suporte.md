@@ -288,6 +288,13 @@ Classifica e-mails recebidos via IMAP/Power Automate:
 | Botão Reavaliar | Reset de `reviewApproved` com nova chamada à IA |
 | Toolbar de formatação | Barra fixa abaixo do textarea: Negrito, Itálico, Código, Lista com marcadores, Lista numerada + Paperclip/Imagem |
 | Auto-apply IA status | Ao aceitar versão da IA (ou manter própria), `editStatus` é automaticamente definido conforme `suggested_outcome` |
+| Bypass de erro da IA | Se a revisão falhar (erro de API), o botão muda para "Enviar sem Revisão" (âmbar) + botão secundário "Tentar Revisão". O agente nunca fica bloqueado. |
+
+**Seção de Classificação no sidebar (auto-save):**
+- Prioridade, Produto e Categoria movidos para o sidebar direito
+- Cada alteração chama `PATCH /api/support-tickets/[id]` imediatamente, sem precisar enviar uma resposta
+- Indicador "Salvando..." visível durante a chamada (`savingProps`)
+- O campo Status permanece no rodapé do compose, vinculado ao ciclo de vida da resposta
 
 **Status disponíveis no dropdown (padrão de mercado — osTicket/Zendesk/Freshdesk):**
 
@@ -439,3 +446,5 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Abr/2026 | Auto-apply do status sugerido pela IA: ao aceitar versão da IA ou a própria, `editStatus` é definido automaticamente |
 | Abr/2026 | Adicionado "Aguardando Cliente" e "Aguardando Produto" ao seletor de status (padrão osTicket/Zendesk/Freshdesk) |
 | Abr/2026 | Toolbar de formatação Teams-style (Negrito, Itálico, Código, Listas) abaixo da textarea — eliminado overlap de ícones |
+| Abr/2026 | Classificação (Prioridade, Produto, Categoria) movida de volta ao sidebar direito com auto-save via PATCH; compose footer mantém apenas Status |
+| Abr/2026 | Bypass de erro da IA: se revisão falhar, botão vira "Enviar sem Revisão" + "Tentar Revisão"; agente nunca fica bloqueado |
