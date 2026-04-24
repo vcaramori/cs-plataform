@@ -207,15 +207,15 @@ export function SuporteClient({
       </div>
 
       {/* Premium Tabs */}
-      <div className="flex justify-between items-center border-b border-border/50 pb-2">
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-border-divider">
+      <div className="flex justify-between items-center border-b border-border-divider pb-4">
+        <div className="flex bg-surface-card dark:bg-slate-900/50 p-1.5 rounded-2xl border border-border-divider">
           {(['list', 'import'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-6 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all relative z-10",
-                activeTab === tab ? "text-white shadow-lg" : "text-[#5c5b5b] hover:text-primary dark:text-slate-500 dark:hover:text-white"
+                "px-6 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all relative z-10",
+                activeTab === tab ? "text-white shadow-lg" : "text-content-secondary hover:text-content-primary"
               )}
             >
               {tab === 'list' ? `Fila de Chamados (${tickets.length})` : 'Ingestão Inteligente'}
