@@ -295,6 +295,64 @@ export async function createFromClosed(parentTicketId: string, newTicketData: an
   return newTicket.id
 }
 
+/**
+ * Recalculates SLA deadlines for all open tickets in an account.
+ * Called when SLA policy is created/updated to backfill existing tickets.
+ */
+export async function recalculateSLAForAccount(accountId: string): Promise<number> {
+  const supabase = createAdminClient()
+  const policy = await getPolicyForAccount(accountId)
+
+  if (!policy) return 0
+
+  const { data: openTickets, error } = await supabase
+    .from('support_tickets')
+    .select('id, opened_at, internal_level, contract_id')
+    .eq('account_id', accountId)
+    .in('status', ['open', 'in_progress'])
+
+  if (error || !openTickets) {
+    console.error('[Lifecycle] Error fetching open tickets for SLA recalc:', error)
+    return 0
+  }
+
+  const hours = await getBusinessHoursForAccount(accountId)
+  let updated = 0
+
+  for (const ticket of openTickets) {
+    const level = ticket.internal_level || 'medium'
+    const levelSettings = policy.levels.find(l => l.level === level)
+
+    if (!levelSettings) continue
+
+    const openedAt = new Date(ticket.opened_at)
+    const firstResDeadline = calculateDeadline(openedAt, levelSettings.first_response_minutes, policy.timezone, hours)
+    const firstResAttention = calculateAttentionDeadline(openedAt, levelSettings.first_response_minutes, policy.alert_threshold_pct, policy.timezone, hours)
+    const resDeadline = calculateDeadline(openedAt, levelSettings.resolution_minutes, policy.timezone, hours)
+    const resAttention = calculateAttentionDeadline(openedAt, levelSettings.resolution_minutes, policy.alert_threshold_pct, policy.timezone, hours)
+
+    const { error: updateError } = await supabase
+      .from('support_tickets')
+      .update({
+        sla_policy_id: policy.id,
+        first_response_deadline: firstResDeadline.toISOString(),
+        first_response_attention_at: firstResAttention.toISOString(),
+        resolution_deadline: resDeadline.toISOString(),
+        resolution_attention_at: resAttention.toISOString(),
+        sla_status_first_response: 'no_prazo',
+        sla_status_resolution: 'no_prazo',
+        sla_breach_first_response: false,
+        sla_breach_resolution: false
+      })
+      .eq('id', ticket.id)
+
+    if (!updateError) updated++
+  }
+
+  console.log(`[Lifecycle] Recalculated SLA for ${updated}/${openTickets.length} tickets in account ${accountId}`)
+  return updated
+}
+
 async function createNotification(userId: string, type: string, ticketId: string, message: string): Promise<void> {
   const supabase = createAdminClient()
   await supabase.from('notifications').insert({
