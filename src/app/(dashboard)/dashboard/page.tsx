@@ -6,6 +6,7 @@ import { getNPSSegment } from "@/lib/supabase/types"
 import { PortfolioHealthCard } from "./components/PortfolioHealthCard"
 import { AccountsTable } from "./components/AccountsTable"
 import { NPSTestLoader } from "./components/NPSTestLoader"
+import { ModuleHeader } from "@/components/shared/guardians/ModuleHeader"
 
 export default async function DashboardPage() {
   const supabase = await getSupabaseServerClient()
@@ -94,20 +95,11 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Premium Header */}
-      <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 dark:bg-primary/20 blur-[60px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 flex items-center justify-center shadow-sm">
-             <LayoutDashboard className="w-5 h-5 text-[#2d3558] dark:text-primary" />
-          </div>
-          <h1 className="h1-page">Portfolio Control</h1>
-        </div>
-        <p className="label-premium flex items-center gap-2">
-          Visão Executiva de Clientes e Receita Recorrente
-          <Sparkles className="w-3.5 h-3.5 text-[#2d3558]/40 dark:text-primary/50" />
-        </p>
-      </div>
+      <ModuleHeader 
+        title="Portfolio Control" 
+        subtitle="Visão Executiva de Clientes e Receita Recorrente"
+        iconName="LayoutDashboard"
+      />
 
       {/* KPI Section */}
       <section className="relative">

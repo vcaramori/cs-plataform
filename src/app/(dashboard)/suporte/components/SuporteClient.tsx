@@ -18,6 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner'
 import { format as formatDate } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
+import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -180,22 +182,30 @@ export function SuporteClient({
     <div className="space-y-6">
       {/* KPI Strip */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Abertos', value: openTickets.length, color: 'text-primary', icon: TicketCheck },
-          { label: 'SLA Vencido', value: breachedCount, color: 'text-destructive', icon: AlertTriangle },
-          { label: 'SLA Atenção', value: attentionCount, color: 'text-amber-500', icon: AlertTriangle },
-          { label: 'Histórico Total', value: tickets.length, color: 'text-muted-foreground', icon: CheckCircle2 },
-        ].map(({ label, value, color, icon: Icon }) => (
-          <Card key={label} className="bg-surface-card border border-border-divider shadow-sm p-4 flex items-center gap-4">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", color.replace('text-', 'bg-').replace('-500', '/10').replace('primary', 'primary/10').replace('destructive', 'destructive/10'), color.replace('text-', 'border-').replace('-500', '/20').replace('primary', 'primary/20').replace('destructive', 'destructive/20'))}>
-              <Icon className={cn("w-5 h-5", color)} />
-            </div>
-            <div>
-              <p className="label-premium mb-0.5 !text-[#5c5b5b] dark:!text-slate-400">{label}</p>
-              <p className={cn("text-2xl font-extrabold tracking-tighter", color)}>{value}</p>
-            </div>
-          </Card>
-        ))}
+        <StatCardPremium
+          title="Abertos"
+          value={openTickets.length}
+          iconName="TicketCheck"
+          colorVariant="default"
+        />
+        <StatCardPremium
+          title="SLA Vencido"
+          value={breachedCount}
+          iconName="AlertTriangle"
+          colorVariant="destructive"
+        />
+        <StatCardPremium
+          title="SLA Atenção"
+          value={attentionCount}
+          iconName="AlertTriangle"
+          colorVariant="orange"
+        />
+        <StatCardPremium
+          title="Histórico Total"
+          value={tickets.length}
+          iconName="CheckCircle2"
+          colorVariant="ds"
+        />
       </div>
 
       {/* Link para Dashboard executivo */}
@@ -353,14 +363,18 @@ export function SuporteClient({
                                 </span>
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest border border-current/10 shadow-sm", sConf.bg, sConf.color)}>
-                                  {sConf.label}
-                                </span>
+                                <StatusBadgeGuard 
+                                  label={sConf.label} 
+                                  type={t.status as any} 
+                                  className="w-full justify-center"
+                                />
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
-                                <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-widest border border-current/10 shadow-sm", pConf.bg, pConf.color)}>
-                                  {pConf.label}
-                                </span>
+                                <StatusBadgeGuard 
+                                  label={pConf.label} 
+                                  type={t.priority as any} 
+                                  className="w-full justify-center"
+                                />
                               </TableCell>
                               <TableCell className="text-center whitespace-nowrap">
                                 {t.sla_status_resolution

@@ -14,6 +14,9 @@ import {
   Building2, ListChecks, AlignLeft, Hash, Bookmark,
   CalendarRange, Globe, Target, AlertTriangle, TrendingUp, TrendingDown
 } from 'lucide-react'
+import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
+import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -110,7 +113,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             </div>
             <div className="text-right">
               <p className="label-premium !text-[9px]">Nota NPS</p>
-              <p className={`text-3xl font-extrabold tracking-tighter ${segColor.split(' ')[0]}`}>{render.score}<span className="text-xs opacity-30">/10</span></p>
+              <p className="text-3xl font-extrabold tracking-tighter text-content-primary">{render.score}<span className="text-xs opacity-30">/10</span></p>
             </div>
           </div>
 
@@ -364,20 +367,11 @@ export function NPSDashboardClient({ accounts }: Props) {
 
   return (
     <PageContainer>
-      {/* Header */}
-      <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-32 h-32 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner">
-            <Star className="w-6 h-6 text-primary" />
-          </div>
-          <h1 className="h1-page">NPS Research Control</h1>
-        </div>
-        <p className="label-premium flex items-center gap-2">
-          Inteligência de Atendimento, Pesquisas Relacionais e Feedback Estruturado
-          <Sparkles className="w-3.5 h-3.5 text-primary/40 animate-pulse" />
-        </p>
-      </div>
+      <ModuleHeader 
+        title="NPS Research Control" 
+        subtitle="Inteligência de Atendimento, Pesquisas Relacionais e Feedback Estruturado"
+        iconName="Star"
+      />
 
       {/* Filter Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-card border border-border-divider p-5 rounded-2xl shadow-sm">
@@ -482,14 +476,14 @@ export function NPSDashboardClient({ accounts }: Props) {
               <div className="lg:col-span-4 p-10 flex flex-col justify-center gap-10">
                 <div className="grid grid-cols-2 gap-y-8">
                   <div className="space-y-2">
-                    <p className="label-premium opacity-50">Volume Total</p>
-                    <p className="text-4xl font-extrabold text-foreground tracking-tighter leading-none">{stats.total_responses}</p>
+                    <p className="label-premium">Volume Total</p>
+                    <p className="text-4xl font-extrabold text-content-primary tracking-tighter leading-none">{stats.total_responses}</p>
                   </div>
                   <div className="space-y-2 ml-4 border-l border-border-divider pl-6">
-                    <p className="label-premium opacity-50">Média Global</p>
+                    <p className="label-premium">Média Global</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-4xl font-extrabold text-primary tracking-tighter leading-none">{stats.avg_score}</p>
-                      <span className="text-xs font-extrabold text-muted-foreground/30">/10</span>
+                      <p className="text-4xl font-extrabold text-plannera-primary tracking-tighter leading-none">{stats.avg_score}</p>
+                      <span className="text-xs font-extrabold text-content-secondary/30">/10</span>
                     </div>
                   </div>
                 </div>
@@ -576,8 +570,8 @@ export function NPSDashboardClient({ accounts }: Props) {
 
                 <div className="flex-1 min-w-0 pr-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-content-primary text-sm font-extrabold truncate group-hover:text-primary transition-all uppercase tracking-tight">{r.user_email || 'ANÔNIMO'}</span>
-                    <span className="label-premium !text-[9px] ml-auto shrink-0 flex items-center gap-2 opacity-50">
+                    <span className="text-content-primary text-sm font-extrabold truncate group-hover:text-plannera-primary transition-all uppercase tracking-tight">{r.user_email || 'ANÔNIMO'}</span>
+                    <span className="label-premium !text-[9px] ml-auto shrink-0 flex items-center gap-2">
                       {r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '—'}
                     </span>
                   </div>

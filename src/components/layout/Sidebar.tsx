@@ -78,36 +78,30 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         key={href}
         href={href}
         onClick={onMobileClose}
+        className="block"
       >
         <div className={cn(
-          "group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all relative border border-transparent",
+          "group flex items-center transition-all relative border border-transparent",
+          isCollapsed ? "justify-center p-2 rounded-xl" : "gap-4 px-4 py-3 rounded-2xl",
           active
-            ? "text-brand-primary bg-muted border-border-divider shadow-sm dark:text-white"
-            : "text-content-secondary hover:text-content-primary hover:bg-muted/50 dark:hover:bg-white/5"
+            ? "text-brand-primary bg-muted/40 border-border-divider shadow-sm dark:text-white"
+            : "text-content-secondary hover:text-content-primary hover:bg-muted/30 dark:hover:bg-white/5"
         )}>
           <Icon className={cn(
-            "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
+            "w-5 h-5 flex-shrink-0 transition-all duration-300",
             active
-              ? "text-brand-primary dark:text-white"
-              : "text-content-secondary/40 group-hover:text-brand-primary dark:group-hover:text-white"
+              ? "text-accent scale-110 drop-shadow-[0_0_8px_rgba(var(--accent),0.4)]"
+              : "text-content-secondary/40 group-hover:text-brand-primary group-hover:scale-110"
           )} />
 
           {!isCollapsed && (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex-1 whitespace-nowrap"
+              className="flex-1 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.15em]"
             >
               {label}
             </motion.span>
-          )}
-
-          {active && (
-            <motion.div
-              layoutId="active-pill"
-              className="absolute inset-0 bg-primary/5 rounded-2xl -z-10"
-              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
           )}
 
           {active && !isCollapsed && (
@@ -116,7 +110,12 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
 
           {/* Barra lateral do item ativo */}
           {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-accent rounded-full shadow-[0_0_15px_rgba(var(--accent),0.5)]" />
+            <div className={cn(
+              "absolute bg-accent rounded-full shadow-[0_0_15px_rgba(var(--accent),0.6)] transition-all",
+              isCollapsed 
+                ? "left-[-8px] top-1/2 -translate-y-1/2 w-1 h-10 opacity-100" 
+                : "left-[-16px] top-1/2 -translate-y-1/2 w-1.5 h-6"
+            )} />
           )}
         </div>
       </Link>
@@ -137,7 +136,11 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         variant="outline"
         size="icon"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-4 top-12 w-8 h-8 rounded-2xl bg-primary hover:bg-primary/90 border-primary/30 text-primary-foreground z-50 shadow-xl hidden md:flex items-center justify-center p-0 transition-all hover:scale-110 active:scale-95"
+        className={cn(
+          "absolute -right-4 w-8 h-8 rounded-2xl bg-primary hover:bg-primary/90 border-primary/30 text-primary-foreground z-50 shadow-xl hidden md:flex items-center justify-center p-0 transition-all hover:scale-110 active:scale-95",
+          isCollapsed ? "top-[36px]" : "top-[46px]"
+        )}
+        style={{ transform: 'translateY(-50%)' }}
         aria-label={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
       >
         {isCollapsed
@@ -147,10 +150,22 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </Button>
 
       {/* ── Logo ─────────────────────────────────────────── */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-4 overflow-hidden">
-          <div className="w-11 h-11 rounded-2xl bg-accent flex items-center justify-center flex-shrink-0 shadow-lg border border-accent/20">
-            <Sparkles className="w-5 h-5 text-accent-foreground" />
+      <div className={cn(
+        "border-b border-border transition-all duration-300",
+        isCollapsed ? "p-4" : "p-6"
+      )}>
+        <div className={cn(
+          "flex items-center gap-4 overflow-hidden",
+          isCollapsed ? "justify-center" : "justify-start"
+        )}>
+          <div className={cn(
+            "rounded-2xl bg-accent flex items-center justify-center flex-shrink-0 shadow-lg border border-accent/20 transition-all duration-300",
+            isCollapsed ? "w-10 h-10" : "w-11 h-11"
+          )}>
+            <Sparkles className={cn(
+              "text-accent-foreground transition-all duration-300",
+              isCollapsed ? "w-4 h-4" : "w-5 h-5"
+            )} />
           </div>
 
           {!isCollapsed && (
@@ -171,7 +186,10 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </div>
 
       {/* ── Navegação ────────────────────────────────────── */}
-      <nav className="flex-1 p-4 space-y-10 mt-4 overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <nav className={cn(
+        "flex-1 space-y-10 mt-4 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
+        isCollapsed ? "p-2" : "p-4"
+      )}>
         {/* Main Section */}
         <div className="space-y-2">
           {navItems.map((item) => (
@@ -186,7 +204,8 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
             type="button"
             onClick={() => { if (!isCollapsed) setSettingsOpen(o => !o) }}
             className={cn(
-              "w-full group flex items-center gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em] transition-all border border-transparent",
+              "w-full group flex items-center transition-all border border-transparent",
+              isCollapsed ? "justify-center p-3 rounded-xl" : "gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em]",
               settingsOpen && !isCollapsed
                 ? "text-content-primary bg-muted"
                 : "text-content-secondary/50 hover:text-content-primary hover:bg-muted/50"
@@ -228,17 +247,23 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
       </nav>
 
       {/* ── Notificações e Alertas ──────────────────────── */}
-      <div className="px-4 py-3 border-t border-border-divider bg-muted/20">
+      <div className={cn(
+        "py-3 border-t border-border-divider bg-muted/20 transition-all duration-300",
+        isCollapsed ? "px-2" : "px-4"
+      )}>
         <NotificationCenter isCollapsed={isCollapsed} />
       </div>
 
       {/* ── Rodapé do usuário ─────────────────────────────── */}
-      <div className="p-4 border-t border-border-divider bg-muted/20">
+      <div className={cn(
+        "border-t border-border-divider bg-muted/20 transition-all duration-300",
+        isCollapsed ? "p-2" : "p-4"
+      )}>
         <div className={cn(
-          "flex items-center gap-4 p-3 rounded-2xl transition-all",
-          !isCollapsed ? "hover:bg-muted/50" : "justify-center"
+          "flex items-center transition-all",
+          !isCollapsed ? "gap-4 p-3 rounded-2xl hover:bg-muted/50" : "justify-center p-2 rounded-xl"
         )}>
-          <Avatar className="w-10 h-10 border-2 border-border/50 flex-shrink-0 shadow-md">
+          <Avatar className="w-9 h-9 border-2 border-border/50 flex-shrink-0 shadow-md">
             <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-extrabold">
               {initials}

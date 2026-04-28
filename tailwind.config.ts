@@ -24,6 +24,16 @@ const config: Config = {
         'content-secondary':  'hsl(var(--content-secondary))',
         'border-divider':     'hsl(var(--border-divider))',
 
+        /* ─── Plannera Official Palette ─────────────────────────────────── */
+        'plannera-primary':    'hsl(var(--plannera-primary))',
+        'plannera-orange':     'hsl(var(--plannera-orange))',
+        'plannera-sop':        'hsl(var(--plannera-sop))',
+        'plannera-operations': 'hsl(var(--plannera-operations))',
+        'plannera-demand':     'hsl(var(--plannera-demand))',
+        'plannera-soe':        'hsl(var(--plannera-soe))',
+        'plannera-ds':         'hsl(var(--plannera-ds))',
+        'plannera-grey':       'hsl(var(--plannera-grey))',
+
         /* ─── shadcn/Radix compatibility (mantidos) ─────────────────────── */
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

@@ -39,29 +39,39 @@
     --content-secondary:  0 1% 36%;           /* Grey #5c5b5b → labels, captions */
     --border-divider:     214.3 31.8% 91.4%; /* slate-200 → card/panel borders */
 
-    /* ─── shadcn/Radix compatibility (mantidos) ───────────────────────────── */
-    --background: 210 40% 98%;      /* bg-slate-50 */
-    --foreground: 229 32% 17%;    /* Primary Deep Blue #2d3558 (aproximado) */
+    /* ─── Plannera Official Palette ───────────────────────────────────────── */
+    --plannera-primary:    229 32% 26%;  /* #2d3558 */
+    --plannera-orange:     33 92% 54%;   /* #f7941e */
+    --plannera-sop:        226 41% 38%;  /* #3a4c8a */
+    --plannera-operations: 34 91% 69%;   /* #f8b967 */
+    --plannera-demand:     8 66% 57%;    /* #d85d4b */
+    --plannera-soe:        15 81% 60%;   /* #ea724a */
+    --plannera-ds:         178 58% 40%;  /* #2ba09d */
+    --plannera-grey:       0 1% 36%;     /* #5c5b5b */
 
-    --card: 0 0% 100%;            /* bg-white */
-    --card-foreground: 229 32% 17%;
+    /* ─── shadcn/Radix compatibility ──────────────────────────────────────── */
+    --background: 210 40% 98%;
+    --foreground: 229 32% 26%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 229 32% 26%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 229 32% 17%;
+    --popover-foreground: 229 32% 26%;
 
-    --primary: 229 32% 26%;       /* Corporate Navy #2d3558 */
+    --primary: 229 32% 26%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 226 41% 38%;    /* S&OP Blue #3a4c8a */
+    --secondary: 226 41% 38%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* Grey #5c5b5b (aproximado) */
+    --muted-foreground: 0 1% 36%;
 
-    --accent: 33 92% 54%;        /* Plannera Orange #f7941e */
+    --accent: 33 92% 54%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 8 66% 57%;    /* Demand Red #d85d4b */
+    --destructive: 8 66% 57%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
@@ -72,40 +82,40 @@
   }
 
   .dark {
-    /* ─── Semantic Surface Tokens (dark) ─────────────────────────────────── */
-    --surface-background: 222.2 84% 4.9%;    /* slate-950 → PageContainer bg */
-    --surface-card:       222.2 84% 10%;      /* slate-900 → Card, Modal, Panel */
-    --content-primary:    0 0% 100%;           /* white     → titles, metrics */
-    --content-secondary:  215 20.2% 65.1%;    /* slate-400 → labels, captions */
-    --border-divider:     217.2 32.6% 17.5%;  /* slate-800 → card/panel borders */
+    /* ─── Semantic Surface Tokens (OLED Black) ───────────────────────────── */
+    --surface-background: 222.2 84% 2%;     /* Quase #000000 */
+    --surface-card:       222.2 84% 5%;     /* Muito profundo */
+    --content-primary:    0 0% 100%;        /* white */
+    --content-secondary:  215 20.2% 65.1%; /* slate-400 */
+    --border-divider:     217.2 32.6% 12%;  /* sutil */
 
-    /* ─── shadcn/Radix compatibility (mantidos) ───────────────────────────── */
-    --background: 222.2 84% 4.9%;  /* Slate 950 */
+    /* ─── shadcn/Radix compatibility (dark) ───────────────────────────────── */
+    --background: 222.2 84% 2%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 10%;        /* Slate 900 */
+    --card: 222.2 84% 5%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 8%;
+    --popover: 222.2 84% 4%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 229 32% 26%;       /* Corporate Navy #2d3558 */
+    --primary: 229 32% 26%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 226 41% 38%;    /* S&OP Blue #3a4c8a */
+    --secondary: 226 41% 38%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 217.2 32.6% 12%;
     --muted-foreground: 215 20.2% 75.1%;
 
-    --accent: 33 92% 54%;        /* Plannera Orange #f7941e */
+    --accent: 33 92% 54%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 8 66% 57%;    /* Demand Red #d85d4b */
+    --destructive: 8 66% 57%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 12%;
+    --input: 217.2 32.6% 12%;
     --ring: 33 92% 54%;
   }
 }
@@ -190,7 +200,7 @@
   }
 
   .label-premium {
-    @apply text-[10px] font-extrabold uppercase tracking-widest text-[#5c5b5b]/80 dark:text-muted-foreground/60 font-sans;
+    @apply text-[10px] font-extrabold uppercase tracking-widest text-[#2d3558]/70 dark:text-muted-foreground/80 font-sans;
   }
 
   /* Utilities de label legadas (manter por compatibilidade temporária) */

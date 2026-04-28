@@ -100,7 +100,6 @@ Do you approve? (Y/N)
 | `seo-specialist` | SEO | Meta, Schema, Rankings |
 | `documentation-writer` | Docs | README, API docs |
 | `debugger` | Debug | Error analysis |
-| `game-developer` | Games | Unity, Godot |
 | `orchestrator` | Meta | Coordination |
 
 ---
