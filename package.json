@@ -5,9 +5,7 @@
   "scripts": {
     "ollama:setup": "npx tsx scripts/setup-ollama.ts",
     "ollama:start": "npx tsx scripts/start-ollama.ts",
-    "predev": "npm run ollama:start",
     "dev": "next dev --webpack",
-    "prebuild": "npm run ollama:start",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."

@@ -86,9 +86,9 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto bg-surface-card border-border-divider text-content-primary">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold uppercase tracking-tight flex items-center justify-between pr-8">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white rounded-2xl shadow-2xl p-0">
+        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               Análise de Saúde: <span className="text-plannera-orange">{accountName}</span>
             </div>
@@ -105,36 +105,39 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
             <Loader2 className="w-8 h-8 animate-spin text-plannera-orange" />
           </div>
         ) : (
-          <div className="space-y-8 py-4">
+          <div className="space-y-8 py-4 px-6">
             {/* Chart Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between px-2">
-                <h3 className="text-xs font-black uppercase tracking-widest text-content-secondary">Evolução Temporal: Manual vs Shadow</h3>
-                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-tight">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Evolução Temporal: Manual vs Shadow</h3>
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-tight text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f7941e]" /> Manual</div>
                   <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#6366f1]" /> Shadow IA</div>
                 </div>
               </div>
-              <div className="h-[300px] w-full bg-surface-background rounded-2xl p-6 border border-border-divider">
+              <div className="h-[300px] w-full bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" vertical={false} />
                     <XAxis
                       dataKey="name"
-                      stroke="#475569"
+                      stroke="currentColor"
+                      className="text-slate-400 dark:text-slate-500"
                       fontSize={10}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      stroke="#475569"
+                      stroke="currentColor"
+                      className="text-slate-400 dark:text-slate-500"
                       fontSize={10}
                       tickLine={false}
                       axisLine={false}
                       domain={[0, 100]}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                      contentStyle={{ backgroundColor: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: '12px' }}
+                      labelStyle={{ color: 'var(--content-primary)', fontWeight: 'bold' }}
                       itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
                     />
                     <Line
@@ -162,26 +165,26 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
             </div>
 
             {/* History Table */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase tracking-widest text-content-secondary px-2">Histórico Completo de Eventos</h3>
-              <div className="rounded-2xl border border-border-divider overflow-hidden">
+            <div className="space-y-4 mb-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 px-2">Histórico Completo de Eventos</h3>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-surface-background border-b border-border-divider">
-                      <th className="px-4 py-3 font-black uppercase tracking-widest text-content-secondary text-[9px]">Referência</th>
-                      <th className="px-4 py-3 font-black uppercase tracking-widest text-content-secondary text-[9px]">Tipo / Origem</th>
-                      <th className="px-4 py-3 font-black uppercase tracking-widest text-content-secondary text-[9px] text-center">Score</th>
-                      <th className="px-4 py-3 font-black uppercase tracking-widest text-content-secondary text-[9px]">Classificação</th>
-                      <th className="px-4 py-3 font-black uppercase tracking-widest text-content-secondary text-[9px]">Nota / Raciocínio</th>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                      <th className="px-4 py-3 font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-[9px]">Referência</th>
+                      <th className="px-4 py-3 font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-[9px]">Tipo / Origem</th>
+                      <th className="px-4 py-3 font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-[9px] text-center">Score</th>
+                      <th className="px-4 py-3 font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-[9px]">Classificação</th>
+                      <th className="px-4 py-3 font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 text-[9px]">Nota / Raciocínio</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data?.history?.map((h: any) => (
-                      <tr key={h.id} className="border-b border-border-divider hover:bg-surface-background transition-colors group">
+                      <tr key={h.id} className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-4 py-4">
                           <div className="flex flex-col">
-                            <span className="font-bold text-content-primary">{format(parseISO(h.date), 'dd/MM/yyyy')}</span>
-                            <span className="text-[9px] text-content-secondary uppercase font-medium">Criado: {format(parseISO(h.created_at), 'dd/MM HH:mm')}</span>
+                            <span className="font-bold text-[#2d3558] dark:text-white">{format(parseISO(h.date), 'dd/MM/yyyy')}</span>
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-medium">Criado: {format(parseISO(h.created_at), 'dd/MM HH:mm')}</span>
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -190,7 +193,7 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
                               <span className="text-plannera-orange font-bold uppercase text-[9px]">
                                 {h.source_type === 'manual_update' ? 'Atualização Manual' : 'Lançamento Manual'}
                               </span>
-                              <span className="text-content-secondary text-[9px] italic opacity-50">#manual</span>
+                              <span className="text-slate-400 text-[9px] italic">#manual</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 text-indigo-400 font-bold uppercase text-[9px]">
@@ -206,11 +209,11 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
                             {h.manual_score ?? h.shadow_score}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-content-primary font-medium">
+                        <td className="px-4 py-4 text-[#2d3558] dark:text-white font-medium">
                           {h.classification}
                         </td>
                         <td className="px-4 py-4 max-w-xs">
-                          <p className="text-content-secondary italic text-[11px] leading-relaxed">
+                          <p className="text-slate-500 dark:text-slate-400 italic text-[11px] leading-relaxed">
                              {h.notes && h.notes.trim() !== "" ? h.notes : (h.shadow_reasoning && h.shadow_reasoning.trim() !== "" ? h.shadow_reasoning : '—')}
                           </p>
                         </td>

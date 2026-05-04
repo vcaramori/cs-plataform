@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 interface Props {
   isOpen: boolean
@@ -81,85 +83,109 @@ export function HealthScoreEditModal({ isOpen, onClose, account, onSuccess }: Pr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-white/10 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold uppercase tracking-tight">
-            Atualizar Saúde: <span className="text-plannera-orange">{account.name}</span>
+      <DialogContent className="sm:max-w-[480px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden rounded-2xl text-[#2d3558] dark:text-white">
+        <div className="h-1.5 bg-gradient-to-r from-plannera-orange to-plannera-sop w-full" />
+        
+        <DialogHeader className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
+            Saúde do <span className="text-plannera-orange">Logo</span>
           </DialogTitle>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 opacity-80 mt-1">
+            {account.name} — Atualização Estratégica
+          </p>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="score" className="text-xs font-bold uppercase tracking-widest text-slate-400">Score Manual (0-100)</Label>
-            <div className="flex items-center gap-4">
-              <Input
-                id="score"
-                type="number"
-                min="0"
-                max="100"
-                value={score}
-                onChange={(e) => setScore(Number(e.target.value))}
-                className="bg-black/20 border-white/5 text-xl font-bold h-12 text-center focus:ring-plannera-orange"
-              />
-              <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                <div 
-                  className="h-full transition-all duration-500 rounded-full"
-                  style={{ 
-                    width: `${score}%`, 
-                    backgroundColor: score >= 70 ? '#2ba09d' : score >= 40 ? '#f7941e' : '#d85d4b' 
-                  }}
-                />
+        <div className="p-6 space-y-8">
+          <div className="grid gap-8">
+            <div className="space-y-4">
+              <Label htmlFor="score" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Health Score Manual (0-100)</Label>
+              <div className="flex items-center gap-6 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <Input
+                    id="score"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={score}
+                    onChange={(e) => setScore(Number(e.target.value))}
+                    className="w-24 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-2xl font-black h-16 text-center focus:ring-plannera-orange rounded-2xl text-[#2d3558] dark:text-white"
+                  />
+                <div className="flex-1 flex flex-col gap-3">
+                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300 dark:border-slate-700 shadow-inner">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${score}%` }}
+                      className="h-full transition-all duration-500 rounded-full"
+                      style={{ 
+                        backgroundColor: score >= 70 ? '#2ba09d' : score >= 40 ? '#f7941e' : '#d85d4b' 
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Estado Atual</span>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      score >= 70 ? 'text-emerald-500' : score >= 40 ? 'text-plannera-orange' : 'text-plannera-demand'
+                    )}>
+                      {score >= 70 ? 'Saudável' : score >= 40 ? 'Em Observação' : 'Crítico'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Data de Referência</Label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-12 focus:ring-plannera-orange rounded-xl font-bold pl-10 text-[#2d3558] dark:text-white"
+                  />
+                  <CalendarIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Origem</Label>
+                <Select value={sourceType} onValueChange={setSourceType}>
+                  <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-12 rounded-xl font-bold text-[#2d3558] dark:text-white">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white rounded-xl">
+                    {SOURCE_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value} className="text-[11px] font-black uppercase tracking-tight focus:bg-plannera-orange focus:text-white">
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Data de Referência</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="bg-black/20 border-white/5 h-10 focus:ring-plannera-orange"
+              <Label htmlFor="notes" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Racional Estratégico</Label>
+              <Textarea
+                id="notes"
+                placeholder="Descreva o motivo desta atualização..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 resize-none h-28 focus:ring-plannera-orange rounded-2xl p-4 font-medium text-sm leading-relaxed text-[#2d3558] dark:text-white"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Origem</Label>
-              <Select value={sourceType} onValueChange={setSourceType}>
-                <SelectTrigger className="bg-black/20 border-white/5 h-10">
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                  {SOURCE_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value} className="text-xs font-bold uppercase tracking-tight">
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-400">Observações (opcional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Por que este score?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="bg-black/20 border-white/5 resize-none h-24 focus:ring-plannera-orange"
-            />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">Cancelar</Button>
+        <DialogFooter className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex gap-3">
+          <Button variant="outline" onClick={onClose} className="flex-1 text-[10px] font-black uppercase tracking-[0.2em] h-11 rounded-xl border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800">
+              Descartar
+            </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={loading}
-            className="bg-plannera-orange hover:bg-plannera-orange/80 text-white font-bold uppercase tracking-widest text-xs px-8"
+            className="flex-[2] bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-[0.2em] text-[11px] h-11 rounded-xl shadow-lg shadow-plannera-orange/20 transition-all active:scale-95"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar Histórico'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Atualização'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,9 @@ import { SLAPolicyEditor } from '@/components/support/SLAPolicyEditor'
 import { LevelMappingEditor } from '@/components/support/LevelMappingEditor'
 import { ArrowLeft, ShieldCheck, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { PageContainer } from '@/components/ui/page-container'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
+import { motion } from 'framer-motion'
 
 export default async function AccountSLASettings({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -56,33 +59,20 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
   const tableError = policyFetchError?.message?.includes('does not exist')
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/accounts/${id}`}
-          className="p-2 rounded-xl hover:bg-white/5 transition-colors text-slate-400 hover:text-white border border-white/5"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <ShieldCheck className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Configurações de SLA</h1>
-            <p className="text-slate-500 text-sm">{account.name}</p>
-          </div>
-        </div>
-      </div>
+    <PageContainer className="space-y-6">
+      <ModuleHeader 
+        title="Configuração de SLA" 
+        subtitle={`Políticas customizadas para ${account.name}`}
+        iconName="ShieldCheck"
+      />
 
       {/* Migration not applied */}
       {tableError && (
-        <div className="p-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="p-6 rounded-2xl border border-plannera-demand/20 bg-plannera-demand/5 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+          <AlertTriangle className="w-5 h-5 text-plannera-demand shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="text-amber-300 font-semibold text-sm">Migração pendente</p>
-            <p className="text-amber-500/70 text-sm">
+            <p className="text-plannera-demand font-black text-[11px] uppercase tracking-widest">Migração pendente</p>
+            <p className="text-content-secondary text-sm">
               A tabela <code className="font-mono bg-black/20 px-1 rounded">sla_policies</code> não existe no banco.
               Aplique a migração <code className="font-mono bg-black/20 px-1 rounded">012_support_sla.sql</code> no Supabase antes de configurar SLA.
             </p>
@@ -92,25 +82,31 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
 
       {/* No contract */}
       {!tableError && !currentPolicy && (
-        <div className="p-8 text-center border border-dashed border-white/10 rounded-2xl bg-black/20 space-y-2">
-          <ShieldCheck className="w-8 h-8 text-slate-600 mx-auto" />
-          <p className="text-white font-semibold">Nenhum contrato ativo</p>
-          <p className="text-slate-500 text-sm">
-            Associe um contrato ativo a esta conta para configurar a política de SLA.
-          </p>
+        <div className="p-12 text-center border border-dashed border-border-divider rounded-2xl bg-surface-card/40 space-y-4">
+          <div className="w-16 h-16 bg-surface-card rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-border-divider/50">
+            <ShieldCheck className="w-8 h-8 text-content-secondary opacity-20" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-content-primary font-black uppercase tracking-tight text-lg">Nenhum contrato ativo</p>
+            <p className="text-content-secondary text-sm max-w-xs mx-auto">
+              Associe um contrato ativo a esta conta para configurar a política de SLA customizada.
+            </p>
+          </div>
         </div>
       )}
 
       {/* Editors */}
       {!tableError && currentPolicy?.id && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-8 rounded-2xl border-none">
+          <section className="bg-surface-card border border-border-divider shadow-xl p-8 rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-plannera-orange/40 to-transparent" />
             <SLAPolicyEditor
               policyId={currentPolicy.id}
               initialLevels={currentPolicy.levels || []}
             />
           </section>
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-8 rounded-2xl border-none">
+          <section className="bg-surface-card border border-border-divider shadow-xl p-8 rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/40 to-transparent" />
             <LevelMappingEditor
               policyId={currentPolicy.id}
               initialMappings={currentPolicy.mappings || []}
@@ -118,6 +114,6 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
           </section>
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }

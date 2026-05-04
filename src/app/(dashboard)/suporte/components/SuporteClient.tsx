@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Account, SupportTicket } from '@/lib/supabase/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,76 +26,49 @@ const statusConfig: Record<string, { label: string, color: string, bg: string }>
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
   'in-progress': { label: 'Em Progresso', color: 'text-accent', bg: 'bg-accent/10' },
   resolved: { label: 'Resolvido', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-slate-500/10' },
+  closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-surface-background/50' },
 }
 
 const priorityConfig: Record<string, { label: string, color: string, bg: string }> = {
   critical: { label: 'Crítico', color: 'text-destructive', bg: 'bg-destructive/10' },
   high: { label: 'Alto', color: 'text-accent', bg: 'bg-accent/10' },
   medium: { label: 'Médio', color: 'text-secondary', bg: 'bg-secondary/10' },
-  low: { label: 'Baixo', color: 'text-content-secondary', bg: 'bg-slate-500/10' },
+  low: { label: 'Baixo', color: 'text-content-secondary', bg: 'bg-surface-background/50' },
 }
 
-type Account = { id: string; name: string }
-type Ticket = {
-  id: string
-  account_id: string
-  title: string
-  description: string
-  status: string
-  priority: string
-  internal_level?: string | null
-  category: string | null
-  opened_at: string
-  created_at: string
-  resolved_at: string | null
-  thread_content: string | null
-  accounts: { name: string } | null
-  sla_status_resolution?: string | null
-  sla_status_first_response?: string | null
-  resolution_deadline?: string | null
-}
+const csvExample = `account_name,title,description,status,priority
+ACME Corp,Erro no Relatório,Erro ao processar PDF,open,high`
 
-const SLA_SORT_ORDER: Record<string, number> = { vencido: 0, atencao: 1, no_prazo: 2, cumprido: 3, violado: 4 }
-const LEVEL_SORT_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+const textExample = `De: suporte@cliente.com
+Assunto: Lentidão no Dashboard
+Olá time, estamos percebendo lentidão ao carregar os dados de NPS desde ontem.`
 
-function sortTickets(tickets: Ticket[]) {
+function sortTickets(tickets: any[]) {
+  const priorityMap: any = { critical: 0, high: 1, medium: 2, low: 3 }
+  const slaMap: any = { vencido: 0, atencao: 1, no_prazo: 2 }
+  
   return [...tickets].sort((a, b) => {
-    const aStatus = a.sla_status_resolution ?? 'no_prazo'
-    const bStatus = b.sla_status_resolution ?? 'no_prazo'
-    if (aStatus !== bStatus) return (SLA_SORT_ORDER[aStatus] ?? 5) - (SLA_SORT_ORDER[bStatus] ?? 5)
-    const aLevel = a.internal_level ?? 'low'
-    const bLevel = b.internal_level ?? 'low'
-    if (aLevel !== bLevel) return (LEVEL_SORT_ORDER[aLevel] ?? 4) - (LEVEL_SORT_ORDER[bLevel] ?? 4)
-    return new Date(a.opened_at).getTime() - new Date(b.opened_at).getTime()
+    // 1. SLA Status (Resolution)
+    const slaA = slaMap[a.sla_status_resolution] ?? 99
+    const slaB = slaMap[b.sla_status_resolution] ?? 99
+    if (slaA !== slaB) return slaA - slaB
+    
+    // 2. Priority
+    const pA = priorityMap[a.priority] ?? 99
+    const pB = priorityMap[b.priority] ?? 99
+    if (pA !== pB) return pA - pB
+    
+    // 3. Date
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 }
-
-const csvExample = `account_name,title,description,status,priority,category,opened_at
-Empresa X,Erro no login,Usuário não consegue autenticar após atualização,open,high,auth,2026-03-15
-Empresa Y,Lentidão no dashboard,Dashboard demora mais de 30s para carregar,in-progress,medium,performance,2026-03-20`
-
-const textExample = `LOGO: Empresa X
-Título: Falha na integração de pagamento
-Descrição: Webhook não está sendo disparado após a confirmação do pagamento
-Status: open
-Prioridade: critical
-Categoria: integração
-Data: 2026-03-25
-
-LOGO: Empresa Y
-Título: Relatório com dados desatualizados
-Descrição: O relatório mensal está mostrando dados do mês anterior
-Status: in-progress
-Prioridade: medium
-Data: 2026-03-22`
 
 export function SuporteClient({
   accounts,
   initialTickets,
 }: {
-  accounts: Account[]
-  initialTickets: Ticket[]
+  accounts: Pick<Account, 'id' | 'name'>[]
+  initialTickets: SupportTicket[]
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'list' | 'import'>('list')
@@ -106,63 +80,38 @@ export function SuporteClient({
   const [filterPriority, setFilterPriority] = useState('all')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<{ created: number; errors: string[] } | null>(null)
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets)
+  const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets)
 
-  async function handleIngest() {
-    if (format !== 'pdf' && !content.trim()) { toast.error('Cole o conteúdo antes de importar'); return }
-    if (format === 'pdf' && !pdfFile) { toast.error('Selecione um arquivo PDF antes de importar'); return }
-    
+  const handleIngest = async () => {
     setIsSubmitting(true)
     setResult(null)
-
     try {
-      let res;
-      if (format === 'pdf') {
-        // PDF → rota dedicada com parse binário
-        const formData = new FormData()
-        formData.append('file', pdfFile!)
-        if (selectedAccountId && selectedAccountId !== 'all') {
-          formData.append('account_id', selectedAccountId)
-        }
-        res = await fetch('/api/support-tickets/pdf', {
-          method: 'POST',
-          body: formData,
-        })
-      } else if (format === 'text') {
-        // Texto livre → IA (Gemini) interpreta o conteúdo copiado
-        res = await fetch('/api/support-tickets/ingest-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content,
-            account_id: selectedAccountId !== 'all' ? selectedAccountId : undefined,
-          }),
-        })
+      const formData = new FormData()
+      formData.append('format', format)
+      formData.append('accountId', selectedAccountId)
+      
+      if (format === 'pdf' && pdfFile) {
+        formData.append('file', pdfFile)
       } else {
-        // CSV → parser estruturado sem IA
-        res = await fetch('/api/support-tickets/ingest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            format,
-            content,
-            account_id: selectedAccountId !== 'all' ? selectedAccountId : undefined,
-          }),
-        })
+        formData.append('content', content)
       }
 
+      const res = await fetch('/api/support-tickets/ingest', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!res.ok) throw new Error(await res.text())
+      
       const data = await res.json()
       setResult(data)
-
+      toast.success(`${data.created} chamados criados!`)
       if (data.created > 0) {
-        toast.success(`${data.created} ticket(s) importado(s)`)
-        setContent('')
         router.refresh()
-      } else {
-        toast.error(data.error || 'Nenhum ticket foi importado')
       }
-    } catch {
-      toast.error('Erro na importação')
+    } catch (err: any) {
+      toast.error('Erro na ingestão: ' + err.message)
+      setResult({ created: 0, errors: [err.message] })
     } finally {
       setIsSubmitting(false)
     }
@@ -179,60 +128,63 @@ export function SuporteClient({
   const attentionCount = openTickets.filter(t => t.sla_status_resolution === 'atencao' || t.sla_status_first_response === 'atencao').length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
       {/* KPI Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCardPremium
           title="Abertos"
           value={openTickets.length}
-          iconName="TicketCheck"
-          colorVariant="default"
+          icon={TicketCheck}
+          colorVariant="sop"
         />
         <StatCardPremium
           title="SLA Vencido"
           value={breachedCount}
-          iconName="AlertTriangle"
+          icon={AlertTriangle}
           colorVariant="destructive"
         />
         <StatCardPremium
           title="SLA Atenção"
           value={attentionCount}
-          iconName="AlertTriangle"
+          icon={AlertTriangle}
           colorVariant="orange"
         />
         <StatCardPremium
           title="Histórico Total"
           value={tickets.length}
-          iconName="CheckCircle2"
+          icon={CheckCircle2}
           colorVariant="ds"
         />
       </div>
 
-      {/* Link para Dashboard executivo */}
-      <div className="flex justify-end">
-        <Link href="/suporte/dashboard" className="label-premium text-primary hover:opacity-80 transition-opacity flex items-center gap-2">
-          <LayoutDashboard className="w-3.5 h-3.5" />
-          Analytics de Atendimento
+      {/* Analytics Shortcut */}
+      <div className="flex justify-end pr-2">
+        <Link 
+          href="/suporte/dashboard" 
+          className="text-[10px] font-black uppercase tracking-[0.2em] text-plannera-primary hover:text-plannera-orange transition-all flex items-center gap-2 group"
+        >
+          <LayoutDashboard className="w-4 h-4 transition-transform group-hover:scale-110" />
+          Analytics & Control Tower
         </Link>
       </div>
 
-      {/* Premium Tabs */}
-      <div className="flex justify-between items-center border-b border-border-divider pb-4">
-        <div className="flex bg-surface-card dark:bg-slate-900/50 p-1.5 rounded-2xl border border-border-divider">
+      {/* Tabs */}
+      <div className="flex justify-between items-center border-b border-border-divider/50 pb-6">
+        <div className="flex bg-surface-card border border-border-divider p-1.5 rounded-2xl shadow-inner">
           {(['list', 'import'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-6 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all relative z-10",
-                activeTab === tab ? "text-white shadow-lg" : "text-content-secondary hover:text-content-primary"
+                "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative z-10",
+                activeTab === tab ? "text-white" : "text-content-secondary hover:text-content-primary"
               )}
             >
-              {tab === 'list' ? `Fila de Chamados (${tickets.length})` : 'Ingestão Inteligente'}
+              {tab === 'list' ? `Fila Ativa (${tickets.length})` : 'Ingestão Inteligente'}
               {activeTab === tab && (
                 <motion.div 
-                  layoutId="active-tab"
-                  className="absolute inset-0 bg-primary rounded-lg -z-10"
+                  layoutId="active-tab-support"
+                  className="absolute inset-0 bg-plannera-primary rounded-xl -z-10 shadow-lg shadow-plannera-primary/20"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -263,31 +215,30 @@ export function SuporteClient({
                 setIsSubmitting(false)
               }
             }}
-            className="rounded-xl h-9 gap-2 shadow-lg hover:scale-105"
+            className="bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-xl h-11 px-6 shadow-lg shadow-plannera-orange/20"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Mail className="w-4 h-4" />
+              <Mail className="w-4 h-4 mr-2" />
             )}
             Sincronizar E-mails
           </Button>
         )}
       </div>
 
-      {/* Lista */}
       {activeTab === 'list' && (
-        <div className="space-y-4">
-          {/* Filtros */}
-          <div className="flex gap-4 items-center flex-wrap bg-surface-background border border-border-divider p-4 rounded-2xl">
-            <div className="flex items-center gap-2 pl-1 shrink-0">
-              <Filter className="w-3.5 h-3.5 text-primary" />
-              <span className="label-premium">Filtrar Visão:</span>
+        <div className="space-y-6">
+          {/* Filters */}
+          <div className="flex gap-4 items-center flex-wrap bg-surface-card border border-border-divider p-5 rounded-[1.5rem] shadow-xl">
+            <div className="flex items-center gap-3 pl-2 pr-4 border-r border-border-divider/50 shrink-0">
+              <Filter className="w-4 h-4 text-plannera-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-content-primary">Filtros</span>
             </div>
             <SearchableSelect
               value={filterStatus}
               onValueChange={setFilterStatus}
-              className="h-9 w-44 rounded-xl border-border/50 shadow-sm"
+              className="h-10 w-44 rounded-xl border-border-divider shadow-sm text-[10px] font-bold uppercase tracking-tight"
               options={[
                 { label: 'Todos os Status', value: 'all' },
                 ...Object.entries(statusConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -296,7 +247,7 @@ export function SuporteClient({
             <SearchableSelect
               value={filterPriority}
               onValueChange={setFilterPriority}
-              className="h-9 w-48 rounded-xl border-border/50 shadow-sm"
+              className="h-10 w-48 rounded-xl border-border-divider shadow-sm text-[10px] font-bold uppercase tracking-tight"
               options={[
                 { label: 'Todas as Prioridades', value: 'all' },
                 ...Object.entries(priorityConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -307,96 +258,94 @@ export function SuporteClient({
                 variant="ghost"
                 size="sm"
                 onClick={() => { setFilterStatus('all'); setFilterPriority('all') }}
-                className="label-premium text-primary hover:bg-primary/10 transition-all"
+                className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all"
               >
                 Limpar Busca
               </Button>
             )}
           </div>
 
-          <Card className="border-border-divider shadow-2xl overflow-hidden bg-surface-card">
-            <CardContent className="p-0">
-              {filteredTickets.length === 0 ? (
-                <div className="text-center py-24 border-dashed border-2 border-border/50 m-4 rounded-3xl">
-                  <TicketCheck className="w-12 h-12 mx-auto mb-4 text-muted-foreground/20" />
-                  <p className="label-premium opacity-40">Nenhum chamado pendente nesta visão</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+          <div className="bg-surface-card border border-border-divider rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-surface-background/50">
+                  <TableRow className="hover:bg-transparent border-b border-border-divider">
+                    <TableHead className="pl-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">LOGO / Cliente</TableHead>
+                    <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Título do Chamado</TableHead>
+                    <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Status</TableHead>
+                    <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Prioridade</TableHead>
+                    <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">SLA Resolução</TableHead>
+                    <TableHead className="pr-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-right">Abertura</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <AnimatePresence mode='popLayout'>
+                    {filteredTickets.length === 0 ? (
                       <TableRow>
-                        <TableHead className="pl-8 text-[11px]">Ticket</TableHead>
-                        <TableHead className="text-[11px]">Categoria</TableHead>
-                        <TableHead className="text-[11px]">Responsável</TableHead>
-                        <TableHead className="text-[11px]">Prioridade</TableHead>
-                        <TableHead className="text-[11px]">Status</TableHead>
-                        <TableHead className="text-[11px]">SLA Resolução</TableHead>
-                        <TableHead className="pr-8 text-right text-[11px]">Abertura</TableHead>
+                        <TableCell colSpan={6} className="h-64 text-center">
+                          <div className="flex flex-col items-center justify-center opacity-30 grayscale">
+                            <TicketCheck className="w-12 h-12 mb-4" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em]">Nenhum chamado pendente</p>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <AnimatePresence mode='popLayout'>
-                        {filteredTickets.map((t, index) => {
-                          const sConf = statusConfig[t.status] || statusConfig.open
-                          const pConf = priorityConfig[t.priority] || priorityConfig.low
-                          return (
-                            <motion.tr 
-                              key={t.id} 
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.03 }}
-                              onClick={() => router.push(`/suporte/${t.id}`)}
-                              className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer h-16"
-                            >
-                              <TableCell className="p-4 pl-8 whitespace-nowrap">
-                                <span className="text-[11px] font-extrabold uppercase tracking-tight text-content-primary">
-                                  {t.accounts?.name ?? '—'}
-                                </span>
-                              </TableCell>
-                              <TableCell className="pl-8 py-4">
-                                <span className="text-content-primary text-[13px] font-extrabold tracking-tight line-clamp-1">{t.title}</span>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-[11px] font-extrabold uppercase tracking-widest text-content-secondary line-clamp-1">
-                                  {t.category || 'Incidente Geral'}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-center whitespace-nowrap">
-                                <StatusBadgeGuard 
-                                  label={sConf.label} 
-                                  type={t.status as any} 
-                                  className="w-full justify-center"
-                                />
-                              </TableCell>
-                              <TableCell className="text-center whitespace-nowrap">
-                                <StatusBadgeGuard 
-                                  label={pConf.label} 
-                                  type={t.priority as any} 
-                                  className="w-full justify-center"
-                                />
-                              </TableCell>
-                              <TableCell className="text-center whitespace-nowrap">
-                                {t.sla_status_resolution
-                                  ? <SLABadge status={t.sla_status_resolution as any} />
-                                  : <span className="text-muted-foreground/30 text-xs">—</span>}
-                              </TableCell>
-                              <TableCell className="pr-8 text-right">
-                                <span className="text-content-secondary font-extrabold text-[11px] tracking-widest">
-                                  {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
-                                </span>
-                              </TableCell>
-                            </motion.tr>
-                          )
-                        })}
-                      </AnimatePresence>
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+                    ) : (
+                      filteredTickets.map((t, index) => (
+                        <motion.tr 
+                          key={t.id} 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.02 }}
+                          onClick={() => router.push(`/suporte/${t.id}`)}
+                          className="group border-b border-border-divider hover:bg-white/5 transition-all cursor-pointer h-20"
+                        >
+                          <TableCell className="pl-10">
+                            <span className="text-[11px] font-black uppercase tracking-tight text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
+                              {t.accounts?.name ?? '—'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <span className="text-xs font-black text-content-primary line-clamp-1 group-hover:text-plannera-primary transition-colors">
+                                {t.title}
+                              </span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40">
+                                {t.category || 'Incidente Geral'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <StatusBadgeGuard 
+                              label={statusConfig[t.status]?.label || t.status} 
+                              type={t.status as any} 
+                              className="mx-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <StatusBadgeGuard 
+                              label={priorityConfig[t.priority]?.label || t.priority} 
+                              type={t.priority as any} 
+                              className="mx-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {t.sla_status_resolution
+                              ? <SLABadge status={t.sla_status_resolution as any} />
+                              : <span className="text-[9px] font-black uppercase tracking-widest opacity-20">—</span>}
+                          </TableCell>
+                          <TableCell className="pr-10 text-right">
+                            <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-60">
+                              {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
+                            </span>
+                          </TableCell>
+                        </motion.tr>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </div>
       )}
 

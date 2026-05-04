@@ -46,18 +46,19 @@ export default function LoginPage() {
              <Sparkles className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-3xl font-heading font-extrabold text-white tracking-tight uppercase">CS-Continuum</h1>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2 opacity-70">Control Tower — Plannera DS</p>
+          <p className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Control Tower — Plannera DS</p>
         </div>
 
-        <Card className="glass-card border-none shadow-2xl">
-          <CardHeader className="pb-4">
+        <Card className="glass-card border-none shadow-2xl overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-plannera-orange to-plannera-sop w-full" />
+          <CardHeader className="pb-4 pt-8">
             <CardTitle className="text-white text-lg font-bold uppercase tracking-tight">Autenticação</CardTitle>
-            <CardDescription className="text-slate-500 text-xs font-medium uppercase tracking-widest">Insira suas credenciais Plannera</CardDescription>
+            <CardDescription className="text-content-secondary/80 text-xs font-medium uppercase tracking-widest">Insira suas credenciais Plannera</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">E-mail Corporativo</Label>
+                <Label htmlFor="email" className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">E-mail Corporativo</Label>
                 <Input
                   id="email"
                   type="email"
@@ -65,11 +66,11 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 focus:border-plannera-orange h-11 rounded-xl transition-all"
+                  className="bg-black/20 border-white/5 text-white placeholder:text-content-secondary/30 focus:border-plannera-orange h-11 rounded-xl transition-all"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Senha de Acesso</Label>
+                <Label htmlFor="password" className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">Senha de Acesso</Label>
                 <Input
                   id="password"
                   type="password"
@@ -77,7 +78,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 focus:border-plannera-orange h-11 rounded-xl transition-all"
+                  className="bg-black/20 border-white/5 text-white placeholder:text-content-secondary/30 focus:border-plannera-orange h-11 rounded-xl transition-all"
                 />
               </div>
               {error && (

@@ -83,6 +83,9 @@ export async function generateEmbedding(
     const response = await ai.models.embedContent({
       model: env.gemini.embeddingModel || 'text-embedding-004',
       contents: text,
+      config: {
+        outputDimensionality: env.gemini.embeddingDimensions,
+      },
     })
 
     const embedding = response.embeddings?.[0]?.values ?? []

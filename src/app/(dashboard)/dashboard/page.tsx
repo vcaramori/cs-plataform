@@ -7,6 +7,7 @@ import { PortfolioHealthCard } from "./components/PortfolioHealthCard"
 import { AccountsTable } from "./components/AccountsTable"
 import { NPSTestLoader } from "./components/NPSTestLoader"
 import { ModuleHeader } from "@/components/shared/guardians/ModuleHeader"
+import { Suspense } from "react"
 
 export default async function DashboardPage() {
   const supabase = await getSupabaseServerClient()
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
 
   const { data: accounts } = await supabase
     .from("accounts")
-    .select(`*, contracts(id, mrr, arr, renewal_date, service_type, status, contracted_hours_monthly, csm_hour_cost)`)
+    .select(`*, contracts(id, mrr, arr, renewal_date, service_type, status, contracted_hours_monthly, csm_hour_cost), account_risk_assessments(risk_score, sentiment_label, analyzed_at)`)
     .order("name")
 
   const safeAccounts = accounts ?? []
@@ -27,7 +28,12 @@ export default async function DashboardPage() {
     return sum + activeMRR
   }, 0)
 
-  const atRisk = safeAccounts.filter(a => a.health_score < 40).length
+  const atRisk = safeAccounts.filter(a => {
+    const healthRisk = a.health_score < 40
+    const riskAssessments = Array.isArray(a.account_risk_assessments) ? a.account_risk_assessments : []
+    const aiRisk = riskAssessments.some((r: any) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
+    return healthRisk || aiRisk
+  }).length
   const avgHealth = safeAccounts.length
     ? Math.round(safeAccounts.reduce((sum, a) => sum + a.health_score, 0) / safeAccounts.length)
     : 0
@@ -95,6 +101,7 @@ export default async function DashboardPage() {
         />
       )}
 
+
       <ModuleHeader 
         title="Portfolio Control" 
         subtitle="Visão Executiva de Clientes e Receita Recorrente"
@@ -103,21 +110,25 @@ export default async function DashboardPage() {
 
       {/* KPI Section */}
       <section className="relative">
-        <PortfolioHealthCard
-          totalAccounts={safeAccounts.length}
-          totalActiveContracts={totalActiveContracts}
-          totalMRR={totalMRR}
-          avgHealthScore={avgHealth}
-          atRisk={atRisk}
-          renewalsSoon={renewalsSoon}
-          npsScore={npsScore}
-        />
+        <Suspense fallback={<div className="h-32 animate-pulse bg-accent/20 rounded-2xl" />}>
+          <PortfolioHealthCard
+            totalAccounts={safeAccounts.length}
+            totalActiveContracts={totalActiveContracts}
+            totalMRR={totalMRR}
+            avgHealthScore={avgHealth}
+            atRisk={atRisk}
+            renewalsSoon={renewalsSoon}
+            npsScore={npsScore}
+          />
+        </Suspense>
       </section>
 
       {/* Main Table Section */}
       <section className="relative pb-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none rounded-3xl" />
-        <AccountsTable accounts={safeAccounts as any} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none rounded-2xl" />
+        <Suspense fallback={<div className="h-96 animate-pulse bg-accent/10 rounded-2xl" />}>
+          <AccountsTable accounts={safeAccounts as any} />
+        </Suspense>
       </section>
     </PageContainer>
   )

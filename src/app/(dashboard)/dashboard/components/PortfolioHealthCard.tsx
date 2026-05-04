@@ -1,5 +1,8 @@
+'use client'
+
 import { Building2, DollarSign, Heart, AlertTriangle, CalendarClock, Star } from 'lucide-react'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   totalAccounts: number
@@ -20,6 +23,7 @@ export function PortfolioHealthCard({
   renewalsSoon,
   npsScore,
 }: Props) {
+  const router = useRouter()
   const isMrrMillion = totalMRR >= 1000000
   const isArrMillion = (totalMRR * 12) >= 1000000
 
@@ -31,6 +35,7 @@ export function PortfolioHealthCard({
         status={`${totalActiveContracts === 1 ? 'Conta' : 'Contas'}: ${totalActiveContracts}`}
         iconName="Building2"
         colorVariant="default"
+        onClick={() => router.push('/dashboard')}
       />
       <StatCardPremium
         title={"MRR TOTAL (R$)"}
@@ -57,9 +62,10 @@ export function PortfolioHealthCard({
       <StatCardPremium
         title={"LOGOS EM RISCO"}
         value={atRisk}
-        status="Health Score < 40"
+        status="Risk or Health < 40"
         iconName="AlertTriangle"
         colorVariant={atRisk > 0 ? 'destructive' : 'default'}
+        onClick={() => router.push('/dashboard?filter=at-risk')}
       />
       <StatCardPremium
         title={"RENOVAÇÕES (30D)"}

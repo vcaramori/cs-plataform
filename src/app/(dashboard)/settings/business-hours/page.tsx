@@ -15,7 +15,7 @@ export default async function GlobalBusinessHoursPage() {
       <div className="flex flex-col gap-2 relative">
         <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-border-divider flex items-center justify-center shadow-sm">
              <Clock className="w-5 h-5 text-[#2d3558] dark:text-primary" />
           </div>
           <h1 className="h1-page">Horário Operacional</h1>

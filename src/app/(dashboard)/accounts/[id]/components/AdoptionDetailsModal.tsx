@@ -70,7 +70,8 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
 
       if (adoptionRes.ok) {
         const data = await adoptionRes.json()
-        setRecords(data)
+        // API returns { adoption: [], plan_summary: {} }
+        setRecords(Array.isArray(data) ? data : (data.adoption ?? []))
       }
       if (usersRes.ok) {
         const data = await usersRes.json()

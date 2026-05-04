@@ -127,53 +127,51 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
   return (
     <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-none text-white max-w-2xl overflow-hidden p-0 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl text-[#2d3558] dark:text-white max-w-2xl overflow-hidden p-0 rounded-2xl">
         
         {/* Header Area with Subtle Glow */}
-        <div className="relative h-24 bg-gradient-to-r from-indigo-900/40 to-black/40 border-b border-white/5 flex items-center px-8 justify-between">
-           <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full opacity-20 pointer-events-none" />
+        <div className="relative h-24 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center px-10 justify-between">
+           <div className="absolute inset-0 bg-plannera-primary/5 blur-3xl rounded-full opacity-50 pointer-events-none" />
            
            <div className="flex items-center gap-4 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-                 <Clock className="w-6 h-6 text-indigo-400" />
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                 <Clock className="w-6 h-6 text-plannera-primary" />
               </div>
               <div>
-                 <DialogTitle className="text-xl font-extrabold uppercase tracking-tighter leading-none mb-1">
+                 <DialogTitle className="text-xl font-black uppercase tracking-tighter leading-none mb-1 text-[#2d3558] dark:text-white">
                    {isEditing ? 'Configurar Inteligência' : 'Análise de Esforço'}
                  </DialogTitle>
-                 <DialogDescription className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest opacity-70 leading-none">
+                 <DialogDescription className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
                     Refinamento de Log Automático com I.A
                  </DialogDescription>
               </div>
            </div>
 
-           <div className="flex items-center gap-2 relative z-10">
-              {isEditing ? (
-                 <Button 
-                   variant="ghost" 
-                   size="sm" 
-                   onClick={() => setIsEditing(false)}
-                   className="text-slate-400 hover:text-white font-extrabold uppercase tracking-widest text-[10px]"
-                 >
-                    Cancelar
-                 </Button>
-              ) : (
+            <div className="flex items-center gap-3 relative z-10">
+              {!isEditing && (
                 <Button 
                    variant="outline" 
                    size="sm" 
                    onClick={() => setIsEditing(true)}
-                   className="bg-indigo-600/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-600 hover:text-white font-extrabold uppercase tracking-widest text-[10px] h-9 gap-2"
+                   className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[10px] h-9 gap-2 shadow-sm"
                 >
                    <Edit2 className="w-3.5 h-3.5" /> Editar Log
                 </Button>
               )}
-              <DialogClose className="opacity-40 hover:opacity-100 transition-opacity ml-2">
-                 <X className="w-5 h-5" />
-              </DialogClose>
+              {isEditing && (
+                 <Button 
+                   variant="ghost" 
+                   size="sm" 
+                   onClick={() => setIsEditing(false)}
+                   className="text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[10px]"
+                 >
+                    Cancelar
+                 </Button>
+              )}
            </div>
         </div>
 
-        <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/5">
+        <div className="p-10 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
           {entry && (
             <AnimatePresence mode="wait">
               <motion.div 
@@ -181,68 +179,69 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.02 }}
-                className="space-y-8"
+                className="space-y-10"
               >
                 {/* Information Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20 p-6 rounded-2xl border border-white/5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                   
                   {/* Account Selector */}
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
-                       <Target className="w-3 h-3" /> LOGO Vinculado
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                       <Target className="w-3.5 h-3.5 text-plannera-primary" /> Conta Alvo
                     </p>
                     {isEditing ? (
                       <SearchableSelect
                         options={accounts.map(a => ({ value: a.id, label: a.name.toUpperCase() }))}
                         value={editForm.account_id || ''}
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, account_id: val }))}
+                        className="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                       />
                     ) : (
-                      <p className="text-sm font-extrabold text-white uppercase tracking-tight pl-1">{entry.accounts?.name ?? '—'}</p>
+                      <p className="text-sm font-black text-[#2d3558] dark:text-white uppercase tracking-tight pl-1">{entry.accounts?.name ?? '—'}</p>
                     )}
                   </div>
 
                   {/* Date Picker */}
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
-                       <History className="w-3 h-3" /> Data de Registro
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                       <Calendar className="w-3.5 h-3.5 text-plannera-primary" /> Realizado em
                     </p>
                     {isEditing ? (
                       <Input
                         type="date"
                         value={editForm.date || ''}
                         onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                        className="bg-slate-900/50 border-white/5 h-10 text-sm font-bold uppercase"
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-11 text-sm font-black uppercase rounded-xl"
                       />
                     ) : (
-                      <p className="text-sm font-extrabold text-white uppercase tracking-tight pl-1">
+                      <p className="text-sm font-black text-[#2d3558] dark:text-white uppercase tracking-tight pl-1">
                         {format(new Date(entry.date + 'T12:00:00'), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                       </p>
                     )}
                   </div>
 
                   {/* Activity Type */}
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
-                       <Zap className="w-3 h-3" /> Tipo de Atividade
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                       <Zap className="w-3.5 h-3.5 text-plannera-primary" /> Tipo de Atividade
                     </p>
                     {isEditing ? (
                       <Select
                         value={editForm.activity_type}
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, activity_type: val }))}
                       >
-                        <SelectTrigger className="bg-slate-900/50 border-white/5 h-10 text-[11px] font-extrabold uppercase tracking-widest text-indigo-400">
+                        <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-11 text-[11px] font-black uppercase tracking-widest text-[#2d3558] dark:text-white rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white">
                           {Object.entries(activityLabels).map(([val, label]) => (
-                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-extrabold">{label}</SelectItem>
+                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-black">{label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     ) : (
                       <div className="flex">
-                         <Badge className="bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 font-extrabold uppercase tracking-widest text-[9px]">
+                         <Badge className="bg-plannera-primary/10 text-plannera-primary border border-plannera-primary/20 px-4 py-1.5 font-black uppercase tracking-widest text-[9px] rounded-full shadow-sm">
                            {activityLabels[entry.activity_type] || entry.activity_type}
                          </Badge>
                       </div>
@@ -250,44 +249,44 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   </div>
 
                   {/* Hours */}
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-2 text-[10px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">
-                       <Clock className="w-3 h-3" /> Duração Ingerida
+                  <div className="space-y-3">
+                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                       <Clock className="w-3.5 h-3.5 text-plannera-primary" /> Tempo Dedicado
                     </p>
                     {isEditing ? (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                          <MaskedInput 
                           maskType="decimal"
                           value={String(editForm.parsed_hours || 0)}
                           onValueChange={(val) => setEditForm(prev => ({ ...prev, parsed_hours: parseFloat(val) || 0 }))}
-                          className="bg-slate-900/50 border-white/5 h-10 text-sm font-extrabold w-28"
+                          className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white h-11 text-sm font-black w-32 rounded-xl"
                         />
-                        <span className="text-[10px] font-extrabold text-slate-600 uppercase">Horas Decimais</span>
+                        <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase">Horas</span>
                       </div>
                     ) : (
-                      <div className="flex items-baseline gap-1 pl-1">
-                         <span className="text-xl font-extrabold text-indigo-400 leading-none">{entry.parsed_hours}</span>
-                         <span className="text-[10px] font-extrabold text-slate-500 uppercase">hrs</span>
+                      <div className="flex items-baseline gap-2 pl-1">
+                         <span className="text-2xl font-black text-[#2d3558] dark:text-white leading-none tabular-nums">{entry.parsed_hours}</span>
+                         <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">hrs</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Description Textarea / Narrative */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 ml-1">
-                     <Activity className="w-4 h-4 text-indigo-400" />
-                     <p className="text-[11px] text-white uppercase font-extrabold tracking-[0.2em]">Narrativa Estruturada (I.A)</p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 ml-1">
+                     <Brain className="w-5 h-5 text-plannera-primary" />
+                     <p className="text-[11px] text-[#2d3558] dark:text-white uppercase font-black tracking-[0.2em]">Contexto Operacional</p>
                   </div>
                   {isEditing ? (
                     <Textarea
                       value={editForm.parsed_description || ''}
                       onChange={(e) => setEditForm(prev => ({ ...prev, parsed_description: e.target.value }))}
-                      className="bg-black/40 border-white/5 text-slate-200 min-h-[140px] text-base font-bold tracking-tight rounded-2xl p-6 focus-visible:ring-indigo-500/50"
+                      className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white min-h-[160px] text-base font-bold tracking-tight rounded-2xl p-8 focus-visible:ring-plannera-primary/30 shadow-inner"
                       placeholder="Descreva detalhadamente o esforço executado..."
                     />
                   ) : (
-                    <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 text-slate-100 text-base font-bold tracking-tight leading-relaxed shadow-inner">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white text-base font-medium tracking-tight leading-relaxed shadow-inner">
                       {entry.parsed_description}
                     </div>
                   )}
@@ -295,9 +294,9 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
                 {/* Grounding Info */}
                 {!isEditing && (
-                  <div className="space-y-3 opacity-40 hover:opacity-100 transition-opacity">
-                    <p className="text-[9px] text-slate-500 uppercase font-extrabold tracking-[0.2em] ml-1">Insight Original (Input de voz/texto)</p>
-                    <div className="bg-black/20 p-4 rounded-xl border border-white/5 text-slate-500 italic text-[11px] font-medium leading-relaxed">
+                  <div className="space-y-4 opacity-40 hover:opacity-100 transition-opacity">
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-2">Insight Original (Input de voz/texto)</p>
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 italic text-[11px] font-medium leading-relaxed shadow-sm">
                       &quot;{entry.natural_language_input}&quot;
                     </div>
                   </div>
@@ -308,14 +307,14 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-white/5 bg-black/40 flex items-center justify-between">
+        <div className="p-10 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
             {entry && !isEditing ? (
                <Button 
                  variant="ghost" 
                  onClick={handleDelete}
-                 className="text-red-500/60 hover:text-red-500 hover:bg-red-500/10 font-extrabold uppercase tracking-widest text-[10px] gap-2 h-10 px-4"
+                 className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 font-black uppercase tracking-widest text-[10px] gap-2 h-11 px-6 rounded-xl transition-all"
                >
-                  <Trash2 className="w-4 h-4" /> Remover Registro
+                  <Trash2 className="w-4.5 h-4.5" /> Remover Registro
                </Button>
             ) : <div />}
 
@@ -324,7 +323,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   <Button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold uppercase tracking-[0.2em] h-11 px-8 shadow-[0_0_20px_rgba(99,102,241,0.4)] gap-2 group"
+                    className="bg-plannera-primary hover:bg-plannera-primary/90 text-white font-black uppercase tracking-[0.2em] h-12 px-10 shadow-xl shadow-plannera-primary/20 gap-3 group rounded-xl active:scale-[0.98] transition-all"
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 group-hover:scale-125 transition-transform" />}
                     Sincronizar Inteligência
@@ -332,6 +331,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                </div>
             )}
         </div>
+
       </DialogContent>
     </Dialog>
   )

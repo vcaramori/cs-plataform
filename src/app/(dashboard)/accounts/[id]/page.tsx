@@ -20,7 +20,23 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       time_entries (*),
       success_goals (*),
       adoption_metrics (*),
-      feature_adoption (*)
+      feature_adoption (*),
+      account_risk_assessments (*),
+      nps_responses (
+        *,
+        nps_answers (
+          *,
+          nps_questions (*)
+        )
+      ),
+      account_playbooks (
+        *,
+        template:playbook_templates (*),
+        tasks:account_playbook_tasks (
+          *,
+          task:playbook_tasks (*)
+        )
+      )
     `)
     .eq('id', id)
     .single()
@@ -37,6 +53,15 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const successGoals = Array.isArray(account.success_goals) ? account.success_goals : (account.success_goals ? [account.success_goals] : [])
   const adoptionMetrics = Array.isArray(account.adoption_metrics) ? account.adoption_metrics : (account.adoption_metrics ? [account.adoption_metrics] : [])
   const adoptionRecords = Array.isArray(account.feature_adoption) ? account.feature_adoption : (account.feature_adoption ? [account.feature_adoption] : [])
+  const playbooks = Array.isArray(account.account_playbooks) ? account.account_playbooks : (account.account_playbooks ? [account.account_playbooks] : [])
+  const riskAssessments = Array.isArray(account.account_risk_assessments) ? account.account_risk_assessments : (account.account_risk_assessments ? [account.account_risk_assessments] : [])
+  const npsResponses = Array.isArray(account.nps_responses) ? account.nps_responses : (account.nps_responses ? [account.nps_responses] : [])
+
+  // Identificar o playbook ativo (em progresso)
+  const activePlaybook = playbooks.find((pb: any) => pb.status === 'in_progress')
+
+  // Identificar o último risk assessment da IA
+  const latestRiskAssessment = riskAssessments.sort((a: any, b: any) => new Date(b.analyzed_at).getTime() - new Date(a.analyzed_at).getTime())[0] ?? null
 
   // Calcular Score de Adoção Real para o Header
   const total = adoptionRecords.length
@@ -73,6 +98,10 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         contacts={contacts}
         successGoals={successGoals}
         adoptionMetrics={adoptionMetrics}
+        activePlaybook={activePlaybook}
+        playbooks={playbooks}
+        latestRiskAssessment={latestRiskAssessment}
+        npsResponses={npsResponses}
       />
     </div>
   )

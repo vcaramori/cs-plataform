@@ -115,11 +115,12 @@ interface AccountFormProps {
   mode?: 'create' | 'edit'
 }
 
-const INPUT = 'bg-accent/30 border-border text-foreground h-10 rounded-xl text-sm focus-visible:ring-primary'
+const INPUT = 'bg-surface-background/50 dark:bg-slate-900/40 border-border/50 text-foreground h-10 rounded-xl text-sm focus-visible:ring-primary/30 transition-all'
 const LABEL = 'text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest'
 
 export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) {
   const router = useRouter()
+  const isEdit = mode === 'edit'
   const [loading, setLoading] = useState(false)
   const [searchingCep, setSearchingCep] = useState(false)
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
@@ -271,22 +272,23 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   return (
     <PageContainer>
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="outline" size="icon" className="w-10 h-10 rounded-xl">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <h1 className="text-2xl font-extrabold text-foreground tracking-tighter uppercase whitespace-nowrap">
-                {mode === 'create' ? 'Nova Logo' : 'Editar Logo'}
-              </h1>
-            </div>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-              Gestão estratégica de clientes plannera
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="rounded-full hover:bg-primary/10 text-primary transition-all duration-300"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black text-content-primary tracking-tighter uppercase">
+              {isEdit ? 'Editar Logo' : 'Nova Logo'}
+            </h1>
+            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest opacity-60">
+              {isEdit ? 'Atualize as informações cadastrais e comerciais' : 'Cadastre uma nova conta no ecossistema'}
             </p>
           </div>
         </div>
@@ -390,11 +392,11 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 </div>
                 <div className="space-y-0.5">
                   <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Localização</CardTitle>
-                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Endereço e presença física</p>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Geografia e Operação</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 bg-accent/30 px-3 py-1.5 rounded-xl border border-border">
-                <Label className={cn(LABEL, 'mb-0')}>Inter</Label>
+              <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10 self-center">
+                <Label className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 leading-none">Inter</Label>
                 <Switch
                   checked={isInternational}
                   onCheckedChange={(v) => setValue('is_international', v)}
@@ -420,24 +422,24 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-[100px_1fr_150px_1fr_100px] gap-6">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
+              <div className="space-y-2 md:col-span-1">
                 <Label className={LABEL}>Num</Label>
                 <Input {...register('number')} placeholder="1000" className={INPUT} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label className={LABEL}>Complemento</Label>
                 <Input {...register('complement')} placeholder="Sala 42..." className={INPUT} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label className={LABEL}>Bairro</Label>
                 <Input {...register('neighborhood')} placeholder="Centro" className={INPUT} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label className={LABEL}>Cidade</Label>
                 <Input {...register('city')} placeholder="São Paulo" className={INPUT} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label className={LABEL}>UF</Label>
                 <Input {...register('state')} placeholder="SP" className={INPUT} />
               </div>
@@ -484,7 +486,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
           <CardContent className="px-8 pb-10 space-y-6">
             {fields.length === 0 && (
               <div className="py-20 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-4 text-muted-foreground/30">
-                <div className="p-4 rounded-full bg-accent/30">
+                <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-900/50">
                   <FileText className="w-10 h-10" />
                 </div>
                 <p className="text-xs font-extrabold uppercase tracking-widest">Nenhum contrato cadastrado</p>
@@ -492,7 +494,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             )}
 
             {fields.map((field, index) => (
-              <Card key={field.id} className="bg-accent/20 border-border rounded-2xl p-6 relative group/card shadow-sm hover:shadow-md transition-all">
+              <Card key={field.id} className="bg-surface-card dark:bg-slate-900/20 border-border/50 rounded-2xl p-6 relative group/card shadow-sm hover:shadow-md transition-all">
                 <div className="absolute -top-3 -right-3 opacity-0 group-hover/card:opacity-100 transition-opacity z-20">
                   <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="h-8 w-8 rounded-full shadow-lg">
                     <Trash2 className="w-4 h-4" />
@@ -502,14 +504,14 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <Label className={LABEL}>Código</Label>
-                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-accent/30 border-border" />
+                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
                   </div>
                   <div className="space-y-2">
                     <Label className={LABEL}>Status</Label>
                     <SearchableSelect
                       value={watch(`contracts.${index}.status`)}
                       onValueChange={(v) => setValue(`contracts.${index}.status`, v as any)}
-                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
+                      className="h-10 text-xs rounded-xl bg-surface-background/50 dark:bg-slate-900/40 border-border/50"
                       options={[
                         { label: 'Ativa', value: 'active' },
                         { label: 'Em Negociação', value: 'in-negotiation' },
@@ -523,7 +525,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <SearchableSelect
                       value={watch(`contracts.${index}.contract_type`)}
                       onValueChange={(v) => setValue(`contracts.${index}.contract_type`, v as any)}
-                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
+                      className="h-10 text-xs rounded-xl bg-surface-background/50 dark:bg-slate-900/40 border-border/50"
                       options={[
                         { label: 'Inicial', value: 'initial' },
                         { label: 'Aditivo', value: 'additive' },
@@ -548,7 +550,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* Financial Engine */}
-                  <div className="col-span-2 space-y-4 p-5 bg-accent/30 rounded-2xl border border-border">
+                  <div className="col-span-2 space-y-4 p-5 bg-surface-background/30 dark:bg-slate-900/30 rounded-2xl border border-border/50">
                     <div className="flex items-center justify-between">
                       <Label className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">Financial Engine</Label>
                       <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
@@ -641,16 +643,16 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className={LABEL}>Início</Label>
-                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs bg-accent/30 border-border" />
+                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
                       </div>
                       <div className="space-y-2">
                         <Label className={LABEL}>Renovação</Label>
-                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs bg-accent/30 border-border" />
+                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className={LABEL}>Notas Rápidas</Label>
-                      <Textarea {...register(`contracts.${index}.notes`)} className="min-h-[80px] text-xs bg-accent/30 border-border" placeholder="Observações do contrato..." />
+                      <Textarea {...register(`contracts.${index}.notes`)} className="min-h-[80px] text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" placeholder="Observações do contrato..." />
                     </div>
                     {mode === 'edit' && (
                       <div className="flex justify-end pt-2">
@@ -667,7 +669,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* SLA do Contrato */}
-                  <div className="col-span-2 md:col-span-4 space-y-6 p-5 bg-accent/30 rounded-2xl border border-border mt-2">
+                  <div className="col-span-2 md:col-span-4 space-y-6 p-5 bg-surface-background/30 dark:bg-slate-900/30 rounded-2xl border border-border/50 mt-2">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
@@ -747,7 +749,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   {(lvl.client_labels ?? []).map((label, labelIdx) => (
                                     <span
                                       key={labelIdx}
-                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-accent text-[9px] font-extrabold text-foreground uppercase border border-border"
+                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-900/60 text-[9px] font-extrabold text-foreground uppercase border border-border/50"
                                     >
                                       {label}
                                       <button
@@ -764,7 +766,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                 </div>
                                 <Input
                                   placeholder="Add label (P0, Urgente...)"
-                                  className="h-9 text-xs bg-accent/30 border-border placeholder:text-muted-foreground/50 rounded-lg"
+                                  className="h-10 text-xs text-center bg-surface-background/50 dark:bg-slate-900/40 border-border/50 font-mono rounded-lg"
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ',') {
                                       e.preventDefault()

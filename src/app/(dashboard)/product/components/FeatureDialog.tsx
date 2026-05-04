@@ -92,7 +92,7 @@ export function FeatureDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {feature ? (
-          <Button variant="ghost" size="icon" className="hover:bg-plannera-orange/10 text-slate-400 hover:text-plannera-orange">
+          <Button variant="ghost" size="icon" className="hover:bg-plannera-orange/10 text-content-secondary/40 hover:text-plannera-orange">
             <Settings2 className="w-4 h-4" />
           </Button>
         ) : (
@@ -102,13 +102,13 @@ export function FeatureDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-lg">
+      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-plannera-orange" />
             {feature ? 'Editar Funcionalidade' : 'Nova Funcionalidade'}
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-content-secondary">
             {feature 
               ? 'Ajuste os detalhes técnicos desta funcionalidade do produto.' 
               : 'Cadastre uma nova funcionalidade que poderá ser vinculada a planos.'
@@ -119,38 +119,38 @@ export function FeatureDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Nome da Funcionalidade *</Label>
+              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Nome da Funcionalidade *</Label>
               <Input
                 {...register('name')}
                 placeholder="Ex: Dashboards Customizados"
-                className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 h-11 rounded-xl focus:border-plannera-orange"
+                className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
               />
               {errors.name && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Módulo / Categoria *</Label>
+              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Módulo / Categoria *</Label>
               <Input
                 {...register('module')}
                 placeholder="Ex: Analytics"
-                className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 h-11 rounded-xl focus:border-plannera-orange"
+                className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
               />
               {errors.module && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.module.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Descrição Curta</Label>
+              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Descrição Curta</Label>
               <Textarea
                 {...register('description')}
                 placeholder="Descreva o valor desta funcionalidade..."
-                className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 min-h-[100px] rounded-xl focus:border-plannera-orange"
+                className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 min-h-[100px] rounded-xl focus:border-plannera-orange"
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 rounded-xl bg-black/20 border border-white/5">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-surface-background/50 border border-border-divider">
               <div className="space-y-0.5">
-                <Label className="text-white text-xs font-bold uppercase">Status de Ativação</Label>
-                <p className="text-slate-500 text-[10px]">Determina se a funcionalidade pode ser usada em novos planos.</p>
+                <Label className="text-content-primary text-xs font-bold uppercase">Status de Ativação</Label>
+                <p className="text-content-secondary/50 text-[10px]">Determina se a funcionalidade pode ser usada em novos planos.</p>
               </div>
               <Switch
                 checked={watch('is_active')}
@@ -164,7 +164,7 @@ export function FeatureDialog({
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-white uppercase text-[10px] font-bold tracking-widest"
+              className="text-content-secondary hover:text-foreground uppercase text-[10px] font-bold tracking-widest"
             >
               Cancelar
             </Button>

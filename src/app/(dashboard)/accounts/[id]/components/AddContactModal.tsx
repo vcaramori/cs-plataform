@@ -88,73 +88,75 @@ export function AddContactModal({ open, onClose, accountId }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-surface-card border-border-divider text-content-primary max-w-lg">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
-              <UserPlus className="w-4 h-4 text-plannera-orange" />
+      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
+              <UserPlus className="w-6 h-6 text-plannera-orange" />
             </div>
             <div>
-              <DialogTitle className="text-content-primary text-base font-bold uppercase tracking-tight">
+              <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
                 Adicionar Stakeholder
               </DialogTitle>
-              <DialogDescription className="text-content-secondary text-[10px] font-bold uppercase tracking-wide mt-0">
+              <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
                 Mapa de Influência
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-6 py-6">
 
           {/* Nome e Sobrenome */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Nome *</Label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome *</Label>
               <Input
                 {...register('firstName')}
-                className="bg-surface-background border-border-divider text-content-primary h-9"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="João"
               />
-              {errors.firstName && <p className="text-red-400 text-[10px]">{errors.firstName.message}</p>}
+              {errors.firstName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.firstName.message}</p>}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Sobrenome *</Label>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Sobrenome *</Label>
               <Input
                 {...register('lastName')}
-                className="bg-surface-background border-border-divider text-content-primary h-9"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="Silva"
               />
-              {errors.lastName && <p className="text-red-400 text-[10px]">{errors.lastName.message}</p>}
+              {errors.lastName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.lastName.message}</p>}
             </div>
           </div>
 
           {/* Cargo */}
-          <div className="space-y-1.5">
-            <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Cargo *</Label>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Cargo *</Label>
             <Input
               {...register('role')}
-              className="bg-surface-background border-border-divider text-content-primary h-9"
+              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               placeholder="Head de TI, CEO, Gerente de Projetos..."
             />
-            {errors.role && <p className="text-red-400 text-[10px]">{errors.role.message}</p>}
+            {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
           </div>
 
           {/* Senioridade e Nível de Influência */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Senioridade</Label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Senioridade</Label>
               <SearchableSelect
                 value={watch('seniority')}
                 onValueChange={v => setValue('seniority', v as any)}
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Nível de Influência</Label>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nível de Influência</Label>
               <SearchableSelect
                 value={watch('influence_level')}
                 onValueChange={v => setValue('influence_level', v as any)}
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 options={[
                   { label: 'Campeão', value: 'Campeão' },
                   { label: 'Neutro', value: 'Neutro' },
@@ -166,70 +168,70 @@ export function AddContactModal({ open, onClose, accountId }: {
           </div>
 
           {/* E-mail e Telefone */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">E-mail</Label>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">E-mail</Label>
               <Input
                 {...register('email')}
                 type="email"
-                className="bg-surface-background border-border-divider text-content-primary h-9"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="joao@empresa.com"
               />
-              {errors.email && <p className="text-red-400 text-[10px]">{errors.email.message}</p>}
+              {errors.email && <p className="text-destructive text-[10px] font-bold ml-1">{errors.email.message}</p>}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">Telefone</Label>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Telefone</Label>
               <MaskedInput
                 maskType="phone"
                 value={watch('phone')}
                 onValueChange={(v) => setValue('phone', v)}
                 placeholder="(00) 00000-0000"
-                className="h-9"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               />
             </div>
           </div>
 
           {/* LinkedIn e Foto */}
-          <div className="space-y-1.5">
-            <Label className="text-content-secondary text-[10px] font-bold uppercase tracking-wide">
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
               URL do LinkedIn
-              <span className="ml-1 text-content-secondary normal-case font-medium">— foto carregada automaticamente</span>
+              <span className="ml-1 text-slate-400 dark:text-slate-500 normal-case font-medium">— foto carregada automaticamente</span>
             </Label>
             <Input
               {...register('linkedin_url')}
-              className="bg-surface-background border-border-divider text-content-primary h-9"
+              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               placeholder="https://linkedin.com/in/joaosilva"
             />
-            {errors.linkedin_url && <p className="text-red-400 text-[10px]">{errors.linkedin_url.message}</p>}
+            {errors.linkedin_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.linkedin_url.message}</p>}
           </div>
 
           {/* Tomador de decisão */}
-          <label className="flex items-center gap-3 cursor-pointer group">
+          <label className="flex items-center gap-3 cursor-pointer group mt-2">
             <div
               onClick={() => setValue('decision_maker', !watch('decision_maker'))}
-              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-border-divider'}`}
+              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-slate-200 dark:bg-slate-700'}`}
             >
               <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
             </div>
-            <span className="text-content-primary text-sm font-bold group-hover:text-content-primary transition-colors">
+            <span className="text-[#2d3558] dark:text-white text-sm font-bold">
               Tomador de decisão
             </span>
           </label>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-border-divider">
-            <Button type="button" variant="ghost" onClick={onClose} className="text-content-secondary hover:text-content-primary">
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold gap-2"
-            >
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Salvar Stakeholder
-            </Button>
-          </div>
         </form>
+        
+        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            disabled={loading}
+            className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest gap-2"
+          >
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            Salvar Stakeholder
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   )

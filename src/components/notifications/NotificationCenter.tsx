@@ -140,15 +140,17 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
                         {n.type === 'stale_score' ? <Clock className="w-5 h-5" /> :
                          n.type === 'new_ticket' ? <MessageSquare className="w-5 h-5" /> :
                          n.type === 'mention' ? <AtSign className="w-5 h-5" /> :
+                         n.type === 'churn_risk' ? <AlertTriangle className="w-5 h-5 animate-pulse" /> :
                          <AlertTriangle className="w-5 h-5" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-content-secondary font-extrabold text-[11px] uppercase tracking-widest leading-none">
-                            {n.type === 'stale_score' ? 'Health Score' :
-                             n.type === 'new_ticket' ? 'Suporte' :
-                             n.type === 'mention' ? 'Menção' :
-                             'Discrepância IA'}
+                        {n.type === 'stale_score' ? 'Health Score' :
+                         n.type === 'new_ticket' ? 'Suporte' :
+                         n.type === 'mention' ? 'Menção' :
+                         n.type === 'churn_risk' ? 'Risco Churn' :
+                         'Discrepância IA'}
                           </p>
                           <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-white transition-all transform group-hover:translate-x-1" />
                         </div>

@@ -135,7 +135,7 @@ export function PlanDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {plan ? (
-          <Button variant="ghost" size="icon" className="hover:bg-plannera-sop/10 text-slate-400 hover:text-plannera-sop">
+          <Button variant="ghost" size="icon" className="hover:bg-plannera-sop/10 text-content-secondary/40 hover:text-plannera-sop">
             <Settings2 className="w-4 h-4" />
           </Button>
         ) : (
@@ -145,13 +145,13 @@ export function PlanDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-2xl">
+      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             <Layers className="w-5 h-5 text-plannera-sop" />
             {plan ? 'Editar Plano' : 'Novo Plano'}
           </DialogTitle>
-          <DialogDescription className="text-slate-400 font-medium">
+          <DialogDescription className="text-content-secondary font-medium">
             Configure o nome do plano e quais funcionalidades estão inclusas no contrato padrão.
           </DialogDescription>
         </DialogHeader>
@@ -160,34 +160,34 @@ export function PlanDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Nome do Plano *</Label>
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Nome do Plano *</Label>
                 <Input
                   {...register('name')}
                   placeholder="Ex: Enterprise Plus"
-                  className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 h-11 rounded-xl focus:border-plannera-sop"
+                  className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-sop"
                 />
                 {errors.name && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Descrição</Label>
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Descrição</Label>
                 <Textarea
                   {...register('description')}
                   placeholder="O que este plano oferece de diferencial?"
-                  className="bg-black/20 border-white/5 text-white placeholder:text-slate-700 min-h-[120px] rounded-xl focus:border-plannera-sop"
+                  className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 min-h-[120px] rounded-xl focus:border-plannera-sop"
                 />
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-slate-400 text-[10px] font-bold uppercase tracking-widest ml-1">Funcionalidades do Plano</Label>
-                {fetchingFeatures && <Loader2 className="w-3 h-3 animate-spin text-slate-500" />}
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Funcionalidades do Plano</Label>
+                {fetchingFeatures && <Loader2 className="w-3 h-3 animate-spin text-content-secondary/40" />}
               </div>
               
-              <div className="bg-black/20 border border-white/5 rounded-xl p-4 h-[220px] overflow-y-auto space-y-3 custom-scrollbar">
+              <div className="bg-surface-background/50 border border-border-divider rounded-xl p-4 h-[220px] overflow-y-auto space-y-3 custom-scrollbar">
                 {features.length === 0 && !fetchingFeatures ? (
-                  <p className="text-slate-600 text-[10px] font-bold uppercase text-center py-10">Nenhuma funcionalidade ativa cadastrada.</p>
+                  <p className="text-content-secondary/30 text-[10px] font-bold uppercase text-center py-10">Nenhuma funcionalidade ativa cadastrada.</p>
                 ) : (
                   features.map((f) => (
                     <div key={f.id} className="flex items-start gap-3 group">
@@ -201,8 +201,8 @@ export function PlanDialog({
                         htmlFor={`feat-${f.id}`} 
                         className="flex flex-col cursor-pointer"
                       >
-                        <span className="text-white text-[11px] font-bold uppercase group-hover:text-plannera-sop transition-colors">{f.name}</span>
-                        <span className="text-slate-500 text-[9px] font-medium uppercase tracking-tight">{f.module}</span>
+                        <span className="text-foreground text-[11px] font-bold uppercase group-hover:text-plannera-sop transition-colors">{f.name}</span>
+                        <span className="text-content-secondary/40 text-[9px] font-medium uppercase tracking-tight">{f.module}</span>
                       </Label>
                     </div>
                   ))
@@ -211,12 +211,12 @@ export function PlanDialog({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-white/5 mt-2">
+          <div className="flex justify-end gap-3 pt-2 border-t border-border-divider mt-2">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-white uppercase text-[10px] font-bold tracking-widest"
+              className="text-content-secondary hover:text-foreground uppercase text-[10px] font-bold tracking-widest"
             >
               Cancelar
             </Button>

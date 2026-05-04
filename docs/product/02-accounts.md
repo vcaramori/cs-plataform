@@ -147,6 +147,17 @@ Timeline unificada de interações (estratégicas) + esforço (operacional).
 | Título | `truncate` sem max-w fixo |
 | Itens exibidos | Máximo 10 (slice) |
 | Filtros | Feed Geral / Estratégia |
+| Clique na Interação | Abre o `InteractionDetailModal` |
+
+### 2.3.4 InteractionDetailModal (Reuniões Estratégicas)
+
+Modal para visualização e edição das interações estratégicas registradas na timeline.
+
+| Bloco | Conteúdo / Funcionalidade |
+|-------|---------------------------|
+| **Metadados** | Data da realização, com quem foi realizada (Contato/Stakeholder da conta). |
+| **Checklist** | Visualização de todo o checklist validado durante a reunião. |
+| **Edição** | Permitir edição dos apontamentos (campos e checklist) caso algo tenha sido registrado errado pelo assistente/CSM. |
 
 ### 2.3.3 AccountsTable (Dashboard)
 
@@ -173,6 +184,7 @@ Timeline unificada de interações (estratégicas) + esforço (operacional).
 | Gerar Shadow Score | Clique no botão Sparkles (header) | POST `/api/health-scores/generate` |
 | Editar health score manual | Clique no lápis mini (dentro do gauge) | Abre `HealthScoreEditModal` |
 | Ver raciocínio IA | Clique no ícone Info | Expande painel de reasoning |
+| Detalhar Interação | Clique em um item estratégico na timeline | Abre `InteractionDetailModal` para visualização/edição |
 
 ---
 

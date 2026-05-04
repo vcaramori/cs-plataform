@@ -9,6 +9,7 @@ import { QuickDocuments } from './QuickDocuments'
 import { AccountChat } from './AccountChat'
 import { EditContractDialog } from './EditContractDialog'
 import { AdoptionChart } from './AdoptionChart'
+import { PlaybookWidget } from './PlaybookWidget'
 import Link from 'next/link'
 import {
   History,
@@ -22,6 +23,8 @@ import {
   CalendarDays,
   FileText,
   Settings2,
+  BrainCircuit,
+  AlertTriangle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -39,6 +42,10 @@ interface Props {
   contacts: any[]
   successGoals: any[]
   adoptionMetrics: any[]
+  activePlaybook?: any
+  latestRiskAssessment?: any
+  npsResponses: any[]
+  playbooks?: any[]
 }
 
 function daysUntil(dateStr: string | null | undefined) {
@@ -144,7 +151,11 @@ export function AccountDetailPageClient({
   efforts,
   contacts,
   successGoals,
-  adoptionMetrics
+  adoptionMetrics,
+  activePlaybook,
+  latestRiskAssessment,
+  npsResponses,
+  playbooks = []
 }: Props) {
   return (
     <div className="flex flex-col gap-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -168,13 +179,53 @@ export function AccountDetailPageClient({
             <AccountUnifiedTimeline
               interactions={interactions}
               efforts={efforts}
+              tickets={tickets}
+              npsResponses={npsResponses}
+              playbooks={playbooks}
               accounts={[{ id, name: accountName }]}
+              accountName={accountName}
             />
           </div>
         </div>
 
         {/* COLUNA 2 — Valor, Adoção & Atrito */}
         <div className="space-y-12 lg:border-x lg:border-border lg:px-10">
+
+          {/* AI Risk Alert */}
+          {latestRiskAssessment && (latestRiskAssessment.sentiment_label === 'negative' || latestRiskAssessment.sentiment_label === 'at-risk') && (
+            <section className="space-y-6">
+              <div className="rounded-2xl border border-destructive/20 bg-red-50 dark:bg-destructive/10 p-5 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 rounded-xl bg-red-100 dark:bg-destructive/20 text-destructive shrink-0">
+                    {latestRiskAssessment.sentiment_label === 'at-risk' ? <AlertTriangle className="w-5 h-5" /> : <BrainCircuit className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black text-destructive tracking-tight uppercase">
+                        Alerta IA: {latestRiskAssessment.sentiment_label === 'at-risk' ? 'Risco de Churn' : 'Atrito Severo'}
+                      </h3>
+                      <Badge variant="neutral" className="bg-destructive/20 text-destructive font-black">
+                        Score: {latestRiskAssessment.risk_score}/100
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-red-900 dark:text-red-200 opacity-80 leading-relaxed font-medium">
+                      {latestRiskAssessment.ai_reasoning}
+                    </p>
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-destructive/50 pt-2">
+                      Analisado em: {new Date(latestRiskAssessment.analyzed_at).toLocaleString('pt-BR')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Active Playbook (Se houver) */}
+          {activePlaybook && (
+            <section className="space-y-6">
+              <PlaybookWidget playbook={activePlaybook} />
+            </section>
+          )}
 
           {/* Resultados Estratégicos */}
           <section className="space-y-6">
@@ -207,22 +258,6 @@ export function AccountDetailPageClient({
                 <AdoptionChart metrics={adoptionMetrics} />
               </div>
             )}
-          </section>
-
-          {/* Risco & Atrito */}
-          <section className="space-y-6 pb-12">
-            <div className="flex items-center justify-between px-1 h-12">
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 rounded-xl bg-red-50 dark:bg-destructive/10 text-red-600 dark:text-destructive border border-red-100 dark:border-destructive/20 shadow-sm">
-                  <Ticket className="w-5 h-5" />
-                </div>
-                <h2 className="h2-section !text-base">Atendimento & NPS</h2>
-              </div>
-              <Badge variant="neutral" className="bg-red-50 dark:bg-destructive/10 text-red-700 dark:text-destructive border-red-100 dark:border-destructive/20 px-3 py-1 text-[9px]">
-                Attention
-              </Badge>
-            </div>
-            <RecentTicketsWidget tickets={tickets} />
           </section>
         </div>
 

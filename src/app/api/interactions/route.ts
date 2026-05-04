@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { generateText } from '@/lib/llm/gateway'
+import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
 
 const InteractionSchema = z.object({
   account_id: z.string().uuid(),
@@ -85,5 +86,11 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Trigger Predictive Risk AI em background sem bloquear o usuário
+  runPredictiveRiskAnalysis(parsed.data.account_id).catch(err => {
+    console.error('[Background AI] Error in predictive risk:', err)
+  })
+
   return NextResponse.json(data, { status: 201 })
 }

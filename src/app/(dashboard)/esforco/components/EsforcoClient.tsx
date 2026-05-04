@@ -139,84 +139,85 @@ export function EsforcoClient({
   })
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in fade-in duration-700">
       {/* Logger Column */}
       <div className="lg:col-span-3 space-y-8">
-        <Card variant="glass" className="border-border shadow-2xl relative overflow-hidden group rounded-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent pointer-events-none" />
+        <Card variant="glass" className="border-border-divider shadow-2xl relative overflow-hidden group rounded-2xl bg-surface-card/80 backdrop-blur-xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-plannera-primary/[0.05] to-transparent pointer-events-none" />
           
-          <CardHeader className="pb-4 pt-10 px-10">
-            <CardTitle className="h2-section !text-xl !text-foreground flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5 text-primary" />
+          <CardHeader className="pb-4 pt-12 px-12">
+            <CardTitle className="text-2xl font-black uppercase tracking-tighter text-content-primary flex items-center gap-5">
+              <div className="p-4 rounded-[1.25rem] bg-plannera-primary/10 border border-plannera-primary/20 group-hover:scale-105 transition-transform shadow-lg shadow-plannera-primary/10">
+                <Sparkles className="w-6 h-6 text-plannera-primary" />
               </div>
               Inteligência de Esforço
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-10 px-10 pb-10 relative z-10">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-1 ml-1">
-                <Target className="w-4 h-4 text-primary" />
-                <Label className="label-premium">Contexto do Cliente</Label>
+          <CardContent className="space-y-12 px-12 pb-12 relative z-10">
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 mb-1 ml-2">
+                <Target className="w-4 h-4 text-plannera-primary" />
+                <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Contexto do Cliente</Label>
               </div>
               <SearchableSelect
                 value={selectedAccountId}
                 onValueChange={setSelectedAccountId}
+                className="h-14 rounded-2xl bg-surface-background/50 border-border-divider shadow-inner text-sm font-bold uppercase tracking-tight"
                 options={[
                   { 
                     label: 'IDENTIFICAR POR I.A (RECOMENDADO)', 
                     value: 'all',
-                    className: "bg-white border border-slate-300 text-[#2d3558] dark:bg-slate-800 dark:text-white font-extrabold"
+                    className: "bg-surface-card border-border-divider text-plannera-primary font-black"
                   },
                   ...accounts.map((a) => ({ label: a.name.toUpperCase(), value: a.id }))
                 ]}
               />
             </div>
 
-            <div className="space-y-4 relative">
-              <div className="flex items-center justify-between mb-1 ml-1 group/label">
-                <div className="flex items-center gap-2">
-                   <Zap className="w-4 h-4 text-primary" />
-                   <Label className="label-premium">Relato de Atividade</Label>
+            <div className="space-y-5 relative">
+              <div className="flex items-center justify-between mb-1 ml-2 group/label">
+                <div className="flex items-center gap-3">
+                   <Zap className="w-4 h-4 text-plannera-orange" />
+                   <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Relato de Atividade</Label>
                 </div>
                 <button
                   type="button"
                   onClick={() => setText(examples[Math.floor(Math.random() * examples.length)])}
-                  className="text-[10px] font-extrabold text-primary hover:text-foreground uppercase tracking-widest opacity-0 group-hover/label:opacity-100 transition-opacity"
+                  className="text-[9px] font-black text-plannera-primary hover:text-plannera-orange uppercase tracking-[0.2em] opacity-0 group-hover/label:opacity-100 transition-all"
                 >
                   Sugestão Aleatória
                 </button>
               </div>
               
               <div className="relative group/input">
-                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within/input:opacity-100 transition-opacity pointer-events-none animate-pulse" />
+                 <div className="absolute -inset-1 bg-gradient-to-r from-plannera-primary/20 to-plannera-orange/20 rounded-2xl blur opacity-0 group-focus-within/input:opacity-100 transition-opacity pointer-events-none" />
                  <Textarea
                    value={text}
                    onChange={(e) => setText(e.target.value)}
                    placeholder="Descreva o que foi feito em liguagem natural... ex: 'Passei 45min em reunião de estratégia com a Empresa X'"
-                   rows={4}
-                    className="relative bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-foreground placeholder:text-muted-foreground/30 font-bold tracking-tight text-base p-6 rounded-2xl focus-visible:ring-primary/30 resize-none transition-all shadow-sm"
+                   rows={5}
+                    className="relative bg-surface-background/50 border-border-divider text-content-primary placeholder:text-content-secondary/20 font-bold tracking-tight text-lg p-8 rounded-2xl focus-visible:ring-plannera-primary/20 resize-none transition-all shadow-inner border-2"
                  />
               </div>
             </div>
 
             {/* Smart Suggestions */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 ml-1">
-                 <ListFilter className="w-4 h-4 text-muted-foreground/50" />
-                 <span className="label-premium opacity-50">Explorações sugeridas:</span>
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 ml-2">
+                 <ListFilter className="w-4 h-4 text-content-secondary/30" />
+                 <span className="text-[9px] font-black uppercase tracking-[0.25em] text-content-secondary opacity-50">Explorações sugeridas:</span>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-3">
                 {examples.map((ex, idx) => (
                   <motion.button
                     key={ex}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     type="button"
                     onClick={() => setText(ex)}
-                    className="text-[10px] font-extrabold text-[#5c5b5b] dark:text-slate-400 hover:text-primary bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 transition-all text-left uppercase tracking-tight shadow-sm"
+                    className="text-[9px] font-black text-content-secondary hover:text-plannera-primary bg-surface-background/30 hover:bg-white/5 px-5 py-2.5 rounded-xl border border-border-divider/50 transition-all text-left uppercase tracking-tight shadow-sm hover:scale-105 active:scale-95"
                   >
                     {ex.split(' ').slice(0, 4).join(' ')}...
                   </motion.button>
@@ -227,14 +228,14 @@ export function EsforcoClient({
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !text.trim()}
-              className="w-full h-16 bg-[#f7941e] text-white hover:bg-[#e0861b] shadow-xl shadow-[#f7941e]/20 group active:scale-[0.98] rounded-2xl font-extrabold"
+              className="w-full h-20 bg-plannera-orange hover:bg-plannera-orange/90 text-white shadow-2xl shadow-plannera-orange/20 group active:scale-[0.98] rounded-2xl font-black transition-all"
             >
               {isSubmitting ? (
                 <><Loader2 className="w-6 h-6 animate-spin mr-3" /> Processando Inteligência...</>
               ) : (
-                <span className="flex items-center gap-4 text-xs tracking-[0.2em]">
-                   REGISTRAR PRODUÇÃO
-                   <ChevronRight className="w-5 h-5 text-white/50 group-hover:translate-x-1 transition-transform" />
+                <span className="flex items-center gap-5 text-[11px] tracking-[0.3em]">
+                   REGISTRAR PRODUÇÃO DE CS
+                   <ChevronRight className="w-5 h-5 text-white/50 group-hover:translate-x-2 transition-transform" />
                 </span>
               )}
             </Button>
@@ -244,44 +245,45 @@ export function EsforcoClient({
 
       {/* Telemetry Column */}
       <div className="lg:col-span-1 h-full">
-        <Card variant="glass" className="border-border shadow-2xl h-full flex flex-col rounded-2xl overflow-hidden">
-          <CardHeader className="pb-4 pt-10 px-8">
+        <Card variant="glass" className="border-border-divider shadow-2xl h-full flex flex-col rounded-2xl bg-surface-card overflow-hidden">
+          <CardHeader className="pb-6 pt-12 px-10">
             <div className="flex items-center justify-between">
-              <CardTitle className="h2-section !text-[11px] flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                Curva de Esforço
+              <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 text-content-secondary">
+                <BarChart3 className="w-5 h-5 text-plannera-primary" />
+                Pareto / Eficiência
               </CardTitle>
               
               {paretoData.length > 5 && (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 text-primary transition-all">
-                      <Maximize2 className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-plannera-primary/10 text-plannera-primary transition-all">
+                      <Maximize2 className="w-5 h-5" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-surface-card border-border-divider max-w-2xl rounded-2xl shadow-2xl">
+                  <DialogContent className="bg-surface-card border-border-divider max-w-2xl rounded-2xl shadow-2xl p-12">
                     <DialogHeader>
-                      <DialogTitle className="h2-section flex items-center gap-3">
-                        <Building2 className="w-6 h-6 text-primary" />
-                        Visão Pareto de Esforço (Todos os Clientes)
+                      <DialogTitle className="text-2xl font-black uppercase tracking-tighter flex items-center gap-4">
+                        <Building2 className="w-8 h-8 text-plannera-primary" />
+                        Visão Pareto de Esforço
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="mt-10 space-y-6 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
                       {paretoData.map((t, idx) => (
-                        <div key={t.name} className="flex items-center gap-4 group">
-                          <span className="w-6 text-[10px] font-extrabold text-content-secondary/30 italic tabular-nums">{String(idx + 1).padStart(2, '0')}</span>
-                          <div className="flex-1 space-y-2">
+                        <div key={t.name} className="flex items-center gap-5 group">
+                          <span className="w-8 text-[11px] font-black text-content-secondary/20 italic tabular-nums">{String(idx + 1).padStart(2, '0')}</span>
+                          <div className="flex-1 space-y-3">
                             <div className="flex items-center justify-between">
-                              <span className="text-foreground text-xs font-extrabold uppercase tracking-tight truncate max-w-[200px]">{t.name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="label-premium opacity-40 !text-[9px]">{t.percentage.toFixed(1)}%</span>
-                                <span className="text-primary font-extrabold text-sm">{t.hours.toFixed(1)}H</span>
+                              <span className="text-content-primary text-xs font-black uppercase tracking-tight truncate max-w-[250px]">{t.name}</span>
+                              <div className="flex items-center gap-4">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-30">{t.percentage.toFixed(1)}%</span>
+                                <span className="text-plannera-primary font-black text-lg tabular-nums">{t.hours.toFixed(1)}H</span>
                               </div>
                             </div>
-                            <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-border-divider">
-                              <div 
-                                className="h-full bg-primary shadow-[0_0_8px_var(--primary)]"
-                                style={{ width: `${t.percentage}%` }}
+                            <div className="w-full h-2.5 bg-surface-background rounded-full overflow-hidden shadow-inner border border-border-divider">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${t.percentage}%` }}
+                                className="h-full bg-gradient-to-r from-plannera-primary to-plannera-orange shadow-[0_0_15px_rgba(var(--plannera-primary-rgb),0.3)]"
                               />
                             </div>
                           </div>
@@ -293,74 +295,72 @@ export function EsforcoClient({
               )}
             </div>
           </CardHeader>
-          <CardContent className="flex-1 px-5 pb-8 space-y-6 overflow-y-auto custom-scrollbar">
+          <CardContent className="flex-1 px-8 pb-10 space-y-8 overflow-y-auto custom-scrollbar">
             <AnimatePresence mode='popLayout'>
               {paretoData.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
-                   <Clock className="w-12 h-12 mb-4" />
-                   <p className="label-premium">Sem métricas hoje</p>
+                <div className="h-full flex flex-col items-center justify-center opacity-10 py-32">
+                   <Clock className="w-16 h-16 mb-6" />
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sem métricas</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {paretoData.slice(0, 8).map((t, idx) => (
+                <div className="space-y-8">
+                  {paretoData.slice(0, 10).map((t, idx) => (
                     <motion.div 
                       key={t.name}
-                      initial={{ opacity: 0, x: 10 }}
+                      initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="group flex flex-col space-y-2 relative"
+                      className="group flex flex-col space-y-3 relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-foreground text-[10px] font-extrabold uppercase tracking-tight truncate max-w-[120px] group-hover:text-primary transition-colors">{t.name}</span>
-                        <span className="text-primary font-extrabold text-xs tabular-nums">
+                        <span className="text-content-primary text-[10px] font-black uppercase tracking-tight truncate max-w-[140px] group-hover:text-plannera-primary transition-colors">{t.name}</span>
+                        <span className="text-plannera-primary font-black text-sm tabular-nums">
                            {t.hours.toFixed(1)}H
                         </span>
                       </div>
                       
-                      <div className="relative h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-border-divider/50">
+                      <div className="relative h-2.5 w-full bg-surface-background rounded-full overflow-hidden shadow-inner border border-border-divider/50">
                         <motion.div 
                            initial={{ width: 0 }}
                            animate={{ width: `${t.percentage}%` }}
                            transition={{ duration: 1, delay: idx * 0.1 }}
                            className={cn(
                              "h-full rounded-full transition-all",
-                             idx < 3 ? "bg-primary shadow-[0_0_10px_var(--primary)]" : "bg-primary/40"
+                             idx < 3 ? "bg-plannera-primary shadow-[0_0_12px_rgba(var(--plannera-primary-rgb),0.4)]" : "bg-plannera-primary/30"
                            )}
                          />
                       </div>
                       
-                      {idx < 8 && (
-                         <div className="flex justify-between items-center px-0.5">
-                            <span className="text-[8px] font-bold text-muted-foreground/40 uppercase">Pareto Acumulado</span>
-                            <span className="text-[8px] font-bold text-muted-foreground/60">{t.cumulativePercentage.toFixed(0)}%</span>
-                         </div>
-                      )}
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[8px] font-black text-content-secondary/30 uppercase tracking-widest">Pareto</span>
+                        <span className="text-[9px] font-black text-plannera-orange/60 tabular-nums">{t.cumulativePercentage.toFixed(0)}%</span>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
               )}
             </AnimatePresence>
           </CardContent>
-          <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-center">
-             <span className="label-premium !text-[8px] opacity-40 uppercase tracking-widest">Distribuição por Pareto (Volume 80/20)</span>
+          <div className="p-8 border-t border-border-divider bg-surface-background/50 text-center">
+             <span className="text-[9px] font-black uppercase tracking-[0.25em] text-content-secondary/40">Análise Estratégica 80/20</span>
           </div>
         </Card>
       </div>
 
       {/* History Area */}
       <div className="lg:col-span-4 mt-8">
-        <Card variant="glass" className="border-border shadow-2xl rounded-2xl overflow-hidden">
-          <CardHeader className="pb-8 pt-8 px-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        <Card variant="glass" className="border-border-divider shadow-2xl rounded-2xl overflow-hidden bg-surface-card">
+          <CardHeader className="pb-10 pt-12 px-12 border-b border-border-divider bg-surface-background/50">
             <div className="flex items-center justify-between">
-              <CardTitle className="h2-section !text-xl !text-foreground flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-                  <History className="w-6 h-6 text-primary" />
+              <CardTitle className="text-2xl font-black uppercase tracking-tighter text-content-primary flex items-center gap-5">
+                <div className="p-4 rounded-[1.25rem] bg-plannera-orange/10 border border-plannera-orange/20 shadow-lg shadow-plannera-orange/5">
+                  <History className="w-7 h-7 text-plannera-orange" />
                 </div>
-                Journal de Atividades Recentes
+                Journal de Atividades
               </CardTitle>
-              <div className="flex items-center gap-3">
-                <span className="label-premium opacity-50">Produção Total Bruta:</span>
-                <Badge variant="neutral" className="text-primary border-primary/20 font-extrabold text-xs px-4 py-1.5 rounded-xl">
+              <div className="flex items-center gap-5">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary opacity-40">Produção Total Bruta:</span>
+                <Badge variant="neutral" className="bg-plannera-primary/10 text-plannera-primary border-plannera-primary/20 font-black text-sm px-6 py-2 rounded-2xl shadow-lg">
                    {entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0).toFixed(1)} HORAS
                 </Badge>
               </div>
@@ -368,20 +368,20 @@ export function EsforcoClient({
           </CardHeader>
           <CardContent className="p-0">
             {entries.length === 0 ? (
-              <div className="text-center py-32 opacity-20 bg-slate-50/50 dark:bg-slate-900/50">
-                <Clock className="w-16 h-16 mx-auto mb-6" />
-                <p className="label-premium !text-sm">Histórico aguardando novos registros</p>
+              <div className="text-center py-40 opacity-10 grayscale">
+                <Clock className="w-20 h-20 mx-auto mb-8" />
+                <p className="text-[11px] font-black uppercase tracking-[0.4em]">Aguardando Registros</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                       <TableHead className="pl-8 text-[11px]">Logo / Conta</TableHead>
-                       <TableHead className="text-[11px]">Tipo de Atividade</TableHead>
-                       <TableHead className="text-[11px]">Detalhamento Analítico</TableHead>
-                       <TableHead className="text-center text-[11px]">Horas</TableHead>
-                       <TableHead className="text-right pr-8 text-[11px]">Data</TableHead>
+                  <TableHeader className="bg-surface-background/30">
+                    <TableRow className="hover:bg-transparent border-b border-border-divider">
+                       <TableHead className="pl-12 h-20 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Logo / Conta</TableHead>
+                       <TableHead className="h-20 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Tipo</TableHead>
+                       <TableHead className="h-20 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Detalhamento Analítico</TableHead>
+                       <TableHead className="h-20 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-center">Horas</TableHead>
+                       <TableHead className="h-20 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-right pr-12">Data</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -389,32 +389,32 @@ export function EsforcoClient({
                       {entries.map((e, index) => (
                         <motion.tr 
                           key={e.id} 
-                          initial={{ opacity: 0, x: -10 }}
+                          initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.02 }}
-                          className="group border-b border-border-divider hover:bg-muted/40 transition-all cursor-pointer h-16"
+                          className="group border-b border-border-divider hover:bg-white/5 transition-all cursor-pointer h-24"
                           onClick={() => setSelectedEntry(e)}
                         >
-                           <TableCell className="p-4 pl-8">
-                              <span className="text-[13px] font-extrabold uppercase tracking-tight text-content-primary">
+                           <TableCell className="pl-12">
+                              <span className="text-[13px] font-black uppercase tracking-tight text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
                                  {e.accounts?.name ?? '—'}
                               </span>
                            </TableCell>
                            <TableCell>
-                              <Badge variant="outline" className="bg-surface-background border-border-divider text-content-secondary text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-2xl">
+                              <Badge className="bg-plannera-primary/5 border-plannera-primary/20 text-plannera-primary text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-sm group-hover:bg-plannera-primary group-hover:text-white transition-all">
                                 {activityLabels[e.activity_type] || e.activity_type}
                               </Badge>
                            </TableCell>
-                           <TableCell>
-                              <span className="text-content-secondary text-sm font-medium tracking-tight line-clamp-1 group-hover:text-foreground transition-colors">{e.parsed_description}</span>
+                           <TableCell className="max-w-md">
+                              <span className="text-content-primary text-sm font-medium tracking-tight line-clamp-1 group-hover:text-plannera-primary transition-colors">{e.parsed_description}</span>
                            </TableCell>
                            <TableCell className="text-center">
                               <div className="inline-flex flex-col items-center">
-                                 <span className="text-content-primary font-extrabold text-[11px] tracking-widest">{Number(e.parsed_hours).toFixed(1)}H</span>
+                                 <span className="text-plannera-orange font-black text-sm tabular-nums">{Number(e.parsed_hours).toFixed(1)}H</span>
                               </div>
                            </TableCell>
-                           <TableCell className="text-right pr-8">
-                              <span className="text-content-secondary font-extrabold text-[11px] tracking-widest">
+                           <TableCell className="text-right pr-12">
+                              <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-40">
                                  {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
                               </span>
                            </TableCell>
@@ -429,6 +429,14 @@ export function EsforcoClient({
         </Card>
       </div>
 
+      {selectedEntry && (
+        <EffortEditModal
+          entry={selectedEntry}
+          accounts={accounts}
+          onClose={() => setSelectedEntry(null)}
+          onUpdate={handleUpdate}
+        />
+      )}
     </div>
   )
 }

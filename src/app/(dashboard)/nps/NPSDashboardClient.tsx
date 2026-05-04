@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import {
   SmilePlus, Meh, Frown, Star, RefreshCw, Sparkles,
   Building2, ListChecks, AlignLeft, Hash, Bookmark,
-  CalendarRange, Globe, Target, AlertTriangle, TrendingUp, TrendingDown
+  CalendarRange, Globe, Target, AlertTriangle, TrendingUp, TrendingDown, Loader2
 } from 'lucide-react'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
@@ -91,7 +91,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             <DialogTitle className="h2-section !text-xl !text-foreground">Feedback Detalhado</DialogTitle>
             <p className="label-premium opacity-60">{render.account_name}</p>
           </div>
-          <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-xl shadow-sm ${segColor}`}>
+          <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-2xl shadow-sm ${segColor}`}>
             {seg || 'N/A'}
           </Badge>
         </DialogHeader>
@@ -125,7 +125,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             </div>
 
             {render.comment && (
-              <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 space-y-2 relative overflow-hidden">
+              <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-2 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                 <p className="label-premium opacity-60 mb-1">Comentário Estruturado</p>
                 <p className="text-foreground text-sm italic font-medium leading-relaxed tracking-tight">"{render.comment}"</p>
@@ -134,12 +134,12 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
 
             <div className="space-y-4">
               {answers.length === 0 && !render.comment ? (
-                <div className="py-12 border-2 border-dashed border-border rounded-3xl flex flex-col items-center justify-center opacity-30">
+                <div className="py-12 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center opacity-30">
                   <p className="label-premium">Sem dados detalhados</p>
                 </div>
               ) : (
                 answers.map((ans: any) => (
-                  <div key={ans.id} className="space-y-2 p-5 rounded-3xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
+                  <div key={ans.id} className="space-y-2 p-5 rounded-2xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
                     <p className="label-premium !text-[9px] opacity-40 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
                     <div className="text-content-primary text-sm font-extrabold tracking-tight leading-relaxed">
                       {ans.nps_questions?.type === 'nps_scale' ? (
@@ -373,78 +373,104 @@ export function NPSDashboardClient({ accounts }: Props) {
         iconName="Star"
       />
 
-      {/* Filter Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-card border border-border-divider p-5 rounded-2xl shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
+      {/* Filter Bar — Two-row layout to prevent overflow on mid-viewports */}
+      <div className="flex flex-col gap-3 bg-surface-card border border-border-divider p-4 rounded-2xl shadow-xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-plannera-orange/60" />
+        
+        {/* Row 1: Selects + Refresh */}
+        <div className="flex flex-wrap items-center gap-3 pl-2">
           <Select value={programFilter} onValueChange={setProgramFilter}>
-            <SelectTrigger className="w-56 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
-              <Bookmark className="w-3.5 h-3.5 text-primary/50 mr-2" />
+            <SelectTrigger className="w-52 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
+              <Bookmark className="w-4 h-4 text-plannera-primary/40 mr-2" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-background border-border rounded-xl">
-              <SelectItem value="default" className="text-[10px] font-extrabold uppercase">GLOBAL PORTFOLIO</SelectItem>
+            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
+              <SelectItem value="default" className="text-[10px] font-black uppercase tracking-widest">GLOBAL PORTFOLIO</SelectItem>
               {programs.filter(p => p.is_active).map(p => (
-                <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-extrabold uppercase">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
+                <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-widest">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Select value={accountFilter} onValueChange={setAccountFilter}>
-            <SelectTrigger className="w-48 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
-              <Building2 className="w-3.5 h-3.5 text-muted-foreground mr-2" />
+            <SelectTrigger className="w-44 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
+              <Building2 className="w-4 h-4 text-content-secondary/40 mr-2" />
               <SelectValue placeholder="CONTAS" />
             </SelectTrigger>
-            <SelectContent className="bg-background border-border rounded-xl">
-              <SelectItem value="all" className="text-[10px] font-extrabold uppercase">TODAS AS CONTAS</SelectItem>
-              {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-extrabold uppercase">{a.name}</SelectItem>)}
+            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
+              <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest">TODAS AS CONTAS</SelectItem>
+              {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase tracking-widest">{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
 
           <Select value={periodDays} onValueChange={setPeriodDays}>
-            <SelectTrigger className="w-44 text-foreground text-[10px] font-extrabold h-11 rounded-xl hover:bg-accent/50 transition-all shadow-sm">
-              <CalendarRange className="w-3.5 h-3.5 text-muted-foreground mr-2" />
+            <SelectTrigger className="w-36 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
+              <CalendarRange className="w-4 h-4 text-content-secondary/40 mr-2" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-background border-border rounded-xl">
-              {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-extrabold uppercase">{v} DIAS</SelectItem>)}
+            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
+              {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-black uppercase tracking-widest">{v} DIAS</SelectItem>)}
             </SelectContent>
           </Select>
 
-          <Button variant="ghost" size="icon" onClick={fetchData} className="h-11 w-11 text-muted-foreground hover:text-primary bg-background rounded-xl border border-border-divider shadow-sm transition-all">
+          <Button variant="ghost" size="icon" onClick={fetchData} className="h-10 w-10 text-content-secondary/40 hover:text-plannera-primary bg-surface-background/50 rounded-2xl border border-border-divider shadow-sm transition-all active:scale-90">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-5 px-5 py-2.5 rounded-2xl bg-primary/5 border border-primary/20 shadow-sm">
-            <div className="flex flex-col">
-              <span className="label-premium !text-[8px] opacity-60 leading-tight">Meta Portfólio</span>
-              <span className="text-xl font-extrabold text-primary leading-none tracking-tighter">{goal ?? '—'}</span>
+        {/* Row 2: Meta NPS (prominent) + Export + Manage */}
+        <div className="flex flex-wrap items-center gap-3 pl-2 pt-1 border-t border-border-divider/50">
+          {/* Goal Display */}
+          <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-plannera-orange/5 border border-plannera-orange/20 shadow-inner group transition-all hover:border-plannera-orange/40">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[8px] font-black text-content-secondary/40 uppercase tracking-[0.25em]">Meta NPS</span>
+              <span className="text-xl font-black text-plannera-orange leading-none tracking-tighter tabular-nums">{goal ?? '—'}</span>
             </div>
             <Dialog>
               <DialogTrigger asChild>
-                <button className="p-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-all shadow-sm">
-                  <Target className="w-4 h-4" />
+                <button className="p-2 rounded-xl bg-plannera-orange/10 hover:bg-plannera-orange text-plannera-orange hover:text-white transition-all group-hover:scale-105 active:scale-90">
+                  <Target className="w-3.5 h-3.5" />
                 </button>
               </DialogTrigger>
-              <DialogContent className="bg-background border-border text-foreground max-w-sm rounded-2xl shadow-2xl">
-                <DialogHeader><DialogTitle className="h2-section !text-2xl !text-foreground">Definir Meta NPS</DialogTitle></DialogHeader>
-                <div className="py-6 space-y-6">
-                  <p className="label-premium normal-case opacity-60 font-medium">Estabeleça o benchmark de satisfação desejado para este programa ou período.</p>
-                  <Input type="number" value={newGoalValue} onChange={e => setNewGoalValue(e.target.value)} placeholder="Ex: 75" className="h-14 text-center text-3xl font-extrabold rounded-2xl shadow-sm" />
-                  <Button onClick={handleSetGoal} disabled={isUpdatingGoal} className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-extrabold rounded-2xl shadow-xl">ATUALIZAR TARGET</Button>
+              <DialogContent className="bg-surface-card border border-border-divider text-white max-w-sm rounded-2xl shadow-2xl p-0 overflow-hidden backdrop-blur-3xl">
+                <div className="bg-gradient-to-r from-plannera-orange/40 to-black/40 p-8 border-b border-white/5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-plannera-orange" />
+                  </div>
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-black text-white uppercase tracking-tighter">Meta Estratégica</DialogTitle>
+                    <p className="text-[9px] font-black text-plannera-orange/60 uppercase tracking-widest">NPS Target Benchmark</p>
+                  </DialogHeader>
+                </div>
+                <div className="p-10 space-y-8">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-content-secondary leading-relaxed opacity-70">Estabeleça o benchmark de satisfação desejado para este programa.</p>
+                  <div className="relative group">
+                    <div className="absolute -inset-2 bg-plannera-orange rounded-2xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                    <Input 
+                      type="number" 
+                      value={newGoalValue} 
+                      onChange={e => setNewGoalValue(e.target.value)} 
+                      placeholder="75" 
+                      className="relative h-20 text-center text-5xl font-black rounded-2xl border-2 border-border-divider bg-surface-background shadow-inner focus-visible:ring-plannera-orange/20" 
+                    />
+                  </div>
+                  <Button onClick={handleSetGoal} disabled={isUpdatingGoal} className="w-full h-16 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black text-[11px] tracking-[0.3em] rounded-2xl shadow-xl shadow-plannera-orange/20 transition-all active:scale-[0.98] uppercase">
+                    {isUpdatingGoal ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sincronizar Meta'}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-emerald-500 hover:bg-emerald-500/10 text-[10px] font-extrabold uppercase tracking-widest rounded-xl px-6 shadow-sm">
-            <Globe className="w-4 h-4 mr-2" /> Exportar Dados
+          <div className="flex-1" />
+
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-10 border-border-divider text-emerald-500 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
+            <Globe className="w-4 h-4" /> Exportar
           </Button>
 
           <Link href="/nps/programs">
-            <Button variant="premium" className="text-[10px] font-extrabold uppercase tracking-widest px-6 rounded-xl shadow-lg">
-              Configurar
+            <Button className="h-10 bg-plannera-primary hover:bg-plannera-primary/90 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 rounded-2xl shadow-xl shadow-plannera-primary/10 transition-all active:scale-95">
+              Gestão
             </Button>
           </Link>
         </div>
@@ -452,19 +478,19 @@ export function NPSDashboardClient({ accounts }: Props) {
 
       {/* Main Stats Card */}
       {loading ? (
-        <div className="h-80 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
+        <div className="h-80 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider shadow-lg" />
       ) : stats ? (
-        <Card variant="glass" className="border-border rounded-2xl overflow-hidden shadow-2xl">
+        <Card variant="glass" className="border-border-divider rounded-2xl overflow-hidden shadow-2xl bg-surface-card/80 backdrop-blur-xl">
           <CardContent className="p-0">
             <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border-divider">
 
               {/* Section 1: Score Gauge */}
-              <div className="lg:col-span-3 relative p-10 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-transparent min-h-[260px]">
-                <div className="absolute inset-x-0 bottom-0 top-1/2 opacity-[0.05] pointer-events-none">
+              <div className="lg:col-span-3 relative p-12 flex flex-col items-center justify-center bg-gradient-to-br from-plannera-primary/[0.05] to-transparent min-h-[300px]">
+                <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
                   {isMounted && (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
-                        <Area type="monotone" dataKey="nps" stroke="none" fill="var(--primary)" animationDuration={1000} />
+                        <Area type="monotone" dataKey="nps" stroke="none" fill="var(--plannera-primary)" animationDuration={1000} />
                       </AreaChart>
                     </ResponsiveContainer>
                   )}
@@ -473,74 +499,76 @@ export function NPSDashboardClient({ accounts }: Props) {
               </div>
 
               {/* Section 2: Core Metrics */}
-              <div className="lg:col-span-4 p-10 flex flex-col justify-center gap-10">
-                <div className="grid grid-cols-2 gap-y-8">
-                  <div className="space-y-2">
-                    <p className="label-premium">Volume Total</p>
-                    <p className="text-4xl font-extrabold text-content-primary tracking-tighter leading-none">{stats.total_responses}</p>
+              <div className="lg:col-span-4 p-12 flex flex-col justify-center gap-12">
+                <div className="grid grid-cols-2 gap-y-10">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-40">Volume Amostral</p>
+                    <p className="text-5xl font-black text-content-primary tracking-tighter leading-none tabular-nums">{stats.total_responses}</p>
                   </div>
-                  <div className="space-y-2 ml-4 border-l border-border-divider pl-6">
-                    <p className="label-premium">Média Global</p>
+                  <div className="space-y-3 ml-6 border-l border-border-divider pl-10">
+                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-40">Média Ponderada</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-4xl font-extrabold text-plannera-primary tracking-tighter leading-none">{stats.avg_score}</p>
-                      <span className="text-xs font-extrabold text-content-secondary/30">/10</span>
+                      <p className="text-5xl font-black text-plannera-primary tracking-tighter leading-none tabular-nums">{stats.avg_score}</p>
+                      <span className="text-xs font-black text-content-secondary/20">/10</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-8 border-t border-border-divider">
-                  <ScoreBar label="Promotores" count={stats.promoters} total={stats.total_responses} color="bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
-                  <ScoreBar label="Neutros" count={stats.passives} total={stats.total_responses} color="bg-amber-400 opacity-60" />
-                  <ScoreBar label="Detratores" count={stats.detractors} total={stats.total_responses} color="bg-destructive shadow-[0_0_15px_rgba(239,68,68,0.4)]" />
+                <div className="space-y-5 pt-10 border-t border-border-divider/50">
+                  <ScoreBar label="Promotores" count={stats.promoters} total={stats.total_responses} color="bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
+                  <ScoreBar label="Neutros" count={stats.passives} total={stats.total_responses} color="bg-amber-400 opacity-50" />
+                  <ScoreBar label="Detratores" count={stats.detractors} total={stats.total_responses} color="bg-destructive shadow-[0_0_20px_rgba(239,68,68,0.3)]" />
                 </div>
               </div>
 
               {/* Section 3: Pareto Chart */}
-              <div className="lg:col-span-5 p-10 flex flex-col space-y-8">
+              <div className="lg:col-span-5 p-12 flex flex-col space-y-10">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-5 h-5 text-primary/50" />
-                    <h3 className="h2-section">Distribuição por Contas</h3>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 rounded-xl bg-plannera-primary/10 border border-plannera-primary/20">
+                      <Building2 className="w-5 h-5 text-plannera-primary" />
+                    </div>
+                    <h3 className="text-lg font-black uppercase tracking-tighter text-content-primary">Top Performers</h3>
                   </div>
-                  <div className="flex bg-surface-background p-1.5 rounded-2xl border border-border-divider shadow-inner">
+                  <div className="flex bg-surface-background/50 p-2 rounded-2xl border border-border-divider shadow-inner">
                     {(['promoters', 'passives', 'detractors'] as const).map(s => (
                       <button key={s} onClick={() => setParetoSortBy(s)}
                         className={cn(
-                          "w-5 h-5 rounded-xl transition-all m-0.5",
+                          "w-6 h-6 rounded-xl transition-all m-1 flex items-center justify-center",
                           paretoSortBy === s
-                            ? (s === 'promoters' ? 'bg-emerald-500' : s === 'passives' ? 'bg-amber-400' : 'bg-destructive')
-                            : 'bg-transparent hover:bg-surface-card'
+                            ? (s === 'promoters' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : s === 'passives' ? 'bg-amber-400 shadow-lg shadow-amber-400/20' : 'bg-destructive shadow-lg shadow-destructive/20')
+                            : 'bg-transparent hover:bg-surface-card opacity-30 hover:opacity-100'
                         )} />
                     ))}
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-4 max-h-[220px] overflow-y-auto pr-4 custom-scrollbar">
+                <div className="flex-1 space-y-6 max-h-[250px] overflow-y-auto pr-6 custom-scrollbar">
                   {[...paretoData].sort((a, b) => {
                     const valA = paretoSortBy === 'promoters' ? a.p : paretoSortBy === 'passives' ? a.n : a.d
                     const valB = paretoSortBy === 'promoters' ? b.p : paretoSortBy === 'passives' ? b.n : b.d
                     return valB - valA
-                  }).slice(0, 10).map((acc, i) => (
-                    <div key={acc.name} className="flex items-center gap-5 group">
-                      <span className="w-5 text-[10px] font-extrabold text-content-secondary/30 italic tabular-nums">{String(i + 1).padStart(2, '0')}</span>
-                      <div className="flex-1 min-w-0 space-y-2">
+                  }).slice(0, 15).map((acc, i) => (
+                    <div key={acc.name} className="flex items-center gap-6 group">
+                      <span className="w-6 text-[11px] font-black text-content-secondary/20 italic tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                      <div className="flex-1 min-w-0 space-y-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-content-primary text-xs font-extrabold truncate group-hover:text-primary transition-all uppercase tracking-tight">{acc.name}</p>
-                          <div className={cn("text-xs font-extrabold tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-emerald-500' : 'text-destructive/80')}>
+                          <p className="text-content-primary text-[10px] font-black truncate group-hover:text-plannera-primary transition-all uppercase tracking-tight">{acc.name}</p>
+                          <div className={cn("text-sm font-black tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-emerald-500' : 'text-destructive')}>
                             {acc.score > 0 ? '+' : ''}{acc.score}
                           </div>
                         </div>
-                        <div className="flex h-2 bg-surface-background rounded-full overflow-hidden shadow-inner border border-border-divider">
-                          {acc.p > 0 && <div className="bg-emerald-500 h-full" style={{ width: `${(acc.p / acc.total) * 100}%` }} />}
-                          {acc.n > 0 && <div className="bg-amber-400 h-full opacity-60" style={{ width: `${(acc.n / acc.total) * 100}%` }} />}
-                          {acc.d > 0 && <div className="bg-destructive h-full" style={{ width: `${(acc.d / acc.total) * 100}%` }} />}
+                        <div className="flex h-2.5 bg-surface-background rounded-full overflow-hidden shadow-inner border border-border-divider">
+                          {acc.p > 0 && <div className="bg-emerald-500 h-full transition-all duration-1000" style={{ width: `${(acc.p / acc.total) * 100}%` }} />}
+                          {acc.n > 0 && <div className="bg-amber-400 h-full opacity-50 transition-all duration-1000" style={{ width: `${(acc.n / acc.total) * 100}%` }} />}
+                          {acc.d > 0 && <div className="bg-destructive h-full transition-all duration-1000" style={{ width: `${(acc.d / acc.total) * 100}%` }} />}
                         </div>
                       </div>
                     </div>
                   ))}
                   {paretoData.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center py-10 border-2 border-dashed border-border-divider rounded-3xl opacity-20">
-                      <p className="label-premium">Sem dados computados</p>
+                    <div className="h-full flex flex-col items-center justify-center py-16 border-2 border-dashed border-border-divider rounded-2xl opacity-20">
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aguardando Dados</p>
                     </div>
                   )}
                 </div>
@@ -552,42 +580,45 @@ export function NPSDashboardClient({ accounts }: Props) {
 
       {/* Feed Area */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {responses.slice(0, 12).map((r: any, i: number) => {
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
+          {responses.slice(0, 14).map((r: any, i: number) => {
             const seg = r.score !== null ? getNPSSegment(r.score) : null
             const segColor = seg === 'promoter' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : seg === 'passive' ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
 
             return (
-              <motion.div key={r.id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
+              <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 onClick={() => setSelectedResponse(r)}
-                className="flex items-stretch gap-6 p-6 rounded-2xl bg-surface-card border border-border-divider cursor-pointer hover:bg-surface-background hover:border-primary/30 transition-all group overflow-hidden relative shadow-sm">
+                className="flex items-stretch gap-8 p-8 rounded-2xl bg-surface-card border border-border-divider cursor-pointer hover:bg-surface-background hover:border-plannera-primary/30 transition-all group overflow-hidden relative shadow-lg shadow-black/5">
 
                 {/* Score Indicator */}
-                <div className={cn("flex flex-col items-center justify-center w-16 rounded-xl border font-extrabold shrink-0 shadow-lg transition-transform group-hover:scale-105", segColor)}>
-                  <span className="text-[9px] opacity-40 uppercase leading-none mb-1 font-extrabold">Score</span>
-                  <span className="text-2xl leading-none tracking-tighter">{r.score}</span>
+                <div className={cn("flex flex-col items-center justify-center w-20 rounded-2xl border-2 font-black shrink-0 shadow-xl transition-all group-hover:scale-105 group-hover:rotate-2", segColor)}>
+                  <span className="text-[8px] opacity-40 uppercase leading-none mb-1.5 font-black tracking-widest">Score</span>
+                  <span className="text-3xl leading-none tracking-tighter tabular-nums">{r.score}</span>
                 </div>
 
-                <div className="flex-1 min-w-0 pr-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-content-primary text-sm font-extrabold truncate group-hover:text-plannera-primary transition-all uppercase tracking-tight">{r.user_email || 'ANÔNIMO'}</span>
-                    <span className="label-premium !text-[9px] ml-auto shrink-0 flex items-center gap-2">
+                <div className="flex-1 min-w-0 pr-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className="text-content-primary text-[11px] font-black truncate group-hover:text-plannera-primary transition-all uppercase tracking-[0.1em]">{r.user_email || 'ANÔNIMO'}</span>
+                    <span className="text-[9px] font-black text-content-secondary/30 ml-auto shrink-0 flex items-center gap-2 uppercase tracking-widest">
                       {r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '—'}
                     </span>
                   </div>
 
-                  <div className="px-4 py-2.5 rounded-2xl bg-surface-background border border-border-divider shadow-inner group-hover:border-primary/20 transition-all">
+                  <div className="px-5 py-3.5 rounded-2xl bg-surface-background/50 border border-border-divider shadow-inner group-hover:border-plannera-primary/20 transition-all">
                     <ResponseCarousel
                       ansList={r.comment ? [{ is_comment: true, text_value: r.comment }, ...(r.nps_answers || [])] : (r.nps_answers || [])}
                       scoreColor={seg === 'promoter' ? 'text-emerald-500' : seg === 'passive' ? 'text-amber-500' : 'text-destructive'}
                     />
                   </div>
-                  <p className="label-premium !text-[9px] mt-3 opacity-40 group-hover:opacity-100 transition-opacity truncate font-medium">{r.account_name}</p>
+                  <div className="flex items-center gap-2 mt-4">
+                    <Building2 className="w-3.5 h-3.5 text-content-secondary/20" />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-content-secondary/40 group-hover:text-plannera-primary/40 transition-colors truncate">{r.account_name}</p>
+                  </div>
                 </div>
 
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-6 transition-all duration-300">
-                  <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20">
-                    <Sparkles className="w-5 h-5 text-primary-foreground" />
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-10 transition-all duration-500 ease-out">
+                  <div className="w-12 h-12 rounded-2xl bg-plannera-primary flex items-center justify-center shadow-2xl shadow-plannera-primary/30">
+                    <Sparkles className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </motion.div>
@@ -597,11 +628,11 @@ export function NPSDashboardClient({ accounts }: Props) {
       )}
 
       {!loading && responses.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-32 bg-surface-background border-2 border-dashed border-border-divider rounded-2xl opacity-30">
-          <div className="w-24 h-24 bg-surface-card rounded-full flex items-center justify-center mb-8">
-            <AlertTriangle className="w-12 h-12 text-content-secondary" />
+        <div className="flex flex-col items-center justify-center py-48 bg-surface-background/30 border-4 border-dashed border-border-divider/50 rounded-2xl opacity-20 grayscale mt-12">
+          <div className="w-28 h-28 bg-surface-card rounded-2xl flex items-center justify-center mb-10 shadow-xl">
+            <AlertTriangle className="w-14 h-14 text-content-secondary" />
           </div>
-          <p className="label-premium !text-sm">Horizonte sem dados para o período selecionado</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.5em] text-center max-w-md leading-relaxed">Horizonte sem dados para o período selecionado</p>
         </div>
       )}
 

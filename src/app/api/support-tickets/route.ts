@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { enrichTicketWithSLA, logSLAEvent } from '@/lib/support/lifecycle'
+import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
 
 const TicketSchema = z.object({
   account_id: z.string().uuid(),
@@ -73,6 +74,11 @@ export async function POST(request: Request) {
 
   // Log creation event asynchronously
   logSLAEvent(data.id, 'ticket_created', { source: 'manual', assigned_priority: data.internal_level }).catch(console.error)
+
+  // Trigger Predictive Risk AI em background sem bloquear o usuário
+  runPredictiveRiskAnalysis(parsed.data.account_id).catch(err => {
+    console.error('[Background AI] Error in predictive risk:', err)
+  })
 
   return NextResponse.json(data, { status: 201 })
 }

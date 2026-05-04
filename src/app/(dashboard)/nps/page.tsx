@@ -8,7 +8,7 @@ export default async function NPSPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-slate-500">Usuário não autenticado.</p>
+        <p className="text-content-secondary font-medium">Usuário não autenticado.</p>
       </div>
     )
   }

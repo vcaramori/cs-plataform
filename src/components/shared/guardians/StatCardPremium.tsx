@@ -22,6 +22,7 @@ interface StatCardPremiumProps {
   status?: string
   colorVariant?: 'default' | 'demand' | 'ds' | 'sop' | 'orange' | 'emerald' | 'destructive'
   className?: string
+  onClick?: () => void
 }
 
 export function StatCardPremium({
@@ -35,7 +36,8 @@ export function StatCardPremium({
   iconName,
   status,
   colorVariant = 'default',
-  className
+  className,
+  onClick
 }: StatCardPremiumProps) {
   
   const Icon = iconName ? (Icons[iconName] as LucideIcon) : IconProp
@@ -60,7 +62,8 @@ export function StatCardPremium({
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="h-full"
+      className={cn("h-full", onClick && "cursor-pointer")}
+      onClick={onClick}
     >
       <Card variant="glass" className={cn(
         "p-6 rounded-2xl bg-surface-background border border-border-divider shadow-inner group transition-all h-full flex flex-col justify-between relative overflow-hidden",

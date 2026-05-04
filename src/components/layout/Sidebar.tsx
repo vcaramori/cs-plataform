@@ -69,9 +69,16 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
   const initials = user.email?.slice(0, 2).toUpperCase() ?? 'CS'
 
   const NavLink = ({ href, label, icon: Icon }: any) => {
-    const active =
-      pathname === href ||
-      (href !== '/dashboard' && pathname.startsWith(href))
+    const isActive = () => {
+      if (pathname === href) return true
+      if (href === '/' || href === '/dashboard') return false
+      if (href === '/suporte') {
+        return pathname.startsWith('/suporte/') && !pathname.startsWith('/suporte/dashboard') && !pathname.startsWith('/suporte/sla')
+      }
+      return pathname.startsWith(href + '/')
+    }
+    
+    const active = isActive()
 
     return (
       <Link

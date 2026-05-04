@@ -62,21 +62,22 @@ function HealthMiniGauge({ label, value, icon: Icon, color, index, displayLabel 
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.2 + (index * 0.1) }}
-      className="flex flex-col items-center gap-2 group min-w-0"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + (index * 0.1) }}
+      className="flex flex-col items-center justify-center gap-3 relative overflow-hidden rounded-2xl border border-border-divider bg-surface-background h-[120px] shadow-sm group hover:border-primary/30 transition-all"
     >
-      <div className="w-12 h-12 rounded-2xl border border-border-divider flex items-center justify-center relative overflow-hidden bg-surface-background shadow-sm transition-all group-hover:border-primary group-hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)]">
-        <div
-          className="absolute bottom-0 left-0 w-full transition-all duration-1000"
-          style={{ height: `${value}%`, backgroundColor: color, opacity: 0.15 }}
-        />
-        <Icon className="w-5 h-5 relative z-10" style={{ color }} />
-      </div>
-      <div className="text-center overflow-hidden w-full">
-        <p className="label-premium opacity-50 mb-0.5 truncate px-1">{label}</p>
-        <p className="text-[11px] font-black text-foreground leading-none tracking-tighter tabular-nums">
+      <div
+        className="absolute bottom-0 left-0 w-full transition-all duration-1000 z-0"
+        style={{ height: `${Math.max(5, value)}%`, backgroundColor: color, opacity: 0.2 }}
+      />
+      <div className="absolute bottom-0 left-0 w-full h-[2px] z-10" style={{ backgroundColor: color, opacity: 0.5 }} />
+      
+      <Icon className="w-6 h-6 relative z-10 transition-transform group-hover:scale-110" style={{ color }} />
+      
+      <div className="text-center relative z-10 w-full px-1">
+        <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">{label}</p>
+        <p className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums">
           {displayLabel ?? `${Math.round(value)}%`}
         </p>
       </div>
@@ -139,28 +140,25 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
     } catch { setSlaActive(false) }
   }
 
-  // Agrupar por data para o sparkline de fundo
   const groupedSparkline = (history || []).reduce((acc: any, h: any) => {
     const dateKey = h.date
     if (!acc[dateKey]) {
       acc[dateKey] = { date: h.date, score: null }
     }
-    // No sparkline de fundo, priorizamos o score manual ou o shadow se presente
     acc[dateKey].score = h.manual_score ?? h.shadow_score
     return acc
   }, {})
 
   const chartData = (Object.values(groupedSparkline) as { date: string, score: number | null }[])
     .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-10) // Mantém os últimos 10 dias
+    .slice(-10)
 
-  // Cálculo de estagnação
   const lastManualDate = summaryData?.manual?.date
   const daysSinceUpdate = lastManualDate ? differenceInDays(new Date(), parseISO(lastManualDate)) : null
   const scoreValue = Math.round(account.health_score)
 
-  // Cores semânticas para o Gauge
-  const statusColor = scoreValue <= 40 ? 'var(--destructive)' : scoreValue < 70 ? 'var(--primary)' : 'var(--emerald-500)'
+  // Use explicit hex/hsl to avoid SVG crash due to missing CSS vars
+  const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? 'hsl(var(--primary))' : '#10b981'
 
   async function handleGenerateShadowScore() {
     setGenerating(true)
@@ -208,7 +206,6 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
     stable: <Minus className="w-5 h-5 text-muted-foreground" />,
   }[account.health_trend] ?? <Minus className="w-5 h-5 text-muted-foreground" />
 
-  // Se houver apenas 1 ponto, duplicamos para o gráfico renderizar uma área
   const displayChartData = chartData.length === 1 
     ? [{ date: 'Start', score: chartData[0].score }, { date: 'End', score: chartData[0].score }]
     : chartData
@@ -216,10 +213,8 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-top-4 duration-700">
 
-      {/* Top Bar Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
 
-        {/* Esquerda: botão voltar + identidade da conta */}
         <div className="flex items-center gap-4 sm:gap-8 min-w-0">
           <Link href="/dashboard" className="shrink-0">
             <Button variant="outline" size="icon" className="w-12 h-12 rounded-2xl shadow-sm border-border/50 group">
@@ -255,7 +250,6 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </div>
         </div>
 
-        {/* Direita: pills financeiros */}
         <div className="flex items-center gap-4 overflow-x-auto pb-1 sm:pb-0 shrink-0">
           <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shrink-0 shadow-lg">
             <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
@@ -283,25 +277,30 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
         </div>
       </div>
 
-      {/* Health & Intelligence Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-        {/* Anel de Health Score */}
         <Card 
           variant="glass"
           onClick={() => setShowDetails(true)}
-          className="lg:col-span-1 p-6 flex flex-col justify-between items-center relative group min-h-[160px] border-border rounded-2xl cursor-pointer hover:bg-accent/20 transition-all overflow-hidden shadow-2xl"
+          className="lg:col-span-1 p-6 flex flex-col justify-center items-center relative group min-h-[160px] border-border rounded-2xl cursor-pointer hover:bg-accent/20 transition-all overflow-hidden shadow-2xl"
         >
-          {/* Background Sparkline (Subtle Area) */}
-          <div className="absolute inset-x-0 -bottom-1 h-full opacity-[0.05] pointer-events-none z-0">
+          <div className="absolute inset-x-0 -bottom-1 h-full opacity-30 pointer-events-none z-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={displayChartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={statusColor} stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor={statusColor} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <YAxis domain={[0, 100]} hide />
                 <Area 
                   type="monotone" 
                   dataKey="score" 
-                  stroke="var(--primary)" 
+                  stroke={statusColor} 
                   strokeWidth={2} 
-                  fill="var(--primary)"
+                  fillOpacity={1}
+                  fill="url(#colorScore)"
                   connectNulls
                   isAnimationActive={true}
                 />
@@ -311,13 +310,13 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
 
           <div className="flex items-center gap-6 w-full relative z-10">
             <div className="relative flex items-center justify-center shrink-0">
-              <svg className="w-20 h-20 -rotate-90">
-                <circle cx="48" cy="48" r="42" fill="none" stroke="var(--border)" className="opacity-10" strokeWidth="8" />
+              <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="36" fill="none" stroke="var(--border)" className="opacity-10" strokeWidth="8" />
                 <motion.circle
-                  initial={{ strokeDasharray: "0 264" }}
-                  animate={{ strokeDasharray: `${(account.health_score / 100) * 264} 264` }}
+                  initial={{ strokeDasharray: "0 226" }}
+                  animate={{ strokeDasharray: `${(account.health_score / 100) * 226} 226` }}
                   transition={{ duration: 1.5, ease: "easeOut" }}
-                  cx="48" cy="48" r="42" fill="none"
+                  cx="40" cy="40" r="36" fill="none"
                   stroke={statusColor}
                   strokeWidth="8"
                   strokeLinecap="round"
@@ -332,7 +331,7 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
-                <p className="label-premium !text-[11px] opacity-60">Health Index</p>
+                <p className="label-premium !text-[11px] opacity-60">Índice de Saúde</p>
                   <Button
                   variant="ghost"
                   size="icon"
@@ -360,7 +359,7 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
             </div>
           </div>
 
-          <div className="w-full flex justify-end mt-4 relative z-10">
+          <div className="absolute bottom-4 right-4 z-20">
             <TooltipProvider>
               <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
@@ -371,9 +370,9 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
                     }}
                     disabled={generating}
                     variant="premium"
-                    className="h-11 w-11 p-0 rounded-2xl shadow-xl transition-all hover:scale-110 active:scale-95"
+                    className="h-8 w-8 p-0 rounded-xl shadow-lg transition-all hover:scale-110 active:scale-95 bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-6 h-6" />}
+                    {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="bg-background border-border shadow-2xl">
@@ -384,19 +383,18 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </div>
         </Card>
 
-        {/* Gauges de saúde + NPS + SLA + Score IA */}
-        <Card variant="glass" className="lg:col-span-3 p-5 flex items-center justify-between gap-2 border-border shadow-2xl rounded-2xl overflow-hidden">
-          <div className="flex-1 grid grid-cols-6 gap-2 items-start">
-            <HealthMiniGauge index={0} label="Adoção"   value={currentAdoptionScore ?? latestHealthScore?.engagement_component ?? 50} icon={Zap}    color="var(--emerald-500)" />
-            <HealthMiniGauge index={1} label="Tickets"   value={latestHealthScore?.ticket_component     || 50} icon={Ticket} color="var(--amber-500)" />
-            <HealthMiniGauge index={2} label="Relation" value={latestHealthScore?.sentiment_component  || 50} icon={Heart}  color="var(--primary)" />
+        <Card variant="glass" className="lg:col-span-3 p-5 flex items-center justify-between gap-4 border-border shadow-2xl rounded-2xl overflow-hidden min-h-[160px]">
+          <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
+            <HealthMiniGauge index={0} label="Adoção" value={currentAdoptionScore ?? latestHealthScore?.engagement_component ?? 50} icon={Zap} color="#10b981" />
+            <HealthMiniGauge index={1} label="Chamados" value={latestHealthScore?.ticket_component || 50} icon={Ticket} color="#f59e0b" />
+            <HealthMiniGauge index={2} label="Relacionamento" value={latestHealthScore?.sentiment_component || 50} icon={Heart} color="hsl(var(--primary))" />
 
             <HealthMiniGauge
               index={3}
               label="NPS"
               value={npsScore === null ? 50 : Math.max(0, (npsScore + 100) / 2)}
               icon={MessageSquare}
-              color="var(--primary)"
+              color={npsScore !== null && npsScore > 50 ? "#10b981" : "hsl(var(--primary))"}
               displayLabel={npsScore === null ? '—' : npsScore > 0 ? `+${npsScore}` : String(npsScore)}
             />
 
@@ -405,46 +403,48 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
               label="SLA"
               value={slaActive === null ? 50 : slaActive ? 100 : 15}
               icon={slaActive ? ShieldCheck : ShieldOff}
-              color={slaActive ? "var(--emerald-500)" : "var(--muted-foreground)"}
+              color={slaActive ? "#10b981" : "hsl(var(--destructive))"}
               displayLabel={slaActive === null ? '—' : slaActive ? 'OK' : 'Err.'}
             />
 
-            {/* Score IA */}
-            <div className="flex flex-col items-center gap-2 group min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-col items-center justify-center gap-3 relative overflow-hidden rounded-2xl border border-border-divider bg-surface-background h-[120px] shadow-sm group hover:border-primary/30 transition-all cursor-pointer"
+              onClick={() => latestHealthScore?.shadow_reasoning && setShowReasoning(!showReasoning)}
+            >
               {latestHealthScore?.shadow_score != null ? (
                 <>
-                  <div className="w-12 h-12 rounded-2xl border border-primary/20 bg-primary/10 flex items-center justify-center shadow-inner group-hover:border-primary transition-all shrink-0">
-                    <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                  </div>
-                  <div className="text-center overflow-hidden w-full">
-                    <p className="label-premium opacity-50 mb-0.5 truncate">IA Score</p>
+                  <div
+                    className="absolute bottom-0 left-0 w-full transition-all duration-1000 z-0"
+                    style={{ height: `${Math.max(5, latestHealthScore.shadow_score)}%`, backgroundColor: "hsl(var(--primary))", opacity: 0.2 }}
+                  />
+                  <div className="absolute bottom-0 left-0 w-full h-[2px] z-10" style={{ backgroundColor: "hsl(var(--primary))", opacity: 0.5 }} />
+                  <Sparkles className="w-6 h-6 relative z-10 text-primary animate-pulse" />
+                  <div className="text-center relative z-10 w-full px-1">
+                    <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">Pontuação IA</p>
                     <div className="flex items-center gap-1 justify-center">
-                      <span className="text-[11px] font-black text-primary leading-none tracking-tighter tabular-nums">
+                      <span className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums">
                         {Math.round(latestHealthScore.shadow_score)}
                       </span>
                       {latestHealthScore.shadow_reasoning && (
-                        <button
-                          onClick={() => setShowReasoning(!showReasoning)}
-                          className="text-muted-foreground hover:text-primary transition-colors h-3 w-3 bg-accent rounded-full flex items-center justify-center shrink-0"
-                        >
-                          <Info className="w-2.5 h-2.5" />
-                        </button>
+                        <Info className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
                       )}
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-2xl border border-border-divider bg-surface-background flex items-center justify-center opacity-30 shrink-0">
-                    <Sparkles className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div className="text-center opacity-30 overflow-hidden w-full">
-                    <p className="label-premium opacity-50 mb-0.5 truncate">IA Score</p>
-                    <p className="label-premium italic !text-[8px]">Proc.</p>
+                  <div className="absolute bottom-0 left-0 w-full h-[5%] bg-muted-foreground opacity-10 z-0" />
+                  <Sparkles className="w-6 h-6 relative z-10 text-muted-foreground opacity-50" />
+                  <div className="text-center relative z-10 w-full px-1 opacity-50">
+                    <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">Pontuação IA</p>
+                    <p className="text-xs font-black italic">Proc.</p>
                   </div>
                 </>
               )}
-            </div>
+            </motion.div>
           </div>
         </Card>
       </div>

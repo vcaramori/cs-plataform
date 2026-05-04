@@ -119,25 +119,25 @@ export function EditAccountDialog({ account }: { account: Account }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-background border-border text-muted-foreground hover:text-foreground">
+        <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl">
           <Settings2 className="w-4 h-4 mr-2" />
           Editar Conta
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass border-border text-foreground max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-black tracking-tight">Editar Conta</DialogTitle>
-          <DialogDescription className="label-premium opacity-50 !text-[10px]">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">Editar Conta</DialogTitle>
+          <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium">
             Atualize os dados primários da organização e identidade visual.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 overflow-y-auto max-h-[70vh]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
             <div className="space-y-6">
               <div className="space-y-2 text-center">
-                <Label className="label-premium w-full text-left">Logotipo</Label>
-                <div className="bg-accent/20 rounded-2xl p-4 border border-border/50 shadow-inner">
+                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 w-full text-left block">Logotipo</Label>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-inner">
                   <ImageUpload
                     value={watch('logo_url') ?? undefined}
                     onChange={(url) => setValue('logo_url', url)}
@@ -146,12 +146,12 @@ export function EditAccountDialog({ account }: { account: Account }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-name" className="label-premium">Nome da Empresa</Label>
+                <Label htmlFor="edit-name" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome da Empresa</Label>
                 <Input
                   id="edit-name"
                   {...register('name')}
                   placeholder="Ex: General Mills"
-                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
                 {errors.name && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.name.message}</p>}
               </div>
@@ -159,10 +159,11 @@ export function EditAccountDialog({ account }: { account: Account }) {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="label-premium">Segmento</Label>
+                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Segmento</Label>
                 <SearchableSelect
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                   options={[
                     { label: 'Indústria', value: 'Indústria' },
                     { label: 'MRO', value: 'MRO' },
@@ -172,64 +173,66 @@ export function EditAccountDialog({ account }: { account: Account }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-industry" className="label-premium">Setor / Indústria</Label>
+                <Label htmlFor="edit-industry" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Setor / Indústria</Label>
                 <Input
                   id="edit-industry"
                   {...register('industry')}
                   placeholder="Ex: Bens de Consumo"
-                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-website" className="label-premium">Website Executive</Label>
+                <Label htmlFor="edit-website" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Website Executive</Label>
                 <Input
                   id="edit-website"
                   {...register('website')}
                   placeholder="https://exemplo.com"
-                  className="bg-accent/30 border-border text-foreground font-black tracking-tight"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
                 {errors.website && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.website.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label className="label-premium">CNPJ / TAX ID</Label>
+                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">CNPJ / TAX ID</Label>
                 <MaskedInput 
                   maskType="tax_id"
                   value={watch('tax_id') ?? ''}
                   onValueChange={(v) => setValue('tax_id', v)}
                   placeholder="00.000.000/0000-00"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="label-premium">Plano Estratégico</Label>
+                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Plano Estratégico</Label>
                 <SearchableSelect
                   value={watch('plan_id') || ''}
                   onValueChange={(v) => setValue('plan_id', v)}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                   options={[
                     { label: 'Portfolio (Nenhum)', value: '' },
                     ...plans.map(p => ({ label: p.name, value: p.id }))
                   ]}
                 />
-                <p className="label-premium !text-[8px] opacity-30 mt-2">Define as capacidades operacionais contratadas.</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">Define as capacidades operacionais contratadas.</p>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="label-premium !text-[10px] opacity-60 hover:opacity-100"
+              className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white"
             >
               Descartar
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] min-w-[160px] shadow-lg shadow-primary/20"
+              className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Confirmar Update

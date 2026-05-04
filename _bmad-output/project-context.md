@@ -48,5 +48,6 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ## Safety & Workflow
 
 - **Git Safety**: **NEVER** execute `git restore .`, `git reset --hard`, or any command that discards uncommitted changes without explicit user permission.
-- **Source of Truth**: Always read `README.md` and `docs/product/` at the start of a task.
-- **Documentation**: Update `README.md` when adding/modifying features and `docs/product/` for business rule changes.
+- **Source of Truth**: Always read `README.md`, `docs/product/specification.md`, e **`docs/product/epics.md`** at the start of a task.
+- **Sprint Status**: O acompanhamento do progresso (Backlog, In-Progress, Done) de todos os épicos e histórias está em **`docs/product/sprint-status.yaml`**. Sempre atualize este arquivo ao iniciar ou finalizar uma história.
+- **Documentation**: Update `README.md` quando adicionar/modificar funcionalidades. Atualize `docs/product/epics.md` quando finalizar ou adicionar novas histórias.

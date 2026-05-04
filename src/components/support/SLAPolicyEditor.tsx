@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2, Save } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 type LevelMap = Record<'critical' | 'high' | 'medium' | 'low', SLAPolicyLevel | undefined>
 type UnitKey = `${'critical'|'high'|'medium'|'low'}_${'first'|'res'}`
@@ -104,71 +105,86 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
   const lbls = { critical: 'Crítico', high: 'Alto', medium: 'Médio', low: 'Baixo' }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold text-brand-primary dark:text-white">Matriz de Prazos (Minutos Úteis)</h3>
-          <p className="text-sm text-brand-grey dark:text-slate-400">Configure os prazos máximos exigidos contratualmente.</p>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-4 bg-plannera-primary rounded-full" />
+          <div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary">Matriz de Prazos (Minutos Úteis)</h3>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40 mt-1">Acordos de Nível de Serviço Contratuais</p>
+          </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} size="sm">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving} 
+          className="bg-plannera-primary hover:bg-plannera-primary/90 text-white rounded-xl h-12 px-6 shadow-lg shadow-plannera-primary/20 active:scale-95 transition-all"
+        >
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Salvar Matriz
+          <span className="text-[10px] font-black uppercase tracking-widest">Salvar Matriz</span>
         </Button>
       </div>
 
-      <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 dark:bg-slate-800/50 text-brand-grey dark:text-slate-400">
+      <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-xl">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-surface-background/50 border-b border-border-divider">
             <tr>
-              <th className="px-4 py-3 font-medium">Nível de Severidade</th>
-              <th className="px-4 py-3 font-medium">Primeira Resposta</th>
-              <th className="px-4 py-3 font-medium">Resolução</th>
+              <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Severidade</th>
+              <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Primeira Resposta</th>
+              <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Resolução Final</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/50">
+          <tbody className="divide-y divide-border-divider bg-transparent">
             {(['critical', 'high', 'medium', 'low'] as const).map(lev => (
-               <tr key={lev} className="transition-colors">
-                 <td className="px-4 py-3 font-medium text-brand-primary dark:text-slate-200">
-                   {lbls[lev]}
+               <tr key={lev} className="hover:bg-white/5 transition-all group">
+                 <td className="px-8 py-6">
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      lev === 'critical' ? 'text-red-500' :
+                      lev === 'high' ? 'text-orange-500' :
+                      lev === 'medium' ? 'text-plannera-primary' :
+                      'text-content-secondary opacity-60'
+                    )}>
+                      {lbls[lev]}
+                    </span>
                  </td>
-                 <td className="px-4 py-3">
-                   <div className="flex items-center gap-1.5">
+                 <td className="px-8 py-6">
+                   <div className="flex items-center gap-2">
                      <Input
                        type="number"
                        min="1"
-                       className="w-20"
+                       className="w-24 bg-surface-background border-border-divider rounded-xl h-11 text-xs font-black text-content-primary focus:ring-2 focus:ring-plannera-primary/50 transition-all"
                        value={displayVal(levels[lev]?.first_response_minutes ?? 0, units[`${lev}_first`])}
                        onChange={e => handleUpdate(lev, 'first_response_minutes', e.target.value, units[`${lev}_first`])}
                      />
                      <Select value={units[`${lev}_first`]} onValueChange={v => handleUnitChange(`${lev}_first`, v as UnitType)}>
-                       <SelectTrigger className="w-20 h-9 text-xs bg-surface-card dark:bg-slate-900 border-border-divider">
+                       <SelectTrigger className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
                          <SelectValue />
                        </SelectTrigger>
-                       <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
-                         <SelectItem value="min">min</SelectItem>
-                         <SelectItem value="h">h</SelectItem>
-                         <SelectItem value="dia">dia</SelectItem>
+                       <SelectContent className="bg-surface-card border-border-divider rounded-xl">
+                         <SelectItem value="min" className="text-[9px] font-black uppercase tracking-widest py-3">min</SelectItem>
+                         <SelectItem value="h" className="text-[9px] font-black uppercase tracking-widest py-3">h</SelectItem>
+                         <SelectItem value="dia" className="text-[9px] font-black uppercase tracking-widest py-3">dia</SelectItem>
                        </SelectContent>
                      </Select>
                    </div>
                  </td>
-                 <td className="px-4 py-3">
-                   <div className="flex items-center gap-1.5">
+                 <td className="px-8 py-6">
+                   <div className="flex items-center gap-2">
                      <Input
                        type="number"
                        min="1"
-                       className="w-20"
+                       className="w-24 bg-surface-background border-border-divider rounded-xl h-11 text-xs font-black text-content-primary focus:ring-2 focus:ring-plannera-primary/50 transition-all"
                        value={displayVal(levels[lev]?.resolution_minutes ?? 0, units[`${lev}_res`])}
                        onChange={e => handleUpdate(lev, 'resolution_minutes', e.target.value, units[`${lev}_res`])}
                      />
                      <Select value={units[`${lev}_res`]} onValueChange={v => handleUnitChange(`${lev}_res`, v as UnitType)}>
-                       <SelectTrigger className="w-20 h-9 text-xs bg-surface-card dark:bg-slate-900 border-border-divider">
+                       <SelectTrigger className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
                          <SelectValue />
                        </SelectTrigger>
-                       <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
-                         <SelectItem value="min">min</SelectItem>
-                         <SelectItem value="h">h</SelectItem>
-                         <SelectItem value="dia">dia</SelectItem>
+                       <SelectContent className="bg-surface-card border-border-divider rounded-xl">
+                         <SelectItem value="min" className="text-[9px] font-black uppercase tracking-widest py-3">min</SelectItem>
+                         <SelectItem value="h" className="text-[9px] font-black uppercase tracking-widest py-3">h</SelectItem>
+                         <SelectItem value="dia" className="text-[9px] font-black uppercase tracking-widest py-3">dia</SelectItem>
                        </SelectContent>
                      </Select>
                    </div>

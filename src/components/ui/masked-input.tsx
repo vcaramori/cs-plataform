@@ -19,7 +19,6 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
 
     const commonProps = {
       className: cn(
-        "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500",
         className
       ),
       onValueChange: (values: any) => {

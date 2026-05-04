@@ -102,8 +102,8 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
     }
   }
 
-  const INPUT = "h-11 rounded-xl bg-accent/30 border-border focus-visible:ring-primary shadow-inner"
-  const LABEL = "text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1"
+  const INPUT = "h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+  const LABEL = "text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1"
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -118,10 +118,10 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-background border-border text-foreground max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-xl font-black uppercase tracking-tighter">Editar Contrato</DialogTitle>
-          <DialogDescription className="text-muted-foreground text-xs font-medium">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">Editar Contrato</DialogTitle>
+          <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium">
             Atualize os parâmetros financeiros e operacionais deste registro.
           </DialogDescription>
         </DialogHeader>
@@ -229,16 +229,16 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
 
           <div className="space-y-2">
             <Label className={LABEL}>Notas Estratégicas</Label>
-            <Textarea {...register('notes')} className="min-h-[100px] bg-accent/30 border-border rounded-xl shadow-inner text-sm" placeholder="Detalhes específicos da negociação ou do contrato..." />
+            <Textarea {...register('notes')} className="min-h-[100px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner text-sm text-[#2d3558] dark:text-white focus-visible:ring-plannera-orange" placeholder="Detalhes específicos da negociação ou do contrato..." />
             {errors.notes && <p className="text-destructive text-[10px] font-bold ml-1">{errors.notes.message}</p>}
           </div>
         </form>
 
-        <DialogFooter className="p-6 bg-accent/30 border-t border-border flex items-center justify-between">
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-xl font-bold">
+        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white">
             Descartar
           </Button>
-          <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)} variant="premium" className="px-6 rounded-xl shadow-lg">
+          <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)} className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest">
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Salvar Alterações"}
           </Button>
         </DialogFooter>

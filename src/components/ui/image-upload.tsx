@@ -72,14 +72,22 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
         <Label 
           htmlFor="dropzone-file" 
           className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-            ${value ? 'border-indigo-500/50 bg-indigo-500/5 hover:bg-indigo-500/10' : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800'}
+            ${value ? 'border-plannera-primary/50 bg-plannera-primary/5 hover:bg-plannera-primary/10' : 'border-border-divider bg-surface-card hover:bg-accent/50'}
             ${disabled || isUploading ? 'pointer-events-none opacity-50' : ''}
           `}
         >
           {value ? (
              <div className="w-full h-full relative p-2 flex items-center justify-center group">
                {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src={value} alt="Logo" className="max-h-full max-w-full object-contain" />
+               <img 
+                 src={value} 
+                 alt="Logo" 
+                 className="max-h-full max-w-full object-contain" 
+                 onError={(e) => {
+                   (e.target as HTMLImageElement).style.display = 'none';
+                   // Here we could show a placeholder icon but for now we just hide the broken image
+                 }}
+               />
                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
                  <p className="text-white text-xs font-medium flex gap-2 items-center"><Upload className="w-4 h-4"/> Alterar Imagem</p>
                </div>
@@ -87,14 +95,14 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
           ) : (
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               {isUploading ? (
-                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-2" />
+                <Loader2 className="w-8 h-8 text-plannera-primary animate-spin mb-2" />
               ) : (
-                <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                <ImageIcon className="w-8 h-8 text-content-secondary/40 mb-2" />
               )}
-              <p className="mb-1 text-sm text-slate-400">
-                <span className="font-semibold text-indigo-400">Clique para enviar</span> ou arraste
+              <p className="mb-1 text-sm text-content-secondary">
+                <span className="font-semibold text-plannera-primary">Clique para enviar</span> ou arraste
               </p>
-              <p className="text-xs text-slate-500">SVG, PNG, JPG (Max. 2MB)</p>
+              <p className="text-xs text-content-secondary/60">SVG, PNG, JPG (Max. 2MB)</p>
             </div>
           )}
           <input 

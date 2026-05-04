@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { MessageSquare, Sparkles } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PerguntarClient } from './components/PerguntarClient'
+import { PageContainer } from '@/components/ui/page-container'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
+
 
 export default async function PerguntarPage() {
   const supabase = await getSupabaseServerClient()
@@ -15,21 +18,15 @@ export default async function PerguntarPage() {
     .order('name')
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 flex items-center justify-center shadow-sm">
-             <MessageSquare className="w-5 h-5 text-[#2d3558] dark:text-primary" />
-          </div>
-          <h1 className="h1-page">Perguntar</h1>
-        </div>
-        <p className="label-premium flex items-center gap-2">
-          Inteligência de Portfólio em Linguagem Natural
-          <Sparkles className="w-3.5 h-3.5 text-[#2d3558]/40 dark:text-primary/50" />
-        </p>
+    <PageContainer className="flex flex-col h-[calc(100vh-120px)]">
+      <ModuleHeader 
+        title="Plannera Assistant" 
+        subtitle="Inteligência de Portfólio, Análise Preditiva e RAG em Tempo Real"
+        iconName="Sparkles"
+      />
+      <div className="flex-1 mt-6 overflow-hidden">
+        <PerguntarClient accounts={accounts ?? []} />
       </div>
-      <PerguntarClient accounts={accounts ?? []} />
-    </div>
+    </PageContainer>
   )
 }

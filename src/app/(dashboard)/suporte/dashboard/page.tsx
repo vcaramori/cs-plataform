@@ -6,11 +6,14 @@ import {
 } from 'recharts'
 import {
   TicketCheck, AlertTriangle, Clock, CheckCircle2, Download,
-  Users, Building2, RefreshCw
+  Users, Building2, RefreshCw, ShieldCheck, Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageContainer } from '@/components/ui/page-container'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
+import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
+import { motion } from 'framer-motion'
 import {
   Table,
   TableBody,
@@ -117,157 +120,227 @@ export default function SupportDashboardPage() {
   }
 
   return (
-    <PageContainer className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-content-primary flex items-center gap-3">
-            <TicketCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            Dashboard de Suporte
-          </h1>
-          <p className="text-content-secondary text-sm mt-1">Visão executiva do módulo de suporte</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {(['7d', '30d', '90d'] as Period[]).map(p => (
+    <PageContainer>
+      <ModuleHeader 
+        title="Painel Tático de Suporte" 
+        subtitle="Métricas de Atendimento, Compliance de SLA e Satisfação do Cliente"
+        iconName="TicketCheck"
+      >
+        <div className="flex bg-surface-background/50 p-1.5 rounded-2xl border border-border-divider shadow-inner mr-4">
+          {(['7d', '30d', '90d'] as const).map(p => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                period === p ? 'bg-indigo-600 text-white' : 'bg-surface-card border border-border-divider text-content-secondary hover:text-content-primary'
+                "px-5 py-2 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest",
+                period === p 
+                  ? "bg-plannera-primary text-white shadow-lg shadow-plannera-primary/20" 
+                  : "text-content-secondary hover:text-plannera-primary opacity-40 hover:opacity-100"
               )}
             >
-              {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '90 dias'}
+              {p}
             </button>
           ))}
-          <Button size="sm" variant="outline" onClick={load} disabled={loading}>
-            <RefreshCw className={cn('w-3.5 h-3.5 mr-1', loading && 'animate-spin')} />
-            Atualizar
-          </Button>
-          <Button size="sm" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5 mr-1" />
-            Exportar XLSX
-          </Button>
         </div>
-      </div>
+        <Button size="sm" onClick={handleExport} className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
+          <Download className="w-4 h-4" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Relatório XLSX</span>
+        </Button>
+      </ModuleHeader>
 
-      {/* Camada 1 — KPIs Operacionais */}
-      <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary mb-3">Agora — Operacional</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Abertos', value: operational?.open_now, icon: TicketCheck, color: 'text-indigo-600 dark:text-indigo-400' },
-            { label: 'SLA Vencido', value: operational?.sla_breached, icon: AlertTriangle, color: 'text-red-600 dark:text-red-400' },
-            { label: 'SLA Atenção', value: operational?.sla_attention, icon: Clock, color: 'text-amber-600 dark:text-amber-400' },
-            { label: 'Aguard. Fechamento', value: operational?.awaiting_close, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400' },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <Card key={label} className="rounded-2xl p-4 space-y-2">
-              <div className={cn('flex items-center gap-2 text-xs font-semibold uppercase tracking-wider', color)}>
-                <Icon className="w-4 h-4" />
-                {label}
-              </div>
-              <p className="text-3xl font-extrabold text-content-primary">
-                {loading ? '—' : (value ?? 0)}
-              </p>
-            </Card>
-          ))}
+      {/* Camada 1 — KPIs Operacionais — Premium StatCards */}
+      <section className="relative">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-2 h-6 bg-plannera-primary rounded-full shadow-[0_0_15px_rgba(var(--plannera-primary),0.4)]" />
+          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Real-Time Operations</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <StatCardPremium 
+            title="Chamados Abertos"
+            value={operational?.open_now ?? 0}
+            iconName="TicketCheck"
+            colorVariant="sop"
+            status="Em fila de triagem"
+          />
+          <StatCardPremium 
+            title="SLA Vencido"
+            value={operational?.sla_breached ?? 0}
+            iconName="AlertTriangle"
+            colorVariant="destructive"
+            status="Ação crítica imediata"
+          />
+          <StatCardPremium 
+            title="SLA em Atenção"
+            value={operational?.sla_attention ?? 0}
+            iconName="Clock"
+            colorVariant="orange"
+            status="Janela de risco"
+          />
+          <StatCardPremium 
+            title="Aguard. Fechamento"
+            value={operational?.awaiting_close ?? 0}
+            iconName="CheckCircle2"
+            colorVariant="emerald"
+            status="Validação pendente"
+          />
         </div>
       </section>
 
       {/* Camada 2 — KPIs do período + gráficos */}
-      <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary mb-3">Período</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <section className="space-y-8">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
+          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Performance Summary</h2>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { label: 'Recebidos', value: periodData?.tickets_received },
-            { label: 'Resolvidos', value: periodData?.tickets_resolved },
-            { label: 'Compliance SLA Resolução', value: periodData?.sla_resolution_compliance_pct != null ? `${periodData.sla_resolution_compliance_pct}%` : '—' },
-            { label: 'CSAT Médio', value: periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—' },
-          ].map(({ label, value }) => (
-            <Card key={label} className="rounded-2xl p-4 space-y-1">
-              <p className="text-xs text-content-secondary font-semibold">{label}</p>
-              <p className="text-2xl font-extrabold text-content-primary">{loading ? '—' : (value ?? 0)}</p>
-            </Card>
+            { label: 'Recebidos', value: periodData?.tickets_received, icon: TicketCheck, color: 'text-plannera-primary' },
+            { label: 'Resolvidos', value: periodData?.tickets_resolved, icon: CheckCircle2, color: 'text-emerald-500' },
+            { label: 'Compliance SLA', value: periodData?.sla_resolution_compliance_pct != null ? `${periodData.sla_resolution_compliance_pct}%` : '—', icon: ShieldCheck, color: 'text-plannera-orange' },
+            { label: 'CSAT Médio', value: periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—', icon: Star, color: 'text-amber-400' },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="bg-surface-card border border-border-divider p-8 rounded-2xl shadow-lg hover:border-plannera-primary/20 transition-all group overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-border-divider group-hover:bg-plannera-primary transition-colors" />
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/40 group-hover:text-content-secondary transition-opacity">{label}</p>
+                <Icon className={cn("w-5 h-5 opacity-20 group-hover:opacity-100 transition-all group-hover:scale-110", color)} />
+              </div>
+              <p className="text-4xl font-black text-content-primary tracking-tighter leading-none tabular-nums">{loading ? '—' : (value ?? 0)}</p>
+            </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="rounded-2xl p-4">
-            <p className="text-xs font-semibold text-content-secondary mb-4">TMP — Tempo Médio 1ª Resposta</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -mr-10 -mt-10" />
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">TMP — 1ª Resposta</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-4xl font-black text-indigo-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_first_response_minutes ?? null)}</p>
+                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Média</span>
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-indigo-500/10 text-indigo-500 shadow-inner group-hover:scale-110 transition-transform">
+                <Clock className="w-6 h-6" />
+              </div>
+            </div>
             {periodData && (
-              <ResponsiveContainer width="100%" height={120}>
-                <BarChart data={[{ name: 'Período', value: periodData.avg_first_response_minutes ?? 0 }]}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="name" tick={{ fill: '#5c5b5b', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#5c5b5b', fontSize: 11 }} />
-                  <Tooltip formatter={(v: any) => [`${v}min`, 'TMP']} contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                  <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-[140px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[{ name: 'Média', value: periodData.avg_first_response_minutes ?? 0 }]}>
+                    <XAxis dataKey="name" hide />
+                    <YAxis hide />
+                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
+                    <Bar dataKey="value" fill="url(#colorIndigo)" radius={[12, 12, 12, 12]} barSize={80} />
+                    <defs>
+                      <linearGradient id="colorIndigo" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={1}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.2}/>
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
-            <p className="text-center text-xs text-content-secondary mt-2 font-extrabold tabular-nums">
-              {loading ? '—' : formatMinutes(periodData?.avg_first_response_minutes ?? null)}
-            </p>
           </Card>
 
-          <Card className="rounded-2xl p-4">
-            <p className="text-xs font-semibold text-content-secondary mb-4">TMR — Tempo Médio de Resolução</p>
+          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] -mr-10 -mt-10" />
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">TMR — Resolução</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-4xl font-black text-emerald-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}</p>
+                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Média</span>
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+            </div>
             {periodData && (
-              <ResponsiveContainer width="100%" height={120}>
-                <BarChart data={[{ name: 'Período', value: periodData.avg_resolution_minutes ?? 0 }]}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="name" tick={{ fill: '#5c5b5b', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#5c5b5b', fontSize: 11 }} />
-                  <Tooltip formatter={(v: any) => [`${v}min`, 'TMR']} contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-[140px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[{ name: 'Média', value: periodData.avg_resolution_minutes ?? 0 }]}>
+                    <XAxis dataKey="name" hide />
+                    <YAxis hide />
+                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
+                    <Bar dataKey="value" fill="url(#colorEmerald)" radius={[12, 12, 12, 12]} barSize={80} />
+                    <defs>
+                      <linearGradient id="colorEmerald" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
-            <p className="text-center text-xs text-content-secondary mt-2 font-extrabold tabular-nums">
-              {loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}
-            </p>
           </Card>
         </div>
       </section>
 
       {/* Camada 3 — Por Agente */}
-      <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary mb-3 flex items-center gap-2">
-          <Users className="w-4 h-4" /> Desempenho por Agente
-        </h2>
+      <section className="space-y-8">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-2 h-6 bg-plannera-primary rounded-full shadow-[0_0_15px_rgba(var(--plannera-primary),0.4)]" />
+          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Expert Performance</h2>
+        </div>
+
         {loading ? (
-          <p className="text-content-secondary text-sm">Carregando...</p>
+          <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
         ) : agents.length === 0 ? (
-          <Card className="rounded-2xl p-8 text-center text-content-secondary text-sm">
-            Nenhum dado de agente no período selecionado.
+          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-40">
+            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem registros para o horizonte selecionado</p>
           </Card>
         ) : (
-          <Card className="rounded-2xl overflow-hidden border border-border-divider">
+          <Card variant="glass" className="rounded-2xl overflow-hidden border border-border-divider bg-surface-card/80 backdrop-blur-xl shadow-2xl">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6 text-[11px]">Agente</TableHead>
-                  <TableHead className="text-right text-[11px]">Recebidos</TableHead>
-                  <TableHead className="text-right text-[11px]">Resolvidos</TableHead>
-                  <TableHead className="text-right text-[11px]">SLA Res.</TableHead>
-                  <TableHead className="text-right text-[11px]">TMR</TableHead>
-                  <TableHead className="text-right pr-6 text-[11px]">CSAT</TableHead>
+              <TableHeader className="bg-surface-background/50">
+                <TableRow className="hover:bg-transparent border-border-divider h-16">
+                  <TableHead className="pl-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Agente Especialista</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Fluxo</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Sucesso</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Compliance</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">TMR Médio</TableHead>
+                  <TableHead className="text-right pr-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Rating CSAT</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {agents.map(a => (
-                  <TableRow key={a.agent_id}>
-                    <TableCell className="pl-6 text-[13px] font-extrabold uppercase tracking-tight text-content-primary transition-colors">
-                      {a.agent_id.slice(0, 8)}…
+                  <TableRow key={a.agent_id} className="hover:bg-plannera-primary/[0.02] border-border-divider group transition-all h-24">
+                    <TableCell className="pl-10">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-2xl bg-plannera-primary/5 border border-plannera-primary/10 flex items-center justify-center text-[12px] font-black text-plannera-primary group-hover:scale-110 transition-transform shadow-inner">
+                          {a.agent_id.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[12px] font-black uppercase tracking-tight text-content-primary group-hover:text-plannera-primary transition-colors">
+                            {a.agent_id.split('-')[0] || 'Agente'}
+                          </span>
+                          <span className="text-[9px] font-black text-content-secondary/30 uppercase tracking-widest">{a.agent_id.slice(0, 8)}</span>
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right font-extrabold text-[11px] text-content-primary">{a.received}</TableCell>
-                    <TableCell className="text-right font-extrabold text-[11px] text-emerald-600 dark:text-emerald-400">{a.resolved}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{a.received}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-emerald-500 tabular-nums">{a.resolved}</TableCell>
                     <TableCell className="text-right"><CompliancePill value={a.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-extrabold text-[11px] text-content-secondary">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-40 group-hover:opacity-100 tabular-nums">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right pr-10">
                       {a.avg_csat != null
-                        ? <span className={cn('font-extrabold text-[11px]', a.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : a.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{a.avg_csat}/5</span>
-                        : <span className="text-content-secondary font-extrabold text-[11px]">——</span>}
+                        ? <div className="flex items-center justify-end gap-2">
+                            <div className={cn(
+                              "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
+                              a.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : a.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
+                            )}>
+                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-40')} />
+                              {a.avg_csat}
+                            </div>
+                          </div>
+                        : <span className="text-content-secondary font-black text-[12px] opacity-10">——</span>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -278,27 +351,29 @@ export default function SupportDashboardPage() {
       </section>
 
       {/* Camada 4 — Por Cliente */}
-      <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary mb-3 flex items-center gap-2">
-          <Building2 className="w-4 h-4" /> Saúde de Suporte por Cliente
-        </h2>
+      <section className="space-y-8">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-2 h-6 bg-plannera-orange rounded-full shadow-[0_0_15px_rgba(247,148,30,0.4)]" />
+          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Client Engagement Health</h2>
+        </div>
+
         {loading ? (
-          <p className="text-content-secondary text-sm">Carregando...</p>
+          <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
         ) : clients.length === 0 ? (
-          <Card className="rounded-2xl p-8 text-center text-content-secondary text-sm">
-            Nenhum dado de cliente no período selecionado.
+          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-40">
+            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem dados de engajamento no período</p>
           </Card>
         ) : (
-          <Card className="rounded-2xl overflow-hidden border border-border-divider">
+          <Card variant="glass" className="rounded-2xl overflow-hidden border border-border-divider bg-surface-card/80 backdrop-blur-xl shadow-2xl">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6 text-[11px]">Cliente</TableHead>
-                  <TableHead className="text-right text-[11px]">Chamados</TableHead>
-                  <TableHead className="text-right text-[11px]">Críticos</TableHead>
-                  <TableHead className="text-right text-[11px]">SLA Res.</TableHead>
-                  <TableHead className="text-right text-[11px]">TMR</TableHead>
-                  <TableHead className="text-right pr-6 text-[11px]">CSAT</TableHead>
+              <TableHeader className="bg-surface-background/50">
+                <TableRow className="hover:bg-transparent border-border-divider h-16">
+                  <TableHead className="pl-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Cliente Corporativo</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Tickets</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Críticos</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Compliance</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">TMR Médio</TableHead>
+                  <TableHead className="text-right pr-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Rating CSAT</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -306,22 +381,42 @@ export default function SupportDashboardPage() {
                   <TableRow
                     key={c.account_id}
                     onClick={() => window.location.href = `/accounts/${c.account_id}`}
+                    className="hover:bg-plannera-orange/[0.02] border-border-divider group transition-all cursor-pointer h-24"
                   >
-                    <TableCell className="pl-6 text-[13px] font-extrabold uppercase tracking-tight text-content-primary transition-colors">
-                      {c.account_name}
+                    <TableCell className="pl-10">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-2xl bg-plannera-orange/5 border border-plannera-orange/10 flex items-center justify-center text-[12px] font-black text-plannera-orange group-hover:rotate-6 transition-transform shadow-inner">
+                          {c.account_name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <span className="text-[12px] font-black uppercase tracking-tight text-content-primary group-hover:text-plannera-orange transition-colors">
+                          {c.account_name}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right font-extrabold text-[11px] text-content-primary">{c.tickets}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{c.tickets}</TableCell>
                     <TableCell className="text-right">
                       {c.critical_tickets > 0
-                        ? <span className="text-red-600 dark:text-red-400 font-extrabold text-[11px]">{c.critical_tickets}</span>
-                        : <span className="text-content-secondary font-extrabold text-[11px]">0</span>}
+                        ? <div className="flex justify-end">
+                            <div className="px-3 py-1 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 font-black text-[11px] animate-pulse shadow-sm">
+                              {c.critical_tickets} ATENÇÃO
+                            </div>
+                          </div>
+                        : <span className="text-content-secondary font-black text-[14px] opacity-10 tabular-nums">0</span>}
                     </TableCell>
                     <TableCell className="text-right"><CompliancePill value={c.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-extrabold text-[11px] text-content-secondary">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
-                    <TableCell className="text-right pr-6">
+                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-40 group-hover:opacity-100 tabular-nums">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right pr-10">
                       {c.avg_csat != null
-                        ? <span className={cn('font-extrabold text-[11px]', c.avg_csat >= 4 ? 'text-emerald-600 dark:text-emerald-400' : c.avg_csat >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400')}>{c.avg_csat}/5</span>
-                        : <span className="text-content-secondary font-extrabold text-[11px]">——</span>}
+                        ? <div className="flex items-center justify-end gap-2">
+                            <div className={cn(
+                              "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
+                              c.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : c.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
+                            )}>
+                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-40')} />
+                              {c.avg_csat}
+                            </div>
+                          </div>
+                        : <span className="text-content-secondary font-black text-[12px] opacity-10">——</span>}
                     </TableCell>
                   </TableRow>
                 ))}

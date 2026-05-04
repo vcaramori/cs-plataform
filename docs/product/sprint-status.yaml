@@ -1,0 +1,65 @@
+# generated: 2026-04-28
+# last_updated: 2026-04-28
+# project: CS-Continuum
+# tracking_system: file-system
+# story_location: docs/product/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+generated: 2026-04-28
+last_updated: 2026-04-28
+project: CS-Continuum
+tracking_system: file-system
+story_location: docs/product/stories
+
+development_status:
+  epic-1: done
+  1-1-kpi-strip-metricas: done
+  1-2-accounts-table-resumo: done
+  epic-1-retrospective: optional
+
+  epic-2: done
+  2-1-lista-de-contas: done
+  2-2-detalhes-da-conta: done
+  epic-2-retrospective: optional
+
+  epic-3: done
+  3-1-dashboard-nps: done
+  epic-3-retrospective: optional
+
+  epic-4: done
+  4-1-gestao-de-tickets: done
+  epic-4-retrospective: optional
+
+  epic-5: done
+  5-1-chatbot-contextual: done
+  epic-5-retrospective: optional
+
+  epic-6: done
+  6-1-lancamento-de-horas: done
+  epic-6-retrospective: optional
+
+  epic-7: done
+  7-1-configuracoes-globais: done
+  epic-7-retrospective: optional
+
+  epic-8: done
+  8-1-login-auth: done
+  8-2-gestao-de-equipe: done
+  epic-8-retrospective: optional

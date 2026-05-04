@@ -90,22 +90,22 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 h-full w-full sm:w-[420px] bg-surface-card border-l border-border-divider shadow-2xl z-50 flex flex-col"
+              className="fixed right-0 top-0 h-full w-full sm:w-[420px] bg-white dark:bg-slate-900 border-l border-border shadow-2xl z-50 flex flex-col"
             >
               {/* Cabeçalho */}
-              <div className="p-4 border-b border-border-divider flex items-center justify-between bg-surface-background/60 shrink-0">
+              <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                     <Bot className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="text-content-primary text-sm font-black uppercase tracking-tight">Assistente IA</h3>
-                    <p className="text-[10px] text-content-secondary font-bold uppercase tracking-wide">{accountName}</p>
+                    <h3 className="text-foreground text-sm font-black uppercase tracking-tight">Assistente IA</h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">{accountName}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-surface-background flex items-center justify-center text-content-secondary hover:text-content-primary hover:bg-surface-card transition-all"
+                  className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
                   aria-label="Fechar assistente"
                 >
                   <X className="w-4 h-4" />
@@ -118,8 +118,8 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40 px-6">
                     <Sparkles className="w-10 h-10 text-indigo-500 animate-pulse" />
                     <div className="space-y-2">
-                      <p className="text-content-primary text-sm font-bold">Como posso ajudar hoje?</p>
-                      <p className="text-xs text-content-secondary leading-relaxed">
+                      <p className="text-foreground text-sm font-bold">Como posso ajudar hoje?</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
                         Pergunte sobre contratos, tickets abertos ou insights de saúde deste cliente.
                       </p>
                     </div>
@@ -131,7 +131,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
                     <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
                       m.role === 'user'
                         ? 'bg-indigo-600 text-white'
-                        : 'bg-surface-background border border-border-divider text-content-primary'
+                        : 'bg-card border border-border text-foreground'
                     }`}>
                       <div className="prose prose-invert prose-sm max-w-none">
                         <ReactMarkdown>{m.content}</ReactMarkdown>
@@ -142,7 +142,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
 
                 {loading && (
                   <div className="flex justify-start">
-                    <div className="bg-surface-background border border-border-divider p-3 rounded-2xl">
+                    <div className="bg-card border border-border p-3 rounded-2xl">
                       <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
                     </div>
                   </div>
@@ -150,14 +150,13 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Campo de entrada */}
-              <div className="p-4 border-t border-border-divider bg-surface-background/60 shrink-0">
+              <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900 shrink-0">
                 <form onSubmit={handleSend} className="flex gap-2">
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Pergunte algo sobre este cliente..."
-                    className="bg-surface-background border-border-divider text-content-primary placeholder:text-content-secondary h-10"
+                    className="bg-card border-border text-foreground placeholder:text-muted-foreground h-10"
                   />
                   <Button
                     type="submit"

@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { parseTimeEntry } from '@/lib/gemini/parse-time-entry'
+import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
+import { getHealthClassification } from '@/lib/health/utils'
 
 const BodySchema = z.object({
   raw_text: z.string().min(5),
@@ -53,10 +56,11 @@ export async function POST(request: Request) {
   let accountId = parsed.data.account_id ?? null
 
   if (!accountId && parsedEntry.account_name_hint) {
+    const hint = parsedEntry.account_name_hint
     const { data: accounts } = await supabase
       .from('accounts')
       .select('id, name')
-      .ilike('name', `%${parsedEntry.account_name_hint}%`)
+      .or(`name.ilike.%${hint}%,company_name.ilike.%${hint}%`)
       .eq('csm_owner_id', user.id)
       .limit(1)
 
@@ -100,19 +104,50 @@ export async function POST(request: Request) {
     console.warn(`[TimeEntry] confidence_score=${parsedEntry.confidence_score} — salvo com status pending_review`)
   }
 
-  // 4. Se for uma interação com o cliente, sincroniza com a tabela de interações
+  // 4. Se for uma interação com o cliente ou texto de alto risco, sincroniza com a tabela de interações
   const clientFacingTypes = ['meeting', 'onboarding', 'qbr']
-  if (clientFacingTypes.includes(parsedEntry.activity_type)) {
-    await supabase.from('interactions').insert({
+  const riskKeywords = ['crise', 'risco', 'cancelamento', 'cancelar', 'insatisfeito', 'reclamou', 'urgente', 'board']
+  const positiveKeywords = ['resolvido', 'corrigido', 'sucesso', 'parabéns', 'obrigado', 'agradeço', 'positivo', 'ótimo', 'excelente']
+  
+  const isHighRisk = riskKeywords.some(kw => parsed.data.raw_text.toLowerCase().includes(kw))
+  const isPositive = positiveKeywords.some(kw => parsed.data.raw_text.toLowerCase().includes(kw))
+  
+  if (clientFacingTypes.includes(parsedEntry.activity_type) || isHighRisk || isPositive) {
+    // Sentiment: -0.8 (risco), 0.8 (positivo), ou 0.2 (neutro/padrão)
+    const sentimentScore = isHighRisk ? -0.8 : isPositive ? 0.8 : 0.2
+    const alertTriggered = isHighRisk
+
+    const { error: intError } = await supabase.from('interactions').insert({
       account_id: accountId,
       csm_id: user.id,
-      title: `Esforço: ${(parsedEntry.activity_type as string) === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
-      type: parsedEntry.activity_type,
+      title: isHighRisk 
+        ? `ALERTA: ${(parsedEntry.parsed_description || 'Crise detectada').slice(0, 50)}...`
+        : isPositive
+        ? `SUCESSO: ${(parsedEntry.parsed_description || 'Problema resolvido').slice(0, 50)}...`
+        : `Esforço: ${(parsedEntry.activity_type as string) === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
+      type: isHighRisk ? 'churn-risk' : isPositive ? 'success' : (parsedEntry.activity_type === 'other' ? 'meeting' : parsedEntry.activity_type),
       date: parsedEntry.date,
       direct_hours: parsedEntry.parsed_hours,
       source: 'effort_sync',
-      time_entry_id: result.id // CRITICAL: This was missing
+      time_entry_id: result.id,
+      raw_transcript: parsed.data.raw_text,
+      sentiment_score: sentimentScore,
+      alert_triggered: alertTriggered
     })
+
+    if (intError) {
+      console.error('[TimeEntry] Interaction Insert Error:', intError)
+    } else {
+      // Trigger AI Analysis and WAIT for them to ensure they complete in this request cycle
+      console.log(`[TimeEntry] Triggering AI analysis for account ${accountId}`)
+      
+      try {
+        // Aciona análise unificada (Risco + Saúde) usando o Admin Client interno do módulo
+        await runAutomatedAccountAnalysis(accountId, user.id)
+      } catch (aiErr) {
+        console.error('[TimeEntry] AI Analysis Error:', aiErr)
+      }
+    }
   }
 
   return NextResponse.json({

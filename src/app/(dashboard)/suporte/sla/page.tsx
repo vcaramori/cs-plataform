@@ -1,19 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
+import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
+import { Clock, CheckCircle2, AlertTriangle, Star, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, Legend 
+  ResponsiveContainer, 
+  BarChart, 
+  CartesianGrid, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Bar, 
+  Cell, 
+  PieChart, 
+  Pie, 
+  Legend 
 } from 'recharts'
-import { 
-  TicketCheck, AlertTriangle, CheckCircle2, 
-  Clock, TrendingUp, ArrowLeft, Loader2, Star
-} from 'lucide-react'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 export default function SLADashboard() {
   const [data, setData] = useState<any>(null)
@@ -34,15 +38,20 @@ export default function SLADashboard() {
 
   if (loading) {
     return (
-      <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-plannera-orange" />
-        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Compilando Inteligência SLA...</p>
+      <div className="h-[80vh] flex flex-col items-center justify-center gap-6">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-plannera-orange/20 border-t-plannera-orange rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-plannera-primary/20 border-t-plannera-primary rounded-full animate-spin-slow" />
+          </div>
+        </div>
+        <p className="text-[10px] font-black text-content-primary uppercase tracking-[0.3em] animate-pulse">Compilando Inteligência SLA...</p>
       </div>
     )
   }
 
   const COLORS = ['#f7941e', '#3a4c8a', '#d85d4b', '#64748b']
-  const PIE_COLORS = ['#10b981', '#ef4444'] // Success vs Danger
+  const PIE_COLORS = ['#10b981', '#ef4444']
 
   const pieData = [
     { name: 'Dentro do Prazo', value: data?.summary?.first_response_met_pct || 100 },
@@ -50,94 +59,77 @@ export default function SLADashboard() {
   ]
 
   return (
-    <div className="p-6 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link href="/suporte" className="p-2 rounded-full hover:bg-white/5 transition-all text-slate-500 hover:text-white">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="h1-page">Control Tower SLA</h1>
-            <p className="label-premium flex items-center gap-2">
-              Portfolio Intelligence & Operational Excellence
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-           <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900 px-4 py-1.5 rounded-full font-extrabold text-[10px] tracking-widest uppercase">
-             Health: Stability
-           </Badge>
-        </div>
-      </div>
+    <div className="p-8 space-y-10 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <ModuleHeader 
+        title="Control Tower SLA"
+        subtitle="Portfolio Intelligence & Operational Excellence"
+      />
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard 
-          title="Achievement rate" 
+        <StatCardPremium 
+          title="Achievement Rate" 
           value={`${data?.summary?.first_response_met_pct.toFixed(1)}%`} 
-          label="Primeira Resposta"
-          icon={<Clock className="w-4 h-4" />}
-          trend="+2.4%"
-          color="indigo"
+          status="Primeira Resposta"
+          icon={Clock}
+          trend={{ value: '2.4', isPositive: true }}
+          colorVariant="sop"
         />
-        <KpiCard 
+        <StatCardPremium 
           title="Resolution Rate" 
           value={`${data?.summary?.resolution_met_pct.toFixed(1)}%`} 
-          label="Resolução Final"
-          icon={<CheckCircle2 className="w-4 h-4" />}
-          trend="-0.5%"
-          color="emerald"
+          status="Resolução Final"
+          icon={CheckCircle2}
+          trend={{ value: '0.5', isPositive: false }}
+          colorVariant="emerald"
         />
-        <KpiCard 
+        <StatCardPremium 
           title="Open Violations" 
           value={data?.summary?.breached_total || 0} 
-          label="Ação Imediata"
-          icon={<AlertTriangle className="w-4 h-4" />}
-          color="orange"
-          isBad
+          status="Ação Imediata"
+          icon={AlertTriangle}
+          colorVariant="destructive"
         />
-        <KpiCard 
+        <StatCardPremium 
           title="Average CSAT" 
           value={data?.summary?.avg_csat || '—'} 
-          label="Satisfação Global"
-          icon={<Star className="w-4 h-4" />}
-          color="amber"
+          status="Satisfação Global"
+          icon={Star}
+          colorVariant="orange"
         />
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Priority Breakdown */}
-        <Card className="xl:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl">
-          <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 bg-surface-card border border-border-divider rounded-2xl p-8 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <CardTitle className="h2-section !text-[#2d3558] dark:!text-white">Performance por Prioridade</CardTitle>
-              <p className="label-premium !text-[9px] opacity-60">Percentual de conformidade por nível de sla</p>
+              <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Performance por Prioridade</h2>
+              <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Conformidade por nível de serviço</p>
             </div>
-          </CardHeader>
-          <CardContent className="px-0 pt-6 h-[350px]">
+          </div>
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data?.priority_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis 
                   dataKey="priority" 
-                  stroke="#64748b" 
+                  stroke="rgba(255,255,255,0.2)" 
                   fontSize={10} 
-                  fontWeight="bold" 
+                  fontWeight="900" 
                   tickFormatter={(val) => val.toUpperCase()} 
+                  dy={10}
                 />
-                <YAxis stroke="#64748b" fontSize={10} fontWeight="bold" />
+                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} fontWeight="900" />
                 <Tooltip 
-                  cursor={{ fill: '#f1f5f9' }}
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', backdropFilter: 'blur(12px)' }}
                 />
                 <Bar 
                   dataKey="pct" 
                   name="SLA %" 
-                  radius={[8, 8, 0, 0]}
-                  animationDuration={1500}
+                  radius={[12, 12, 0, 0]}
+                  animationDuration={2000}
                 >
                   {data?.priority_breakdown.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -145,127 +137,88 @@ export default function SLADashboard() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Global Distribution Pie */}
-        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl">
-          <CardHeader className="px-0 pt-0">
-            <CardTitle className="h2-section !text-[#2d3558] dark:!text-white">Status de Saúde</CardTitle>
-            <p className="label-premium !text-[9px] opacity-60">Proporção total de atendimento</p>
-          </CardHeader>
-          <CardContent className="px-0 pt-6 h-[350px]">
+        <div className="bg-surface-card border border-border-divider rounded-2xl p-8 shadow-2xl backdrop-blur-md flex flex-col">
+          <div className="mb-8">
+            <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Status de Saúde</h2>
+            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Proporção total de atendimento</p>
+          </div>
+          <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
-                  cy="45%"
-                  innerRadius={80}
-                  outerRadius={110}
-                  paddingAngle={8}
+                  cy="50%"
+                  innerRadius={85}
+                  outerRadius={120}
+                  paddingAngle={10}
                   dataKey="value"
-                  animationDuration={1500}
+                  animationDuration={2000}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
+                  contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', backdropFilter: 'blur(12px)' }}
                 />
                 <Legend 
                   verticalAlign="bottom" 
                   align="center"
-                  wrapperStyle={{ paddingTop: '20px', fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}
+                  wrapperStyle={{ paddingTop: '20px', fontSize: '9px', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '0.1em' }}
                 />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Recent Breaches */}
-      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6 rounded-3xl overflow-hidden">
-        <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
-           <div>
-              <CardTitle className="text-slate-900 dark:text-white text-lg font-extrabold uppercase tracking-tight">Alertas de Violação</CardTitle>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Top 10 incidentes recentes fora do prazo</p>
-           </div>
-           <Button variant="outline" className="h-8 text-[9px] font-extrabold uppercase tracking-widest border-slate-200">
-             Exportar Relatório
-           </Button>
-        </CardHeader>
-        <CardContent className="px-0 pt-6">
-          <div className="space-y-3">
-            {data?.recent_breaches.length === 0 ? (
-              <div className="text-center py-10 opacity-30">
-                <p className="text-xs uppercase font-bold tracking-widest">Nenhuma violação detectada no portfolio.</p>
-              </div>
-            ) : (
-              data?.recent_breaches.map((t: any) => (
-                <div key={t.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="text-slate-900 dark:text-white text-sm font-bold">{t.title}</h4>
-                      <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">Prioridade: {t.priority}</p>
-                    </div>
+      <div className="bg-surface-card border border-border-divider rounded-2xl p-8 shadow-2xl backdrop-blur-md">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Alertas de Violação</h2>
+            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Incidentes críticos pendentes</p>
+          </div>
+          <Button variant="outline" className="h-11 rounded-xl px-6 border-border-divider hover:bg-white/5 text-[10px] font-black uppercase tracking-widest transition-all">
+            Exportar Deep Audit
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {data?.recent_breaches.length === 0 ? (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-20 grayscale">
+              <CheckCircle2 className="w-12 h-12 mb-4" />
+              <p className="text-[10px] font-black uppercase tracking-widest">Nenhuma violação detectada no portfolio</p>
+            </div>
+          ) : (
+            data?.recent_breaches.map((t: any) => (
+              <div key={t.id} className="group flex items-center justify-between p-6 rounded-2xl bg-surface-background/50 border border-border-divider hover:border-red-500/30 transition-all">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <AlertTriangle className="w-6 h-6 text-red-500" />
                   </div>
-                  <div className="text-right">
-                    <Badge className="bg-red-100 text-red-700 border-none text-[9px] font-extrabold uppercase tracking-widest">
-                      Violado
-                    </Badge>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-tight text-content-primary">{t.title}</h4>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40">Prioridade {t.priority}</span>
+                      <div className="w-1 h-1 bg-content-secondary opacity-20 rounded-full" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-red-500/60">Violado</span>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function KpiCard({ title, value, label, icon, trend, color, isBad }: any) {
-  const colorMap: any = {
-    indigo: 'from-primary/10 to-transparent text-primary',
-    emerald: 'from-emerald-500/10 to-transparent text-emerald-600 dark:text-emerald-400',
-    orange: 'from-orange-500/10 to-transparent text-orange-600 dark:text-orange-400',
-    amber: 'from-amber-500/10 to-transparent text-amber-600 dark:text-amber-400',
-  }
-
-  return (
-    <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm border-none rounded-3xl overflow-hidden relative group">
-      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50", colorMap[color])} />
-      <CardContent className="p-6 relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <div className="p-2.5 rounded-xl bg-white dark:bg-black/40 border border-white/5 text-slate-400 group-hover:text-brand-primary dark:text-white transition-colors">
-            {icon}
-          </div>
-          {trend && (
-            <span className={cn(
-              "text-[10px] font-extrabold uppercase tracking-widest",
-              trend.startsWith('+') ? "text-emerald-400" : "text-red-400"
-            )}>
-              {trend}
-            </span>
+                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider hover:bg-white/5 text-content-secondary opacity-40 hover:opacity-100 transition-all">
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                </Button>
+              </div>
+            ))
           )}
         </div>
-        <div className="space-y-1">
-          <p className="label-premium !text-[9px] opacity-60">{title}</p>
-          <h3 className={cn(
-            "text-3xl font-extrabold tracking-tight",
-            isBad ? "text-red-600 dark:text-red-500" : "text-brand-primary dark:text-white"
-          )}>
-            {value}
-          </h3>
-          <p className="label-premium !text-[9px] opacity-60">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

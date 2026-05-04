@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Trash2, Plus, ArrowRight } from 'lucide-react'
+import { Trash2, Plus, ArrowRight, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   policyId: string
@@ -67,55 +68,79 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
   const lbls = { critical: 'Crítico', high: 'Alto', medium: 'Médio', low: 'Baixo' }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-brand-primary dark:text-white">Mapeamento de Prioridades Externas</h3>
-        <p className="text-sm text-brand-grey dark:text-slate-400">Traduza rótulos vindos de e-mails (IMAP) ou integrações para os níveis de SLA internos.</p>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-1 h-4 bg-plannera-orange rounded-full" />
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary">Mapeamento de Prioridades Externas</h3>
       </div>
 
-      <div className="flex gap-2 items-center bg-white dark:bg-slate-900/50 p-4 border border-slate-200 dark:border-slate-800 rounded-lg">
+      <div className="flex gap-3 items-center bg-surface-card/50 backdrop-blur-md p-4 border border-border-divider rounded-2xl shadow-sm">
         <Input
-          placeholder="Ex: Urgent, P1"
+          placeholder="Ex: Urgent, P1, Urgente"
           value={newLabel}
           onChange={e => setNewLabel(e.target.value)}
-          className="flex-1"
+          className="flex-1 bg-surface-background border-border-divider rounded-xl h-12 text-xs font-bold uppercase tracking-tight"
         />
-        <ArrowRight className="w-4 h-4 text-brand-grey dark:text-slate-500" />
+        <div className="px-2 text-content-secondary opacity-30">
+          <ArrowRight className="w-4 h-4" />
+        </div>
         <Select value={newLevel} onValueChange={(v) => setNewLevel(v as any)}>
-          <SelectTrigger className="w-36 bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
+          <SelectTrigger className="w-40 bg-surface-background border-border-divider text-content-primary rounded-xl h-12 text-[10px] font-black uppercase tracking-widest">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-surface-card dark:bg-slate-900 border-border-divider text-content-primary">
-            <SelectItem value="critical">Crítico</SelectItem>
-            <SelectItem value="high">Alto</SelectItem>
-            <SelectItem value="medium">Médio</SelectItem>
-            <SelectItem value="low">Baixo</SelectItem>
+          <SelectContent className="bg-surface-card border-border-divider rounded-xl">
+            <SelectItem value="critical" className="text-[10px] font-black uppercase tracking-widest py-3">Crítico</SelectItem>
+            <SelectItem value="high" className="text-[10px] font-black uppercase tracking-widest py-3">Alto</SelectItem>
+            <SelectItem value="medium" className="text-[10px] font-black uppercase tracking-widest py-3">Médio</SelectItem>
+            <SelectItem value="low" className="text-[10px] font-black uppercase tracking-widest py-3">Baixo</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={handleAdd} disabled={isAdding || !newLabel.trim()}>
-          <Plus className="w-4 h-4 mr-1" /> Adicionar
+        <Button 
+          onClick={handleAdd} 
+          disabled={isAdding || !newLabel.trim()}
+          className="bg-plannera-orange hover:bg-plannera-orange/90 text-white h-12 px-6 rounded-xl shadow-lg shadow-plannera-orange/20 active:scale-95 transition-all"
+        >
+          {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+          <span className="text-[10px] font-black uppercase tracking-widest">Adicionar</span>
         </Button>
       </div>
 
-      <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+      <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-xl">
         {mappings.length === 0 ? (
-          <div className="p-6 text-center text-sm text-brand-grey dark:text-slate-500 bg-white dark:bg-slate-900/50">
-            Nenhum mapeamento configurado. Os tickets não mapeados assumirão "Médio" por padrão.
+          <div className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-content-secondary opacity-40 bg-surface-background/50">
+            Nenhum mapeamento configurado
           </div>
         ) : (
-          <table className="w-full text-sm text-left">
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900/50">
+          <table className="w-full text-left border-collapse">
+            <tbody className="divide-y divide-border-divider bg-transparent">
               {mappings.map(m => (
-                <tr key={m.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-brand-primary dark:text-slate-200">
-                    "{m.external_label}"
+                <tr key={m.id} className="hover:bg-white/5 transition-all group">
+                  <td className="px-8 py-5">
+                    <span className="text-xs font-black uppercase tracking-widest text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
+                      "{m.external_label}"
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-brand-grey dark:text-slate-400 w-10 text-center">→</td>
-                  <td className="px-4 py-3 text-indigo-400 font-medium whitespace-nowrap w-24">
-                    {lbls[m.internal_level]}
+                  <td className="px-4 py-5 text-content-secondary opacity-20 w-10 text-center">
+                    <ArrowRight className="w-3 h-3 mx-auto" />
                   </td>
-                  <td className="px-4 py-3 text-right w-16">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-brand-grey dark:text-slate-500 hover:text-red-400" onClick={() => handleDelete(m.id)}>
+                  <td className="px-8 py-5">
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border",
+                      m.internal_level === 'critical' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                      m.internal_level === 'high' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
+                      m.internal_level === 'medium' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
+                      'bg-slate-500/10 text-content-secondary border-border-divider'
+                    )}>
+                      {lbls[m.internal_level]}
+                    </span>
+                  </td>
+                  <td className="px-8 py-5 text-right w-16">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 text-content-secondary opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" 
+                      onClick={() => handleDelete(m.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>

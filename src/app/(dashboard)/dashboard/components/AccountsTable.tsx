@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, TrendingUp, TrendingDown, Minus, AlertTriangle, Building2, Pencil } from 'lucide-react'
+import { Search, Plus, TrendingUp, TrendingDown, Minus, AlertTriangle, Building2, Pencil, BrainCircuit } from 'lucide-react'
 import type { Account, Contract } from '@/lib/supabase/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatCurrency, formatNumber } from '@/lib/utils'
@@ -70,12 +70,29 @@ function SegmentBadge({ segment }: { segment: string }) {
 
 export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [segmentFilter, setSegmentFilter] = useState<string>('all')
+  const [riskFilter, setRiskFilter] = useState<boolean>(false)
+
+  useEffect(() => {
+    const filter = searchParams.get('filter')
+    setRiskFilter(filter === 'at-risk')
+  }, [searchParams])
+
   const filtered = accounts.filter(a => {
     const matchSearch = a.name.toLowerCase().includes(search.toLowerCase())
     const matchSegment = segmentFilter === 'all' || a.segment === segmentFilter
-    return matchSearch && matchSegment
+    
+    let matchRisk = true
+    if (riskFilter) {
+      const healthRisk = a.health_score < 40
+      const riskAssessments = Array.isArray((a as any).account_risk_assessments) ? (a as any).account_risk_assessments : []
+      const aiRisk = riskAssessments.some((r: any) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
+      matchRisk = healthRisk || aiRisk
+    }
+
+    return matchSearch && matchSegment && matchRisk
   })
 
   return (
@@ -92,11 +109,26 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary group-focus-within:text-content-primary transition-colors" />
                 <Input
-                  placeholder="Buscar cliente..."
+                  placeholder="Buscar por nome..."
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="pl-10 w-72 h-11 rounded-xl"
                 />
+                { (search || riskFilter || segmentFilter !== 'all') && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setSearch('')
+                      setRiskFilter(false)
+                      setSegmentFilter('all')
+                      router.push('/dashboard')
+                    }}
+                    className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground hover:text-primary transition-all ml-2"
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
 
               <div className="flex bg-surface-background p-1 rounded-xl border border-border-divider">
@@ -172,7 +204,34 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-content-primary font-extrabold text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-content-primary font-extrabold text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
+                            {(() => {
+                              const riskAssessments = Array.isArray((account as any).account_risk_assessments) 
+                                ? (account as any).account_risk_assessments 
+                                : ((account as any).account_risk_assessments ? [(account as any).account_risk_assessments] : []);
+                              const latestRisk = riskAssessments.sort((a: any, b: any) => new Date(b.analyzed_at).getTime() - new Date(a.analyzed_at).getTime())[0];
+                              
+                              if (latestRisk && (latestRisk.sentiment_label === 'at-risk' || latestRisk.sentiment_label === 'negative')) {
+                                return (
+                                  <TooltipProvider>
+                                    <Tooltip delayDuration={100}>
+                                      <TooltipTrigger>
+                                        <Badge variant="neutral" className="bg-destructive/10 text-destructive border-destructive/20 h-5 px-1.5 flex items-center gap-1 cursor-help">
+                                          {latestRisk.sentiment_label === 'at-risk' ? <AlertTriangle className="w-3 h-3" /> : <BrainCircuit className="w-3 h-3" />}
+                                          <span className="text-[9px] uppercase font-black">AI Risk</span>
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="bg-card border-border text-foreground">
+                                        <p className="text-[10px] font-bold uppercase tracking-tight">Risco Detectado ({latestRisk.risk_score})</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <p className="text-content-secondary text-[11px] font-extrabold uppercase tracking-widest">{account.industry || 'Global'}</p>

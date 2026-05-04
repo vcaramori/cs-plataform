@@ -185,6 +185,30 @@ export async function GET() {
     })
   }
 
+  // 7. Busca Alertas de Risco de Churn (IA)
+  const { data: riskAlerts } = await supabase
+    .from('account_risk_assessments')
+    .select('id, risk_score, sentiment_label, analyzed_at, account_id, accounts!inner(name, csm_owner_id)')
+    .eq('accounts.csm_owner_id', user.id)
+    .in('sentiment_label', ['at-risk', 'negative'])
+    .order('analyzed_at', { ascending: false })
+    .limit(10)
+
+  if (riskAlerts) {
+    riskAlerts.forEach(r => {
+      notifications.push({
+        id: `risk-${r.id}`,
+        type: 'churn_risk',
+        title: 'RISCO DE CHURN DETECTADO',
+        description: `A IA identificou um risco elevado (${r.risk_score}/100) para a conta ${r.accounts.name}.`,
+        account_id: r.account_id,
+        account_name: r.accounts.name,
+        severity: 'critical',
+        created_at: r.analyzed_at
+      })
+    })
+  }
+
   return NextResponse.json({ notifications })
 }
 
