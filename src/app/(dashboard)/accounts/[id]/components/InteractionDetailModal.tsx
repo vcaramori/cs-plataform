@@ -42,6 +42,10 @@ interface Interaction {
   date: string
   raw_transcript: string | null
   direct_hours?: number
+  metadata?: {
+    operation_context?: string
+    original_insight?: string
+  }
 }
 
 interface Props {
@@ -258,6 +262,33 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
                     </div>
                   )}
                 </div>
+
+                {/* AI Insights Area */}
+                {interaction.metadata && (isEditing || interaction.metadata.operation_context || interaction.metadata.original_insight) && (
+                  <div className="space-y-10 pt-10 border-t border-slate-100 dark:border-slate-800/50">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 ml-1">
+                         <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                            <Activity className="w-4 h-4 text-indigo-500" />
+                         </div>
+                         <p className="text-[11px] text-[#2d3558] dark:text-white uppercase font-black tracking-[0.2em]">Contexto Operacional</p>
+                      </div>
+                      <div className="bg-indigo-50/30 dark:bg-indigo-500/[0.02] p-8 rounded-2xl border border-indigo-100 dark:border-indigo-500/10 text-slate-600 dark:text-slate-300 text-sm font-medium leading-relaxed shadow-sm">
+                        {interaction.metadata.operation_context || "Sem contexto adicional mapeado pela I.A."}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 ml-1 text-slate-400">
+                         <History className="w-4 h-4" />
+                         <p className="text-[10px] uppercase font-black tracking-[0.2em]">Insight Original</p>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-slate-800/20 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-[11px] italic leading-relaxed">
+                        "{interaction.metadata.original_insight || "Transcrição bruta não disponível."}"
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
           )}

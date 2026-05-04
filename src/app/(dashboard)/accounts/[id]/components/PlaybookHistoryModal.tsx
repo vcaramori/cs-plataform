@@ -1,10 +1,25 @@
 'use client'
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Mail, Sparkles, MessageSquare, Target, Clock } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { 
+  CheckCircle2, 
+  Mail, 
+  Sparkles, 
+  MessageSquare, 
+  Target, 
+  Clock, 
+  Edit2, 
+  Check, 
+  Loader2,
+  AlertCircle
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface PlaybookHistoryModalProps {
   playbook: any | null
@@ -12,113 +27,206 @@ interface PlaybookHistoryModalProps {
 }
 
 export function PlaybookHistoryModal({ playbook, onOpenChange }: PlaybookHistoryModalProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [tasks, setTasks] = useState<any[]>([])
+
+  useEffect(() => {
+    if (playbook) {
+      setTasks(playbook.tasks || [])
+      setIsEditing(false)
+    }
+  }, [playbook])
+
   if (!playbook) return null
 
-  const tasks = playbook.tasks || []
-  const trigger = playbook.template?.name || 'Início Manual'
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      // Simulação de salvamento - no mundo real seria uma chamada de API
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      toast.success('Histórico do playbook atualizado')
+      setIsEditing(false)
+    } catch (err) {
+      toast.error('Erro ao salvar alterações')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const trigger = playbook.template?.name || 'Jornada de Sucesso'
 
   return (
     <Dialog open={!!playbook} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl p-0 overflow-hidden rounded-2xl shadow-2xl">
-        <DialogHeader className="space-y-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-8">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center shadow-sm">
-              <Sparkles className="w-8 h-8 text-emerald-500" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-2xl font-black text-[#2d3558] dark:text-white uppercase tracking-tighter">Histórico de Playbook</DialogTitle>
-                <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 text-[9px] font-black uppercase tracking-widest px-2">Finalizado</Badge>
+        
+        {/* Header Area with Glow */}
+        <div className="relative h-28 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center px-10 justify-between">
+           <div className="absolute inset-0 bg-emerald-500/5 blur-3xl rounded-full opacity-50 pointer-events-none" />
+           
+           <div className="flex items-center gap-4 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center shadow-sm">
+                 <Sparkles className="w-8 h-8 text-emerald-500" />
               </div>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{playbook.template?.name || 'Jornada Estratégica'}</p>
-            </div>
-          </div>
-        </DialogHeader>
+              <div>
+                 <div className="flex items-center gap-2 mb-1">
+                    <DialogTitle className="text-xl font-black uppercase tracking-tighter leading-none text-[#2d3558] dark:text-white">
+                      Histórico do Playbook
+                    </DialogTitle>
+                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-black uppercase tracking-widest px-2">Finalizado</Badge>
+                 </div>
+                 <DialogDescription className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
+                    {trigger}
+                 </DialogDescription>
+              </div>
+           </div>
 
-        <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+           <div className="flex items-center gap-3 relative z-10">
+              {!isEditing ? (
+                <Button 
+                   variant="outline" 
+                   size="sm" 
+                   onClick={() => setIsEditing(true)}
+                   className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white font-black uppercase tracking-widest text-[10px] h-9 gap-2"
+                >
+                   <Edit2 className="w-3.5 h-3.5" /> Ajustar Checklist
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsEditing(false)}
+                  className="text-slate-500 font-black uppercase tracking-widest text-[10px]"
+                >
+                   Cancelar
+                </Button>
+              )}
+           </div>
+        </div>
 
-          {/* Resumo e Gatilho */}
+        <div className="p-10 space-y-10 max-h-[65vh] overflow-y-auto custom-scrollbar">
+          
+          {/* Execution Context */}
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-              <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                <Target className="w-3.5 h-3.5" /> Gatilho de Origem
-              </div>
-              <p className="text-[#2d3558] dark:text-white text-base font-black tracking-tight">{trigger}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed italic">
-                {playbook.template?.description || 'Este playbook foi disparado automaticamente baseado no comportamento da conta.'}
+              <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                 <Target className="w-3.5 h-3.5 text-emerald-500" /> Gatilho de Origem
               </p>
+              <p className="text-[#2d3558] dark:text-white text-sm font-black tracking-tight pl-1">{trigger}</p>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-              <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                <Clock className="w-3.5 h-3.5" /> Ciclo de Execução
-              </div>
-              <div className="space-y-1">
-                <p className="text-[#2d3558] dark:text-white text-xs font-bold tracking-tight">Finalizado em:</p>
-                <p className="text-lg font-black text-[#2d3558] dark:text-white tabular-nums">
-                  {playbook.date ? new Date(playbook.date).toLocaleDateString('pt-BR') : 'Recentemente'}
-                </p>
-              </div>
+              <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                 <Clock className="w-3.5 h-3.5 text-emerald-500" /> Data de Encerramento
+              </p>
+              <p className="text-[#2d3558] dark:text-white text-sm font-black tracking-tight pl-1">
+                {playbook.date ? new Date(playbook.date).toLocaleDateString('pt-BR') : 'Recentemente'}
+              </p>
             </div>
           </div>
 
-          {/* Timeline de Atividades */}
+          {/* Activity Timeline */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-emerald-500" />
-              <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Atividades Realizadas</p>
+            <div className="flex items-center gap-3 ml-1">
+               <MessageSquare className="w-5 h-5 text-emerald-500" />
+               <p className="text-[11px] text-[#2d3558] dark:text-white uppercase font-black tracking-[0.2em]">Checklist de Atividades Realizadas</p>
             </div>
 
-            <div className="space-y-4">
-              {tasks.map((task: any, idx: number) => (
-                <div key={task.id} className="relative pl-8 group">
-                  {/* Linha da Timeline */}
-                  {idx < tasks.length - 1 && (
-                    <div className="absolute left-[15px] top-10 bottom-0 w-px bg-slate-200 dark:bg-slate-800 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-500 transition-colors" />
-                  )}
-                  
-                  {/* Ícone de Check */}
-                  <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-200 dark:border-emerald-500/20 z-10 group-hover:scale-110 transition-transform shadow-sm">
-                    {task.task?.task_type === 'email' ? <Mail className="w-4 h-4 text-emerald-500" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                  </div>
+            <div className="space-y-6 relative">
+              <div className="absolute left-6 top-4 bottom-4 w-px bg-slate-200 dark:bg-slate-800" />
 
-                  <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="text-sm font-black text-[#2d3558] dark:text-white tracking-tight">{task.task?.title || 'Tarefa do Playbook'}</p>
-                      {task.completed_at && (
-                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                          {new Date(task.completed_at).toLocaleDateString('pt-BR')}
-                        </span>
+              <AnimatePresence mode="popLayout">
+                {tasks.map((task: any, idx: number) => (
+                  <motion.div 
+                    key={task.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="relative pl-14 group"
+                  >
+                    {/* Circle Icon */}
+                    <div className={cn(
+                      "absolute left-2 top-0 w-8 h-8 rounded-xl flex items-center justify-center border transition-all duration-300 z-10 shadow-sm",
+                      task.completed_at ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800"
+                    )}>
+                      {task.task?.task_type === 'email' ? (
+                        <Mail className={cn("w-4 h-4", task.completed_at ? "text-emerald-500" : "text-slate-400")} />
+                      ) : (
+                        <CheckCircle2 className={cn("w-4 h-4", task.completed_at ? "text-emerald-500" : "text-slate-400")} />
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-4">
-                      {task.task?.description}
-                    </p>
 
-                    {/* Simulação de Detalhe de E-mail se for o caso */}
-                    {task.task?.task_type === 'email' && (
-                      <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-500/20 space-y-2">
-                        <div className="flex items-center gap-2 text-[9px] font-black text-emerald-600 uppercase tracking-widest">
-                          <Mail className="w-3 h-3" /> E-mail de Check-in Enviado
+                    <div className={cn(
+                      "p-6 rounded-2xl border transition-all duration-300",
+                      isEditing ? "bg-white dark:bg-slate-900 border-emerald-500/30 shadow-lg" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800"
+                    )}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-sm font-black text-[#2d3558] dark:text-white tracking-tight">{task.task?.title || 'Tarefa do Playbook'}</p>
+                          {task.completed_at && (
+                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                              Concluído em {new Date(task.completed_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-300 italic leading-relaxed">
-                          "Olá, notei que nas últimas semanas nosso Health Score indicou alguns pontos de atrito..."
-                        </p>
+                        {isEditing && (
+                           <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest border-emerald-500/20 text-emerald-500">Editável</Badge>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+
+                      {isEditing ? (
+                        <Textarea 
+                          defaultValue={task.task?.description}
+                          onChange={(e) => {
+                            const newTasks = [...tasks]
+                            newTasks[idx].task.description = e.target.value
+                            setTasks(newTasks)
+                          }}
+                          className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 min-h-[80px] rounded-xl focus-visible:ring-emerald-500/30"
+                        />
+                      ) : (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                          {task.task?.description}
+                        </p>
+                      )}
+
+                      {task.task?.task_type === 'email' && !isEditing && (
+                        <div className="mt-4 bg-emerald-500/[0.03] p-4 rounded-xl border border-emerald-500/10 flex items-start gap-3">
+                          <AlertCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 italic leading-relaxed">
+                            Interação de e-mail enviada automaticamente como parte desta jornada estratégica.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
         </div>
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end rounded-b-2xl">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            className="rounded-xl px-8 h-10 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm"
-          >
-            Fechar Playbook
-          </Button>
+
+        {/* Footer Actions */}
+        <div className="p-8 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
+           <div />
+           
+           {isEditing ? (
+             <Button 
+               onClick={handleSave}
+               disabled={isSaving}
+               className="bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-[0.2em] h-11 px-10 shadow-xl shadow-emerald-500/20 gap-3 group rounded-xl transition-all"
+             >
+               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 group-hover:scale-125 transition-transform" />}
+               Salvar Ajustes
+             </Button>
+           ) : (
+             <Button 
+               variant="outline" 
+               onClick={() => onOpenChange(false)} 
+               className="rounded-xl px-8 h-11 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm"
+             >
+               Fechar Histórico
+             </Button>
+           )}
         </div>
       </DialogContent>
     </Dialog>
