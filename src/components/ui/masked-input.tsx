@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 export interface MaskedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  maskType: 'currency' | 'phone' | 'decimal' | 'tax_id'
+  maskType: 'currency' | 'phone' | 'decimal' | 'number' | 'tax_id'
   onValueChange?: (value: string) => void
 }
 
@@ -59,6 +59,19 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
       )
     }
 
+    if (maskType === 'number') {
+      return (
+        <NumericFormat
+          {...(commonProps as any)}
+          customInput={Input as any}
+          thousandSeparator="."
+          decimalSeparator=","
+          decimalScale={0}
+          allowNegative={false}
+        />
+      )
+    }
+
     if (maskType === 'phone') {
       // Máscara flexível: Se o valor começar com +, remove a máscara rígida para permitir internacional
       // Se não, tenta o padrão BR.
@@ -95,7 +108,14 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
       )
     }
 
-    return <Input {...otherProps} value={sanitizedValue} className={commonProps.className} />
+    return (
+      <Input
+        {...otherProps}
+        value={sanitizedValue}
+        className={commonProps.className}
+        onChange={(e) => onValueChange?.(e.target.value)}
+      />
+    )
   }
 )
 

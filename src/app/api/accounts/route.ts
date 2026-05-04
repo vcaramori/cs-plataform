@@ -20,10 +20,23 @@ const ContractItemSchema = z.object({
   notes: z.string().optional().nullable(),
 })
 
+const GovernanceItemSchema = z.object({
+  id: z.string().optional(),
+  rule_type: z.enum(['discount', 'penalty', 'fidelity']),
+  sub_type: z.enum(['progressive', 'fixed', 'percentage', 'fidelity_penalty']),
+  label: z.string(),
+  value: z.number().optional().default(0),
+  contract_id: z.string().uuid().optional().nullable(),
+  starts_at: z.string().optional().nullable(),
+  ends_at: z.string().optional().nullable(),
+  config: z.any().optional().default({}),
+  is_active: z.boolean().optional().default(true),
+})
+
 const AccountSchema = z.object({
   company_name: z.string().min(2, 'Nome da empresa obrigatório'),
   account_name: z.string().min(2, 'Nome da logo obrigatório'),
-  segment: z.enum(['Indústria', 'MRO', 'Varejo']),
+  segment: z.enum(['Indústria', 'MRO', 'Varejo', 'Distribuidor']),
   csm_owner_id: z.string().uuid().optional(),
   sales_executive_id: z.string().uuid().optional().nullable(),
   industry: z.string().optional().nullable(),
@@ -39,6 +52,7 @@ const AccountSchema = z.object({
   neighborhood: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
   is_international: z.boolean().default(false),
   
   // Faturamento
@@ -48,8 +62,9 @@ const AccountSchema = z.object({
   billing_contact_phone: z.string().optional().nullable(),
   billing_contact_email: z.string().email().optional().or(z.literal('')).nullable(),
 
-  // Lista de Contratos
+  // Lista de Contratos e Governança
   contracts: z.array(ContractItemSchema).optional().default([]),
+  commercial_governance: z.array(GovernanceItemSchema).optional().default([]),
 })
 
 export async function GET() {
@@ -128,6 +143,7 @@ export async function POST(request: Request) {
       neighborhood: payload.neighborhood || null,
       city: payload.city || null,
       state: payload.state || null,
+      country: payload.country || null,
       is_international: payload.is_international,
       
       billing_day: payload.billing_day || null,
@@ -148,18 +164,30 @@ export async function POST(request: Request) {
     const contractsToInsert = payload.contracts.map(c => ({
       ...c,
       account_id: account.id,
-      // O banco calcula o ARR automaticamente a partir do MRR
     }))
 
     const { error: contractErr } = await supabase
       .from('contracts')
       .insert(contractsToInsert)
     
-    if (contractErr) {
-      console.error('Error creating contracts:', contractErr)
-    }
+    if (contractErr) console.error('Error creating contracts:', contractErr)
+  }
+
+  // 4. Criar as regras de governança se houver
+  if (payload.commercial_governance.length > 0) {
+    const governanceToInsert = payload.commercial_governance.map(g => ({
+      ...g,
+      starts_at: g.starts_at || null,
+      ends_at: g.ends_at || null,
+      account_id: account.id,
+    }))
+
+    const { error: govErr } = await supabase
+      .from('commercial_governance')
+      .insert(governanceToInsert)
+
+    if (govErr) console.error('Error creating governance rules:', govErr)
   }
 
   return NextResponse.json(account, { status: 201 })
 }
-

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Sparkles, LayoutDashboard } from 'lucide-react'
+import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Sparkles, LayoutDashboard, Search } from 'lucide-react'
 import { SLABadge } from '@/components/support/SLABadge'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -70,7 +70,7 @@ export function SuporteClient({
   userId,
 }: {
   accounts: Pick<Account, 'id' | 'name'>[]
-  initialTickets: SupportTicket[]
+  initialTickets: (SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null })[]
   userId: string
 }) {
   const router = useRouter()
@@ -84,7 +84,8 @@ export function SuporteClient({
   const [filterPriority, setFilterPriority] = useState('all')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<{ created: number; errors: string[] } | null>(null)
-  const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets)
+  const [tickets, setTickets] = useState<(SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null })[]>(initialTickets)
+  const [searchQuery, setSearchQuery] = useState('')
   const [showCreateViewPopover, setShowCreateViewPopover] = useState(false)
 
   const handleIngest = async () => {
@@ -140,6 +141,14 @@ export function SuporteClient({
   const filteredTickets = sortTickets(viewFilteredTickets.filter((t) => {
     if (filterStatus !== 'all' && t.status !== filterStatus) return false
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
+    
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase()
+      const titleMatch = t.title.toLowerCase().includes(searchLower)
+      const accountMatch = t.accounts?.name?.toLowerCase().includes(searchLower)
+      if (!titleMatch && !accountMatch) return false
+    }
+    
     return true
   }))
 
@@ -235,7 +244,7 @@ export function SuporteClient({
                 setIsSubmitting(false)
               }
             }}
-            className="bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-xl h-11 px-6 shadow-lg shadow-plannera-orange/20"
+            className="bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-2xl h-11 px-8 shadow-lg shadow-plannera-orange/20 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -258,7 +267,7 @@ export function SuporteClient({
             <SearchableSelect
               value={filterStatus}
               onValueChange={setFilterStatus}
-              className="h-10 w-44 rounded-xl border-border-divider shadow-sm text-[10px] font-bold uppercase tracking-tight"
+              className="w-44"
               options={[
                 { label: 'Todos os Status', value: 'all' },
                 ...Object.entries(statusConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -267,12 +276,21 @@ export function SuporteClient({
             <SearchableSelect
               value={filterPriority}
               onValueChange={setFilterPriority}
-              className="h-10 w-48 rounded-xl border-border-divider shadow-sm text-[10px] font-bold uppercase tracking-tight"
+              className="w-48"
               options={[
                 { label: 'Todas as Prioridades', value: 'all' },
                 ...Object.entries(priorityConfig).map(([value, conf]) => ({ label: conf.label, value }))
               ]}
             />
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary/60" />
+              <Input
+                placeholder="PESQUISAR TICKETS..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 h-11 rounded-2xl border-border/40 bg-slate-500/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
+              />
+            </div>
             {(filterStatus !== 'all' || filterPriority !== 'all') && (
               <>
                 <Button

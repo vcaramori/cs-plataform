@@ -10,6 +10,7 @@ import { AccountChat } from './AccountChat'
 import { EditContractDialog } from './EditContractDialog'
 import { AdoptionChart } from './AdoptionChart'
 import { PlaybookWidget } from './PlaybookWidget'
+import { calculateNetMRR, calculateCurrentDiscount } from '@/lib/utils/contract-utils'
 import Link from 'next/link'
 import {
   History,
@@ -46,6 +47,7 @@ interface Props {
   latestRiskAssessment?: any
   npsResponses: any[]
   playbooks?: any[]
+  commercialGovernance: any[]
 }
 
 function daysUntil(dateStr: string | null | undefined) {
@@ -54,7 +56,7 @@ function daysUntil(dateStr: string | null | undefined) {
   return Math.ceil(diff / 86400000)
 }
 
-function CompactContractCard({ contract, accountId }: { contract: any; accountId: string }) {
+function CompactContractCard({ contract, accountId, governanceRules }: { contract: any; accountId: string, governanceRules: any[] }) {
   const days = daysUntil(contract.renewal_date)
   const renewalColor =
     days === null ? 'text-muted-foreground'
@@ -72,6 +74,10 @@ function CompactContractCard({ contract, accountId }: { contract: any; accountId
     churned: 'bg-red-50 dark:bg-destructive/10 text-red-700 dark:text-destructive border-red-100 dark:border-destructive/20',
     'in-negotiation': 'bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border-indigo-100 dark:border-primary/20',
   }
+
+  const netMRR = calculateNetMRR(contract, governanceRules)
+  const discount = calculateCurrentDiscount(contract, governanceRules)
+  const hasDiscount = discount > 0
 
   return (
     <Card variant="glass" className="rounded-2xl p-5 space-y-5 border-border shadow-md hover:bg-accent/10 transition-colors">
@@ -101,14 +107,14 @@ function CompactContractCard({ contract, accountId }: { contract: any; accountId
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="label-premium !text-[9px] opacity-40">MRR Equity</span>
+            <span className="label-premium !text-[9px] opacity-40">MRR Líquido</span>
           </div>
           <p className="text-foreground text-base font-black tracking-tighter tabular-nums">
-            {formatCurrency(contract.mrr || 0)}
+            {formatCurrency(netMRR)}
           </p>
-          {Number(contract.arr) > 0 && (
-            <p className="label-premium !text-[8px] mt-2 opacity-30">
-              ARR: {formatCurrency(contract.arr)}
+          {hasDiscount && (
+            <p className="label-premium !text-[8px] mt-2 opacity-30 line-through">
+              Nominal: {formatCurrency(contract.mrr)}
             </p>
           )}
         </div>
@@ -155,7 +161,8 @@ export function AccountDetailPageClient({
   activePlaybook,
   latestRiskAssessment,
   npsResponses,
-  playbooks = []
+  playbooks = [],
+  commercialGovernance
 }: Props) {
   return (
     <div className="flex flex-col gap-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -300,7 +307,12 @@ export function AccountDetailPageClient({
             ) : (
               <div className="space-y-5">
                 {displayContracts.map((contract: any) => (
-                  <CompactContractCard key={contract.id} contract={contract} accountId={id} />
+                  <CompactContractCard 
+                    key={contract.id} 
+                    contract={contract} 
+                    accountId={id} 
+                    governanceRules={commercialGovernance}
+                  />
                 ))}
               </div>
             )}

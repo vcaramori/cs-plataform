@@ -108,7 +108,7 @@ export function EsforcoClient({
     }
   }
 
-  const handleUpdate = (updated: Entry) => {
+  const handleUpdate = (updated: any) => {
     setEntries(prev => prev.map(e => e.id === updated.id ? updated : e))
     setSelectedEntry(updated)
   }

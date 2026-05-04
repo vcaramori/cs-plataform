@@ -1,4 +1,4 @@
-export type AccountSegment = 'Indústria' | 'MRO' | 'Varejo'
+export type AccountSegment = 'Indústria' | 'MRO' | 'Varejo' | 'Distribuidor'
 export type HealthTrend = 'up' | 'stable' | 'down' | 'critical'
 export type ContractStatus = 'active' | 'at-risk' | 'churned' | 'in-negotiation'
 export type ServiceType = 'Basic' | 'Professional' | 'Enterprise' | 'Custom'
@@ -28,6 +28,7 @@ export type Account = {
   neighborhood: string | null
   city: string | null
   state: string | null
+  country: string | null
   is_international: boolean
   logo_url: string | null
   tax_id: string | null
@@ -64,6 +65,32 @@ export type Contract = {
   csm_hour_cost: number
   notes: string | null
   description: string | null
+}
+
+export type CommercialGovernanceRuleType = 'discount' | 'penalty' | 'fidelity'
+export type CommercialGovernanceSubType = 'progressive' | 'fixed' | 'percentage' | 'fidelity_penalty'
+
+export type CommercialGovernance = {
+  id: string
+  account_id: string
+  contract_id: string | null
+  rule_type: CommercialGovernanceRuleType
+  sub_type: CommercialGovernanceSubType
+  label: string
+  value: number
+  config: {
+    stages?: {
+      label: string
+      discount: number
+      type: 'percentage' | 'fixed'
+      starts_at?: string | null
+      ends_at?: string | null
+    }[]
+  }
+  is_active: boolean
+  starts_at: string
+  ends_at: string | null
+  created_at: string
 }
 
 export type Contact = {
@@ -262,6 +289,7 @@ export type AccountDetail = Account & {
   interactions: Interaction[]
   support_tickets: SupportTicket[]
   latest_health_score: HealthScore | null
+  commercial_governance: CommercialGovernance[]
 }
 
 // Support SLA Types

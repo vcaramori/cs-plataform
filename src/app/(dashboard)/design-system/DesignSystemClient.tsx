@@ -10,7 +10,7 @@ import {
   Palette, Type, Box, MousePointer2, Moon, Sun,
   TrendingUp, AlertTriangle, CheckCircle2, Info
 } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/components/providers/ThemeProvider'
 import { cn } from '@/lib/utils'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'

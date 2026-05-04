@@ -2,10 +2,23 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 
+const GovernanceItemSchema = z.object({
+  id: z.string().optional(),
+  rule_type: z.enum(['discount', 'penalty', 'fidelity']),
+  sub_type: z.enum(['progressive', 'fixed', 'percentage', 'fidelity_penalty']),
+  label: z.string(),
+  value: z.number().optional().default(0),
+  contract_id: z.string().uuid().optional().nullable(),
+  starts_at: z.string().optional().nullable(),
+  ends_at: z.string().optional().nullable(),
+  config: z.any().optional().default({}),
+  is_active: z.boolean().optional().default(true),
+})
+
 const UpdateSchema = z.object({
   company_name: z.string().min(2).optional(),
   account_name: z.string().min(2).optional(),
-  segment: z.enum(['Indústria', 'MRO', 'Varejo']).optional(),
+  segment: z.enum(['Indústria', 'MRO', 'Varejo', 'Distribuidor']).optional(),
   industry: z.string().optional().nullable(),
   website: z.string().url().optional().or(z.literal('')).nullable(),
   logo_url: z.string().url().optional().or(z.literal('')).nullable(),
@@ -19,6 +32,7 @@ const UpdateSchema = z.object({
   neighborhood: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
   is_international: z.boolean().optional(),
   
   // Faturamento
@@ -33,6 +47,8 @@ const UpdateSchema = z.object({
 
   health_score: z.number().min(0).max(100).optional(),
   health_trend: z.enum(['up', 'stable', 'down', 'critical']).optional(),
+  
+  commercial_governance: z.array(GovernanceItemSchema).optional(),
 })
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -49,7 +65,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       contacts (*),
       interactions (*, time_entries(*)),
       support_tickets (*),
-      health_scores (*)
+      health_scores (*),
+      commercial_governance (*)
     `)
     .eq('id', id)
     .single()
@@ -68,12 +85,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { account_name, ...updateData } = parsed.data as any
+  const { account_name, commercial_governance, ...updateData } = parsed.data as any
   const finalUpdateData = {
     ...updateData,
     ...(account_name ? { name: account_name } : {})
   }
 
+  // 1. Atualizar a account
   const { data, error } = await supabase
     .from('accounts')
     .update(finalUpdateData)
@@ -85,6 +103,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     console.error('Supabase Error (PATCH accounts):', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // 2. Atualizar Governança se enviado
+  if (commercial_governance) {
+    // Para simplificar, vamos deletar e reinserir (ou fazer upsert se houver IDs)
+    // Aqui usaremos a estratégia de "substituição total" para simplificar o sync do form
+    await supabase.from('commercial_governance').delete().eq('account_id', id)
+    
+    if (commercial_governance.length > 0) {
+      const toInsert = commercial_governance.map((g: any) => ({
+        ...g,
+        id: g.id && g.id.length > 20 ? g.id : undefined, // Evitar IDs temporários do frontend
+        starts_at: g.starts_at || null,
+        ends_at: g.ends_at || null,
+        account_id: id
+      }))
+      await supabase.from('commercial_governance').insert(toInsert)
+    }
+  }
+
+  return NextResponse.json(data)
   return NextResponse.json(data)
 }
 

@@ -36,11 +36,13 @@ import {
   ShieldCheck,
   ShieldOff,
   Shield,
+  Lock,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import type { Account, Contract } from '@/lib/supabase/types'
+import type { Account, Contract, CommercialGovernance } from '@/lib/supabase/types'
+import { CommercialGovernanceForm } from './CommercialGovernanceForm'
 
 const SLALevelSchema = z.object({
   level: z.enum(['critical', 'high', 'medium', 'low']),
@@ -68,20 +70,29 @@ const ContractSchema = z.object({
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
   pricing_type: z.enum(['standard', 'custom']).default('standard'),
   pricing_explanation: z.string().optional().nullable(),
-  discount_percentage: z.number().min(0).max(100).default(0),
-  discount_duration_months: z.number().int().min(0).default(0),
-  discount_type: z.enum(['percentage', 'fixed']).default('percentage'),
-  discount_value_brl: z.number().min(0).default(0),
-  // SLA
+  contracted_hours_monthly: z.number().min(0).default(0),
   sla_use_global: z.boolean().default(true),
   sla_levels: z.array(SLALevelSchema).default(DEFAULT_SLA_LEVELS),
   notes: z.string().optional().nullable(),
 })
 
+const GovernanceSchema = z.object({
+  id: z.string().optional(),
+  rule_type: z.enum(['discount', 'penalty', 'fidelity']),
+  sub_type: z.enum(['progressive', 'fixed', 'percentage', 'fidelity_penalty']),
+  label: z.string(),
+  value: z.number().default(0),
+  contract_id: z.string().uuid().optional().nullable(),
+  starts_at: z.string().optional().nullable(),
+  ends_at: z.string().optional().nullable(),
+  config: z.any().default({}),
+  is_active: z.boolean().default(true),
+})
+
 const schema = z.object({
   company_name: z.string().min(2, 'Razão social obrigatória'),
   account_name: z.string().min(2, 'Nome da logo obrigatório'),
-  segment: z.enum(['Indústria', 'MRO', 'Varejo']),
+  segment: z.enum(['Indústria', 'MRO', 'Varejo', 'Distribuidor']),
   industry: z.string().optional().nullable(),
   website: z.string().url('URL inválida').optional().or(z.literal('')).nullable(),
   logo_url: z.string().optional().nullable(),
@@ -94,6 +105,7 @@ const schema = z.object({
   neighborhood: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
   is_international: z.boolean().default(false),
 
   csm_owner_id: z.string().uuid('Selecione um CSM').optional().nullable(),
@@ -106,17 +118,18 @@ const schema = z.object({
   billing_contact_email: z.string().email('Email inválido').optional().or(z.literal('')).nullable(),
 
   contracts: z.array(ContractSchema),
+  commercial_governance: z.array(GovernanceSchema).default([]),
 })
 
 type FormData = z.infer<typeof schema>
 
 interface AccountFormProps {
-  initialData?: Account & { contracts: Contract[] }
+  initialData?: Account & { contracts: Contract[], commercial_governance: CommercialGovernance[] }
   mode?: 'create' | 'edit'
 }
 
-const INPUT = 'bg-surface-background/50 dark:bg-slate-900/40 border-border/50 text-foreground h-10 rounded-xl text-sm focus-visible:ring-primary/30 transition-all'
-const LABEL = 'text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest'
+const INPUT = 'bg-slate-500/5 dark:bg-slate-400/10 border-border/60 text-foreground h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest focus-visible:ring-primary/30 transition-all placeholder:text-muted-foreground/50 shadow-sm'
+const LABEL = 'text-[10px] font-extrabold text-muted-foreground/90 uppercase tracking-widest ml-1'
 
 export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) {
   const router = useRouter()
@@ -135,14 +148,14 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
       contracts: initialData.contracts.map(c => ({
         ...c,
         id: c.id,
-        discount_type: (c.discount_type ?? 'percentage') as 'percentage' | 'fixed',
-        discount_value_brl: c.discount_value_brl ?? 0,
         sla_use_global: true,
         sla_levels: DEFAULT_SLA_LEVELS,
-      }))
+      })),
+      commercial_governance: initialData.commercial_governance ?? []
     } : {
       segment: 'Indústria',
       contracts: [],
+      commercial_governance: [],
       is_international: false,
       billing_day: 0
     },
@@ -351,11 +364,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <SearchableSelect
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
-                  className="h-10 rounded-xl bg-accent/30 border-border"
+                  className={INPUT}
                   options={[
                     { label: 'Indústria', value: 'Indústria' },
                     { label: 'MRO', value: 'MRO' },
                     { label: 'Varejo', value: 'Varejo' },
+                    { label: 'Distribuidor', value: 'Distribuidor' },
                   ]}
                 />
               </div>
@@ -374,7 +388,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   value={watch('tax_id') || ''}
                   onValueChange={(v) => setValue('tax_id', v)}
                   placeholder="00.000.000/0000-00"
-                  className="h-10"
+                  className={INPUT}
                 />
               </div>
             </div>
@@ -396,7 +410,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 </div>
               </div>
               <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10 self-center">
-                <Label className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 leading-none">Inter</Label>
+                <Label className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 leading-none">Internacional</Label>
                 <Switch
                   checked={isInternational}
                   onCheckedChange={(v) => setValue('is_international', v)}
@@ -423,6 +437,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
+              {isInternational && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label className={LABEL}>País</Label>
+                  <Input {...register('country')} placeholder="Ex: Argentina" className={INPUT} />
+                </div>
+              )}
               <div className="space-y-2 md:col-span-1">
                 <Label className={LABEL}>Num</Label>
                 <Input {...register('number')} placeholder="1000" className={INPUT} />
@@ -470,10 +490,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   contract_type: 'initial',
                   service_type: 'Professional',
                   pricing_type: 'standard',
-                  discount_percentage: 0,
-                  discount_duration_months: 0,
-                  discount_type: 'percentage',
-                  discount_value_brl: 0,
+                  contracted_hours_monthly: 0,
                   sla_use_global: true,
                   sla_levels: DEFAULT_SLA_LEVELS,
                 })}
@@ -511,7 +528,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <SearchableSelect
                       value={watch(`contracts.${index}.status`)}
                       onValueChange={(v) => setValue(`contracts.${index}.status`, v as any)}
-                      className="h-10 text-xs rounded-xl bg-surface-background/50 dark:bg-slate-900/40 border-border/50"
+                      className={cn(INPUT, "h-10 text-xs")}
                       options={[
                         { label: 'Ativa', value: 'active' },
                         { label: 'Em Negociação', value: 'in-negotiation' },
@@ -525,7 +542,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <SearchableSelect
                       value={watch(`contracts.${index}.contract_type`)}
                       onValueChange={(v) => setValue(`contracts.${index}.contract_type`, v as any)}
-                      className="h-10 text-xs rounded-xl bg-surface-background/50 dark:bg-slate-900/40 border-border/50"
+                      className={cn(INPUT, "h-10 text-xs")}
                       options={[
                         { label: 'Inicial', value: 'initial' },
                         { label: 'Aditivo', value: 'additive' },
@@ -539,7 +556,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <SearchableSelect
                       value={watch(`contracts.${index}.service_type`)}
                       onValueChange={(v) => setValue(`contracts.${index}.service_type`, v as any)}
-                      className="h-10 text-xs rounded-xl bg-accent/30 border-border"
+                      className={cn(INPUT, "h-10 text-xs")}
                       options={[
                         { label: 'Basic', value: 'Basic' },
                         { label: 'Professional', value: 'Professional' },
@@ -573,58 +590,15 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     </div>
                     <div className="space-y-2">
                       <Label className={LABEL}>MRR Base</Label>
-                      <MaskedInput
-                        maskType="currency"
-                        value={watch(`contracts.${index}.mrr`) || 0}
-                        onValueChange={(v) => setValue(`contracts.${index}.mrr`, parseFloat(v) || 0)}
-                        className="h-11 text-lg font-extrabold bg-background/50 border-border"
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        {...register(`contracts.${index}.mrr`, { valueAsNumber: true })}
+                        placeholder="0,00"
+                        className={cn(INPUT, "h-11 text-lg font-black bg-slate-500/10 border-primary/20")}
                       />
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className={LABEL}>Desconto</Label>
-                        <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
-                          {(['percentage', 'fixed'] as const).map(type => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => setValue(`contracts.${index}.discount_type`, type)}
-                              className={cn(
-                                'px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all',
-                                watch(`contracts.${index}.discount_type`) === type
-                                  ? 'bg-primary text-primary-foreground shadow-sm'
-                                  : 'text-muted-foreground hover:text-foreground'
-                              )}
-                            >
-                              {type === 'percentage' ? '%' : 'R$'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          {watch(`contracts.${index}.discount_type`) === 'percentage' ? (
-                            <>
-                              <Label className={LABEL}>% Desc</Label>
-                              <Input {...register(`contracts.${index}.discount_percentage`, { valueAsNumber: true })} type="number" min="0" max="100" className="h-10 bg-background/50" />
-                            </>
-                          ) : (
-                            <>
-                              <Label className={LABEL}>Valor R$</Label>
-                              <MaskedInput
-                                maskType="currency"
-                                value={watch(`contracts.${index}.discount_value_brl`) || 0}
-                                onValueChange={(v) => setValue(`contracts.${index}.discount_value_brl`, parseFloat(v) || 0)}
-                                className="h-10 bg-background/50"
-                              />
-                            </>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label className={LABEL}>Meses</Label>
-                          <Input {...register(`contracts.${index}.discount_duration_months`, { valueAsNumber: true })} type="number" className="h-10 bg-background/50" />
-                        </div>
-                      </div>
                     </div>
                     {watch(`contracts.${index}.pricing_type`) === 'custom' && (
                       <div className="space-y-2 pt-2 border-t border-border">
@@ -632,11 +606,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         <Textarea
                           {...register(`contracts.${index}.pricing_explanation`)}
                           placeholder="Justificativa do pricing..."
-                          className="min-h-[80px] text-xs bg-background/50 border-border"
+                          className={cn(INPUT, "min-h-[80px] py-3 text-xs")}
                         />
                       </div>
                     )}
                   </div>
+
 
                   {/* Datas + Notas */}
                   <div className="col-span-2 space-y-4">
@@ -652,7 +627,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     </div>
                     <div className="space-y-2">
                       <Label className={LABEL}>Notas Rápidas</Label>
-                      <Textarea {...register(`contracts.${index}.notes`)} className="min-h-[80px] text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" placeholder="Observações do contrato..." />
+                      <Textarea {...register(`contracts.${index}.notes`)} className={cn(INPUT, "min-h-[80px] text-xs py-3")} placeholder="Observações do contrato..." />
                     </div>
                     {mode === 'edit' && (
                       <div className="flex justify-end pt-2">
@@ -766,7 +741,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                 </div>
                                 <Input
                                   placeholder="Add label (P0, Urgente...)"
-                                  className="h-10 text-xs text-center bg-surface-background/50 dark:bg-slate-900/40 border-border/50 font-mono rounded-lg"
+                                  className={cn(INPUT, "h-10 text-xs text-center font-mono")}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ',') {
                                       e.preventDefault()
@@ -793,7 +768,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                     levels[li] = { ...levels[li], first_response_minutes: parseInt(e.target.value) || 1 }
                                     setValue(`contracts.${index}.sla_levels`, levels)
                                   }}
-                                  className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
+                                  className={cn(INPUT, "h-10 text-xs text-center font-mono")}
                                 />
                                 <span className="text-[8px] text-muted-foreground font-extrabold uppercase tracking-tighter">Min</span>
                               </div>
@@ -808,7 +783,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                     levels[li] = { ...levels[li], resolution_minutes: parseInt(e.target.value) || 1 }
                                     setValue(`contracts.${index}.sla_levels`, levels)
                                   }}
-                                  className="h-10 text-xs text-center bg-accent/30 border-border font-mono rounded-lg"
+                                  className={cn(INPUT, "h-10 text-xs text-center font-mono")}
                                 />
                                 <span className="text-[8px] text-muted-foreground font-extrabold uppercase tracking-tighter">Min</span>
                               </div>
@@ -821,6 +796,18 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 </div>
               </Card>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* ── BLOCO 3.5: GOVERNANÇA COMERCIAL ────────────────────────── */}
+        <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+          <div className="h-[2px] bg-gradient-to-r from-indigo-500/80 to-purple-500/80" />
+          <CardContent className="px-8 py-8">
+            <CommercialGovernanceForm 
+              rules={watch('commercial_governance') || []} 
+              contracts={watch('contracts') || []}
+              onChange={(newRules) => setValue('commercial_governance', newRules)}
+            />
           </CardContent>
         </Card>
 
@@ -859,7 +846,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             </div>
             <div className="space-y-2">
               <Label className={LABEL}>Regras de Faturamento</Label>
-              <Textarea {...register('billing_rules')} className="min-h-[100px] bg-accent/30 border-border text-sm rounded-xl" placeholder="Descreva acordos específicos e particularidades de faturamento..." />
+              <Textarea {...register('billing_rules')} className={cn(INPUT, "min-h-[120px] py-4")} placeholder="Descreva acordos específicos e particularidades de faturamento..." />
             </div>
 
             <div className="h-px bg-border/50" />
@@ -878,7 +865,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     placeholder="Selecionar CSM..."
                     value={watch('csm_owner_id') || ''}
                     onValueChange={(v) => setValue('csm_owner_id', v === 'none' ? null : v)}
-                    className="h-11 rounded-xl bg-accent/30 border-border"
+                    className={INPUT}
                     options={[
                       { label: 'Não Atribuído', value: 'none' },
                       ...users.map(u => ({ label: u.email, value: u.id }))
@@ -891,7 +878,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     placeholder="Selecionar Executivo..."
                     value={watch('sales_executive_id') || ''}
                     onValueChange={(v) => setValue('sales_executive_id', v === 'none' ? null : v)}
-                    className="h-11 rounded-xl bg-accent/30 border-border"
+                    className={INPUT}
                     options={[
                       { label: 'Não Atribuído', value: 'none' },
                       ...users.map(u => ({ label: u.email, value: u.id }))

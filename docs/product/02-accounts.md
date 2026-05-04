@@ -43,7 +43,8 @@ Formulário linear de coluna única com 4 blocos sequenciais:
 |-------|--------|
 | **Identificação** | Logo upload, Razão Social, Nome Fantasia, Segmento, Setor, Website, CNPJ |
 | **Localização** | CEP (via ViaCEP), Logradouro, Número, Complemento, Bairro, Cidade, UF, Toggle Internacional |
-| **Gestão Comercial** | Contratos: MRR, ARR (calculado), Tipo de Serviço, Plano, Financial Engine (Standard/Custom toggle + `pricing_explanation` quando Custom), Cupom, Datas, Duração |
+| **Gestão Comercial** | Contratos: MRR base, ARR (calculado), Tipo de Serviço, Plano, Financial Engine (Standard/Custom toggle + `pricing_explanation` quando Custom), Datas, Duração |
+| **Governança Comercial** | Descontos, multas e fidelidade centralizados por regra global ou por contrato, com valor, tipo e datas de vigência |
 | **Faturamento e Time** | Dia vencimento, Contato faturamento (nome/e-mail/telefone), Regras, CSM Responsável, Executivo Comercial |
 
 Todos os inputs usam `h-10 rounded-xl`. Layout full-width sem `max-w` restritivo.
@@ -78,6 +79,8 @@ Cada contrato possui `pricing_type`:
 - `custom` — negociação específica; exibe campo `pricing_explanation` (textarea livre)
 
 O toggle Standard/Custom no formulário mostra/oculta o campo de explicação dinamicamente.
+
+Descontos e multas não são mais configurados dentro do contrato. Toda redução de MRR, desconto progressivo, valor fixo, percentual, multa e fim de fidelização deve ser cadastrada em **Governança Comercial**, com `starts_at` e `ends_at` para que os cálculos considerem apenas regras vigentes.
 
 ### 2.2.4 Contratos
 
@@ -275,6 +278,7 @@ Modal para visualização e edição das interações estratégicas registradas 
 | Shadow score ausente | Score IA exibe "Pendente" (opacidade 30%) |
 | CEP inválido | Mantém campos vazios, sem erro bloqueante |
 | Toggle internacional | Oculta campo CEP, campos de endereço ficam livres |
+| Conta internacional | Exibe campo País para contexto operacional |
 
 ---
 

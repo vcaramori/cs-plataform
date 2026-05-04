@@ -46,6 +46,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { motion } from 'framer-motion'
 import { cn, formatCurrency } from '@/lib/utils'
+import { calculateNetMRR, calculateCurrentDiscount } from '@/lib/utils/contract-utils'
 import dynamic from 'next/dynamic'
 
 const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false })
@@ -85,10 +86,10 @@ function HealthMiniGauge({ label, value, icon: Icon, color, index, displayLabel 
   )
 }
 
-import { Account, HealthScore } from '@/lib/supabase/types'
+import { Account, CommercialGovernance, HealthScore } from '@/lib/supabase/types'
 
 export function AccountHeader({ account, latestHealthScore, currentAdoptionScore }: {
-  account: Account & { contracts?: any[]; discrepancy_alert?: boolean }
+  account: Account & { contracts?: any[]; commercial_governance?: CommercialGovernance[]; discrepancy_alert?: boolean }
   latestHealthScore?: HealthScore | null
   currentAdoptionScore?: number
 }) {
@@ -256,10 +257,33 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
             <div className="flex flex-col">
-              <span className="label-premium !text-[9px] opacity-50 mb-1">Receita Mensal</span>
-              <span className="text-xl font-black text-foreground tracking-tighter tabular-nums">
-                {formatCurrency(activeContract?.mrr || 0)}
-              </span>
+              <span className="label-premium !text-[9px] opacity-50 mb-1">Receita Mensal (Líquida)</span>
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <span className="text-xl font-black text-foreground tracking-tighter tabular-nums cursor-help">
+                      {formatCurrency(calculateNetMRR(activeContract, account.commercial_governance || []))}
+                    </span>
+                  </TooltipTrigger>
+                  {calculateCurrentDiscount(activeContract, account.commercial_governance || []) > 0 && (
+                    <TooltipContent side="bottom" className="bg-background border-border shadow-2xl p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-8">
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Valor Nominal</span>
+                        <span className="text-[10px] font-black text-foreground">{formatCurrency(activeContract.mrr)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-8">
+                        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Desconto Ativo</span>
+                        <span className="text-[10px] font-black text-amber-500">-{formatCurrency(calculateCurrentDiscount(activeContract, account.commercial_governance || []))}</span>
+                      </div>
+                      <div className="h-px bg-border/50" />
+                      <div className="flex items-center justify-between gap-8">
+                        <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Real MRR</span>
+                        <span className="text-[10px] font-black text-emerald-500">{formatCurrency(calculateNetMRR(activeContract, account.commercial_governance || []))}</span>
+                      </div>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </Card>
 
