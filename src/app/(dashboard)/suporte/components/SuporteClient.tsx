@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Account, SupportTicket } from '@/lib/supabase/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ import { format as formatDate } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
+import { ViewCreationPopover } from './ViewCreationPopover'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -66,11 +67,14 @@ function sortTickets(tickets: any[]) {
 export function SuporteClient({
   accounts,
   initialTickets,
+  userId,
 }: {
   accounts: Pick<Account, 'id' | 'name'>[]
   initialTickets: SupportTicket[]
+  userId: string
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'list' | 'import'>('list')
   const [format, setFormat] = useState<'csv' | 'text' | 'pdf'>('csv')
   const [content, setContent] = useState('')
@@ -81,6 +85,7 @@ export function SuporteClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<{ created: number; errors: string[] } | null>(null)
   const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets)
+  const [showCreateViewPopover, setShowCreateViewPopover] = useState(false)
 
   const handleIngest = async () => {
     setIsSubmitting(true)
@@ -117,7 +122,22 @@ export function SuporteClient({
     }
   }
 
-  const filteredTickets = sortTickets(tickets.filter((t) => {
+  const activeViewId = searchParams.get('view') ?? 'all-tickets'
+
+  // Apply view-based filtering
+  let viewFilteredTickets = tickets
+  if (activeViewId === 'my-tickets') {
+    viewFilteredTickets = tickets.filter((t) => t.assigned_to === userId)
+  } else if (activeViewId === 'sla-at-risk') {
+    viewFilteredTickets = tickets.filter((t) =>
+      ['atencao', 'vencido'].includes(t.sla_status_resolution ?? '')
+    )
+  } else if (activeViewId === 'unassigned') {
+    viewFilteredTickets = tickets.filter((t) => !t.assigned_to)
+  }
+
+  // Apply manual filters on top
+  const filteredTickets = sortTickets(viewFilteredTickets.filter((t) => {
     if (filterStatus !== 'all' && t.status !== filterStatus) return false
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
     return true
@@ -254,14 +274,29 @@ export function SuporteClient({
               ]}
             />
             {(filterStatus !== 'all' || filterPriority !== 'all') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setFilterStatus('all'); setFilterPriority('all') }}
-                className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all"
-              >
-                Limpar Busca
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setFilterStatus('all'); setFilterPriority('all') }}
+                  className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all"
+                >
+                  Limpar Busca
+                </Button>
+                <ViewCreationPopover
+                  open={showCreateViewPopover}
+                  onOpenChange={setShowCreateViewPopover}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Salvar como View
+                  </Button>
+                </ViewCreationPopover>
+              </>
             )}
           </div>
 
