@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Badge } from '@/components/ui/badge'
-import { 
   Clock, 
   Edit2, 
   History, 
@@ -18,7 +17,9 @@ import {
   X,
   Trash2,
   Loader2,
-  Check
+  Check,
+  Calendar,
+  Brain
 } from 'lucide-react'
 import { MaskedInput } from '@/components/ui/masked-input'
 import { toast } from 'sonner'
