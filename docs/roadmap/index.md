@@ -112,16 +112,12 @@ Sistema distribui carga inteligentemente; merge resolve duplicatas de forma segu
 
 ---
 
-## 🔵 FASE 4 — Analytics, Integrações e Escala
+## 🔵 FASE 4 — Analytics e Escala
 
 | Card | Título | Complexidade | Status |
 |------|--------|--------------|--------|
 | F4-01 | [Portfolio Analytics](fase4/F4-01-portfolio-analytics.md) | G | 📋 Ready |
 | F4-02 | [Renewal Management Workflow](fase4/F4-02-renewal-management.md) | M | 📋 Ready |
-| F4-03 | [Integração HubSpot](fase4/F4-03-integracao-hubspot.md) | M | 📋 Ready |
-| F4-04 | [Integração Billing (Stripe/Omie)](fase4/F4-04-integracao-billing.md) | M | 📋 Ready |
-| F4-05 | [Integração Product Telemetry](fase4/F4-05-integracao-telemetria.md) | M | 📋 Ready |
-| F4-06 | [Integração Slack](fase4/F4-06-integracao-slack.md) | P | 📋 Ready |
 
 ---
 
