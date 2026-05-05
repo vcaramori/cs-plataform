@@ -134,6 +134,37 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 11 Suporte UX | Tabs "Responder"/"Nota" movidas para a linha do botão (compose compacto). @menção: `@email` em reply/note grava evento `mention` em `sla_events`; `notifications/route.ts` expõe menções; `NotificationCenter` renderiza com ícone `AtSign` e borda índigo | ✅ Concluída 2026-04-24 |
 | Sessão 12 Suporte (F1-03 a F1-10) | Consolidação completa: Bulk Actions, Busca Semântica, Preview Inline, Colisão, IA Urgency, Auto-reopen, Auto-close/CSAT e Ticket Merge. | ✅ Concluída 2026-05-05 |
 | Sessão 13 Suporte (F1-11 a F1-13) | Detecção de Duplicatas (cron + banner), Reabertura Manual (modal + endpoint), Formulário Público/Webhook (3 endpoints + email). | ✅ Concluída 2026-05-05 |
+| Sessão 14 Suporte (F1-14 a F1-16) | Fila com Capacidade (stats + sidebar), Atribuição Automática (cron 5min), Escalonamento SLA (cron hourly + Slack). | ✅ Concluída 2026-05-05 |
+
+### Scripts de Cron (Agendamento)
+
+Todos os crons são executados via endpoints POST seguro (header `x-api-secret`):
+
+| Job | Endpoint | Agenda | Função |
+|-----|----------|--------|--------|
+| Auto-assign tickets | `POST /api/cron/auto-assign-tickets` | `*/5 * * * *` (5 min) | Distribui tickets unassigned para CSM com menor fila (F1-15) |
+| SLA escalation | `POST /api/cron/escalate-sla-violations` | `0 * * * *` (hourly) | Envia alertas Slack para SLA crítico (F1-16) |
+| SLA polling | `POST /api/cron/sla-polling` | `*/5 * * * *` (5 min) | Calcula status SLA para todos os tickets |
+| Auto-close tickets | `POST /api/cron/ticket-auto-close` | `*/30 * * * *` (30 min) | Fecha tickets resolvidos após inatividade + dispara CSAT |
+| CSAT timeout | `POST /api/cron/csat-timeout` | `0 * * * *` (hourly) | Reseta tokens CSAT expirados |
+
+**Configuração em Produção:**
+- Usar Vercel Crons, AWS EventBridge, GCP Cloud Scheduler ou similar
+- Endpoint requer header `x-api-secret` com valor de `process.env.API_SECRET`
+- Exemplos:
+  ```bash
+  # Vercel cron (vercel.json)
+  {
+    "crons": [
+      { "path": "/api/cron/auto-assign-tickets", "schedule": "*/5 * * * *" },
+      { "path": "/api/cron/escalate-sla-violations", "schedule": "0 * * * *" }
+    ]
+  }
+  
+  # Curl com secret
+  curl -X POST https://csplataform.plannera.com/api/cron/auto-assign-tickets \
+    -H "x-api-secret: $API_SECRET"
+  ```
 
 ### Convenção de Variantes de Button
 
@@ -312,6 +343,9 @@ Todas as ações são snapshot-backed: ao executar, o sistema captura o estado a
 - **Detecção de Duplicatas (F1-11):** Cron job diário (02:00 UTC) que executa análise de similaridade semântica entre todos os tickets abertos usando pgvector e cosine similarity. Tickets com score >= 0.85 são flagrados em `ticket_similarity_candidates` com status `pending_review`. CSM vê banner "Possível duplicata" na tela do ticket com botão "Mesclar" (integrado com F1-10) ou "Não é duplicata" (dismisses). Logs em `ticket_events` com event_type `duplicate_flagged`. RLS garante que CSMs só veem candidates de suas contas.
 - **Reabertura Manual (F1-12):** Botão "Reabrir com Justificativa" na tela de detalhe de tickets fechados. Abre modal com textarea obrigatório (min 10 chars) para registrar a razão da reabertura. Endpoint PATCH `/api/support-tickets/[id]/reopen` valida reason, altera status de `closed` para `open`, reseta `resolved_at` e logs em `ticket_events` com event_type `manual_reopened` incluindo reason e reopened_by no payload. Timeline exibe evento com ícone de reopen e razão completa.
 - **Formulário Público + Webhook (F1-13):** Endpoint público `/api/public/tickets` (POST, sem auth) aceita `{ email, title, description, priority, account_id? }` com rate limit 10 req/min por IP. Cria ticket com source='form', envia confirmation email (HTML + plain text) via nodemailer/Resend, logs em `ticket_events` event_type='public_submission'. Webhook endpoint `/api/webhooks/tickets/create` (POST) valida HMAC-SHA256 signature (header X-Webhook-Signature), mapeia account via `external_id`, cria ticket com source='webhook', logs em `ticket_events` event_type='webhook_submission'. Ambos endpoints suportam CORS e rate limiting. Tabela `webhook_deliveries` registra payload, status, retry count e timestamps para auditoria.
+- **Fila com Capacidade (F1-14):** Dashboard de capacidade dos CSMs mostrando `assigned_count / max_capacity` por agente. View SQL `csm_queue_stats` calcula em tempo real para cada CSM: tickets atribuídos, capacidade máxima (padrão 20, editável em `csm_settings.max_tickets_capacity`), slots disponíveis e percentage de carga. Componente `<QueueStatsPanel>` renderiza barra visual com cores progressivas (verde <50%, amarelo 50-80%, vermelho >=80%), tooltips informativos e summary stats. Endpoint `GET /api/csm-queue-stats` (cache 30s) retorna todas as estatísticas. Integração com sidebar para visibilidade contínua da fila.
+- **Atribuição Automática (F1-15):** Cron job rodando a cada 5 minutos (`*/5 * * * *`) que busca tickets `assigned_to IS NULL` e `status='open'`, encontra o CSM com menor queue (respeitando `csm_settings.max_tickets_capacity` e `csm_settings.auto_assign_enabled`), e atribui. Evento `auto_assigned` registrado em `ticket_events` com CSM responsável. Tabela `auto_assign_stats` coleta telemetria (capacity_before/after, cron timestamp) para análise de padrões. Endpoint POST `/api/support-tickets/[id]/auto-assign-test` (admin) força atribuição para teste (ignora capacidade). View `auto_assign_metrics` permite dashboard de assignments por hora.
+- **Escalonamento SLA (F1-16):** Cron job horário (`0 * * * *`) que busca tickets com SLA crítico (`sla_status='atencao'` ou `sla_status='vencido'`). Para cada ticket crítico não escalado nos últimos 2h, envia mensagem Slack formatada via webhook `SLACK_WEBHOOK_SLA_ALERTS` (circuit breaker: se webhook falha, log registra mas não falha cron). Tabela `sla_escalations` rastreia escalações com de-duplication window. Evento `sla_escalation` registrado em `ticket_events` com horas_elapsed e sla_status. Endpoint POST `/api/admin/test-sla-escalation` testa integração Slack. View `sla_escalation_summary` fornece telemetry de escalações por dia para alerting trends.
 
 ---
 
@@ -404,12 +438,12 @@ npm run dev
 
 ```bash
 # ── Supabase ──────────────────────────────────────────────────
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # ── Google Gemini ─────────────────────────────────────────────
-GEMINI_API_KEY=
+GEMINI_API_KEY=your-gemini-api-key
 GEMINI_EMBEDDING_MODEL=text-embedding-004
 GEMINI_EMBEDDING_DIMENSIONS=768
 GEMINI_FLASH_MODEL=gemini-2.5-flash
@@ -420,6 +454,15 @@ LLM_PROVIDER=gemini                 # gemini (exclusivo para estabilização)
 LLM_FALLBACK_PROVIDER=none          # Fallback desativado
 LLM_TIMEOUT_MS=120000
 LLM_ALLOW_FALLBACK=false
+
+# ── Integração Slack (F1-16: Escalonamento SLA) ───────────────
+SLACK_WEBHOOK_SLA_ALERTS=https://hooks.slack.com/services/T.../B.../XXXX
+
+# ── App URL para links em mensagens ───────────────────────────
+NEXT_PUBLIC_APP_URL=https://csplataform.plannera.com
+
+# ── API Secret para Cron Jobs ─────────────────────────────────
+API_SECRET=your-secure-random-secret-for-cron-jobs
 ```
 
 ---

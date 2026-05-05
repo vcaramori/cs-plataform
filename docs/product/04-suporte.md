@@ -130,7 +130,52 @@ CSM pode reabrir tickets fechados com justificativa registrada.
 | **Auditoria** | Event `manual_reopened` registrado em `ticket_events` com reason + reopened_by no payload |
 | **Timeline** | Exibe ícone de reopen com razão completa visível ao clicar |
 
-#### 4.1.1.8 Formulário Público e Webhook (F1-13)
+#### 4.1.1.8 Fila com Capacidade (F1-14)
+
+Visibilidade em tempo real da capacidade de trabalho de cada CSM.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Coluna max_tickets_capacity** | Adicionada a `csm_settings`; padrão 20 tickets por CSM (editável) |
+| **View csm_queue_stats** | Calcula em tempo real: assigned_count, max_capacity, available_slots, load_percentage |
+| **QueueStatsPanel** | Componente sidebar que lista CSMs com barras de capacidade coloridas |
+| **Codificação de cores** | Verde <50%, Amarelo 50-80%, Vermelho >=80% |
+| **Tooltip** | Exibe X/Y tickets e N slots disponíveis ao passar mouse |
+| **Endpoint** | GET `/api/csm-queue-stats` retorna stats com cache 30s |
+| **RLS** | View herda RLS de `auth.users` e `support_tickets` |
+
+#### 4.1.1.9 Atribuição Automática (F1-15)
+
+Sistema de auto-assignment que distribui carga automaticamente entre CSMs.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Cron Job** | Roda a cada 5 minutos (`*/5 * * * *`) |
+| **Trigger** | Tickets com `assigned_to IS NULL` e `status='open'` |
+| **Algoritmo** | Busca CSM com menor `assigned_count` que ainda tem `available_slots > 0` |
+| **Validação** | Respeita `max_capacity` e `auto_assign_enabled` flag (padrão true) |
+| **Auditoria** | Evento `auto_assigned` em `ticket_events` com CSM responsável |
+| **Telemetria** | Tabela `auto_assign_stats` registra capacity_before/after para análise |
+| **Endpoint de Teste** | POST `/api/support-tickets/[id]/auto-assign-test` (admin) força atribuição |
+| **Dashboard** | View `auto_assign_metrics` mostra assignments por hora para tendências |
+
+#### 4.1.1.10 Escalonamento SLA (F1-16)
+
+Notificação automática via Slack quando SLA está crítico.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Cron Job** | Roda a cada 1 hora (`0 * * * *`) |
+| **Busca** | Tickets com `sla_status='atencao'` (< 3h) ou `sla_status='vencido'` (< 0h) |
+| **Slack Message** | Formatação com emoji (🚨 vencido, ⚠️ atenção), fields de cliente/CSM/prioridade, botão "Ver Ticket" |
+| **De-duplication** | Não envia 2x para mesmo ticket em janela de 2 horas |
+| **Circuit Breaker** | Se webhook Slack falha, log registra mas não falha o cron |
+| **Webhook Var** | `SLACK_WEBHOOK_SLA_ALERTS` configurável por deployment |
+| **Auditoria** | Evento `sla_escalation` em `ticket_events` com horas_elapsed e sla_status |
+| **Telemetry** | Tabela `sla_escalations` rastreia escalações; view `sla_escalation_summary` para trends |
+| **Endpoint de Teste** | POST `/api/admin/test-sla-escalation` valida webhook configurado e envia msg teste |
+
+#### 4.1.1.11 Formulário Público e Webhook (F1-13)
 
 Integração para recebimento de tickets de fontes externas sem autenticação.
 
@@ -641,3 +686,9 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Mai/2026 | **F1-11 — Detecção de Duplicatas:** Cron job diário (02:00 UTC) com análise de similaridade semântica (pgvector, cosine 0.85+); banner UI com opção de merge ou dismissal; RLS enforced. |
 | Mai/2026 | **F1-12 — Reabertura Manual:** Modal de reabertura com justificativa obrigatória (min 10 chars); PATCH endpoint valida status; logs event_type='manual_reopened' com reason. |
 | Mai/2026 | **F1-13 — Formulário Público + Webhook:** POST `/api/public/tickets` (rate limit 10/min, email required) + POST `/api/webhooks/tickets/create` (HMAC validation); suporta `source='form'|'webhook'`; tabela `webhook_deliveries` para auditoria; email de confirmação via nodemailer. |
+| Mai/2026 | **F1-14 — Fila com Capacidade:** View SQL `csm_queue_stats` calcula em tempo real (assigned_count, available_slots, load_percentage); coluna `max_tickets_capacity` em `csm_settings` (padrão 20, editável); componente `<QueueStatsPanel>` no sidebar com barras visuais (verde <50%, amarelo 50-80%, vermelho >=80%); endpoint `GET /api/csm-queue-stats` com cache 30s; RLS enforced por account. |
+| Mai/2026 | **F1-15 — Atribuição Automática:** Cron job a cada 5 minutos (`POST /api/cron/auto-assign-tickets`, schedule `*/5 * * * *`) encontra tickets `assigned_to IS NULL + status='open'` e atribui para CSM com menor `assigned_count` (respeitando `max_capacity` e flag `auto_assign_enabled`); evento `auto_assigned` em `ticket_events` com CSM responsável; tabela `auto_assign_stats` para telemetria (capacity_before/after); endpoint POST `/api/support-tickets/[id]/auto-assign-test` (admin) força atribuição para teste; view `auto_assign_metrics` agrupa assignments por hora para dashboard de tendências. |
+| Mai/2026 | **F1-16 — Escalonamento SLA:** Cron job horário (`POST /api/cron/escalate-sla-violations`, schedule `0 * * * *`) busca tickets com SLA `atencao` (<3h) ou `vencido` (>deadline); envia mensagem Slack formatada (🚨/⚠️ emoji, cliente, prioridade, CSM, link direto) via webhook `SLACK_WEBHOOK_SLA_ALERTS` com circuit breaker (se webhook falha, log registra mas não falha cron); tabela `sla_escalations` com de-duplication (não envia 2x em janela de 2h); evento `sla_escalation` em `ticket_events` com horas_elapsed; endpoint POST `/api/admin/test-sla-escalation` valida webhook e envia msg de teste; view `sla_escalation_summary` fornece telemetria por dia para análise de trends. |
+| Mai/2026 | **F1-14 — Fila com Capacidade:** View SQL `csm_queue_stats` calcula em tempo real (assigned_count, available_slots, load_percentage); coluna `max_tickets_capacity` em `csm_settings` (padrão 20); componente `<QueueStatsPanel>` no sidebar com barras visuais (verde/amarelo/vermelho); endpoint `GET /api/csm-queue-stats` com cache 30s. |
+| Mai/2026 | **F1-15 — Atribuição Automática:** Cron job a cada 5 minutos encontra ticket `assigned_to IS NULL + status='open'` e atribui para CSM com menor queue (respeitando `max_capacity` e `auto_assign_enabled` flag); evento `auto_assigned` em `ticket_events`; tabela `auto_assign_stats` para telemetria; endpoint POST `/api/support-tickets/[id]/auto-assign-test` para teste forçado; view `auto_assign_metrics` para dashboard. |
+| Mai/2026 | **F1-16 — Escalonamento SLA:** Cron job horário busca tickets com SLA `atencao` ou `vencido`; envia mensagem Slack formatada via webhook `SLACK_WEBHOOK_SLA_ALERTS` (circuit breaker se webhook falha); tabela `sla_escalations` com de-duplication (2h window); evento `sla_escalation` em `ticket_events` com horas_elapsed; endpoint POST `/api/admin/test-sla-escalation` testa integração; view `sla_escalation_summary` para análise de trends. |
