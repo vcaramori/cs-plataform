@@ -11,6 +11,17 @@ export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'reo
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical'
 export type TicketSource = 'csv' | 'manual'
 
+export type SupportTicketMessage = {
+  id: string
+  ticket_id: string
+  author_id: string
+  author_email: string | null
+  type: 'reply' | 'note'
+  body: string
+  created_at: string
+  metadata: any
+}
+
 export type Account = {
   id: string
   name: string
@@ -170,6 +181,9 @@ export type SupportTicket = {
   sla_breach_resolution: boolean
   sla_status_first_response: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
   sla_status_resolution: 'no_prazo'|'atencao'|'vencido'|'cumprido'|'violado' | null
+  urgency_score: 'high' | 'medium' | 'low' | null
+  urgency_scored_at: string | null
+  urgency_reasoning: any | null
 }
 
 export type Embedding = {

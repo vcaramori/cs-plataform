@@ -70,6 +70,40 @@ O campo de busca na tabela executa busca semântica via embeddings vetoriais qua
 
 ---
 
+#### 4.1.1.3 Preview Inline (Triagem Rápida)
+
+O Preview Inline permite a visualização contextual e a execução de ações rápidas diretamente da lista de tickets, sem a necessidade de navegar para uma página de detalhes.
+
+| Comportamento | Descrição |
+|---------------|-----------|
+| **Slide-in Panel** | Ao clicar em uma linha da tabela, um painel lateral desliza da direita (90% width em desktop, máximo 600px). |
+| **Contexto Completo** | Exibe subject, informações do customer, SLA status (badge + tempo), descrição completa e as últimas 3 respostas. |
+| **Ações Inline** | Permite alterar *Assignee* via dropdown, mudar *Status*, adicionar *Tags* via modal reutilizável e submeter *Notes* internas. |
+| **Deep Linking** | Atualiza a URL automaticamente (ex: `?view=all&preview=ticket-123`) para permitir compartilhamento direto do contexto. |
+| **Responsividade** | Oculto em telas mobile (< 768px) no MVP. |
+| **Fechamento** | Fecha via botão X, tecla ESC ou clique fora do painel. Remove o parâmetro da URL. |
+
+#### 4.1.1.4 Detecção de Colisão (Collision Detection)
+
+Sistema de presença em tempo real para evitar conflitos entre CSMs.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Supabase Presence** | Rastreia usuários ativos no canal `ticket_presence:[id]`. |
+| **Alerta Visual** | No `TicketPreviewPanel`, um banner animado exibe o e-mail de outros CSMs visualizando o mesmo ticket. |
+| **Prevenção** | Reduz o risco de respostas duplicadas para o mesmo cliente. |
+
+#### 4.1.1.5 Urgency Scoring com IA (F1-07)
+
+Classificação inteligente de prioridade baseada no conteúdo.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Motor Gemini** | Analisa título, descrição e histórico para determinar a urgência. |
+| **Escala** | `low` (Baixa), `medium` (Média), `high` (Alta). |
+| **Insights do Guardião** | Exibição do raciocínio da IA em tooltips (`UrgencyBadge`). |
+| **Disparo** | Executado automaticamente na criação do ticket e em cada reabertura. |
+
 ### 4.1.2 Detalhe do Ticket (`/suporte/[id]`)
 
 Layout de duas colunas:
@@ -307,6 +341,19 @@ Classifica e-mails recebidos via IMAP/Power Automate:
 
 ---
 
+### 4.2.9 Reabertura Automática (Auto-Reopen)
+
+Automação de ciclo de vida via banco de dados para garantir que nenhuma interação do cliente seja ignorada.
+
+| Regra | Descrição |
+|-------|-----------|
+| **Gatilho (Trigger)** | `trg_auto_reopen_on_reply` monitora inserções na tabela `support_ticket_messages`. |
+| **Condição** | Ticket com `status = 'closed'` recebe mensagem do tipo `reply` (cliente). |
+| **Ação** | Status alterado para `open`. |
+| **Auditoria** | Evento `auto_reopened` registrado em `ticket_events`. |
+
+---
+
 ### 4.2.8 Notificações (7 tipos)
 
 | Tipo | Trigger |
@@ -496,3 +543,7 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Abr/2026 | Bypass de erro da IA: se revisão falhar, botão vira "Enviar sem Revisão" + "Tentar Revisão"; agente nunca fica bloqueado |
 | Abr/2026 | Tabs "Responder"/"Nota" movidas para a linha do botão de envio — compose mais compacto, mais espaço para a thread |
 | Abr/2026 | @menções: digitar @email em resposta ou nota notifica o usuário na Central de Alertas (evento `mention` em `sla_events`) |
+| Mai/2026 | **F1-05 — Preview Inline:** Implementado painel lateral deslizante para triagem rápida; integração com `usePreviewPanel` (deep-linking); `PreviewActionBar` para ações rápidas; `TicketListRow` para renderização otimizada. |
+| Mai/2026 | **F1-06 — Detecção de Colisão:** Implementado sistema de presença em tempo real via Supabase Presence para avisar CSMs visualizando o mesmo ticket. |
+| Mai/2026 | **F1-07 — Urgency Scoring com IA:** Integração com Gemini AI para análise de urgência automática com exibição de raciocínio (UrgencyBadge). |
+| Mai/2026 | **F1-08 — Reabertura Automática:** Automação via trigger no Postgres para reabrir tickets fechados quando o cliente responde. |

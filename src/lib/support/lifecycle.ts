@@ -4,6 +4,7 @@ import { evaluateSLAStatus } from './sla-engine'
 import { getSupabaseAdminClient as createAdminClient } from '../supabase/admin'
 import { sendCSATEmail } from './csat-service'
 import { analyzeAgentReply } from './ai-reply-analyzer'
+import { scoreTicketUrgency } from './urgency-scoring'
 
 /**
  * Enriches a new ticket payload with SLA deadlines before insertion.
@@ -96,6 +97,11 @@ export async function openTicket(ticketId: string, openedAt?: Date): Promise<voi
   if (defaultAssignee) {
     await createNotification(defaultAssignee, 'new_ticket', ticketId, 'Novo ticket de suporte atribuído a você')
   }
+
+  // F1-07: Trigger AI Urgency Scoring asynchronously
+  scoreTicketUrgency(ticketId).catch(err => 
+    console.error(`[Lifecycle] Urgency scoring failed for ticket ${ticketId}:`, err)
+  )
 }
 
 /**
@@ -250,6 +256,11 @@ export async function reopenTicket(ticketId: string): Promise<void> {
   if (ticket.assigned_to) {
     await createNotification(ticket.assigned_to, 'ticket_reopened', ticketId, 'Ticket reaberto pelo cliente')
   }
+
+  // F1-07: Re-score urgency on re-open
+  scoreTicketUrgency(ticketId).catch(err => 
+    console.error(`[Lifecycle] Urgency scoring failed on reopen for ticket ${ticketId}:`, err)
+  )
 }
 
 /**

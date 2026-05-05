@@ -27,6 +27,9 @@ import { BulkActionBar } from './BulkActionBar'
 import { BulkActionModal } from './BulkActionModal'
 import { FilterGroup } from '@/lib/schemas/filter.schema'
 import { Checkbox } from '@/components/ui/checkbox'
+import { usePreviewPanel } from '@/lib/hooks/usePreviewPanel'
+import { TicketPreviewPanel } from './TicketPreviewPanel'
+import { TicketListRow } from './TicketListRow'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -105,6 +108,9 @@ export function SuporteClient({
   // Semantic search state (F1-04)
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [semanticResults, setSemanticResults] = useState<{ ids: Set<string>; scores: Map<string, number> } | null>(null)
+
+  // Preview Panel state (F1-05)
+  const { previewId, openPreview, closePreview } = usePreviewPanel()
 
   // Fetch CSMs on mount
   const fetchCSMs = async () => {
@@ -235,6 +241,10 @@ export function SuporteClient({
     } catch (err: any) {
       toast.error('Erro ao desfazer: ' + err.message)
     }
+  }
+
+  const handleTicketUpdated = (updatedTicket: SupportTicket) => {
+    setTickets(prev => prev.map(t => t.id === updatedTicket.id ? { ...t, ...updatedTicket } : t))
   }
 
   const handleIngest = async () => {
@@ -518,6 +528,7 @@ export function SuporteClient({
                     <TableHead className="pl-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">LOGO / Cliente</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Título do Chamado</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Status</TableHead>
+                    <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Urgência</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Prioridade</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">SLA Resolução</TableHead>
                     <TableHead className="pr-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-right">Abertura</TableHead>
@@ -535,88 +546,16 @@ export function SuporteClient({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredTickets.map((t, index) => {
-                        const isSelected = selectedIds.has(t.id)
-                        return (
-                        <motion.tr
+                      filteredTickets.map((t, index) => (
+                        <TicketListRow
                           key={t.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.02 }}
-                          className={cn(
-                            "group border-b border-border-divider transition-all h-20",
-                            isSelected
-                              ? 'bg-surface-card/50 border-border-divider'
-                              : 'hover:bg-white/5 cursor-pointer'
-                          )}
-                        >
-                          <TableCell
-                            className="w-12 flex items-center justify-center"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSelection(t.id)}
-                              aria-label={`Selecionar ${t.title}`}
-                            />
-                          </TableCell>
-                          <TableCell
-                            className="pl-10 cursor-pointer"
-                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
-                          >
-                            <span className="text-[11px] font-black uppercase tracking-tight text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
-                              {t.accounts?.name ?? '—'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <span className="text-xs font-black text-content-primary line-clamp-1 group-hover:text-plannera-primary transition-colors">
-                                {t.title}
-                              </span>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40">
-                                {t.category || 'Incidente Geral'}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell
-                            className="text-center cursor-pointer"
-                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
-                          >
-                            <StatusBadgeGuard
-                              label={statusConfig[t.status]?.label || t.status}
-                              type={t.status as any}
-                              className="mx-auto"
-                            />
-                          </TableCell>
-                          <TableCell
-                            className="text-center cursor-pointer"
-                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
-                          >
-                            <StatusBadgeGuard
-                              label={priorityConfig[t.priority]?.label || t.priority}
-                              type={t.priority as any}
-                              className="mx-auto"
-                            />
-                          </TableCell>
-                          <TableCell
-                            className="text-center cursor-pointer"
-                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
-                          >
-                            {t.sla_status_resolution
-                              ? <SLABadge status={t.sla_status_resolution as any} />
-                              : <span className="text-[9px] font-black uppercase tracking-widest opacity-20">—</span>}
-                          </TableCell>
-                          <TableCell
-                            className="pr-10 text-right cursor-pointer"
-                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
-                          >
-                            <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-60">
-                              {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
-                            </span>
-                          </TableCell>
-                        </motion.tr>
-                      )
-                      })
+                          ticket={t}
+                          isSelected={selectedIds.has(t.id)}
+                          onSelect={(id) => toggleSelection(id)}
+                          onPreview={(id) => openPreview(id)}
+                          isHighlighted={previewId === t.id}
+                        />
+                      ))
                     )}
                   </AnimatePresence>
                 </TableBody>
@@ -865,7 +804,13 @@ export function SuporteClient({
         onOpenChange={setShowFilterEditor}
         tickets={tickets}
       />
+
+      {/* Ticket Preview Side Panel (F1-05) */}
+      <TicketPreviewPanel 
+        ticketId={previewId}
+        onClose={closePreview}
+        onTicketUpdated={handleTicketUpdated}
+      />
     </div>
   )
 }
-
