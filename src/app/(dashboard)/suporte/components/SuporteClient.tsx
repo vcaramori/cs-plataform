@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Account, SupportTicket } from '@/lib/supabase/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,7 +23,10 @@ import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
 import { ViewCreationPopover } from './ViewCreationPopover'
 import { FilterEditorModal } from './FilterEditorModal'
+import { BulkActionBar } from './BulkActionBar'
+import { BulkActionModal } from './BulkActionModal'
 import { FilterGroup } from '@/lib/schemas/filter.schema'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -91,6 +94,113 @@ export function SuporteClient({
   const [showCreateViewPopover, setShowCreateViewPopover] = useState(false)
   const [showFilterEditor, setShowFilterEditor] = useState(false)
 
+  // Bulk actions state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [undoSnapshot, setUndoSnapshot] = useState<any[] | null>(null)
+  const [bulkActionOpen, setBulkActionOpen] = useState(false)
+  const [bulkActionType, setBulkActionType] = useState<'change_status' | 'assign' | 'close' | null>(null)
+  const [isLoadingBulkAction, setIsLoadingBulkAction] = useState(false)
+  const [csms, setCSMs] = useState<Array<{ id: string; name: string }>>([])
+
+  // Fetch CSMs on mount
+  const fetchCSMs = async () => {
+    try {
+      const res = await fetch('/api/accounts')
+      if (res.ok) {
+        const data = await res.json()
+        const csmList = data
+          .filter((account: any) => account.csm_owner?.id && account.csm_owner?.name)
+          .map((account: any) => ({ id: account.csm_owner.id, name: account.csm_owner.name }))
+          .filter((item: any, index: number, self: any[]) => self.findIndex(x => x.id === item.id) === index)
+        setCSMs(csmList)
+      }
+    } catch (err) {
+      console.error('Failed to fetch CSMs:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchCSMs()
+  }, [])
+
+  // Selection handlers
+  const toggleSelection = (id: string) => {
+    const newSelectedIds = new Set(selectedIds)
+    if (newSelectedIds.has(id)) {
+      newSelectedIds.delete(id)
+    } else {
+      newSelectedIds.add(id)
+    }
+    setSelectedIds(newSelectedIds)
+  }
+
+  const toggleSelectAll = (tickets: any[]) => {
+    if (selectedIds.size === tickets.length && tickets.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      const allIds = new Set(tickets.map(t => t.id))
+      setSelectedIds(allIds)
+    }
+  }
+
+  const handleBulkActionOpen = (action: 'change_status' | 'assign' | 'close') => {
+    setBulkActionType(action)
+    setBulkActionOpen(true)
+  }
+
+  const handleBulkActionConfirm = async (payload: any) => {
+    setIsLoadingBulkAction(true)
+    try {
+      const res = await fetch('/api/bulk-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        throw new Error(await res.text())
+      }
+
+      const data = await res.json()
+      setUndoSnapshot(data.snapshot)
+      toast.success(`${data.updated_count} ticket(s) atualizado(s)!`)
+
+      if (data.errors?.length > 0) {
+        toast.error(`Erros: ${data.errors.length} ticket(s) falharam`)
+      }
+
+      setSelectedIds(new Set())
+      setBulkActionOpen(false)
+      setBulkActionType(null)
+      router.refresh()
+    } catch (err: any) {
+      toast.error('Erro na ação em massa: ' + err.message)
+    } finally {
+      setIsLoadingBulkAction(false)
+    }
+  }
+
+  const handleUndo = async () => {
+    if (!undoSnapshot) return
+
+    try {
+      const res = await fetch('/api/bulk-actions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snapshot: undoSnapshot }),
+      })
+
+      if (!res.ok) throw new Error(await res.text())
+
+      const data = await res.json()
+      toast.success(`${data.restored_count} ticket(s) restaurado(s)!`)
+      setUndoSnapshot(null)
+      router.refresh()
+    } catch (err: any) {
+      toast.error('Erro ao desfazer: ' + err.message)
+    }
+  }
+
   const handleIngest = async () => {
     setIsSubmitting(true)
     setResult(null)
@@ -144,16 +254,19 @@ export function SuporteClient({
   const filteredTickets = sortTickets(viewFilteredTickets.filter((t) => {
     if (filterStatus !== 'all' && t.status !== filterStatus) return false
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
-    
+
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase()
       const titleMatch = t.title.toLowerCase().includes(searchLower)
       const accountMatch = t.accounts?.name?.toLowerCase().includes(searchLower)
       if (!titleMatch && !accountMatch) return false
     }
-    
+
     return true
   }))
+
+  const isAllSelected = filteredTickets.length > 0 && selectedIds.size === filteredTickets.length
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < filteredTickets.length
 
   const openTickets = tickets.filter(t => ['open', 'in-progress', 'reopened'].includes(t.status))
   const breachedCount = openTickets.filter(t => t.sla_status_resolution === 'vencido' || t.sla_status_first_response === 'vencido').length
@@ -336,6 +449,13 @@ export function SuporteClient({
               <Table>
                 <TableHeader className="bg-surface-background/50">
                   <TableRow className="hover:bg-transparent border-b border-border-divider">
+                    <TableHead className="w-12 h-16 flex items-center justify-center">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={() => toggleSelectAll(filteredTickets)}
+                        aria-label="Selecionar todos"
+                      />
+                    </TableHead>
                     <TableHead className="pl-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">LOGO / Cliente</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Título do Chamado</TableHead>
                     <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Status</TableHead>
@@ -348,7 +468,7 @@ export function SuporteClient({
                   <AnimatePresence mode='popLayout'>
                     {filteredTickets.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-64 text-center">
+                        <TableCell colSpan={7} className="h-64 text-center">
                           <div className="flex flex-col items-center justify-center opacity-30 grayscale">
                             <TicketCheck className="w-12 h-12 mb-4" />
                             <p className="text-[10px] font-black uppercase tracking-[0.3em]">Nenhum chamado pendente</p>
@@ -356,16 +476,35 @@ export function SuporteClient({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredTickets.map((t, index) => (
-                        <motion.tr 
-                          key={t.id} 
+                      filteredTickets.map((t, index) => {
+                        const isSelected = selectedIds.has(t.id)
+                        return (
+                        <motion.tr
+                          key={t.id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.02 }}
-                          onClick={() => router.push(`/suporte/${t.id}`)}
-                          className="group border-b border-border-divider hover:bg-white/5 transition-all cursor-pointer h-20"
+                          className={cn(
+                            "group border-b border-border-divider transition-all h-20",
+                            isSelected
+                              ? 'bg-surface-card/50 border-border-divider'
+                              : 'hover:bg-white/5 cursor-pointer'
+                          )}
                         >
-                          <TableCell className="pl-10">
+                          <TableCell
+                            className="w-12 flex items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelection(t.id)}
+                              aria-label={`Selecionar ${t.title}`}
+                            />
+                          </TableCell>
+                          <TableCell
+                            className="pl-10 cursor-pointer"
+                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
+                          >
                             <span className="text-[11px] font-black uppercase tracking-tight text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
                               {t.accounts?.name ?? '—'}
                             </span>
@@ -380,38 +519,93 @@ export function SuporteClient({
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
-                            <StatusBadgeGuard 
-                              label={statusConfig[t.status]?.label || t.status} 
-                              type={t.status as any} 
+                          <TableCell
+                            className="text-center cursor-pointer"
+                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
+                          >
+                            <StatusBadgeGuard
+                              label={statusConfig[t.status]?.label || t.status}
+                              type={t.status as any}
                               className="mx-auto"
                             />
                           </TableCell>
-                          <TableCell className="text-center">
-                            <StatusBadgeGuard 
-                              label={priorityConfig[t.priority]?.label || t.priority} 
-                              type={t.priority as any} 
+                          <TableCell
+                            className="text-center cursor-pointer"
+                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
+                          >
+                            <StatusBadgeGuard
+                              label={priorityConfig[t.priority]?.label || t.priority}
+                              type={t.priority as any}
                               className="mx-auto"
                             />
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell
+                            className="text-center cursor-pointer"
+                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
+                          >
                             {t.sla_status_resolution
                               ? <SLABadge status={t.sla_status_resolution as any} />
                               : <span className="text-[9px] font-black uppercase tracking-widest opacity-20">—</span>}
                           </TableCell>
-                          <TableCell className="pr-10 text-right">
+                          <TableCell
+                            className="pr-10 text-right cursor-pointer"
+                            onClick={() => !isSelected && router.push(`/suporte/${t.id}`)}
+                          >
                             <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-60">
                               {formatDate(new Date(t.created_at), 'dd/MM/yyyy')}
                             </span>
                           </TableCell>
                         </motion.tr>
-                      ))
+                      )
+                      })
                     )}
                   </AnimatePresence>
                 </TableBody>
               </Table>
             </div>
           </div>
+
+          {/* Bulk Action Bar */}
+          <BulkActionBar
+            selectedCount={selectedIds.size}
+            onClose={() => setSelectedIds(new Set())}
+            onChangeStatus={() => handleBulkActionOpen('change_status')}
+            onAssign={() => handleBulkActionOpen('assign')}
+            onBulkClose={() => handleBulkActionOpen('close')}
+          />
+
+          {/* Bulk Action Modal */}
+          <BulkActionModal
+            open={bulkActionOpen}
+            onOpenChange={setBulkActionOpen}
+            selectedTickets={filteredTickets.filter((t) => selectedIds.has(t.id))}
+            action={bulkActionType}
+            csms={csms}
+            onConfirm={handleBulkActionConfirm}
+          />
+
+          {/* Undo Toast Trigger */}
+          {undoSnapshot && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="fixed bottom-8 right-8 z-40 bg-surface-card border border-border-divider rounded-2xl p-5 shadow-2xl flex items-center gap-4"
+            >
+              <div className="flex-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-content-primary">
+                  Ação em Massa Realizada
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUndo}
+                className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all"
+              >
+                Desfazer
+              </Button>
+            </motion.div>
+          )}
         </div>
       )}
 

@@ -293,6 +293,13 @@ nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
 
 **Toolbar de formatação Teams-style:** Barra de formatação ancorada abaixo do textarea (não sobreposta). Botões: Negrito (`**text**`), Itálico (`_text_`), Código (`` `text` ``), Lista com marcadores, Lista numerada, Paperclip, Imagem. A seleção de texto no textarea é preservada após aplicar a formatação via `requestAnimationFrame`.
 
+**Ações em Massa (Bulk Actions — F1-03):** Lista de tickets com multi-select via checkboxes. Usuário seleciona tickets e dispara ações para todos simultaneamente:
+- **Mudar Status**: Aplicar novo status a múltiplos tickets de uma vez
+- **Atribuir**: Reatribuir lotes de tickets para outro CSM
+- **Fechar Tudo**: Fechar múltiplos tickets atomicamente
+
+Todas as ações são snapshot-backed: ao executar, o sistema captura o estado anterior de cada ticket. Caso o CSM se arrependa, um toast com botão **Desfazer** aparece nos 30 segundos seguintes para restaurar o estado original. Cada ação dispara eventos de auditoria (`bulk_change_status`, `bulk_assign`, `bulk_close`, `bulk_action_undone`) registrados em `ticket_events`.
+
 ---
 
 ### Adoção de Produto (`/product`)

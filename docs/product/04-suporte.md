@@ -22,6 +22,29 @@ O módulo **Suporte** é o sistema de gestão de tickets do CS-Continuum. Permit
 | **Filtros** | Status, Prioridade, Agente, Conta |
 | **Tabela** | ID, Conta, Assunto, Status, Prioridade, SLABadge, Atualizado |
 
+#### 4.1.1.1 Ações em Massa (Bulk Actions)
+
+A tabela possui uma coluna de seleção com checkboxes para multi-select:
+
+| Recurso | Comportamento |
+|---------|--------------|
+| **Checkbox no header** | "Selecionar tudo" — marca/desmarca todos os tickets da página filtrada |
+| **Checkbox por linha** | Seleciona/deseleciona ticket individual. Clique fora do checkbox navega para detalhe |
+| **Barra flutuante** | Aparece quando 1+ tickets selecionados. Fixa no rodapé, contém: contador de seleção + 3 botões de ação |
+| **Mudar Status** | Abre modal com seletor de novo status. Aplica a TODOS os selecionados atomicamente. Registra evento `bulk_change_status` por ticket |
+| **Atribuir** | Abre modal com dropdown de CSMs. Reatribui todos para o CSM escolhido. Registra evento `bulk_assign` |
+| **Fechar Tudo** | Confirma e fecha todos atomicamente. Status → `closed`, `closed_at` → agora. Registra evento `bulk_close` |
+
+**Snapshot-backed Undo:**
+- Antes de executar qualquer ação, o sistema captura o estado anterior de cada ticket (status, assigned_to)
+- Após execução bem-sucedida, toast com botão **Desfazer** aparece por ~30s
+- Usuário clica → PUT `/api/bulk-actions` com o snapshot restaura estado original
+- Evento `bulk_action_undone` registrado por ticket restaurado
+
+**Isolamento por RLS:**
+- Usuário só pode selecionar/atualizar tickets de contas onde é `csm_owner`
+- POST `/api/bulk-actions` valida propriedade via `accounts.csm_owner_id = auth.uid()`
+
 ---
 
 ### 4.1.2 Detalhe do Ticket (`/suporte/[id]`)
