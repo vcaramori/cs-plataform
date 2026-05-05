@@ -6,6 +6,7 @@ import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
 import { FilterGroupSchema } from '@/lib/schemas/filter.schema'
 import { applyFilterToQuery } from '@/lib/utils/filterQueryBuilder'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
+import { processAutoCategorizationForTicket } from '@/lib/support/categorization'
 
 const TicketSchema = z.object({
   account_id: z.string().uuid(),
@@ -105,6 +106,16 @@ export async function POST(request: Request) {
     `${data.title}\n${data.description ?? ''}`
   ).catch(err => {
     console.error('[Embeddings] store error:', err)
+  })
+
+  // Auto-categorize ticket (F1-18)
+  processAutoCategorizationForTicket(
+    data.id,
+    data.title,
+    data.description,
+    data.category
+  ).catch(err => {
+    console.error('[Auto-Categorize] Background error:', err)
   })
 
   return NextResponse.json(data, { status: 201 })

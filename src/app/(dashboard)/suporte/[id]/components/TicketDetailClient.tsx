@@ -31,6 +31,8 @@ import { MergeTicketModal } from '../../components/MergeTicketModal'
 import { MergedTicketBanner } from '../../components/MergedTicketBanner'
 import { ReopenModal } from '../../components/ReopenModal'
 import { DuplicateTicketBanner } from '../../components/DuplicateTicketBanner'
+import { CategorySuggestionBadge } from '@/components/support/CategorySuggestionBadge'
+import { TicketSummarySection } from '@/components/support/TicketSummarySection'
 import {
   Select,
   SelectContent,
@@ -114,6 +116,11 @@ interface Ticket {
   external_priority_label?: string | null
   merged_into?: string | null
   merged_at?: string | null
+  suggested_category?: string | null
+  suggestion_confidence?: number | null
+  suggestion_reasoning?: string | null
+  summary?: string | null
+  summary_generated_at?: string | null
 }
 
 interface SupportIndicators {
@@ -857,6 +864,24 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 }}
               />
             )}
+
+            {/* Categorization Suggestion (F1-18) */}
+            {ticket.suggested_category && !ticket.category && (
+              <CategorySuggestionBadge
+                ticketId={ticket.id}
+                suggestedCategory={ticket.suggested_category}
+                confidence={ticket.suggestion_confidence}
+                reasoning={ticket.suggestion_reasoning}
+                onAccepted={() => router.refresh()}
+                onRejected={() => {}}
+              />
+            )}
+
+            {/* Ticket Summary (F1-19) */}
+            <TicketSummarySection
+              ticketId={ticket.id}
+              initialSummary={ticket.summary}
+            />
 
             {/* Original message */}
             <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
