@@ -33,6 +33,9 @@ import { ReopenModal } from '../../components/ReopenModal'
 import { DuplicateTicketBanner } from '../../components/DuplicateTicketBanner'
 import { CategorySuggestionBadge } from '@/components/support/CategorySuggestionBadge'
 import { TicketSummarySection } from '@/components/support/TicketSummarySection'
+import { SentimentBadge } from '@/components/support/sentiment-badge'
+import { SentimentTrendSparkline } from '@/components/support/sentiment-trend-sparkline'
+import { SentimentTimeline } from '@/components/support/sentiment-timeline'
 import {
   Select,
   SelectContent,
@@ -46,6 +49,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -165,6 +174,11 @@ interface SupportMessage {
   body: string
   metadata?: any | null
   created_at: string
+  sentiment?: {
+    sentiment: 'positive' | 'neutral' | 'negative'
+    score: number
+    keywords?: string[]
+  } | null
 }
 
 interface Props {
@@ -263,7 +277,7 @@ function ClientMessage({ text, ts }: { text: string; ts: string }) {
   )
 }
 
-function AgentReply({ event, agents }: { event: SLAEvent; agents: Agent[] }) {
+function AgentReply({ event, agents, sentiment }: { event: SLAEvent; agents: Agent[]; sentiment?: { sentiment: 'positive' | 'neutral' | 'negative'; score: number; keywords?: string[] } | null }) {
   const authorEmail = event.metadata?.author_email ?? 'Agente'
   const shortName = authorEmail.split('@')[0]
   return (
@@ -274,6 +288,14 @@ function AgentReply({ event, agents }: { event: SLAEvent; agents: Agent[] }) {
       <div className="flex-1 max-w-2xl flex flex-col items-end">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-content-secondary text-[11px]">{fmtTs(event.occurred_at)}</span>
+          {sentiment && (
+            <SentimentBadge
+              sentiment={sentiment.sentiment}
+              score={sentiment.score}
+              keywords={sentiment.keywords}
+              size="sm"
+            />
+          )}
           <span className="text-xs font-bold uppercase tracking-tight text-indigo-500 dark:text-indigo-400">{shortName}</span>
         </div>
         <div className="bg-indigo-600 border border-indigo-500 rounded-2xl rounded-tr-sm p-4 w-full shadow-premium">
@@ -770,6 +792,12 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           <span className="text-content-primary truncate max-w-md">{ticket.title}</span>
         </div>
 
+        {/* Sentiment Sparkline */}
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Sentimento:</span>
+          <SentimentTrendSparkline ticketId={ticket.id} compact />
+        </div>
+
         {/* Title row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1.5 flex-1 min-w-0">
@@ -922,6 +950,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                         ticket_id: msg.ticket_id
                       }}
                       agents={agents}
+                      sentiment={msg.sentiment || null}
                     />
                   )}
                   {msg.type === 'note' && (
@@ -1352,6 +1381,12 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 </Button>
               </div>
             )}
+          </section>
+
+          {/* ─ Sentiment Timeline ───────────────────────────────── */}
+          <section className="border-b border-border-divider p-4 space-y-3">
+            <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Análise de Sentimento</Text>
+            <SentimentTimeline ticketId={ticket.id} />
           </section>
         </div>
       </div>

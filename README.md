@@ -136,6 +136,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 13 Suporte (F1-11 a F1-13) | Detecção de Duplicatas (cron + banner), Reabertura Manual (modal + endpoint), Formulário Público/Webhook (3 endpoints + email). | ✅ Concluída 2026-05-05 |
 | Sessão 14 Suporte (F1-14 a F1-16) | Fila com Capacidade (stats + sidebar), Atribuição Automática (cron 5min), Escalonamento SLA (cron hourly + Slack). | ✅ Concluída 2026-05-05 |
 | Sessão 15 Suporte (F1-18, F1-17, F1-19) | Auto-categorização (Gemini + sugestão), RAG Reply Suggestion (pgvector + contexto de tickets similares), Resumo do Ticket (cache 24h + regeneração). | ✅ Concluída 2026-05-05 |
+| Sessão 16 Suporte (F1-20 — Sentiment Trend) | Análise de sentimento por reply (Gemini), sparkline de tendência, timeline de sentimentos, detecção de tendência negativa, cache 24h. | ✅ Concluída 2026-05-05 |
 
 ### Scripts de Cron (Agendamento)
 
@@ -148,6 +149,7 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
 | SLA polling | `POST /api/cron/sla-polling` | `*/5 * * * *` (5 min) | Calcula status SLA para todos os tickets |
 | Auto-close tickets | `POST /api/cron/ticket-auto-close` | `*/30 * * * *` (30 min) | Fecha tickets resolvidos após inatividade + dispara CSAT |
 | CSAT timeout | `POST /api/cron/csat-timeout` | `0 * * * *` (hourly) | Reseta tokens CSAT expirados |
+| Sentiment analysis | `POST /api/cron/analyze-ticket-sentiments` | `0 3 * * *` (daily 03:00 UTC) | Analisa replies sem sentimento via Gemini, regenera caches de tendência (F1-20) |
 
 **Configuração em Produção:**
 - Usar Vercel Crons, AWS EventBridge, GCP Cloud Scheduler ou similar
