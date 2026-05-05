@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { enrichTicketWithSLA, logSLAEvent } from '@/lib/support/lifecycle'
 import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
+import { FilterGroupSchema } from '@/lib/schemas/filter.schema'
+import { applyFilterToQuery } from '@/lib/utils/filterQueryBuilder'
 
 const TicketSchema = z.object({
   account_id: z.string().uuid(),
@@ -25,6 +27,7 @@ export async function GET(request: Request) {
   const accountId = searchParams.get('account_id')
   const status = searchParams.get('status')
   const priority = searchParams.get('priority')
+  const filtersParam = searchParams.get('filters')
 
   // Busca apenas tickets de contas do CSM logado
   let query = supabase
@@ -34,9 +37,21 @@ export async function GET(request: Request) {
     .order('opened_at', { ascending: false })
     .limit(100)
 
+  // Legacy filters (F1-01 backward compat)
   if (accountId) query = query.eq('account_id', accountId)
   if (status) query = query.eq('status', status)
   if (priority) query = query.eq('priority', priority)
+
+  // Complex filters (F1-02)
+  if (filtersParam) {
+    try {
+      const filters = JSON.parse(decodeURIComponent(filtersParam))
+      const validatedFilters = FilterGroupSchema.parse(filters)
+      query = applyFilterToQuery(query, validatedFilters)
+    } catch (err) {
+      return NextResponse.json({ error: 'Invalid filters format' }, { status: 400 })
+    }
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

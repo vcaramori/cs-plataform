@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { MaskedInput } from '@/components/ui/masked-input'
 
-const INPUT = 'h-10 rounded-xl bg-surface-card border-border-divider focus:ring-indigo-500/20 focus:border-indigo-500/40'
-const LABEL = 'text-[10px] font-extrabold text-content-secondary uppercase tracking-widest ml-1'
+const INPUT = 'bg-background/50 border-border/60 text-content-primary h-11 rounded-2xl text-sm font-medium focus-visible:ring-primary/30 transition-all placeholder:text-content-secondary/50 shadow-sm'
+const LABEL = 'label-premium'
 
 interface CommercialGovernanceFormProps {
   rules: any[]
@@ -86,7 +86,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
             variant="outline"
             size="sm"
             onClick={() => addRule('discount')}
-            className="h-8 text-[9px] font-black uppercase tracking-widest gap-2"
+            className="h-8 label-premium gap-2"
           >
             <TrendingDown className="w-3 h-3" /> Add Desconto
           </Button>
@@ -95,7 +95,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
             variant="outline"
             size="sm"
             onClick={() => addRule('penalty')}
-            className="h-8 text-[9px] font-black uppercase tracking-widest gap-2"
+            className="h-8 label-premium gap-2"
           >
             <Scale className="w-3 h-3" /> Add Multa
           </Button>
@@ -234,7 +234,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
                   {(rule.config?.stages || []).map((stage: any, stageIndex: number) => (
                     <div key={stageIndex} className="grid grid-cols-12 gap-2 items-end">
                       <div className="col-span-12 md:col-span-3 space-y-1">
-                        <Label className="text-[8px] font-bold text-content-secondary uppercase">Label</Label>
+                        <Label className="label-premium">Label</Label>
                         <Input
                           value={stage.label || ''}
                           onChange={(e) => updateStage(rule, stageIndex, { label: e.target.value })}
@@ -242,7 +242,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
                         />
                       </div>
                       <div className="col-span-6 md:col-span-2 space-y-1">
-                        <Label className="text-[8px] font-bold text-content-secondary uppercase">Inicio</Label>
+                        <Label className="label-premium">Inicio</Label>
                         <Input
                           type="date"
                           value={stage.starts_at || ''}
@@ -251,7 +251,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
                         />
                       </div>
                       <div className="col-span-6 md:col-span-2 space-y-1">
-                        <Label className="text-[8px] font-bold text-content-secondary uppercase">Fim</Label>
+                        <Label className="label-premium">Fim</Label>
                         <Input
                           type="date"
                           value={stage.ends_at || ''}
@@ -260,7 +260,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
                         />
                       </div>
                       <div className="col-span-5 md:col-span-1 space-y-1">
-                        <Label className="text-[8px] font-bold text-content-secondary uppercase">Tipo</Label>
+                        <Label className="label-premium">Tipo</Label>
                         <Select
                           value={stage.type || 'percentage'}
                           onValueChange={(v) => updateStage(rule, stageIndex, { type: v })}
@@ -275,7 +275,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
                         </Select>
                       </div>
                       <div className="col-span-5 md:col-span-3 space-y-1">
-                        <Label className="text-[8px] font-bold text-content-secondary uppercase">Desconto {stage.type === 'fixed' ? '(R$)' : '(%)'}</Label>
+                        <Label className="label-premium">Desconto {stage.type === 'fixed' ? '(R$)' : '(%)'}</Label>
                         <MaskedInput
                           maskType={stage.type === 'fixed' ? 'currency' : 'number'}
                           value={stage.discount ?? 0}
@@ -305,3 +305,5 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
     </div>
   )
 }
+
+

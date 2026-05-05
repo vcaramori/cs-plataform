@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -114,10 +115,10 @@ export function ViewCreationPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       {children && <PopoverTrigger asChild>{children}</PopoverTrigger>}
-      <PopoverContent className="w-80 p-4" align="start">
+      <PopoverContent className="w-80 p-6 bg-white dark:bg-[#101623] border border-border/50 shadow-2xl rounded-2xl" align="start">
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-semibold text-content-primary mb-3">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary mb-5 border-b border-border/50 pb-2">
               Nova view
             </h3>
           </div>
@@ -125,7 +126,7 @@ export function ViewCreationPopover({
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Icon Selector */}
             <div>
-              <Label className="text-xs font-semibold text-content-secondary mb-2 block">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-content-secondary/60 mb-3 block ml-1">
                 Ícone
               </Label>
               <div className="grid grid-cols-4 gap-2">
@@ -142,11 +143,12 @@ export function ViewCreationPopover({
                         input.dispatchEvent(new Event('change', { bubbles: true }))
                       }
                     }}
-                    className={`p-2 rounded-md transition-colors flex items-center justify-center ${
+                    className={cn(
+                      "p-3 rounded-xl transition-all flex items-center justify-center border",
                       selectedIcon === id
-                        ? 'bg-content-primary text-surface-background'
-                        : 'bg-surface-background border border-border-divider text-content-secondary hover:bg-surface-card'
-                    }`}
+                        ? "bg-plannera-primary text-white border-transparent shadow-lg"
+                        : "bg-slate-500/5 border-border/40 text-content-secondary hover:bg-slate-500/10"
+                    )}
                     title={label}
                   >
                     <Icon className="w-4 h-4" />
@@ -167,14 +169,14 @@ export function ViewCreationPopover({
 
             {/* Name Input */}
             <div>
-              <Label htmlFor="name" className="text-xs font-semibold text-content-secondary mb-1 block">
-                Nome
+              <Label htmlFor="name" className="text-[9px] font-black uppercase tracking-widest text-content-secondary/60 mb-2 block ml-1">
+                Nome da View
               </Label>
               <Input
                 id="name"
-                placeholder="Ex: Tickets críticos"
+                placeholder="Ex: TICKETS CRÍTICOS"
                 {...register('name')}
-                className="h-8 text-sm"
+                className="h-10 bg-slate-500/5 dark:bg-slate-400/10 border-border/50 text-foreground rounded-xl text-[10px] font-black uppercase tracking-widest"
               />
               {errors.name && (
                 <p className="text-[10px] text-red-600 mt-1">{errors.name.message}</p>
@@ -183,7 +185,7 @@ export function ViewCreationPopover({
 
             {/* Visibility Radio Group */}
             <div>
-              <Label className="text-xs font-semibold text-content-secondary mb-2 block">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-content-secondary/60 mb-3 block ml-1">
                 Visibilidade
               </Label>
               <div className="space-y-1.5">
@@ -212,7 +214,7 @@ export function ViewCreationPopover({
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-8 text-sm font-medium"
+              className="w-full h-11 bg-plannera-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-plannera-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               {loading ? (
                 <>

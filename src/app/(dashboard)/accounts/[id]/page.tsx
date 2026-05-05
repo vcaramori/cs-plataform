@@ -21,6 +21,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
       success_goals (*),
       adoption_metrics (*),
       feature_adoption (*),
+      commercial_governance (*),
       account_risk_assessments (*),
       nps_responses (
         *,
@@ -56,6 +57,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const playbooks = Array.isArray(account.account_playbooks) ? account.account_playbooks : (account.account_playbooks ? [account.account_playbooks] : [])
   const riskAssessments = Array.isArray(account.account_risk_assessments) ? account.account_risk_assessments : (account.account_risk_assessments ? [account.account_risk_assessments] : [])
   const npsResponses = Array.isArray(account.nps_responses) ? account.nps_responses : (account.nps_responses ? [account.nps_responses] : [])
+  const commercialGovernance = Array.isArray(account.commercial_governance) ? account.commercial_governance : (account.commercial_governance ? [account.commercial_governance] : [])
 
   // Identificar o playbook ativo (em progresso)
   const activePlaybook = playbooks.find((pb: any) => pb.status === 'in_progress')
@@ -102,6 +104,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         playbooks={playbooks}
         latestRiskAssessment={latestRiskAssessment}
         npsResponses={npsResponses}
+        commercialGovernance={commercialGovernance}
       />
     </div>
   )

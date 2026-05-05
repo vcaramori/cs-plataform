@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import {
   Plus,
   Trash2,
@@ -142,18 +143,19 @@ export function SavedViewSidebar({
               <button
                 key={view.id}
                 onClick={() => handleSelectView(view.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-md transition-colors group ${
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative",
                   isActive
-                    ? 'bg-surface-background border border-border-divider text-content-primary'
-                    : 'text-content-secondary hover:bg-surface-background hover:bg-opacity-50'
-                }`}
+                    ? "bg-[#101623] border border-border/40 text-white shadow-lg"
+                    : "text-content-secondary hover:bg-slate-500/5 hover:text-content-primary"
+                )}
                 title={isCollapsed ? view.name : undefined}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!isCollapsed && (
                   <>
-                    <span className="flex-1 text-sm text-left">{view.name}</span>
-                    <span className="text-[10px] font-bold text-content-secondary">
+                    <span className="flex-1 text-[10px] font-black uppercase tracking-widest text-left">{view.name}</span>
+                    <span className="text-[10px] font-black text-content-secondary/60">
                       {count}
                     </span>
                   </>
@@ -187,17 +189,18 @@ export function SavedViewSidebar({
                 >
                   <button
                     onClick={() => handleSelectView(view.id)}
-                    className={`flex-1 flex items-center gap-2 rounded-md transition-colors ${
+                    className={cn(
+                      "flex-1 flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                       isActive
-                        ? 'bg-surface-background border border-border-divider text-content-primary'
-                        : 'text-content-secondary hover:bg-surface-background hover:bg-opacity-50'
-                    }`}
+                        ? "bg-[#101623] border border-border/40 text-white shadow-lg"
+                        : "text-content-secondary hover:bg-slate-500/5"
+                    )}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 text-sm text-left truncate">
+                    <span className="flex-1 text-[10px] font-black uppercase tracking-widest text-left truncate">
                       {view.name}
                     </span>
-                    <span className="text-[10px] font-bold text-content-secondary flex-shrink-0">
+                    <span className="text-[10px] font-black text-content-secondary/60 flex-shrink-0">
                       {count}
                     </span>
                   </button>
@@ -232,7 +235,7 @@ export function SavedViewSidebar({
             open={isCreating}
             onOpenChange={setIsCreating}
           >
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-content-secondary hover:text-content-primary hover:bg-surface-background transition-colors text-sm font-medium">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-500/5 text-content-secondary hover:text-content-primary hover:bg-slate-500/10 transition-all text-[10px] font-black uppercase tracking-widest border border-border/20">
               <Plus className="w-4 h-4" />
               Nova view
             </button>

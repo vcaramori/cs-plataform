@@ -128,8 +128,8 @@ interface AccountFormProps {
   mode?: 'create' | 'edit'
 }
 
-const INPUT = 'bg-slate-500/5 dark:bg-slate-400/10 border-border/60 text-foreground h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest focus-visible:ring-primary/30 transition-all placeholder:text-muted-foreground/50 shadow-sm'
-const LABEL = 'text-[10px] font-extrabold text-muted-foreground/90 uppercase tracking-widest ml-1'
+const INPUT = 'bg-background/50 border-border/60 text-content-primary h-11 rounded-2xl text-sm font-medium focus-visible:ring-primary/30 transition-all placeholder:text-content-secondary/50 shadow-sm'
+const LABEL = 'label-premium'
 
 export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) {
   const router = useRouter()
@@ -297,10 +297,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="space-y-1">
-            <h1 className="text-3xl font-black text-content-primary tracking-tighter uppercase">
+            <h1 className="h1-page">
               {isEdit ? 'Editar Logo' : 'Nova Logo'}
             </h1>
-            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest opacity-60">
+            <p className="label-premium opacity-60">
               {isEdit ? 'Atualize as informações cadastrais e comerciais' : 'Cadastre uma nova conta no ecossistema'}
             </p>
           </div>
@@ -330,7 +330,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
               <div className="space-y-0.5">
                 <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Identificação</CardTitle>
-                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Dados principais da conta</p>
+                <p className="text-[10px] text-content-secondary font-medium tracking-wide">Dados principais da conta</p>
               </div>
             </div>
           </CardHeader>
@@ -406,7 +406,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 </div>
                 <div className="space-y-0.5">
                   <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Localização</CardTitle>
-                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Geografia e Operação</p>
+                  <p className="text-[10px] text-content-secondary font-medium tracking-wide">Geografia e Operação</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10 self-center">
@@ -478,7 +478,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 </div>
                 <div className="space-y-0.5">
                   <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Gestão Comercial</CardTitle>
-                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Contratos e Acordos Atuais</p>
+                  <p className="text-[10px] text-content-secondary font-medium tracking-wide">Contratos e Acordos Atuais</p>
                 </div>
               </div>
               <Button
@@ -503,7 +503,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
           <CardContent className="px-8 pb-10 space-y-6">
             {fields.length === 0 && (
               <div className="py-20 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-4 text-muted-foreground/30">
-                <div className="p-4 rounded-full bg-slate-100 dark:bg-slate-900/50">
+                <div className="p-4 rounded-full bg-muted">
                   <FileText className="w-10 h-10" />
                 </div>
                 <p className="text-xs font-extrabold uppercase tracking-widest">Nenhum contrato cadastrado</p>
@@ -511,7 +511,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             )}
 
             {fields.map((field, index) => (
-              <Card key={field.id} className="bg-surface-card dark:bg-slate-900/20 border-border/50 rounded-2xl p-6 relative group/card shadow-sm hover:shadow-md transition-all">
+              <Card key={field.id} className="bg-surface-card border-border/50 rounded-2xl p-6 relative group/card shadow-sm hover:shadow-md transition-all">
                 <div className="absolute -top-3 -right-3 opacity-0 group-hover/card:opacity-100 transition-opacity z-20">
                   <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="h-8 w-8 rounded-full shadow-lg">
                     <Trash2 className="w-4 h-4" />
@@ -521,7 +521,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <Label className={LABEL}>Código</Label>
-                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
+                    <Input {...register(`contracts.${index}.contract_code`)} placeholder="CTR-XXXX" className="h-10 text-xs font-mono bg-surface-background/50 border-border/50" />
                   </div>
                   <div className="space-y-2">
                     <Label className={LABEL}>Status</Label>
@@ -567,9 +567,9 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* Financial Engine */}
-                  <div className="col-span-2 space-y-4 p-5 bg-surface-background/30 dark:bg-slate-900/30 rounded-2xl border border-border/50">
+                  <div className="col-span-2 space-y-4 p-5 bg-surface-background/30 rounded-2xl border border-border/50">
                     <div className="flex items-center justify-between">
-                      <Label className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">Financial Engine</Label>
+                      <Label className="label-premium text-foreground">Financial Engine</Label>
                       <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
                         {(['standard', 'custom'] as const).map(type => (
                           <button
@@ -597,7 +597,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                         step="0.01"
                         {...register(`contracts.${index}.mrr`, { valueAsNumber: true })}
                         placeholder="0,00"
-                        className={cn(INPUT, "h-11 text-lg font-black bg-slate-500/10 border-primary/20")}
+                        className={cn(INPUT, "h-11 text-lg font-black bg-muted border-primary/20")}
                       />
                     </div>
                     {watch(`contracts.${index}.pricing_type`) === 'custom' && (
@@ -618,11 +618,11 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className={LABEL}>Início</Label>
-                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
+                        <Input {...register(`contracts.${index}.start_date`)} type="date" className="h-10 text-xs bg-surface-background/50 border-border/50" />
                       </div>
                       <div className="space-y-2">
                         <Label className={LABEL}>Renovação</Label>
-                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs bg-surface-background/50 dark:bg-slate-900/40 border-border/50" />
+                        <Input {...register(`contracts.${index}.renewal_date`)} type="date" className="h-10 text-xs bg-surface-background/50 border-border/50" />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -644,15 +644,15 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   </div>
 
                   {/* SLA do Contrato */}
-                  <div className="col-span-2 md:col-span-4 space-y-6 p-5 bg-surface-background/30 dark:bg-slate-900/30 rounded-2xl border border-border/50 mt-2">
+                  <div className="col-span-2 md:col-span-4 space-y-6 p-5 bg-surface-background/30 rounded-2xl border border-border/50 mt-2">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
                           <Shield className="w-5 h-5" />
                         </div>
                         <div className="space-y-0.5">
-                          <Label className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">SLA do Contrato</Label>
-                          <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Prazos de resposta e resolução</p>
+                          <Label className="label-premium text-foreground">SLA do Contrato</Label>
+                          <p className="text-[10px] text-content-secondary font-medium tracking-wide">Prazos de resposta e resolução</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
@@ -690,7 +690,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     {watch(`contracts.${index}.sla_use_global`) ? (
                       <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
                         <AlertCircle className="w-4 h-4 text-blue-500" />
-                        <p className="text-[10px] text-blue-500/80 font-bold uppercase tracking-wider">
+                        <p className="label-premium text-blue-500/80">
                           Herdando diretrizes da Política Global Plannera.
                         </p>
                       </div>
@@ -724,7 +724,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                                   {(lvl.client_labels ?? []).map((label, labelIdx) => (
                                     <span
                                       key={labelIdx}
-                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-900/60 text-[9px] font-extrabold text-foreground uppercase border border-border/50"
+                                      className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-muted text-[9px] font-extrabold text-foreground uppercase border border-border/50"
                                     >
                                       {label}
                                       <button
@@ -821,7 +821,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
               </div>
               <div className="space-y-0.5">
                 <CardTitle className="text-foreground text-sm font-extrabold uppercase tracking-widest">Faturamento e Time</CardTitle>
-                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">Configurações administrativas</p>
+                <p className="text-[10px] text-content-secondary font-medium tracking-wide">Configurações administrativas</p>
               </div>
             </div>
           </CardHeader>
@@ -856,7 +856,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <Users className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-extrabold text-foreground uppercase tracking-widest">Time Interno de Atendimento</span>
+                <span className="label-premium text-foreground">Time Interno de Atendimento</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -896,3 +896,5 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
 }
 
 export default AccountForm;
+
+

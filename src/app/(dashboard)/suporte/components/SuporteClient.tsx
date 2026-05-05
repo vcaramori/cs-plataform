@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Sparkles, LayoutDashboard, Search } from 'lucide-react'
+import { TicketCheck, Upload, Loader2, AlertTriangle, CheckCircle2, Filter, Mail, Sparkles, LayoutDashboard, Search, Sliders } from 'lucide-react'
 import { SLABadge } from '@/components/support/SLABadge'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -22,6 +22,8 @@ import { ptBR } from 'date-fns/locale'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { StatusBadgeGuard } from '@/components/shared/guardians/StatusBadgeGuard'
 import { ViewCreationPopover } from './ViewCreationPopover'
+import { FilterEditorModal } from './FilterEditorModal'
+import { FilterGroup } from '@/lib/schemas/filter.schema'
 
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -87,6 +89,7 @@ export function SuporteClient({
   const [tickets, setTickets] = useState<(SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null })[]>(initialTickets)
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateViewPopover, setShowCreateViewPopover] = useState(false)
+  const [showFilterEditor, setShowFilterEditor] = useState(false)
 
   const handleIngest = async () => {
     setIsSubmitting(true)
@@ -291,6 +294,16 @@ export function SuporteClient({
                 className="pl-11 h-11 rounded-2xl border-border/40 bg-slate-500/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
               />
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFilterEditor(true)}
+              className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              Filtros Avançados
+            </Button>
+
             {(filterStatus !== 'all' || filterPriority !== 'all') && (
               <>
                 <Button
@@ -592,6 +605,13 @@ export function SuporteClient({
           </div>
         </div>
       )}
+
+      {/* Filter Editor Modal */}
+      <FilterEditorModal
+        open={showFilterEditor}
+        onOpenChange={setShowFilterEditor}
+        tickets={tickets}
+      />
     </div>
   )
 }

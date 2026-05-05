@@ -17,6 +17,13 @@ const UpdateSchema = z.object({
   discount_duration_months: z.number().int().min(0).optional(),
   discount_type: z.enum(['percentage', 'fixed']).optional(),
   discount_value_brl: z.number().min(0).optional(),
+  fine_amount: z.number().min(0).optional(),
+  fidelity_months: z.number().int().min(0).optional(),
+  progressive_discounts: z.array(z.object({
+    label: z.string(),
+    discount: z.number(),
+    type: z.enum(['percentage', 'fixed'])
+  })).optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
 })

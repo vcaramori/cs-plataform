@@ -195,7 +195,7 @@ export async function GET() {
     .limit(10)
 
   if (riskAlerts) {
-    riskAlerts.forEach(r => {
+    riskAlerts.forEach((r: any) => {
       notifications.push({
         id: `risk-${r.id}`,
         type: 'churn_risk',

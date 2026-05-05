@@ -64,3 +64,9 @@ Como CSM, quero que o sistema dispare e-mails de check-in automÃ¡ticos baseados 
 Como head de CS, quero que o sistema analise as interaÃ§Ãµes e tickets passados para prever a probabilidade de Churn usando IA.
 ### Story 10.2: Alertas de Risco Inteligentes
 Como CSM, quero ser notificado proativamente pela IA quando um padrÃ£o de comunicaÃ§Ã£o indicar insatisfaÃ§Ã£o antes mesmo do NPS ou Health Score cair.
+
+## Epic 11: Governança Comercial Centralizada (Desacoplada)
+### Story 11.1: Entidade Governança
+Como CSM, quero gerenciar descontos e multas de forma independente dos contratos para maior flexibilidade comercial.
+### Story 11.2: Regras Globais vs Específicas
+Como CSM, quero poder aplicar uma regra de governança a toda a conta ou a um contrato específico.

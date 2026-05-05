@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -11,8 +12,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Pencil, Loader2 } from 'lucide-react'
+import { Pencil, Loader2, Plus, Trash2 } from 'lucide-react'
 import { MaskedInput } from '@/components/ui/masked-input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 
 const schema = z.object({
@@ -24,8 +26,15 @@ const schema = z.object({
   renewal_date: z.string().optional().or(z.literal('')),
   contracted_hours_monthly: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
   csm_hour_cost: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
-  notes: z.string().optional(),
-  description: z.string().optional(),
+  fine_amount: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
+  fidelity_months: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
+  progressive_discounts: z.array(z.object({
+    label: z.string(),
+    discount: z.number(),
+    type: z.enum(['percentage', 'fixed'])
+  })).default([]),
+  notes: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -52,6 +61,9 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
       renewal_date: contract.renewal_date || '',
       contracted_hours_monthly: Number(contract.contracted_hours_monthly),
       csm_hour_cost: Number(contract.csm_hour_cost),
+      fine_amount: Number(contract.fine_amount || 0),
+      fidelity_months: Number(contract.fidelity_months || 0),
+      progressive_discounts: contract.progressive_discounts || [],
       notes: contract.notes || '',
       description: contract.description || '',
     }
@@ -69,6 +81,9 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
         renewal_date: contract.renewal_date || '',
         contracted_hours_monthly: Number(contract.contracted_hours_monthly),
         csm_hour_cost: Number(contract.csm_hour_cost),
+        fine_amount: Number(contract.fine_amount || 0),
+        fidelity_months: Number(contract.fidelity_months || 0),
+        progressive_discounts: contract.progressive_discounts || [],
         notes: contract.notes || '',
         description: contract.description || '',
       })
@@ -102,8 +117,8 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
     }
   }
 
-  const INPUT = "h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-  const LABEL = "text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1"
+  const INPUT = 'bg-slate-500/5 dark:bg-slate-400/10 border-border/60 text-foreground h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest focus-visible:ring-primary/30 transition-all placeholder:text-muted-foreground/50 shadow-sm'
+  const LABEL = 'text-[10px] font-extrabold text-muted-foreground/90 uppercase tracking-widest ml-1'
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -207,7 +222,6 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                 onValueChange={(v) => setValue('contracted_hours_monthly', parseFloat(v) || 0)}
                 className={INPUT}
               />
-              {errors.contracted_hours_monthly && <p className="text-destructive text-[10px] font-bold ml-1">{errors.contracted_hours_monthly.message}</p>}
             </div>
             <div className="space-y-2">
               <Label className={LABEL}>Custo Hora CSM</Label>
@@ -217,7 +231,102 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                 onValueChange={(v) => setValue('csm_hour_cost', parseFloat(v) || 0)}
                 className={INPUT}
               />
-              {errors.csm_hour_cost && <p className="text-destructive text-[10px] font-bold ml-1">{errors.csm_hour_cost.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className={LABEL}>Multa Rescisória</Label>
+              <MaskedInput 
+                maskType="currency"
+                value={watch('fine_amount')}
+                onValueChange={(v) => setValue('fine_amount', parseFloat(v) || 0)}
+                className={INPUT}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={LABEL}>Fidelidade (Meses)</Label>
+              <Input 
+                type="number"
+                {...register('fidelity_months', { valueAsNumber: true })}
+                className={INPUT}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className={LABEL}>Descontos Progressivos</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] font-extrabold uppercase tracking-widest gap-2 bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                onClick={() => {
+                  const current = watch('progressive_discounts') || []
+                  setValue('progressive_discounts', [
+                    ...current,
+                    { label: `Ano ${current.length + 1}`, discount: 0, type: 'percentage' }
+                  ])
+                }}
+              >
+                <Plus className="w-3 h-3" /> Add Estágio
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {(watch('progressive_discounts') || []).map((stage, si) => (
+                <div key={si} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                  <Input
+                    value={stage.label}
+                    onChange={(e) => {
+                      const current = [...(watch('progressive_discounts') || [])]
+                      current[si] = { ...current[si], label: e.target.value }
+                      setValue('progressive_discounts', current)
+                    }}
+                    className="h-8 bg-slate-500/10 dark:bg-slate-400/20 border-none text-[10px] font-bold"
+                    placeholder="Rótulo"
+                  />
+                  <Input
+                    type="number"
+                    value={stage.discount}
+                    onChange={(e) => {
+                      const current = [...(watch('progressive_discounts') || [])]
+                      current[si] = { ...current[si], discount: parseFloat(e.target.value) || 0 }
+                      setValue('progressive_discounts', current)
+                    }}
+                    className="h-8 w-16 text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                  />
+                  <Select
+                    value={stage.type}
+                    onValueChange={(v: 'percentage' | 'fixed') => {
+                      const current = [...(watch('progressive_discounts') || [])]
+                      current[si] = { ...current[si], type: v }
+                      setValue('progressive_discounts', current)
+                    }}
+                  >
+                    <SelectTrigger className="h-8 bg-slate-500/10 dark:bg-slate-400/20 border-none text-[10px] font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">%</SelectItem>
+                      <SelectItem value="fixed">R$</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      const current = [...(watch('progressive_discounts') || [])]
+                      current.splice(si, 1)
+                      setValue('progressive_discounts', current)
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -229,7 +338,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
 
           <div className="space-y-2">
             <Label className={LABEL}>Notas Estratégicas</Label>
-            <Textarea {...register('notes')} className="min-h-[100px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner text-sm text-[#2d3558] dark:text-white focus-visible:ring-plannera-orange" placeholder="Detalhes específicos da negociação ou do contrato..." />
+            <Textarea {...register('notes')} className={cn(INPUT, "min-h-[100px] py-3")} placeholder="Detalhes específicos da negociação ou do contrato..." />
             {errors.notes && <p className="text-destructive text-[10px] font-bold ml-1">{errors.notes.message}</p>}
           </div>
         </form>
