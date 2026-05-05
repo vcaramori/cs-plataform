@@ -40,6 +40,9 @@ Como CSM, quero que o sistema classifique automaticamente a urgência dos ticket
 ### Story 4.5: Reabertura Automática de Tickets
 Como analista, quero que tickets fechados sejam reabertos automaticamente quando o cliente responder, para garantir a continuidade do atendimento.
 
+### Story 4.6: Pesquisa de CSAT e Fechamento Parametrizado
+Como gestor de CS, quero configurar o tempo de fechamento automático e disparar uma pesquisa de satisfação (CSAT) após o encerramento do ticket, para medir a qualidade do atendimento.
+
 ## Epic 5: AI RAG (Perguntar)
 Baseado em `05-perguntar.md`
 ### Story 5.1: Chatbot Contextual

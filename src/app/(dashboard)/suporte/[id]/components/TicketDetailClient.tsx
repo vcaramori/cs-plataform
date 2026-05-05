@@ -25,8 +25,10 @@ import {
   Settings2, Send, Loader2, ChevronRight,
   ExternalLink, GitBranch, Star, Save,
   Mail, FileText, Zap, ClipboardCheck, Paperclip, Image as ImageIcon,
-  Bold, Italic, Code, List, ListOrdered
+  Bold, Italic, Code, List, ListOrdered, Merge
 } from 'lucide-react'
+import { MergeTicketModal } from '../components/MergeTicketModal'
+import { MergedTicketBanner } from '../components/MergedTicketBanner'
 import {
   Select,
   SelectContent,
@@ -363,6 +365,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
 
   function applyMarkdown(prefix: string, suffix = '') {
     const el = textareaRef.current
@@ -813,6 +816,12 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           {/* Thread (scrollable) */}
           <div ref={threadRef} className="flex-1 p-6 space-y-5 bg-surface-background overflow-y-auto custom-scrollbar">
 
+            {/* Banner de Mesclagem */}
+            <MergedTicketBanner 
+              mergedIntoId={ticket.merged_into} 
+              mergedAt={ticket.merged_at} 
+            />
+
             {/* Original message */}
             <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
 
@@ -1259,6 +1268,16 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   <Zap className="w-3.5 h-3.5 text-amber-500" />
                   Ver Indicadores 360°
                 </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setIsMergeModalOpen(true)}
+                  disabled={ticket.status === 'closed'}
+                  className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
+                >
+                  <Merge className="w-3.5 h-3.5 text-primary" />
+                  Mesclar Ticket
+                </Button>
               </div>
             )}
           </section>
@@ -1297,6 +1316,17 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         open={indicatorsOpen}
         onClose={() => setIndicatorsOpen(false)}
         indicators={indicators}
+      />
+
+      <MergeTicketModal 
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        secondaryTicket={{
+          id: ticket.id,
+          title: ticket.title,
+          account_id: ticket.account_id
+        }}
+        onSuccess={() => router.refresh()}
       />
     </PageContainer>
   )

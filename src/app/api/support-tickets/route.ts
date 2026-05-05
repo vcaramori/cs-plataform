@@ -11,10 +11,11 @@ const TicketSchema = z.object({
   account_id: z.string().uuid(),
   title: z.string().min(3),
   description: z.string().min(5),
-  status: z.enum(['open', 'in-progress', 'resolved', 'closed']).default('open'),
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed', 'reopened']).default('open'),
   priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
   category: z.string().optional(),
-  opened_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  product: z.string().optional(),
+  opened_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   resolved_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   external_ticket_id: z.string().optional(),
 })

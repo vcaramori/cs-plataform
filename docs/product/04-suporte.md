@@ -193,11 +193,22 @@ Tempo médio de resposta do agente às interações do cliente.
 
 ---
 
-## 4.2 Regras de Negócio
+### 4.2.1 Ticket Lifecycle & Auto-close
 
-### 4.2.1 Ticket Lifecycle
+O ciclo de vida segue o fluxo: `open` → `in_progress` → `resolved` → `closed`.
 
-```
+| Evento | Regra | Ação |
+|--------|-------|------|
+| **Auto-close** | Ticket em `resolved` sem réplica há X horas. | Status → `closed` + Disparo de CSAT. |
+| **Parâmetro** | Definido em `sla_policies.auto_close_hours` (por conta). | Valor default: 48h. |
+| **Reabertura** | Cliente envia mensagem em ticket `closed` ou `resolved`. | Status → `open` + Reset de SLAs. |
+
+### 4.2.2 Pesquisa de Satisfação (CSAT)
+
+Após o fechamento do ticket, um convite para avaliação é enviado automaticamente.
+- **Escala**: 1 (Muito Insatisfeito) a 5 (Muito Satisfeito).
+- **Token**: Um link único (`/csat/[token]`) é gerado com expiração de 7 dias.
+- **Visibilidade**: A nota e o comentário são exibidos no `KPI Strip` e no Dashboard de Suporte.
 open → in_progress → resolved → closed
                   ↑               ↓
               reopened ←──────────┘
@@ -365,6 +376,30 @@ Automação de ciclo de vida via banco de dados para garantir que nenhuma intera
 | `ticket_reopened` | Ticket reaberto |
 | `csat_received` | Resposta CSAT registrada |
 | `csat_negative` | Score CSAT ≤ 2 |
+
+---
+
+### 4.2.10 Mesclagem de Tickets (Merge)
+
+Permite consolidar tickets duplicados ou relacionados em um único chamado principal.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Vínculo** | O ticket secundário é fechado (`status = 'closed'`) e aponta para o principal via coluna `merged_into`. |
+| **Audit Log** | Registro na tabela `ticket_merge_history` com o autor da mesclagem, motivo e timestamp. |
+| **Integridade** | Evento `ticket_merged_in` é registrado na timeline do ticket principal. |
+| **Indicador** | A coluna `merge_count` no ticket principal é incrementada automaticamente via RPC. |
+
+### 4.2.11 Fechamento Automático (Auto-close)
+
+Mecanismo para manter a fila de suporte limpa de chamados resolvidos mas não encerrados.
+
+| Regra | Descrição |
+|---------|-----------|
+| **Trigger** | Ticket com `status = 'resolved'` sem atividade há X horas. |
+| **Configuração** | O tempo é definido em `sla_policies.auto_close_hours` (default 48h). |
+| **Ação** | Status alterado para `closed`. |
+| **CSAT** | O fechamento dispara automaticamente o convite de CSAT para o cliente. |
 
 ---
 
@@ -547,3 +582,5 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Mai/2026 | **F1-06 — Detecção de Colisão:** Implementado sistema de presença em tempo real via Supabase Presence para avisar CSMs visualizando o mesmo ticket. |
 | Mai/2026 | **F1-07 — Urgency Scoring com IA:** Integração com Gemini AI para análise de urgência automática com exibição de raciocínio (UrgencyBadge). |
 | Mai/2026 | **F1-08 — Reabertura Automática:** Automação via trigger no Postgres para reabrir tickets fechados quando o cliente responde. |
+| Mai/2026 | **F1-09 — Auto-close e CSAT:** Implementado sistema de fechamento automático paramétrico com disparo de pesquisa de satisfação. |
+| Mai/2026 | **F1-10 — Mesclagem de Tickets:** Infraestrutura de merge com auditoria, incremento atômico e vínculo entre chamados. |

@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient as createAdminClient } from '@/lib/supabase/admin'
 import { closeTicket } from './lifecycle'
+import { sendCSATEmail } from './csat-service'
 
 /**
  * Scans for resolved tickets that have exceeded their auto-close threshold.
@@ -36,7 +37,13 @@ export async function runAutoClose(): Promise<{ closedCount: number }> {
 
     if (elapsedMs >= timeoutMs) {
       console.log(`[Auto-Close] Closing ticket ${ticket.id} due to inactivity (${policyHours}h threshold).`)
+      
+      // Update status to closed
       await closeTicket(ticket.id, 'auto_timeout')
+      
+      // Trigger CSAT Survey
+      await sendCSATEmail(ticket.id)
+      
       closedCount++
     }
   }

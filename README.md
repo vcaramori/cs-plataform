@@ -132,6 +132,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 9 Suporte UX | Recovery: ReplyReviewModal fundo sólido (`bg-white dark:bg-slate-900`), escala 0-10 consistente no route+prompt+system, normalize() auto-corrige escala legada, threshold < 6. Features: auto-apply status IA (solution/pending_client/pending_product), status Aguardando Cliente/Produto (padrão mercado), toolbar formatação Teams-style abaixo da textarea | ✅ Concluída 2026-04-24 |
 | Sessão 10 Suporte UX | Classificação (Prioridade, Produto, Categoria) movida para sidebar com auto-save via PATCH a cada alteração; compose footer mantém apenas Status. Bypass de erro da IA implementado: `reviewFailed=true` muda botão para "Enviar sem Revisão" (âmbar) + "Tentar Revisão" — agente nunca bloqueado por falha da IA | ✅ Concluída 2026-04-24 |
 | Sessão 11 Suporte UX | Tabs "Responder"/"Nota" movidas para a linha do botão (compose compacto). @menção: `@email` em reply/note grava evento `mention` em `sla_events`; `notifications/route.ts` expõe menções; `NotificationCenter` renderiza com ícone `AtSign` e borda índigo | ✅ Concluída 2026-04-24 |
+| Sessão 12 Suporte (F1-03 a F1-10) | Consolidação completa: Bulk Actions, Busca Semântica, Preview Inline, Colisão, IA Urgency, Auto-reopen, Auto-close/CSAT e Ticket Merge. | ✅ Concluída 2026-05-05 |
 
 ### Convenção de Variantes de Button
 
@@ -305,6 +306,8 @@ Todas as ações são snapshot-backed: ao executar, o sistema captura o estado a
 - **Detecção de Colisão (F1-06):** Sistema de presença em tempo real via Supabase Presence. Notifica visualmente se outro CSM está visualizando o mesmo ticket no `TicketPreviewPanel`, prevenindo respostas duplicadas e conflitos de edição.
 - **Urgency Scoring com IA (F1-07):** Classificação automática de urgência (Baixa, Média, Alta) processada pelo Gemini AI. A IA analisa o conteúdo e histórico do ticket para atribuir um score e um raciocínio lógico ("Insights do Guardião IA"), exibidos via `UrgencyBadge` na lista e no painel de preview. O scoring é disparado automaticamente na criação e reabertura de tickets.
 - **Reabertura Automática (F1-08):** Automação de ciclo de vida via trigger no Postgres. Tickets com status `closed` são movidos automaticamente para `open` se o cliente enviar uma nova mensagem (reply), garantindo que nenhum acompanhamento seja ignorado. Cada transição automática é registrada no histórico de auditoria.
+- **Fechamento Automático e CSAT (F1-09):** Sistema de lifecycle paramétrico que fecha automaticamente tickets `resolved` após um período de inatividade definido em `sla_policies.auto_close_hours` (default 48h). No fechamento, o status muda para `closed` e um gatilho dispara automaticamente uma pesquisa de CSAT via e-mail para o autor do ticket.
+- **Mesclagem de Tickets (F1-10):** Infraestrutura de consolidação que permite mesclar tickets duplicados da mesma conta. O ticket secundário é fechado e vinculado ao principal (`merged_into`), com histórico de auditoria (`ticket_merge_history`) e banner informativo na UI. Inclui incremento atômico de `merge_count` e logs de evento `ticket_merged_in`.
 
 ---
 

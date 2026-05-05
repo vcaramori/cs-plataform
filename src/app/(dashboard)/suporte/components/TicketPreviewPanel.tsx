@@ -14,11 +14,9 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { SupportTicket, SupportTicketMessage } from '@/lib/supabase/types'
 import { PreviewActionBar } from './PreviewActionBar'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { SLABadge } from '@/components/support/SLABadge'
-import { useTicketPresence } from '@/lib/hooks/useTicketPresence'
-import { UrgencyBadge } from './UrgencyBadge'
-import { AlertTriangle, Tag, X, Calendar, User, Building2, MessageSquare, History, Loader2, Users } from 'lucide-react'
+import { AlertTriangle, Tag, X, Calendar, User, Building2, MessageSquare, History, Loader2, Users, Merge } from 'lucide-react'
+import { MergeTicketModal } from './MergeTicketModal'
+import { MergedTicketBanner } from './MergedTicketBanner'
 
 interface TicketPreviewPanelProps {
   ticketId: string | null
@@ -36,6 +34,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
   const [loading, setLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [currentUser, setCurrentUser] = useState<{ id: string, email: string } | null>(null)
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
   const supabase = getSupabaseBrowserClient()
 
   const otherViewers = useTicketPresence(ticketId, currentUser?.id || null, currentUser?.email || null)
@@ -217,10 +216,18 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
                   status={ticket.status}
                   onStatusChange={handleStatusChange}
                   onAssignMe={handleAssignMe}
+                  onMerge={() => setIsMergeModalOpen(true)}
                   isUpdating={isUpdating}
                 />
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                  {/* Merged Banner */}
+                  {ticket.merged_into && (
+                    <MergedTicketBanner 
+                      primaryTicketId={ticket.merged_into}
+                      mergedAt={ticket.merged_at || ticket.updated_at}
+                    />
+                  )}
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-background border border-surface-border">
@@ -352,6 +359,19 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
               </div>
             )}
           </motion.div>
+
+          {ticket && (
+            <MergeTicketModal 
+              isOpen={isMergeModalOpen}
+              onClose={() => setIsMergeModalOpen(false)}
+              secondaryTicket={{
+                id: ticket.id,
+                title: ticket.title,
+                account_id: ticket.account_id
+              }}
+              onSuccess={() => fetchTicketData(ticket.id)}
+            />
+          )}
         </>
       )}
     </AnimatePresence>

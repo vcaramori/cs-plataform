@@ -40,20 +40,29 @@ const token = crypto.randomUUID()
 export async function sendCSATEmail(ticketId: string, retryCount = 0): Promise<boolean> {
   const supabase = createAdminClient()
 
-  // 1. Fetch ticket and customer details
+  // 1. Fetch ticket, customer details, and the author of the first message
   const { data: ticket, error } = await supabase
     .from('support_tickets')
     .select(`
       id,
       title,
       account_id,
-      accounts (name)
+      accounts (name),
+      support_ticket_messages (author_email)
     `)
     .eq('id', ticketId)
+    .order('created_at', { foreignTable: 'support_ticket_messages', ascending: true })
+    .limit(1, { foreignTable: 'support_ticket_messages' })
     .single()
 
   if (error || !ticket) {
     console.error(`[CSAT Service] Ticket ${ticketId} not found.`)
+    return false
+  }
+
+  const recipientEmail = (ticket.support_ticket_messages as any)?.[0]?.author_email
+  if (!recipientEmail) {
+    console.warn(`[CSAT Service] No recipient email found for ticket ${ticketId}.`)
     return false
   }
 
@@ -103,12 +112,12 @@ export async function sendCSATEmail(ticketId: string, retryCount = 0): Promise<b
   try {
     await transporter.sendMail({
       from: `"Suporte Plannera" <${smtpConfig.auth.user}>`,
-      to: 'cliente@exemplo.com', // No cenário real, buscaríamos o e-mail do contato do ticket
+      to: recipientEmail,
       subject: `Como foi nosso suporte? — ${ticket.title}`,
       html: htmlContent,
     })
 
-    console.log(`[CSAT Service] Email sent for ticket ${ticketId}`)
+    console.log(`[CSAT Service] Email sent to ${recipientEmail} for ticket ${ticketId}`)
     return true
   } catch (err) {
     console.error(`[CSAT Service] Failed to send email for ticket ${ticketId} (Attempt ${retryCount + 1}):`, err)

@@ -7,12 +7,14 @@ import {
   Clock, 
   UserPlus, 
   MoreHorizontal,
-  ExternalLink
+  ExternalLink,
+  Merge
 } from 'lucide-react'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
@@ -22,6 +24,7 @@ interface PreviewActionBarProps {
   status: string
   onStatusChange: (newStatus: string) => void
   onAssignMe: () => void
+  onMerge: () => void
   isUpdating?: boolean
 }
 
@@ -30,6 +33,7 @@ export const PreviewActionBar: React.FC<PreviewActionBarProps> = ({
   status,
   onStatusChange,
   onAssignMe,
+  onMerge,
   isUpdating = false
 }) => {
   return (
@@ -84,10 +88,22 @@ export const PreviewActionBar: React.FC<PreviewActionBarProps> = ({
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={() => onStatusChange('in_progress')}>
               Marcar em progresso
             </DropdownMenuItem>
+            
+            {status !== 'closed' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onMerge} className="gap-2">
+                  <Merge className="w-4 h-4" />
+                  Mesclar Ticket
+                </DropdownMenuItem>
+              </>
+            )}
+
+            <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive">
               Excluir Ticket
             </DropdownMenuItem>
