@@ -300,6 +300,8 @@ nota_final = 5 / (1/tom + 1/estrutura + 1/empatia + 1/clareza + 1/alinhamento)
 
 Todas as ações são snapshot-backed: ao executar, o sistema captura o estado anterior de cada ticket. Caso o CSM se arrependa, um toast com botão **Desfazer** aparece nos 30 segundos seguintes para restaurar o estado original. Cada ação dispara eventos de auditoria (`bulk_change_status`, `bulk_assign`, `bulk_close`, `bulk_action_undone`) registrados em `ticket_events`.
 
+**Busca Semântica (F1-04):** Substitui a busca textual simples por busca vetorial usando pgvector + embeddings Gemini. Ao digitar 3+ caracteres, a plataforma gera embedding da query e busca por similaridade semântica na tabela `embeddings`. Resultados ordenados por score de relevância com badge "Busca semântica" ativa. Fallback automático para busca in-memory se a API falhar. Novos tickets têm seus embeddings gerados automaticamente no background. Endpoint de backfill (`/api/support-tickets/backfill-embeddings`) indexa tickets existentes.
+
 ---
 
 ### Adoção de Produto (`/product`)

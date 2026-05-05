@@ -47,6 +47,29 @@ A tabela possui uma coluna de seleção com checkboxes para multi-select:
 
 ---
 
+#### 4.1.1.2 Busca Semântica (Semantic Search)
+
+O campo de busca na tabela executa busca semântica via embeddings vetoriais quando o usuário digita 3+ caracteres.
+
+| Comportamento | Descrição |
+|---------------|-----------|
+| **Query < 3 chars** | Sem chamada API, mantém busca in-memory simples (fallback) |
+| **Query ≥ 3 chars** | Debounce 400ms → gera embedding Gemini da query → busca por similaridade em pgvector |
+| **Spinner + Badge** | Ícone de carregamento durante a chamada de embedding. Badge "🌟 Semântica" aparece quando busca ativa |
+| **Relevância** | Tickets rankeados por score de similaridade (cosine distance). Threshold 0.35 para incluir |
+| **Combinação com filtros** | Busca semântica determina o conjunto de resultados; filtros de status/prioridade ainda se aplicam |
+| **Fallback silencioso** | Se a API falhar, volta automática para busca in-memory sem feedback negativo ao usuário |
+
+**Ingestão de Embeddings:**
+- Ao criar novo ticket (`POST /api/support-tickets`), o sistema gera embedding do `title + description` e o armazena na tabela `embeddings` em background
+- Tickets existentes podem ser indexados via POST `/api/support-tickets/backfill-embeddings` (chamada única manual)
+
+**RLS:**
+- Busca semântica valida propriedade: usuário só vê tickets de contas onde é `csm_owner`
+- Filtro `accounts.csm_owner_id = auth.uid()` aplicado após ranking semântico
+
+---
+
 ### 4.1.2 Detalhe do Ticket (`/suporte/[id]`)
 
 Layout de duas colunas:

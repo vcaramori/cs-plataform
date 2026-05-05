@@ -5,6 +5,7 @@ import { enrichTicketWithSLA, logSLAEvent } from '@/lib/support/lifecycle'
 import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
 import { FilterGroupSchema } from '@/lib/schemas/filter.schema'
 import { applyFilterToQuery } from '@/lib/utils/filterQueryBuilder'
+import { storeEmbeddings } from '@/lib/supabase/vector-search'
 
 const TicketSchema = z.object({
   account_id: z.string().uuid(),
@@ -93,6 +94,16 @@ export async function POST(request: Request) {
   // Trigger Predictive Risk AI em background sem bloquear o usuário
   runPredictiveRiskAnalysis(parsed.data.account_id).catch(err => {
     console.error('[Background AI] Error in predictive risk:', err)
+  })
+
+  // Ingest embedding para busca semântica (F1-04)
+  storeEmbeddings(
+    data.account_id,
+    'support_ticket',
+    data.id,
+    `${data.title}\n${data.description ?? ''}`
+  ).catch(err => {
+    console.error('[Embeddings] store error:', err)
   })
 
   return NextResponse.json(data, { status: 201 })

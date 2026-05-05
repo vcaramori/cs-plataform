@@ -102,6 +102,10 @@ export function SuporteClient({
   const [isLoadingBulkAction, setIsLoadingBulkAction] = useState(false)
   const [csms, setCSMs] = useState<Array<{ id: string; name: string }>>([])
 
+  // Semantic search state (F1-04)
+  const [isLoadingSearch, setIsLoadingSearch] = useState(false)
+  const [semanticResults, setSemanticResults] = useState<{ ids: Set<string>; scores: Map<string, number> } | null>(null)
+
   // Fetch CSMs on mount
   const fetchCSMs = async () => {
     try {
@@ -122,6 +126,38 @@ export function SuporteClient({
   useEffect(() => {
     fetchCSMs()
   }, [])
+
+  // Semantic search with debounce (F1-04)
+  useEffect(() => {
+    if (searchQuery.length < 3) {
+      setSemanticResults(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoadingSearch(true)
+      try {
+        const res = await fetch('/api/support-tickets/semantic-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: searchQuery }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const ids = new Set<string>((data.tickets ?? []).map((t: any) => t.id))
+          const scores = new Map<string, number>((data.tickets ?? []).map((t: any) => [t.id, t.similarity]))
+          setSemanticResults({ ids, scores })
+        }
+      } catch (err) {
+        console.warn('[Semantic Search] Fallback to in-memory:', err)
+        setSemanticResults(null)
+      } finally {
+        setIsLoadingSearch(false)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Selection handlers
   const toggleSelection = (id: string) => {
@@ -251,19 +287,29 @@ export function SuporteClient({
   }
 
   // Apply manual filters on top
-  const filteredTickets = sortTickets(viewFilteredTickets.filter((t) => {
+  const baseFilteredTickets = viewFilteredTickets.filter((t) => {
     if (filterStatus !== 'all' && t.status !== filterStatus) return false
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
+    return true
+  })
+
+  const filteredTickets = (() => {
+    if (semanticResults) {
+      const semantic = baseFilteredTickets.filter(t => semanticResults.ids.has(t.id))
+      return semantic.sort((a, b) => (semanticResults.scores.get(b.id) ?? 0) - (semanticResults.scores.get(a.id) ?? 0))
+    }
 
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase()
-      const titleMatch = t.title.toLowerCase().includes(searchLower)
-      const accountMatch = t.accounts?.name?.toLowerCase().includes(searchLower)
-      if (!titleMatch && !accountMatch) return false
+      return sortTickets(baseFilteredTickets.filter((t) => {
+        const titleMatch = t.title.toLowerCase().includes(searchLower)
+        const accountMatch = t.accounts?.name?.toLowerCase().includes(searchLower)
+        return titleMatch || accountMatch
+      }))
     }
 
-    return true
-  }))
+    return sortTickets(baseFilteredTickets)
+  })()
 
   const isAllSelected = filteredTickets.length > 0 && selectedIds.size === filteredTickets.length
   const isIndeterminate = selectedIds.size > 0 && selectedIds.size < filteredTickets.length
@@ -399,13 +445,26 @@ export function SuporteClient({
               ]}
             />
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary/60" />
+              {isLoadingSearch ? (
+                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-plannera-primary animate-spin" />
+              ) : (
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary/60" />
+              )}
               <Input
                 placeholder="PESQUISAR TICKETS..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 h-11 rounded-2xl border-border/40 bg-slate-500/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
               />
+              {semanticResults && (
+                <Badge
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-plannera-primary/20 text-plannera-primary border border-plannera-primary/30 cursor-pointer hover:bg-plannera-primary/30 transition-all text-[8px] font-black uppercase"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <Sparkles className="w-2.5 h-2.5 mr-1" />
+                  Semântica
+                </Badge>
+              )}
             </div>
             <Button
               variant="ghost"
