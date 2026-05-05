@@ -104,6 +104,60 @@ Classificação inteligente de prioridade baseada no conteúdo.
 | **Insights do Guardião** | Exibição do raciocínio da IA em tooltips (`UrgencyBadge`). |
 | **Disparo** | Executado automaticamente na criação do ticket e em cada reabertura. |
 
+#### 4.1.1.6 Detecção de Duplicatas (F1-11)
+
+O sistema identifica tickets duplicados através de análise de similaridade semântica.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Cron Diário** | Job executado às 02:00 UTC que compara embeddings de todos os tickets abertos |
+| **Threshold** | Tickets com cosine similarity ≥ 0.85 são flagrados como potenciais duplicatas |
+| **Candidates** | Armazenados em `ticket_similarity_candidates` com status `pending_review` |
+| **UI** | Banner "Possível duplicata" exibe % de similaridade com botões "Mesclar" (F1-10) ou "Não é duplicata" |
+| **Dismissal** | CSM pode marcar como falso positivo; status muda para `dismissed` |
+| **Auditoria** | Logs em `ticket_events` com event_type `duplicate_flagged`; RLS garante isolamento por conta |
+
+#### 4.1.1.7 Reabertura Manual (F1-12)
+
+CSM pode reabrir tickets fechados com justificativa registrada.
+
+| Recurso | Descrição |
+|---------|-----------|
+| **Botão** | "Reabrir com Justificativa" visível apenas em tickets com status `closed` |
+| **Modal** | Textarea obrigatório (min 10 chars, max 1000) para capturar razão da reabertura |
+| **API** | PATCH `/api/support-tickets/[id]/reopen` valida reason, altera status `closed` → `open` |
+| **SLA** | `resolved_at` é resetado; `sla_status_resolution` volta a `no_prazo` |
+| **Auditoria** | Event `manual_reopened` registrado em `ticket_events` com reason + reopened_by no payload |
+| **Timeline** | Exibe ícone de reopen com razão completa visível ao clicar |
+
+#### 4.1.1.8 Formulário Público e Webhook (F1-13)
+
+Integração para recebimento de tickets de fontes externas sem autenticação.
+
+**Formulário Público:**
+
+| Feature | Descrição |
+|---------|-----------|
+| **Endpoint** | POST `/api/public/tickets` (sem auth, CORS enabled) |
+| **Campos** | email (required), title (required), description (required), priority (optional, default='medium'), account_id (optional) |
+| **Rate Limit** | 10 req/min por IP client; retorna 429 se excedido |
+| **Account Mapping** | Se account_id não fornecido, busca por domain do email; fallback para primeira conta |
+| **Criação** | Ticket criado com `source='form'`, `created_via_form_at` timestamp |
+| **Email** | Confirmation email enviado via nodemailer com ID do ticket e link de tracking |
+| **Auditoria** | Event `public_submission` registrado em `ticket_events` com email + timestamp |
+
+**Webhook (Sistema Externo):**
+
+| Feature | Descrição |
+|---------|-----------|
+| **Endpoint** | POST `/api/webhooks/tickets/create` |
+| **Assinatura** | Header `X-Webhook-Signature` valida HMAC-SHA256; rejeita 401 se inválida |
+| **Payload** | email, title, description, priority, account_key (maps to `accounts.external_id`), optional external_id |
+| **Resposta** | 200 com `{ ticket_id }` ou erro 400/401/500 |
+| **Auditoria** | Tabela `webhook_deliveries` registra payload, status, response, tentativas e timestamps |
+| **Retry** | Implementado em background com exponential backoff (1s, 2s, 4s) — 3 tentativas máx |
+| **Logging** | Event `webhook_submission` registrado em `ticket_events` com external_account_key |
+
 ### 4.1.2 Detalhe do Ticket (`/suporte/[id]`)
 
 Layout de duas colunas:
@@ -584,3 +638,6 @@ Componente client-side com countdown em tempo real usando `setInterval`. Exibe t
 | Mai/2026 | **F1-08 — Reabertura Automática:** Automação via trigger no Postgres para reabrir tickets fechados quando o cliente responde. |
 | Mai/2026 | **F1-09 — Auto-close e CSAT:** Implementado sistema de fechamento automático paramétrico com disparo de pesquisa de satisfação. |
 | Mai/2026 | **F1-10 — Mesclagem de Tickets:** Infraestrutura de merge com auditoria, incremento atômico e vínculo entre chamados. |
+| Mai/2026 | **F1-11 — Detecção de Duplicatas:** Cron job diário (02:00 UTC) com análise de similaridade semântica (pgvector, cosine 0.85+); banner UI com opção de merge ou dismissal; RLS enforced. |
+| Mai/2026 | **F1-12 — Reabertura Manual:** Modal de reabertura com justificativa obrigatória (min 10 chars); PATCH endpoint valida status; logs event_type='manual_reopened' com reason. |
+| Mai/2026 | **F1-13 — Formulário Público + Webhook:** POST `/api/public/tickets` (rate limit 10/min, email required) + POST `/api/webhooks/tickets/create` (HMAC validation); suporta `source='form'|'webhook'`; tabela `webhook_deliveries` para auditoria; email de confirmação via nodemailer. |

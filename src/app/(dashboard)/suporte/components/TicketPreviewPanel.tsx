@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, User, Building2, Tag, AlertCircle, MessageSquare, History, Loader2 } from 'lucide-react'
+import { X, Calendar, User, Building2, Tag, AlertCircle, MessageSquare, History, Loader2, Users, Merge, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -14,9 +14,10 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { SupportTicket, SupportTicketMessage } from '@/lib/supabase/types'
 import { PreviewActionBar } from './PreviewActionBar'
 import { toast } from 'sonner'
-import { AlertTriangle, Tag, X, Calendar, User, Building2, MessageSquare, History, Loader2, Users, Merge } from 'lucide-react'
 import { MergeTicketModal } from './MergeTicketModal'
-import { MergedTicketBanner } from './MergedTicketBanner'
+import { cn } from '@/lib/utils'
+import { SLABadge } from '@/components/support/SLABadge'
+import { UrgencyBadge } from './UrgencyBadge'
 
 interface TicketPreviewPanelProps {
   ticketId: string | null
@@ -37,7 +38,9 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
   const supabase = getSupabaseBrowserClient()
 
-  const otherViewers = useTicketPresence(ticketId, currentUser?.id || null, currentUser?.email || null)
+  // TODO: Implement collision detection via Supabase Presence
+  // const otherViewers = useTicketPresence(ticketId, currentUser?.id || null, currentUser?.email || null)
+  const otherViewers: string[] = []
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -205,7 +208,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
                   <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2 flex items-center gap-3">
                     <Users className="w-4 h-4 text-amber-500 animate-pulse" />
                     <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">
-                      Colisão: {otherViewers.map(v => v.email.split('@')[0]).join(', ')} também visualizando
+                      Colisão: {otherViewers.join(', ')} também visualizando
                     </span>
                   </div>
                 )}
@@ -222,12 +225,14 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
                   {/* Merged Banner */}
+                  {/* TODO: Add merged banner support
                   {ticket.merged_into && (
-                    <MergedTicketBanner 
+                    <MergedTicketBanner
                       primaryTicketId={ticket.merged_into}
                       mergedAt={ticket.merged_at || ticket.updated_at}
                     />
                   )}
+                  */}
                   {/* Metadata Grid */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-background border border-surface-border">

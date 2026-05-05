@@ -27,8 +27,10 @@ import {
   Mail, FileText, Zap, ClipboardCheck, Paperclip, Image as ImageIcon,
   Bold, Italic, Code, List, ListOrdered, Merge
 } from 'lucide-react'
-import { MergeTicketModal } from '../components/MergeTicketModal'
-import { MergedTicketBanner } from '../components/MergedTicketBanner'
+import { MergeTicketModal } from '../../components/MergeTicketModal'
+import { MergedTicketBanner } from '../../components/MergedTicketBanner'
+import { ReopenModal } from '../../components/ReopenModal'
+import { DuplicateTicketBanner } from '../../components/DuplicateTicketBanner'
 import {
   Select,
   SelectContent,
@@ -110,6 +112,8 @@ interface Ticket {
   account_id: string
   accounts: { id: string; name: string }
   external_priority_label?: string | null
+  merged_into?: string | null
+  merged_at?: string | null
 }
 
 interface SupportIndicators {
@@ -327,12 +331,30 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const ticket = init
   const [events, setEvents] = useState(initEvents)
   const [messages, setMessages] = useState(initMessages)
+  const [duplicateCandidates, setDuplicateCandidates] = useState<any[]>([])
 
   // Sync props to state (required for router.refresh() to update client state)
   useEffect(() => {
     setEvents(initEvents)
     setMessages(initMessages)
   }, [initEvents, initMessages])
+
+  // Fetch duplicate candidates on mount
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const res = await fetch(`/api/support-tickets/${ticket.id}/similarity-candidates`)
+        if (res.ok) {
+          const data = await res.json()
+          setDuplicateCandidates(data.candidates || [])
+        }
+      } catch (err) {
+        console.error('[TicketDetail] Error fetching duplicate candidates:', err)
+      }
+    }
+
+    fetchCandidates()
+  }, [ticket.id])
 
   const isInitialMount = useRef(true)
 
@@ -366,6 +388,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [uploading, setUploading] = useState(false)
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false)
 
   function applyMarkdown(prefix: string, suffix = '') {
     const el = textareaRef.current
@@ -817,10 +840,23 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           <div ref={threadRef} className="flex-1 p-6 space-y-5 bg-surface-background overflow-y-auto custom-scrollbar">
 
             {/* Banner de Mesclagem */}
-            <MergedTicketBanner 
-              mergedIntoId={ticket.merged_into} 
-              mergedAt={ticket.merged_at} 
-            />
+            {ticket.merged_into && ticket.merged_at && (
+              <MergedTicketBanner
+                primaryTicketId={ticket.merged_into}
+                mergedAt={ticket.merged_at}
+              />
+            )}
+
+            {/* Banner de Duplicatas */}
+            {duplicateCandidates.length > 0 && (
+              <DuplicateTicketBanner
+                ticketId={ticket.id}
+                candidates={duplicateCandidates}
+                onMergeClick={(candidateId, otherTicketId) => {
+                  setIsMergeModalOpen(true)
+                }}
+              />
+            )}
 
             {/* Original message */}
             <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
@@ -1269,6 +1305,17 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   Ver Indicadores 360°
                 </Button>
 
+                {ticket.status === 'closed' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsReopenModalOpen(true)}
+                    className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-accent" />
+                    Reabrir com Justificativa
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
                   onClick={() => setIsMergeModalOpen(true)}
@@ -1318,7 +1365,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         indicators={indicators}
       />
 
-      <MergeTicketModal 
+      <MergeTicketModal
         isOpen={isMergeModalOpen}
         onClose={() => setIsMergeModalOpen(false)}
         secondaryTicket={{
@@ -1326,6 +1373,14 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           title: ticket.title,
           account_id: ticket.account_id
         }}
+        onSuccess={() => router.refresh()}
+      />
+
+      <ReopenModal
+        isOpen={isReopenModalOpen}
+        onClose={() => setIsReopenModalOpen(false)}
+        ticketId={ticket.id}
+        ticketNumber={ticket.external_ticket_id || ticket.id.substring(0, 8)}
         onSuccess={() => router.refresh()}
       />
     </PageContainer>
