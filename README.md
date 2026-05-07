@@ -31,6 +31,34 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 📋 Roadmap — Wave 4 & Wave 5 Refinement Complete
+
+**Data:** 2026-05-07  
+**Status:** ✅ Refinement completo de Wave 4 (3 stories) + Wave 5 Pré-Condições (Epics 36, 37, 38)
+
+### Wave 4 — Automação Proativa (Pronto para Execução)
+
+| Story | Escopo | SP | Status |
+|-------|--------|----|----|
+| **23.1** | Playbook Governance (DB schema, UI update) | 3 | 📋 Refinado |
+| **14.2** | Playbook Trigger Alert (Health Score < 50 → Alert) | 3 | 📋 Refinado |
+| **15.1** | Auto Check-in por Silêncio (Gemini + Approval Queue) | 8 | 📋 Refinado |
+| | **TOTAL** | **14 SP** | **≈1.5 sprints** |
+
+### Wave 5 — Pré-Condições Arquiteturais (Pronto para Execução)
+
+| Epic | Escopo | SP | Status |
+|------|--------|----|----|
+| **36** | User Roles & Permissions (RBAC DB + UI) | 13 | 📋 Refinado |
+| **37** | Admin Control Panel (9 módulos de configuração) | 26 | 📋 Refinado |
+| **38** | Date Intelligence (MTD/YTD/Delta filters) | 10 | 📋 Refinado |
+| | **TOTAL** | **49 SP** | **≈5 sprints** |
+
+📚 **Documento de Refinement Completo:** [`docs/product/refinement-wave4-wave5.md`](docs/product/refinement-wave4-wave5.md)  
+Contém: Critérios de Aceitação, Plano de Testes (124 TCs), Sizing, Sequência de Execução, Definição de Done padrão.
+
+---
+
 > **REGRA OBRIGATÓRIA PARA AGENTES DE IA E DESENVOLVEDORES**
 >
 > Este arquivo é a fonte de verdade do projeto. Toda vez que uma funcionalidade for adicionada, alterada ou removida — endpoint, tabela, módulo, componente, variável de ambiente, script, comportamento de sistema — este README **deve ser atualizado na mesma sessão/PR**, antes de considerar a tarefa concluída.
