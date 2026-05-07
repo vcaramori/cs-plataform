@@ -136,8 +136,10 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
 
   const getIcon = (item: any) => {
     if (item.itemType === 'health_event') {
-      const color = getHealthStatusColor(item.health_status)
-      return <Heart className={`w-3.5 h-3.5 text-${color}`} />
+      if (item.health_status === 'healthy') return <Heart className="w-3.5 h-3.5 text-emerald-500" />
+      if (item.health_status === 'at_risk') return <Heart className="w-3.5 h-3.5 text-amber-500" />
+      if (item.health_status === 'critical') return <Heart className="w-3.5 h-3.5 text-red-500" />
+      return <Heart className="w-3.5 h-3.5 text-gray-400" />
     }
     if (item.itemType === 'contract_event') return <DollarSign className="w-3.5 h-3.5 text-indigo-500" />
     if (item.itemType === 'ticket') return <TicketIcon className="w-3.5 h-3.5 text-plannera-demand" />
