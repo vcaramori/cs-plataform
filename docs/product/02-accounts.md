@@ -29,7 +29,7 @@ Página principal de visualização de uma conta específica. Layout em 3 coluna
 |--------|----------|
 | **Esquerda (31%)** | Linha do Tempo (interações + esforço unificados, scroll independente) |
 | **Centro (45%)** | Resultados Estratégicos (SuccessPlan) → Uso & Adoção Funcional → Risco & Atrito (tickets) |
-| **Direita (24%)** | Mapa de Influência (stakeholders) → Governança Contratual (contratos) → Central de Arquivos |
+| **Direita (24%)** | Health Score Ponderado (4 dimensões) → Mapa de Influência (stakeholders) → Governança Contratual (contratos) → Central de Arquivos |
 
 **Acima das 3 colunas:** `AccountHeader` com health grid e navegação.
 
@@ -55,6 +55,8 @@ Todos os inputs usam `h-10 rounded-xl`. Layout full-width sem `max-w` restritivo
 
 ### 2.2.1 Health Score
 
+**Health Score v1 (Manual/Shadow — Legado):**
+
 | Condição | Classificação | Cor |
 |----------|--------------|-----|
 | `health_score < 40` | Em Risco | Vermelho (`#d85d4b`) |
@@ -62,6 +64,49 @@ Todos os inputs usam `h-10 rounded-xl`. Layout full-width sem `max-w` restritivo
 | `health_score >= 70` | Saudável | Verde-azulado (`#2ba09d`) |
 
 Discrepância: se `|manual − shadow| > 20`, flag `discrepancy_alert` é ativado e exibe ícone de alerta pulsante no gauge.
+
+**Health Score v2 (Ponderado — F2-02):**
+
+Campo: `health_score_v2` na tabela `accounts`. Calcula-se diariamente via cron `/api/cron/health-score-daily` (rodando a cada 24h em todos os clientes com contrato ativo).
+
+Fórmula ponderada:
+```
+health_score_v2 = (SLA × 0.35) + (NPS × 0.30) + (Adoption × 0.25) + (Relationship × 0.10)
+```
+
+**Dimensões:**
+1. **SLA** (35%) — % de tickets resolvidos dentro do SLA nos últimos 30 dias. Range: 0–100
+2. **NPS** (30%) — Escore NPS normalizado: `(avgNPS + 100) / 2`. Range: 0–100 (converte -100..100 para 0..100)
+3. **Adoption** (25%) — % de features ativas do plano. Range: 0–100
+4. **Relationship** (10%) — Frequência de contato (últimos 30 dias). Range: 0–100
+   - 1–7 dias desde última interação = 100
+   - 8–14 dias = 75
+   - 15–21 dias = 50
+   - 22–30 dias = 25
+   - > 30 dias = 0
+
+**Classificação (health_status):**
+
+| Condição | Status | Cor |
+|----------|--------|-----|
+| `health_score_v2 >= 75` | `healthy` | Verde (`emerald-500`) |
+| `health_score_v2 50–74` | `at-risk` | Âmbar (`yellow-500`) |
+| `health_score_v2 < 50` | `critical` | Vermelho (`red-500`) |
+
+**Armazenamento:**
+- `health_breakdown`: JSON com { sla, nps, adoption, relationship }
+- `health_classified_at`: timestamp da última atualização
+- `health_status`: enum ('healthy', 'at-risk', 'critical')
+
+**Visualização:**
+- Componente `HealthBreakdownCard` exibe as 4 barras de progresso (direita da página de detalhe, coluna 3)
+- Modal `HealthScoreDetailsModal` mostra histórico v1 + grid das 4 dimensões v2 (quando disponível)
+
+**Cron Job:**
+- Rota: `POST /api/cron/health-score-daily`
+- Autenticação: header `x-api-secret` (valor: env `API_SECRET`)
+- Processamento: batches de 100 accounts
+- Retorno: { success, accounts_processed, total_accounts, errors: [...] }
 
 ### 2.2.2 Adoption Score
 
@@ -137,7 +182,28 @@ Separador `h-px` entre as linhas.
 
 **Score IA (Shadow Score):** número inteiro da IA com botão `Info` para ver raciocínio. Se ausente, mostra "Pendente" com opacidade 30%.
 
-### 2.3.2 AccountUnifiedTimeline
+### 2.3.2 HealthBreakdownCard (F2-02)
+
+Novo componente para exibir o Health Score v2 com as 4 dimensões ponderadas.
+
+| Seção | Conteúdo |
+|-------|----------|
+| **Header** | Título "Health Score Ponderado" + badge de status (healthy/at-risk/critical) + data de classificação |
+| **4 Dimension Bars** | Uma barra de progresso para cada: SLA, NPS, Adoption, Relationship com cor (verde/âmbar/vermelho) baseada no score |
+| **Score Display** | Cada dimensão mostra: ícone + label + valor 0-100 + percentual de peso (35%, 30%, 25%, 10%) |
+| **Progress Bar** | Fill visual proporcional ao score, com cores semânticas |
+| **Calculation Info** | Rodapé com a fórmula ponderada: (SLA×0.35) + (NPS×0.30) + (Adopt×0.25) + (Relat×0.10) |
+| **Tooltips** | Cada dimensão tem tooltip explicando a fonte dos dados e como é calculada |
+| **Fallback** | Se `breakdown` é null, exibe card vazio com "Sem dados disponíveis" |
+
+**Cores por Score:**
+- ≥ 70: verde (`emerald-500`)
+- 40–69: âmbar (`yellow-500`)
+- < 40: vermelho (`red-500`)
+
+**Placement:** Coluna direita (24%), acima do "Mapa de Influência"
+
+### 2.3.3 AccountUnifiedTimeline
 
 Timeline unificada de interações (estratégicas) + esforço (operacional) + **eventos de contrato** (F2-01-A) + **health scores** (F2-01-B).
 
@@ -177,7 +243,7 @@ Timeline unificada de interações (estratégicas) + esforço (operacional) + **
 - Título: `Contrato: {description || service_type || 'N/A'}`
 - Status: badge com cor conforme `contract.status`
 
-### 2.3.4 InteractionDetailModal (Reuniões Estratégicas)
+### 2.3.5 InteractionDetailModal (Reuniões Estratégicas)
 
 Modal para visualização e edição das interações estratégicas registradas na timeline.
 
@@ -187,7 +253,7 @@ Modal para visualização e edição das interações estratégicas registradas 
 | **Checklist** | Visualização de todo o checklist validado durante a reunião. |
 | **Edição** | Permitir edição dos apontamentos (campos e checklist) caso algo tenha sido registrado errado pelo assistente/CSM. |
 
-### 2.3.5 ContractDetailModal (F2-01-A — Contract Events)
+### 2.3.6 ContractDetailModal (F2-01-A — Contract Events)
 
 Modal read-only para visualização de detalhes de eventos de contrato na timeline. Clique em qualquer evento de contrato abre este modal.
 
@@ -206,7 +272,7 @@ Modal read-only para visualização de detalhes de eventos de contrato na timeli
 - Ação principal: "Editar Contrato" delega para `EditContractDialog` existente
 - Fechar modal: clique fora, Escape, ou botão "Fechar"
 
-### 2.3.6 Data Passing — 6 Timeline Data Sources (F2-01-G)
+### 2.3.7 Data Passing — 6 Timeline Data Sources (F2-01-G)
 
 AccountUnifiedTimeline consolida 6 tipos de eventos. Validação de data passing:
 
@@ -280,7 +346,7 @@ interface Props {
 
 **Padrão:** 6 tipos são consolidados num array `combined[]` com filtro de soft-delete (F2-01-F) e então processados no pipeline de filtro → busca → sort → pagina.
 
-### 2.3.3 AccountsTable (Dashboard)
+### 2.3.4 AccountsTable (Dashboard)
 
 | Elemento | Comportamento |
 |----------|--------------|
@@ -479,3 +545,7 @@ type Contract = {
 | Mai/2026 | **F2-01-A** — Contract Events Integration: eventos de contrato integrados à AccountUnifiedTimeline |
 | Mai/2026 | Novo componente `ContractDetailModal` para visualização de detalhes de contratos via timeline |
 | Mai/2026 | Contracts agora aparecem em "Feed Geral" e "Estratégia" (isStrategic=true), excludos de "Atendimento & NPS" |
+| Mai/2026 | **F2-02** — Health Score Ponderado v2: 4 dimensões (SLA 35%, NPS 30%, Adoption 25%, Relationship 10%) |
+| Mai/2026 | Novo componente `HealthBreakdownCard` exibindo as 4 barras de progresso (coluna direita) |
+| Mai/2026 | Cron diário `/api/cron/health-score-daily` recalcula health_score_v2 para todos os clientes ativos |
+| Mai/2026 | Modal `HealthScoreDetailsModal` mostra breakdown v2 quando disponível (abaixo do gráfico histórico) |

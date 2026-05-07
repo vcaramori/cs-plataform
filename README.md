@@ -140,6 +140,7 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 17 Accounts (F2-01-A — Contract Events) | Integração de eventos de contrato à AccountUnifiedTimeline com modal de detalhes, classificação por tipo de evento (renewal, status_change, created), filtros estratégicos. | ✅ Concluída 2026-05-07 |
 | Sessão 18 Accounts (F2-01-B a F2-01-E) | Health Scores integration, Sort Toggle, Pagination, Semantic Search na timeline. | ✅ Concluída 2026-05-07 |
 | Sessão 19 Accounts (F2-01-F & F2-01-G) | Cleanup de eventos deletados (soft-delete filters), validação de data passing dos 6 types (interactions, efforts, tickets, npsResponses, contracts, healthScores). | ✅ Concluída 2026-05-07 |
+| **Sessão 20 Accounts (F2-02 — Health Score Ponderado)** | **Novo health_score_v2 com 4 dimensões (SLA 35%, NPS 30%, Adoption 25%, Relationship 10%); cron diário; HealthBreakdownCard component; modal com grid de dimensões.** | **✅ Concluída 2026-05-07** |
 
 ### Scripts de Cron (Agendamento)
 
@@ -153,6 +154,7 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
 | Auto-close tickets | `POST /api/cron/ticket-auto-close` | `*/30 * * * *` (30 min) | Fecha tickets resolvidos após inatividade + dispara CSAT |
 | CSAT timeout | `POST /api/cron/csat-timeout` | `0 * * * *` (hourly) | Reseta tokens CSAT expirados |
 | Sentiment analysis | `POST /api/cron/analyze-ticket-sentiments` | `0 3 * * *` (daily 03:00 UTC) | Analisa replies sem sentimento via Gemini, regenera caches de tendência (F1-20) |
+| **Health Score Daily** | `POST /api/cron/health-score-daily` | `0 2 * * *` (daily 02:00 UTC) | **Recalcula health_score_v2 para todas as contas ativas via fórmula ponderada (F2-02)** |
 
 **Configuração em Produção:**
 - Usar Vercel Crons, AWS EventBridge, GCP Cloud Scheduler ou similar
@@ -255,6 +257,32 @@ Gestão completa de contas. Cada logo possui:
 **Navegação de edição**: o ícone de lápis na tabela do dashboard e no cabeçalho da conta redirecionam para `/accounts/[id]/edit`, que carrega o formulário completo com todos os contratos e dados estruturados.
 
 **Header da conta**: exibe dois pills financeiros no canto direito (MRR e Renovação). O grid de saúde abaixo exibe duas linhas de indicadores — linha 1: Adoção | Suporte | Relacionamento; linha 2: NPS (score dos últimos 30 dias, `—` se sem respostas) | SLA (Ativo / Sem SLA conforme `sla_policies` do contrato ativo) | Score IA — todos sempre visíveis sem scroll. A linha do tempo usa ícones `w-8` com trilho alinhado ao centro e card com `overflow-hidden` para evitar overflow de texto.
+
+**Health Score v2 Ponderado (F2-02):**
+
+Novo sistema de saúde baseado em 4 dimensões recalculadas diariamente via cron `POST /api/cron/health-score-daily`:
+
+| Dimensão | Peso | Cálculo |
+|----------|------|---------|
+| **SLA** | 35% | % de tickets resolvidos no prazo (últimos 30d) |
+| **NPS** | 30% | Score NPS normalizado: `(avgNPS + 100) / 2` (0–100) |
+| **Adoption** | 25% | % de features ativas do plano |
+| **Relationship** | 10% | Frequência de contato (1–7d=100, 8–14d=75, 15–21d=50, 22–30d=25, >30d=0) |
+
+**Fórmula:** `health_score_v2 = (SLA×0.35) + (NPS×0.30) + (Adoption×0.25) + (Relationship×0.10)`
+
+**Classificação (health_status):**
+- `healthy`: score ≥ 75 (verde)
+- `at-risk`: score 50–74 (âmbar)
+- `critical`: score < 50 (vermelho)
+
+**Componente HealthBreakdownCard:** renderiza as 4 barras de progresso com tooltips explicativos na coluna direita da página de detalhe. Modal `HealthScoreDetailsModal` também exibe breakdown v2 com grid de dimensões quando disponível.
+
+**Armazenamento:**
+- `health_score_v2`: numeric (0–100)
+- `health_breakdown`: JSONB {sla, nps, adoption, relationship}
+- `health_status`: enum ('healthy', 'at-risk', 'critical')
+- `health_classified_at`: timestamp da última atualização
 
 **Linha do Tempo Unificada (F2-01-A — Contract Events Integration):**
 

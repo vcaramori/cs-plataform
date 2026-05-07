@@ -106,6 +106,43 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
           </div>
         ) : (
           <div className="space-y-8 py-4 px-6">
+            {/* Health Score v2 Breakdown Section */}
+            {data?.health_breakdown && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Health Score Ponderado v2</h3>
+                  <Badge className={cn(
+                    "text-xs border",
+                    data.health_status === 'healthy' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                    data.health_status === 'at-risk' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                    'bg-red-500/20 text-red-300 border-red-500/30'
+                  )}>
+                    {data.health_status === 'healthy' ? 'Saudável' :
+                     data.health_status === 'at-risk' ? 'Em Risco' :
+                     'Crítico'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { name: 'SLA', value: data.health_breakdown.sla, color: 'bg-blue-500/20 text-blue-300', icon: '⚡' },
+                    { name: 'NPS', value: data.health_breakdown.nps, color: 'bg-purple-500/20 text-purple-300', icon: '👥' },
+                    { name: 'Adoption', value: data.health_breakdown.adoption, color: 'bg-green-500/20 text-green-300', icon: '🚀' },
+                    { name: 'Relationship', value: data.health_breakdown.relationship, color: 'bg-orange-500/20 text-orange-300', icon: '🤝' }
+                  ].map((dim, idx) => (
+                    <div key={idx} className={cn("p-3 rounded-lg", dim.color)}>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span>{dim.icon}</span>
+                        <span className="text-[9px] font-black uppercase">{dim.name}</span>
+                      </div>
+                      <div className="text-lg font-black">{Math.round(dim.value)}</div>
+                      <div className="h-1.5 bg-white/20 rounded-full mt-2 overflow-hidden">
+                        <div className="h-full bg-white/40" style={{ width: `${dim.value}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Chart Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between px-2">

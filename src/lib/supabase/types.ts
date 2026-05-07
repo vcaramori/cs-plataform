@@ -200,6 +200,13 @@ export type EmbeddingSearchResult = Embedding & {
   similarity: number
 }
 
+export type HealthBreakdown = {
+  sla: number        // 0-100: % tickets resolved on time in 30 days
+  nps: number        // 0-100: normalized NPS score
+  adoption: number   // 0-100: % features active
+  relationship: number // 0-100: interaction frequency in 30 days
+}
+
 export type HealthScore = {
   id: string
   account_id: string
@@ -217,6 +224,10 @@ export type HealthScore = {
   created_by: string | null
   created_at: string | null
   source_type: string | null
+  health_score_v2?: number        // new: weighted score v2
+  health_breakdown?: HealthBreakdown  // new: breakdown of 4 dimensions
+  health_status?: 'healthy' | 'at-risk' | 'critical'  // new: classification
+  health_classified_at?: string   // new: when status was last calculated
 }
 
 // NPS Types
