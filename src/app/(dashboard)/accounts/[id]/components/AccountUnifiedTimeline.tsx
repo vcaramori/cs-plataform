@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,8 @@ import {
   Ticket as TicketIcon,
   Star,
   DollarSign,
-  Heart
+  Heart,
+  Search
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,9 @@ interface Props {
 
 export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResponses, playbooks, contracts = [], healthScores = [], accounts, accountName }: Props) {
   const [filter, setFilter] = useState<'all' | 'strategic' | 'atendimento'>('all')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedEffort, setSelectedEffort] = useState<any>(null)
   const [selectedPlaybook, setSelectedPlaybook] = useState<any>(null)
   const [selectedNPS, setSelectedNPS] = useState<any>(null)
@@ -47,6 +51,13 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
   const [selectedContract, setSelectedContract] = useState<any>(null)
   const [selectedHealthEvent, setSelectedHealthEvent] = useState<any>(null)
   const router = useRouter()
+
+  const itemsPerPage = 15
+
+  // Reset page quando filter muda (F2-01-D)
+  useEffect(() => {
+    setPage(1)
+  }, [filter])
 
   // Função helper: determinar o tipo de evento de contrato
   const determineContractEventType = (contract: any): string => {
@@ -122,17 +133,43 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
           ? (hs.manual_score > 75 ? 'healthy' : hs.manual_score >= 50 ? 'at_risk' : 'critical')
           : (hs.shadow_score > 75 ? 'healthy' : hs.shadow_score >= 50 ? 'at_risk' : 'critical')
       }))
-  ].sort((a, b) => {
-    const dateA = a.date ? new Date(a.date).getTime() : 0
-    const dateB = b.date ? new Date(b.date).getTime() : 0
-    return dateB - dateA
-  })
+  ]
 
+  // F2-01-E: Função de busca client-side
+  const searchMatches = (item: any) => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    const fields = [
+      item.title,
+      item.description,
+      item.raw_transcript,
+      item.parsed_description,
+      item.comment
+    ]
+    return fields.some(field => field?.toLowerCase().includes(query))
+  }
+
+  // Pipeline: filter -> search -> sort
   const filtered = combined.filter(item => {
     if (filter === 'strategic') return item.isStrategic
     if (filter === 'atendimento') return (item.itemType === 'ticket' || item.itemType === 'nps') && item.itemType !== 'contract_event' && item.itemType !== 'health_event'
     return true
   })
+
+  const searched = filtered.filter(searchMatches)
+
+  // F2-01-C: Sort Toggle
+  const sorted = [...searched].sort((a, b) => {
+    const timeA = new Date(a.date).getTime()
+    const timeB = new Date(b.date).getTime()
+    return sortOrder === 'desc' ? timeB - timeA : timeA - timeB
+  })
+
+  // F2-01-D: Pagination
+  const start = (page - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  const paginatedItems = sorted.slice(start, end)
+  const totalPages = Math.ceil(sorted.length / itemsPerPage)
 
   const getIcon = (item: any) => {
     if (item.itemType === 'health_event') {
@@ -187,33 +224,58 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
 
   return (
     <div className="space-y-6">
+      {/* Header: Tabs + Sort Toggle + Counter */}
       <div className="flex items-center justify-between px-2">
-        <div className="flex bg-surface-background p-1 rounded-xl border border-border-divider">
-          {[
-            { id: 'all', label: 'Feed Geral' },
-            { id: 'strategic', label: 'Estratégia' },
-            { id: 'atendimento', label: 'Atendimento & NPS' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setFilter(tab.id as any)}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-all",
-                filter === tab.id ? "bg-plannera-sop text-white shadow-lg" : "text-content-secondary hover:text-content-primary"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex bg-surface-background p-1 rounded-xl border border-border-divider">
+            {[
+              { id: 'all', label: 'Feed Geral' },
+              { id: 'strategic', label: 'Estratégia' },
+              { id: 'atendimento', label: 'Atendimento & NPS' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id as any)}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-all",
+                  filter === tab.id ? "bg-plannera-sop text-white shadow-lg" : "text-content-secondary hover:text-content-primary"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* F2-01-C: Sort Toggle Button */}
+          <button
+            onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold text-content-secondary hover:text-content-primary hover:bg-surface-background border border-border-divider transition-colors"
+          >
+            {sortOrder === 'desc' ? '🔽 Mais recente' : '🔼 Mais antigo'}
+          </button>
         </div>
-        <span className="text-[9px] text-content-secondary font-bold uppercase tracking-widest">{filtered.length} Atividades</span>
+        <span className="text-[9px] text-content-secondary font-bold uppercase tracking-widest">{sorted.length} Atividades</span>
+      </div>
+
+      {/* F2-01-E: Search Input */}
+      <div className="px-2 py-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-background border border-border-divider text-[10px] text-content-primary placeholder-content-secondary focus:outline-none focus:ring-1 focus:ring-plannera-sop"
+          />
+        </div>
       </div>
 
       <div className="relative space-y-4 px-4">
         <div className="absolute left-8 top-4 bottom-4 w-px bg-border-divider" />
 
         <AnimatePresence mode="popLayout">
-          {filtered.slice(0, 15).map((item, idx) => (
+          {paginatedItems.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, x: -20 }}
@@ -313,6 +375,34 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
           ))}
         </AnimatePresence>
       </div>
+
+      {/* F2-01-D: Pagination Footer */}
+      {sorted.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border-divider">
+          <span className="text-[9px] text-content-secondary font-bold">
+            {start + 1} a {Math.min(end, sorted.length)} de {sorted.length} atividades
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Anterior
+            </button>
+            <span className="text-[9px] text-content-secondary font-bold">
+              Página {page} de {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Próxima →
+            </button>
+          </div>
+        </div>
+      )}
 
       <EffortEditModal
         entry={selectedEffort}
