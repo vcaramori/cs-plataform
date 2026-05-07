@@ -139,7 +139,7 @@ Separador `h-px` entre as linhas.
 
 ### 2.3.2 AccountUnifiedTimeline
 
-Timeline unificada de interações (estratégicas) + esforço (operacional) + **eventos de contrato** (F2-01-A).
+Timeline unificada de interações (estratégicas) + esforço (operacional) + **eventos de contrato** (F2-01-A) + **health scores** (F2-01-B).
 
 | Elemento | Valor |
 |----------|-------|
@@ -148,11 +148,23 @@ Timeline unificada de interações (estratégicas) + esforço (operacional) + **
 | Gap ícone↔card | `gap-3` |
 | Card | `flex-1 min-w-0 overflow-hidden` — evita overflow de texto |
 | Título | `truncate` sem max-w fixo |
-| Itens exibidos | Máximo 15 (slice) |
-| Filtros | Feed Geral / Estratégia / Atendimento & NPS |
-| Tipos de eventos | `interaction`, `effort`, `ticket`, `nps`, **`contract_event`** |
+| Itens exibidos | Máximo 15 (slice) com paginação (F2-01-D) |
+| Filtros | Feed Geral / Estratégia / Atendimento & NPS (F2-01-C) |
+| Sort | Toggle Mais recente ↔ Mais antigo (F2-01-C) |
+| Busca | Client-side search com debounce (F2-01-E) |
+| Tipos de eventos | `interaction`, `effort`, `ticket`, `nps`, **`contract_event`**, **`health_event`** |
 | Clique na Interação | Abre o `InteractionDetailModal` |
 | Clique em Contrato | Abre o `ContractDetailModal` |
+| Clique em Health | Abre o `HealthEventDetailModal` |
+
+**Cleanup de Eventos Deletados (F2-01-F):**
+- `interactions`: filtra `!i.deleted_at && !i.is_archived`
+- `efforts` (time_entries): filtra `!e.deleted_at && !e.is_archived`
+- `tickets` (support_tickets): filtra `!t.deleted_at`
+- `npsResponses`: filtra `!n.deleted_at`
+- `contracts`: filtra `!c.deleted_at` (status `churned` é válido, não deletado)
+- `healthScores`: filtra `!hs.deleted_at && hs.evaluated_at`
+- Dados vêm do servidor limpo (Supabase via select sem soft-deletes) — filtros são safety net
 
 **Eventos de Contrato (F2-01-A):**
 - Ícone: `DollarSign` (indigo-500)
@@ -193,6 +205,80 @@ Modal read-only para visualização de detalhes de eventos de contrato na timeli
 - Modal read-only (sem edição direta, apenas visualização)
 - Ação principal: "Editar Contrato" delega para `EditContractDialog` existente
 - Fechar modal: clique fora, Escape, ou botão "Fechar"
+
+### 2.3.6 Data Passing — 6 Timeline Data Sources (F2-01-G)
+
+AccountUnifiedTimeline consolida 6 tipos de eventos. Validação de data passing:
+
+**1. Server Query (`page.tsx`):**
+```typescript
+const { data: account } = await supabase.from('accounts').select(`
+  interactions (*),
+  time_entries (*),      // → efforts
+  support_tickets (*),   // → tickets
+  nps_responses (*),
+  contracts (*),
+  health_scores (*)
+`).single()
+```
+
+**2. Normalização e Passagem (`page.tsx` → `AccountDetailPageClient`):**
+```typescript
+const interactions = Array.isArray(account.interactions) ? ... : []
+const entries = Array.isArray(account.time_entries) ? ... : []
+const tickets = Array.isArray(account.support_tickets) ? ... : []
+const npsResponses = Array.isArray(account.nps_responses) ? ... : []
+const contracts = Array.isArray(account.contracts) ? ... : []
+const healthScores = Array.isArray(account.health_scores) ? ... : []
+
+<AccountDetailPageClient
+  interactions={interactions}
+  efforts={entries}
+  tickets={tickets}
+  npsResponses={npsResponses}
+  contracts={contracts}
+  healthScores={healthScores}
+  // ...
+/>
+```
+
+**3. Props em `AccountDetailPageClient`:**
+```typescript
+interface Props {
+  interactions: any[]     // ✅
+  efforts: any[]          // ✅
+  tickets: any[]          // ✅
+  npsResponses: any[]     // ✅
+  contracts?: any[]       // ✅ (optional, já tem default F2-01-A)
+  healthScores?: any[]    // ✅ (optional, já tem default F2-01-B)
+  // ... resto
+}
+
+<AccountUnifiedTimeline
+  interactions={interactions}
+  efforts={efforts}
+  tickets={tickets}
+  npsResponses={npsResponses}
+  contracts={contracts}
+  healthScores={healthScores}
+  // ...
+/>
+```
+
+**4. Props em `AccountUnifiedTimeline`:**
+```typescript
+interface Props {
+  interactions: any[]    // ✅ Obrigatório
+  efforts: any[]         // ✅ Obrigatório
+  tickets: any[]         // ✅ Obrigatório
+  npsResponses: any[]    // ✅ Obrigatório
+  contracts?: any[]      // ✅ Opcional (com default [])
+  healthScores?: any[]   // ✅ Opcional (com default [])
+  // ... resto
+}
+```
+
+**Padrão:** 6 tipos são consolidados num array `combined[]` com filtro de soft-delete (F2-01-F) e então processados no pipeline de filtro → busca → sort → pagina.
 
 ### 2.3.3 AccountsTable (Dashboard)
 

@@ -138,6 +138,8 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 15 Suporte (F1-18, F1-17, F1-19) | Auto-categorização (Gemini + sugestão), RAG Reply Suggestion (pgvector + contexto de tickets similares), Resumo do Ticket (cache 24h + regeneração). | ✅ Concluída 2026-05-05 |
 | Sessão 16 Suporte (F1-20 — Sentiment Trend) | Análise de sentimento por reply (Gemini), sparkline de sentimentos, timeline de sentimentos, detecção de tendência negativa, cache 24h. | ✅ Concluída 2026-05-05 |
 | Sessão 17 Accounts (F2-01-A — Contract Events) | Integração de eventos de contrato à AccountUnifiedTimeline com modal de detalhes, classificação por tipo de evento (renewal, status_change, created), filtros estratégicos. | ✅ Concluída 2026-05-07 |
+| Sessão 18 Accounts (F2-01-B a F2-01-E) | Health Scores integration, Sort Toggle, Pagination, Semantic Search na timeline. | ✅ Concluída 2026-05-07 |
+| Sessão 19 Accounts (F2-01-F & F2-01-G) | Cleanup de eventos deletados (soft-delete filters), validação de data passing dos 6 types (interactions, efforts, tickets, npsResponses, contracts, healthScores). | ✅ Concluída 2026-05-07 |
 
 ### Scripts de Cron (Agendamento)
 

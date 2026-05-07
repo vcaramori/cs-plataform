@@ -98,27 +98,44 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
     }
   }
 
+  // F2-01-F: Cleanup de eventos deletados
   const combined = [
-    ...interactions.map(i => ({
-      ...i,
-      itemType: i.type === 'playbook' ? 'playbook' : 'interaction',
-      date: i.date || i.created_at,
-      isStrategic: i.type !== 'playbook'
-    })),
-    ...efforts.map(e => ({ ...e, itemType: 'effort', date: e.date, isStrategic: false })),
-    ...tickets.map(t => ({ ...t, itemType: 'ticket', date: t.opened_at, isStrategic: false })),
-    ...npsResponses.map(n => ({ ...n, itemType: 'nps', date: n.responded_at || n.created_at, isStrategic: false })),
-    ...contracts.map(c => ({
-      ...c,
-      itemType: 'contract_event',
-      date: c.renewal_date || c.created_at,
-      event_type: determineContractEventType(c),
-      isStrategic: true,
-      title: `Contrato: ${c.description || c.service_type || 'N/A'}`,
-      description: c.status
-    })),
+    // Interactions: filter deleted_at e is_archived
+    ...interactions
+      .filter(i => !i.deleted_at && !i.is_archived)
+      .map(i => ({
+        ...i,
+        itemType: i.type === 'playbook' ? 'playbook' : 'interaction',
+        date: i.date || i.created_at,
+        isStrategic: i.type !== 'playbook'
+      })),
+    // Efforts: filter deleted_at e is_archived
+    ...efforts
+      .filter(e => !e.deleted_at && !e.is_archived)
+      .map(e => ({ ...e, itemType: 'effort', date: e.date, isStrategic: false })),
+    // Tickets: filter deleted_at
+    ...tickets
+      .filter(t => !t.deleted_at)
+      .map(t => ({ ...t, itemType: 'ticket', date: t.opened_at, isStrategic: false })),
+    // NPS Responses: filter deleted_at
+    ...npsResponses
+      .filter(n => !n.deleted_at)
+      .map(n => ({ ...n, itemType: 'nps', date: n.responded_at || n.created_at, isStrategic: false })),
+    // Contracts: filter deleted_at (churned é OK)
+    ...contracts
+      .filter(c => !c.deleted_at)
+      .map(c => ({
+        ...c,
+        itemType: 'contract_event',
+        date: c.renewal_date || c.created_at,
+        event_type: determineContractEventType(c),
+        isStrategic: true,
+        title: `Contrato: ${c.description || c.service_type || 'N/A'}`,
+        description: c.status
+      })),
+    // Health Scores: filter deleted_at e evaluated_at
     ...healthScores
-      .filter(hs => hs.evaluated_at)
+      .filter(hs => !hs.deleted_at && hs.evaluated_at)
       .map(hs => ({
         ...hs,
         itemType: 'health_event',
