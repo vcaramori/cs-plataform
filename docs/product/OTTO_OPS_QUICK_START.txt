@@ -1,0 +1,265 @@
+================================================================================
+  OTTO OPS AUDITOR — CS AUDIT FRAMEWORK
+  3 Métricas Operacionais de Performance
+  Versão 1.0 | Maio 2026
+================================================================================
+
+MISSÃO
+------
+Otto Ops é o auditor do time CS. Sua missão é garantir que os dados novos da
+plataforma (Bloco 1 + 2) estão gerando impacto operacional real.
+
+CONTEXTO
+--------
+Bloco 1 (Consolidado):
+  - Health Score v2: 4 dimensões ponderadas (SLA, NPS, Adoption, Relationship)
+  - Segmentação Dinâmica: Filtros + 4 segmentos salvos
+  - Playbooks: Jornadas estruturadas com gatilho manual
+
+Bloco 2 (No Horizonte):
+  - Alertas Proativos: 6 tipos automáticos (Churn, Silent, Renewal, Adoption, etc)
+  - Success Plans: Metas compartilhadas com clientes via link público
+
+================================================================================
+  AS 3 MÉTRICAS CRÍTICAS
+================================================================================
+
+MÉTRICA 1: HSAI (Health Score Accuracy Index)
+─────────────────────────────────────────────
+
+O QUÊ MEDE?
+  % de contas que mudaram para "critical" + receberam ação em ≤7 dias
+
+FÓRMULA
+  Contas em critical com ação / Total de contas em critical
+
+EXEMPLO
+  50 contas → critical este mês
+  35 delas receberam QBR, playbook ou alerta resolvido em 7 dias
+  HSAI = 35/50 = 70%
+
+TARGET: ≥ 80%
+
+INTERPRETAÇÃO
+  ✅ ≥ 80%: CSMs confiam no health score → aumentar automação
+  ⚠️  50-80%: Engajamento parcial → retraining necessário
+  ❌ < 50%: CSMs ignoram o score → revisar modelo
+
+O QUE FAZER SE ESTIVER BAIXO?
+  1. Reunião com CSMs: por que não agiram?
+  2. Análise: é falso positivo? Falta contexto?
+  3. Retraining: demonstrar casos de sucesso
+  4. Automatizar: se ≥85%, criar gatilho automático de playbook
+
+
+MÉTRICA 2: AACR (Alert-to-Action Conversion Rate)
+───────────────────────────────────────────────────
+
+O QUÊ MEDE?
+  % de alertas que foram resolvidos em ≤ 48 horas
+
+FÓRMULA
+  Alertas resolvidos em ≤48h / Total de alertas criados
+  (varia por severidade: Critical ≥85%, Warning ≥70%, Info ≥50%)
+
+EXEMPLO
+  120 alertas criados este mês
+  85 foram marcados "resolvido" em ≤48h
+  AACR = 85/120 = 70.8%
+
+TARGET GLOBAL: ≥ 70%
+
+INTERPRETAÇÃO
+  ✅ ≥ 70%: CSMs respondendo bem → confiança no motor
+  ⚠️  40-70%: Ruído detectado → revisar triggers
+  ❌ < 40%: Alertas ignorados → desabilitar tipo ou revisar lógica
+
+O QUE FAZER SE ESTIVER BAIXO?
+  1. Breakdown por tipo de alerta: qual está falhando?
+  2. Se "Renewal Upcoming": 90d é muito cedo? Ajustar threshold
+  3. Se "Silent Customer": CSM já tem contexto? Remover tipo
+  4. Analisar: falsos positivos? CSM não vê relevância?
+
+
+MÉTRICA 3: PCR (Playbook Completion Rate)
+──────────────────────────────────────────
+
+O QUÊ MEDE?
+  % de playbooks que foram completados (todas tarefas finished)
+
+FÓRMULA
+  Playbooks finished / Total de playbooks instanciados
+
+EXEMPLO
+  40 playbooks iniciados este mês
+  28 foram marcados "finished" (todas tarefas completed)
+  8 foram abandonados (sem atividade > 14 dias)
+  PCR = 28/40 = 70%
+
+TARGET
+  v1 (Manual): ≥ 75%    (CSM escolhe, deve ser relevante)
+  v2 (Auto):   ≥ 60%    (pode incluir irrelevantes)
+
+INTERPRETAÇÃO
+  ✅ ≥ 75%: Template relevante → pronto para escalar
+  ⚠️  40-75%: Engajamento parcial → ajustar tarefas
+  ❌ < 40%: Template inútil → remover ou redesenhar
+
+O QUE FAZER SE ESTIVER BAIXO?
+  1. Qual template está baixo? (breakdown por nome)
+  2. Analisar: tarefas muito complexas? Pouco claras?
+  3. Tempo médio de conclusão: está > 60 dias? Quebrar em passos menores
+  4. Abandonamento > 20%? Talvez auto-activation (Bloco 2) ajudaria
+
+================================================================================
+  CRONOGRAMA DE AUDITORIA
+================================================================================
+
+MENSAL (Otto Ops — Dias 1-3 do mês)
+─────────────────────────────────
+  Dia 1:  Rodar queries das 3 métricas para o mês anterior
+  Dia 2:  Compilar em relatório automático
+  Dia 3:  Reunião com Head de CS + CSM leads
+          → Apresentar métricas vs targets
+          → Identificar CSMs abaixo da meta
+          → Planejar intervenções
+
+TRIMESTRAL (Fim do trimestre)
+────────────────────────────
+  → Análise de tendências de 3 meses
+  → Correlação: HSAI alto → AACR alto → PCR alto?
+  → Impacto real: ARR protegido? NPS melhorou? Churn caiu?
+
+SEMESTRAL (Junho, Dezembro)
+───────────────────────────
+  → Strategic Review: ROI do Bloco 1 + 2
+  → Feedback de CSMs: que alertas? que playbooks?
+  → Roadmap Bloco 3: automação completa? novos triggers?
+
+================================================================================
+  PAINEL DE AUDITORIA (Dashboard /cs-ops/audit)
+================================================================================
+
+LAYOUT 3-COLUNA
+────────────────
+Col 1:                    Col 2:                      Col 3:
+HSAI Score                AACR by Severity            PCR by Template
+(0-100 com trend)         (Cards coloridos)           (Tabela com rates)
+Histórico 6 meses         Alert type breakdown        Trend vs mês anterior
+Recomendações auto       Avg Hours to Resolve       Abandonment timeline
+
+FILTROS DISPONÍVEIS
+────────────────────
+  • Período: Last 30d / Trimestre / Customizado
+  • CSM: Filtrar por indivíduo
+  • Segmento: Indústria / MRO / Varejo
+  • Alert Type: Drill-down específico
+
+AÇÕES DISPONÍVEIS
+──────────────────
+  • Exportar Relatório: XLSX com breakdown
+  • Ajustar Targets: Reconfigurar thresholds
+  • Retraining Needed: Lista CSMs + casos estudo
+
+================================================================================
+  ALERTAS AUTOMÁTICOS PARA OTTO OPS
+================================================================================
+
+QUANDO ESCALALAR?
+──────────────────
+
+SE HSAI < 50% por 2 meses:
+  → Slack: "HSAI crítico — CSMs não confiam em health score v2"
+  → Ação: Agendar workshop de retraining
+
+SE AACR < 40% para alert type específico:
+  → Slack: "Alert type `X` com AACR baixa — remover ou revisar"
+  → Ação: PM + CS lead analisa trigger
+
+SE PCR < 40% para template específico:
+  → Slack: "Playbook `X` crítica — redesenho necessário"
+  → Ação: Remover ou restructure
+
+================================================================================
+  ROADMAP FUTURO (Bloco 3)
+================================================================================
+
+Q4 2026 — AUTOMAÇÃO COMPLETA
+──────────────────────────
+  • Health-based playbook trigger: critical → auto-inicia "Churn Recovery"
+  • Alert auto-remediation: silent > 30d → enviar check-in email
+  • Alert snooze: se AACR baixa → CSM pode snooze 30d
+
+Q1 2027 — SUCCESS METRICS UNIFICADAS
+──────────────────────────────────
+  • KPI Global: % contas "healthy" (alvo 70%)
+  • Correlação: HSAI+AACR+PCR altos → ARR protegido?
+  • ML Preditivo: qual métrica prediz renovação com 90% acurácia?
+
+================================================================================
+  CHECKLIST DE SAÚDE
+================================================================================
+
+TRIPÉ DE VALIDAÇÃO (Todos em Verde = Sucesso)
+──────────────────────────────────────────────
+
+  ✅ HSAI ≥ 80%    → CSMs confiam e agem
+  ✅ AACR ≥ 70%    → Alertas convertem em ação
+  ✅ PCR ≥ 75%     → Playbooks são relevantes
+
+Se qualquer uma estiver vermelha:
+  → Há um gargalo claro
+  → Otto Ops recomenda ação corretiva específica
+  → Impacto: direto no ARR protegido e NPS
+
+================================================================================
+  DOCUMENTAÇÃO TÉCNICA
+================================================================================
+
+Arquivo Completo: docs/product/10-cs-ops-audit.md
+
+Contém:
+  • Fórmulas detalhadas com exemplos
+  • SQLs prontas para auditoria
+  • Dashboard mockup + filtros
+  • Ações corretivas por cenário
+  • Roadmap Bloco 3
+  • Implementação técnica (tabelas, APIs, views)
+
+================================================================================
+  CONTATOS & RESPONSABILIDADES
+================================================================================
+
+Otto Ops:
+  → Calcular 3 métricas mensalmente
+  → Alertar anomalias via Slack
+  → Propor ações corretivas
+
+Head de CS:
+  → Revisar relatório mensal
+  → Aprovar retraining
+  → Arbitrar remediação
+
+CSM Lead:
+  → Implementar coaching para CSMs abaixo da meta
+
+PM/PO:
+  → Revisar PCR baixa
+  → Redesenhar templates
+  → Revisar triggers de alerta
+
+================================================================================
+  PRÓXIMOS PASSOS (Dev)
+================================================================================
+
+1. Backend: Implementar endpoint GET /api/cs-ops/audit
+2. Frontend: Dashboard em /cs-ops/audit com 3 métricas
+3. Cron: Views SQL para cálculo automático de HSAI/AACR/PCR
+4. Alertas: Configurar notificações Slack para anomalias
+
+Status:
+  • Framework definido: ✅ (Sessão 21, 2026-05-07)
+  • SQLs prontas: ✅
+  • Dashboard: ⏳ (Próximo sprint)
+
+================================================================================
