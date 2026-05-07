@@ -12,6 +12,8 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
   const [tasks, setTasks] = useState(playbook?.tasks || [])
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<any>(null)
+  const [showTimeModal, setShowTimeModal] = useState(false)
+  const [timeSpentInput, setTimeSpentInput] = useState<string>('')
 
   const router = useRouter()
   const [isCompleting, setIsCompleting] = useState(false)
@@ -31,26 +33,43 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
       setSelectedTask(task)
       setShowEmailModal(true)
     } else {
-      await updateTaskStatus(task.id, 'completed')
+      // Para outras tarefas, pede time spent
+      setSelectedTask(task)
+      setTimeSpentInput('')
+      setShowTimeModal(true)
     }
   }
 
-  const updateTaskStatus = async (taskId: string, status: string) => {
-    try {
-      const { getSupabaseBrowserClient } = await import('@/lib/supabase/client')
-      const supabase = getSupabaseBrowserClient()
-      
-      const { error } = await supabase
-        .from('account_playbook_tasks')
-        .update({ 
-          status,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', taskId)
+  const handleCompleteWithTime = async () => {
+    const hours = timeSpentInput ? parseFloat(timeSpentInput) : undefined
+    if (hours !== undefined && (hours < 0 || hours > 24)) {
+      alert('Horas deve ser entre 0 e 24')
+      return
+    }
+    await updateTaskStatus(selectedTask.id, 'completed', hours)
+    setShowTimeModal(false)
+    setTimeSpentInput('')
+    setSelectedTask(null)
+  }
 
-      if (error) throw error
-      
-      setTasks(tasks.map((t: any) => t.id === taskId ? { ...t, status } : t))
+  const updateTaskStatus = async (taskId: string, status: string, timeSpentHours?: number) => {
+    try {
+      const res = await fetch(`/api/account-playbooks/${playbook.id}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          time_spent_hours: timeSpentHours || null,
+        })
+      })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || 'Falha ao atualizar task')
+      }
+
+      const updatedTask = await res.json()
+      setTasks(tasks.map((t: any) => t.id === taskId ? updatedTask : t))
     } catch (err) {
       console.error('Erro ao atualizar task:', err)
     }
@@ -168,8 +187,18 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold truncate">{task.task?.title}</span>
+                  {task.task?.assigned_role && (
+                    <Badge variant="secondary" className="text-[9px] py-0.5">
+                      {task.task.assigned_role}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5">{task.task?.description}</p>
+                {task.time_spent_hours && (
+                  <p className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-1">
+                    ⏱️ {task.time_spent_hours}h gastos
+                  </p>
+                )}
               </div>
               <div className="shrink-0">
                 {getTaskIcon(task.task?.task_type)}
@@ -221,6 +250,49 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
                   className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-colors"
                 >
                   Disparar E-mail <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showTimeModal && selectedTask && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-sm bg-white dark:bg-slate-950 shadow-2xl border-border animate-in zoom-in-95">
+            <div className="p-6">
+              <h3 className="text-base font-black mb-4 text-foreground">Quantas horas você gastou?</h3>
+
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">{selectedTask.task?.title}</p>
+                <div>
+                  <label className="text-xs font-bold mb-2 block">Horas (0-24)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    value={timeSpentInput}
+                    onChange={(e) => setTimeSpentInput(e.target.value)}
+                    placeholder="Ex: 2.5"
+                    className="w-full bg-muted/30 border border-border rounded-lg p-2 text-sm focus:outline-none text-foreground"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowTimeModal(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold hover:bg-accent/10 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCompleteWithTime}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-colors"
+                >
+                  Concluir <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

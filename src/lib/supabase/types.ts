@@ -433,6 +433,10 @@ export type PlaybookTask = {
   task_type: 'manual' | 'email' | 'meeting' | 'review'
   action_payload: Record<string, any> | null
   created_at: string
+  assigned_role?: 'csm' | 'manager' | 'ops' | null
+  due_days_from_start?: number | null
+  estimated_hours?: number | null
+  feature_tags?: string[] | null
 }
 
 export type AccountPlaybook = {
@@ -445,6 +449,16 @@ export type AccountPlaybook = {
   csm_owner_id: string | null
   template?: PlaybookTemplate
   tasks?: AccountPlaybookTask[]
+  expected_end_date?: string | null
+  objective?: string | null
+  success_criteria?: string | null
+}
+
+export type PlaybookComment = {
+  author_id: string
+  author_name: string
+  text: string
+  created_at: string
 }
 
 export type AccountPlaybookTask = {
@@ -455,6 +469,11 @@ export type AccountPlaybookTask = {
   completed_at: string | null
   notes: string | null
   created_at: string
+  assigned_to?: string | null
+  due_date?: string | null
+  completed_by?: string | null
+  comments?: PlaybookComment[] | null
+  time_spent_hours?: number | null
 }
 
 // Proactive Alerts Types (F3-02)

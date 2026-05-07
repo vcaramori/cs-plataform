@@ -32,6 +32,8 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
   const [isSaving, setIsSaving] = useState(false)
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
   const [tasks, setTasks] = useState<any[]>([])
+  const [newComment, setNewComment] = useState<string>('')
+  const [addingCommentTo, setAddingCommentTo] = useState<string | null>(null)
 
   useEffect(() => {
     if (playbook) {
@@ -85,6 +87,36 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
       toast.error('Erro ao salvar alterações')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleAddComment = async (taskId: string) => {
+    if (!newComment.trim()) return
+    try {
+      const res = await fetch(
+        `/api/account-playbooks/${playbook.id}/tasks/${taskId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comment: newComment }),
+        }
+      )
+
+      if (!res.ok) throw new Error('Failed to add comment')
+
+      const updatedTask = await res.json()
+      const taskIndex = tasks.findIndex((t) => t.id === taskId)
+      if (taskIndex >= 0) {
+        const newTasks = [...tasks]
+        newTasks[taskIndex] = updatedTask
+        setTasks(newTasks)
+      }
+
+      setNewComment('')
+      setAddingCommentTo(null)
+      toast.success('Comentário adicionado')
+    } catch (err) {
+      toast.error('Erro ao adicionar comentário')
     }
   }
 
@@ -157,6 +189,21 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
               </p>
             </div>
           </div>
+
+          {/* Objetivo (if exists) */}
+          {playbook.objective && (
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 p-6 rounded-2xl border border-emerald-200 dark:border-emerald-500/20 space-y-2">
+              <p className="flex items-center gap-2 text-[9px] text-emerald-600 dark:text-emerald-400 uppercase font-black tracking-[0.2em] ml-1">
+                 <Target className="w-3.5 h-3.5" /> Objetivo
+              </p>
+              <p className="text-[#2d3558] dark:text-white text-sm font-medium pl-1">{playbook.objective}</p>
+              {playbook.success_criteria && (
+                <p className="text-[9px] text-slate-500 dark:text-slate-400 pl-1 mt-2">
+                  <strong>Critério de Sucesso:</strong> {playbook.success_criteria}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Activity Timeline */}
           <div className="space-y-6">
@@ -247,6 +294,71 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
                           <p className="text-[10px] text-slate-500 dark:text-slate-400 italic leading-relaxed">
                             Interação de e-mail enviada automaticamente como parte desta jornada estratégica.
                           </p>
+                        </div>
+                      )}
+
+                      {/* Time Spent and Comments */}
+                      {task.completed_at && (
+                        <div className="mt-4 space-y-3">
+                          {task.time_spent_hours && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="font-semibold text-slate-600 dark:text-slate-300">{task.time_spent_hours}h gastos</span>
+                            </div>
+                          )}
+
+                          {/* Comments Thread */}
+                          {task.comments && task.comments.length > 0 && (
+                            <div className="bg-slate-900/5 dark:bg-white/5 rounded-lg p-3 space-y-2">
+                              {task.comments.map((comment: any, idx: number) => (
+                                <div key={idx} className="text-[9px]">
+                                  <div className="font-bold text-slate-600 dark:text-slate-300">{comment.author_name}</div>
+                                  <div className="text-slate-500 dark:text-slate-400 italic">{comment.text}</div>
+                                  <div className="text-[8px] text-slate-400 mt-1">{new Date(comment.created_at).toLocaleString('pt-BR')}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add Comment */}
+                          {!isEditing && (
+                            <div className="mt-2">
+                              {addingCommentTo === task.id ? (
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Adicionar comentário..."
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-[9px] focus:outline-none"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleAddComment(task.id)}
+                                    className="bg-emerald-500 text-white px-2 py-1 rounded text-[9px] font-bold hover:bg-emerald-600"
+                                  >
+                                    +
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setAddingCommentTo(null)
+                                      setNewComment('')
+                                    }}
+                                    className="text-slate-400 px-2 py-1 text-[9px]"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setAddingCommentTo(task.id)}
+                                  className="text-[9px] text-emerald-600 dark:text-emerald-400 hover:underline"
+                                >
+                                  💬 Adicionar comentário
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -5,6 +5,8 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 const UpdatePlaybookTaskSchema = z.object({
   status: z.enum(['pending', 'completed', 'skipped']),
   notes: z.string().optional(),
+  time_spent_hours: z.number().positive().max(24).optional(),
+  comment: z.string().max(500).optional(),
 })
 
 export async function PATCH(
@@ -24,7 +26,7 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { status, notes } = parsed.data
+  const { status, notes, time_spent_hours, comment } = parsed.data
 
   // Get the playbook task to validate ownership
   const { data: task, error: taskErr } = await supabase
@@ -52,14 +54,43 @@ export async function PATCH(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // Build update object
+  const updateData: any = {
+    status,
+    notes: notes || null,
+    completed_at: status === 'completed' ? new Date().toISOString() : null,
+  }
+
+  if (time_spent_hours !== undefined) {
+    updateData.time_spent_hours = time_spent_hours || null
+  }
+
+  if (status === 'completed') {
+    updateData.completed_by = user.id
+  }
+
+  // Handle comment: fetch current comments, append new one if provided
+  if (comment) {
+    const { data: currentTask } = await supabase
+      .from('account_playbook_tasks')
+      .select('comments')
+      .eq('id', taskId)
+      .single()
+
+    const currentComments = currentTask?.comments || []
+    const newComment = {
+      author_id: user.id,
+      author_name: user.email?.split('@')[0] || 'Unknown',
+      text: comment,
+      created_at: new Date().toISOString(),
+    }
+    updateData.comments = [...currentComments, newComment]
+  }
+
   // Update the task
   const { data: updatedTask, error: updateErr } = await supabase
     .from('account_playbook_tasks')
-    .update({
-      status,
-      notes: notes || null,
-      completed_at: status === 'completed' ? new Date().toISOString() : null,
-    })
+    .update(updateData)
     .eq('id', taskId)
     .select()
     .single()
