@@ -840,7 +840,167 @@ Cada alerta armazena `metadata` JSON com detalhes operacionais:
 
 ---
 
-## 2.7 Changelog Accounts (F2-02 até Presente)
+---
+
+## 2.7 Success Plans (F3-03)
+
+**Visão Geral:**
+
+Feature de compartilhamento de planos de sucesso com clientes. CSMs criam metas com títulos, descrições e datas-alvo. Ao compartilhar, gera link público (via UUID token) que clientes podem visualizar sem autenticação.
+
+### 2.7.1 Tipos de Dados
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `SuccessPlan.id` | UUID | PK |
+| `SuccessPlan.account_id` | UUID | FK para accounts |
+| `SuccessPlan.title` | text | Nome do plano (ex: "Plano de Sucesso 2026") |
+| `SuccessPlan.shared_token` | UUID UNIQUE | Token público para compartilhamento |
+| `SuccessPlan.created_by` | UUID | CSM que criou |
+| `SuccessPlan.created_at`, `.updated_at`, `.deleted_at` | timestamptz | Timestamps (soft-delete) |
+| `SuccessPlanGoal.id` | UUID | PK |
+| `SuccessPlanGoal.plan_id` | UUID | FK para success_plans |
+| `SuccessPlanGoal.title` | text | Nome da meta |
+| `SuccessPlanGoal.description` | text | Descrição opcional |
+| `SuccessPlanGoal.target_date` | date | Data-alvo opcional |
+| `SuccessPlanGoal.status` | enum | `pending \| ongoing \| completed \| delayed` |
+| `SuccessPlanGoal.completed_at` | timestamptz | Quando foi marcado como completo |
+
+### 2.7.2 Fluxo de Criação
+
+```
+CSM abre /accounts/[id]/success-plan
+    ↓
+Clica "Adicionar Meta"
+    ↓
+Preenche: título, descrição (opt), data (opt)
+    ↓
+POST /api/accounts/[id]/success-plans/goals
+    ↓
+Backend:
+  - Valida ownership (CSM = csm_owner_id)
+  - Busca SuccessPlan ativo (deleted_at IS NULL)
+  - Se não existe: cria com título default "Plano de Sucesso - 2026"
+  - Insere goal com status 'pending'
+    ↓
+Frontend: refetch goals, mostra na lista com Badge "Pendente"
+```
+
+### 2.7.3 Fluxo de Compartilhamento
+
+```
+CSM vê botão "Compartilhar Link"
+    ↓
+Clica → Copia URL para clipboard
+    ↓
+URL format: https://app.local/public/success-plans/[shared_token]
+    ↓
+CSM compartilha com cliente via e-mail, Teams, etc
+    ↓
+Cliente abre link → Vê SuccessPlanPage (read-only)
+    ↓
+Cliente vê:
+  - Título do plano
+  - Lista de metas com status
+  - Progress bar visual
+  - Data-alvo e completed_at de cada meta
+  - SEM botões de edição
+```
+
+### 2.7.4 Gerenciamento de Metas
+
+**Status Transitions:**
+
+- `pending` → `ongoing` → `completed` (ideal)
+- `pending` → `delayed` (se passou target_date)
+- Qualquer status → `pending` (reset)
+
+**Ações:**
+- ✏️ Editar: título, descrição, target_date, status
+- ✅ Marcar como Concluído: atualiza status + completed_at
+- 🗑️ Remover: soft-delete (set deleted_at)
+
+**UI Status Badge:**
+- 🔴 Pendente (gray)
+- 🔵 Em andamento (blue)
+- ✅ Concluído (green)
+- ⚠️ Atrasado (red)
+
+### 2.7.5 API Endpoints
+
+| Endpoint | Método | Auth | Descrição |
+|----------|--------|------|-----------|
+| `/api/accounts/[id]/success-plans` | GET | JWT (CSM) | Fetch plano + goals de uma conta |
+| `/api/accounts/[id]/success-plans/goals` | POST | JWT (CSM) | Criar meta (auto-cria plano se necessário) |
+| `/api/accounts/[id]/success-plans/goals/[goalId]` | PATCH | JWT (CSM) | Atualizar meta |
+| `/api/accounts/[id]/success-plans/goals/[goalId]` | DELETE | JWT (CSM) | Soft-delete meta |
+| `/api/public/success-plans/[token]` | GET | Public | View-only (sem auth, usa token) |
+
+### 2.7.6 Páginas
+
+| Rota | Componente | Descrição |
+|------|-----------|-----------|
+| `/accounts/[id]/success-plan` | Client Page | CSM edita plano + goals |
+| `/public/success-plans/[token]` | Server Page | Cliente vê plano (read-only) |
+
+**CSM Page Features:**
+- Formulário em card: input título, textarea descrição, input date
+- Lista de goals com cards coloridos por status
+- Botões: ✅ Concluído, 🗑️ Remover, 📋 Copiar link
+- React Query polling: 30s refetch automático
+- Loader states + toast notifications (sonner)
+
+**Public Page Features:**
+- Header com título + progress %
+- Progress bar visual com cor verde
+- Cards por meta com ícone de status
+- Read-only (sem forms, sem buttons de editar)
+- Responsive mobile-friendly
+- Sem navbar, sem auth, apenas visualização
+
+### 2.7.7 Segurança (RLS)
+
+- CSM SELECT/INSERT/UPDATE goals: apenas de contas que gerencia
+- Public endpoint: SEM auth, usa token UUID como "segurança por obscuridade" (gênero de link compartilhado)
+- Buscas filtram `deleted_at IS NULL` sempre
+
+### 2.7.8 Performance & Indices
+
+- `idx_success_plans_account_id`: Query por conta (comum)
+- `idx_success_plans_shared_token`: Lookup público por token
+- `idx_success_plan_goals_plan_id`: Goals de um plano
+- `idx_success_plan_goals_status`: Filtrar por status
+- Todos com `WHERE deleted_at IS NULL` para soft-delete
+
+### 2.7.9 Auto-Create Plan
+
+Quando CSM cria a **primeira meta** de uma conta:
+- Sistema verifica se SuccessPlan existe (deleted_at IS NULL)
+- Se não existe: insere automáticamente com:
+  - `title`: `"Plano de Sucesso - " + currentYear()`
+  - `account_id`: conta atual
+  - `created_by`: CSM autenticado
+  - `shared_token`: gen_random_uuid()
+
+### 2.7.10 Soft-Delete
+
+Todas as queries de leitura filtram `deleted_at IS NULL`. Permite:
+- ✅ Auditoria: histórico preservado
+- ✅ Recover: pode reativar se necessário (futura feature)
+- ✅ GDPR: marcar como deletado sem destruir
+
+### 2.7.11 Roadmap Futuro (Pós F3-03)
+
+- [ ] Automação: Criar plano via playbook trigger
+- [ ] Compartilhar: Múltiplos destinatários (array de e-mails)
+- [ ] Sync: Atualizar status via webhook do cliente
+- [ ] Template: Salvar planos como templates para reutilizar
+- [ ] Métricas: Taxa de conclusão, dias até conclusão média
+- [ ] Notificações: E-mail quando meta completada (pro cliente)
+
+---
+
+## 2.8 Changelog Accounts (F2-02 até Presente)
 
 | Data | Feature |
 |------|---------|
@@ -849,3 +1009,4 @@ Cada alerta armazena `metadata` JSON com detalhes operacionais:
 | Mai/2026 | F2-03: Filtros dinâmicos + 4 segmentos padrão |
 | Mai/2026 | F3-01: Playbooks MVP + manual trigger |
 | Mai/2026 | F3-02: Motor de Alertas Proativos (6 tipos + cron diário) |
+| Mai/2026 | F3-03: Success Plans com compartilhamento público via UUID token |

@@ -595,6 +595,75 @@ Cada alerta armazena contexto em `metadata` para ações futuras:
 
 ---
 
+## F3-03: Success Plans MVP com Compartilhamento Público
+
+**Status:** Implementado ✅
+
+Sistema MVP para CSMs criarem e compartilharem planos de sucesso com clientes via link público. Suporta CRUD de metas com tracking de progresso.
+
+**Tipos & Estrutura:**
+
+- `SuccessPlan`: Cabeçalho do plano (título, token UUID para compartilhamento, criador, timestamps)
+- `SuccessPlanGoal`: Meta individual (título, descrição, data alvo, status, completed_at)
+- Status goals: `pending | ongoing | completed | delayed`
+
+**APIs REST:**
+
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| GET | `/api/accounts/[id]/success-plans` | JWT (CSM) | Fetch plano + goals de uma conta |
+| POST | `/api/accounts/[id]/success-plans/goals` | JWT (CSM) | Criar nova meta (cria plano se não existe) |
+| PATCH | `/api/accounts/[id]/success-plans/goals/[goalId]` | JWT (CSM) | Atualizar meta (status, título, descrição, data) |
+| DELETE | `/api/accounts/[id]/success-plans/goals/[goalId]` | JWT (CSM) | Soft-delete meta (set `deleted_at`) |
+| GET | `/api/public/success-plans/[token]` | Public (No Auth) | Retorna plano + goals pelo token UUID |
+
+**RLS:**
+- CSM cria/vê/edita só planos de suas contas (`csm_owner_id = auth.uid()`)
+- Public endpoint não requer auth, usa token UUID como "senha pública"
+
+**UI Componentes:**
+
+**CSM Page:** `/accounts/[id]/success-plan`
+- Formulário de nova meta (título, descrição, data)
+- Lista de metas com cards: status badge, descrição, data-alvo, completed_at
+- Botões: Marcar como Concluído, Remover meta
+- Botão "Compartilhar Link" → Copia URL pública para clipboard
+- Query polling: React Query com 30s refetch
+- Estados: loading, error, empty (sem metas)
+
+**Public Page:** `/public/success-plans/[token]`
+- Read-only view do plano (sem edit)
+- Header com progresso: X concluídas / Y total
+- Progress bar visual (%) com cor verde
+- Cards de metas com ícones por status
+- Sem navbar, sem auth, apenas visualização
+- Responsive mobile-friendly com max-width container
+
+**Soft-Delete Pattern:**
+- Migrations têm coluna `deleted_at`
+- Queries filtram `WHERE deleted_at IS NULL`
+- Índices: `WHERE deleted_at IS NULL` para performance
+- Histórico preservado para auditoria
+
+**Auto-Create Plan:**
+- Ao criar primeiro goal, plano é auto-criado se não existir
+- Título default: `Plano de Sucesso - 2026` (ano corrente)
+
+**Metadados:**
+- `shared_token`: UUID único por plano (público, não secreto)
+- `created_by`: CSM que criou
+- `completed_at` em goals: Timestamp quando marcado como completo
+
+**Índices:**
+- `idx_success_plans_account_id`, `idx_success_plans_shared_token`: Lookups rápidos
+- `idx_success_plan_goals_plan_id`, `idx_success_plan_goals_status`: Filtros
+- Todos com `WHERE deleted_at IS NULL` para soft-delete
+
+**Migrations:**
+- `supabase/migrations/031_f3_03_success_plans.sql`: Tabelas, enums (status), índices, RLS
+
+---
+
 ## LLM Gateway e Modo Exclusivo (Gemini First)
 
 O gateway (`src/lib/llm/gateway.ts`) foi migrado para o SDK oficial `@google/genai`, priorizando a família Gemini 2.5 para máxima performance e estabilidade. O sistema agora opera em **Modo Exclusivo** (Gemini), com fallbacks desativados para validação da camada de inteligência.

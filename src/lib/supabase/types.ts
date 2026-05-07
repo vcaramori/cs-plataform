@@ -487,4 +487,35 @@ export type AlertCheckResult = {
   metadata: Record<string, any>
 } | null
 
+// Success Plans Types (F3-03)
+export type SuccessPlanGoalStatus = 'pending' | 'ongoing' | 'completed' | 'delayed'
+
+export type SuccessPlan = {
+  id: string
+  account_id: string
+  title: string
+  shared_token: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type SuccessPlanGoal = {
+  id: string
+  plan_id: string
+  title: string
+  description: string | null
+  target_date: string | null
+  status: SuccessPlanGoalStatus
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type SuccessPlanWithGoals = SuccessPlan & {
+  goals: SuccessPlanGoal[]
+}
+
 export type Database = any
