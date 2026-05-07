@@ -139,18 +139,31 @@ Separador `h-px` entre as linhas.
 
 ### 2.3.2 AccountUnifiedTimeline
 
-Timeline unificada de interações (estratégicas) + esforço (operacional).
+Timeline unificada de interações (estratégicas) + esforço (operacional) + **eventos de contrato** (F2-01-A).
 
 | Elemento | Valor |
 |----------|-------|
-| Ícone | `w-8 h-8 rounded-xl` (compacto) |
+| Ícone | `w-8 h-3.5 rounded-xl` (compacto) |
 | Rail | `left-8` (centro do ícone: 16px padding + 16px) — `top-4 bottom-4` |
 | Gap ícone↔card | `gap-3` |
 | Card | `flex-1 min-w-0 overflow-hidden` — evita overflow de texto |
 | Título | `truncate` sem max-w fixo |
-| Itens exibidos | Máximo 10 (slice) |
-| Filtros | Feed Geral / Estratégia |
+| Itens exibidos | Máximo 15 (slice) |
+| Filtros | Feed Geral / Estratégia / Atendimento & NPS |
+| Tipos de eventos | `interaction`, `effort`, `ticket`, `nps`, **`contract_event`** |
 | Clique na Interação | Abre o `InteractionDetailModal` |
+| Clique em Contrato | Abre o `ContractDetailModal` |
+
+**Eventos de Contrato (F2-01-A):**
+- Ícone: `DollarSign` (indigo-500)
+- Sempre `isStrategic: true` — aparece em "Feed Geral" e "Estratégia"
+- Classificação de evento (`event_type`):
+  - `renewal`: renovation_date é hoje ou ontem
+  - `status_change`: status em `at-risk` ou `in-negotiation`
+  - `created`: padrão
+- Data exibida: `renewal_date` ou `created_at` (fallback)
+- Título: `Contrato: {description || service_type || 'N/A'}`
+- Status: badge com cor conforme `contract.status`
 
 ### 2.3.4 InteractionDetailModal (Reuniões Estratégicas)
 
@@ -161,6 +174,25 @@ Modal para visualização e edição das interações estratégicas registradas 
 | **Metadados** | Data da realização, com quem foi realizada (Contato/Stakeholder da conta). |
 | **Checklist** | Visualização de todo o checklist validado durante a reunião. |
 | **Edição** | Permitir edição dos apontamentos (campos e checklist) caso algo tenha sido registrado errado pelo assistente/CSM. |
+
+### 2.3.5 ContractDetailModal (F2-01-A — Contract Events)
+
+Modal read-only para visualização de detalhes de eventos de contrato na timeline. Clique em qualquer evento de contrato abre este modal.
+
+| Seção | Conteúdo |
+|-------|----------|
+| **Cabeçalho** | Ícone contrato + descrição + status (badge colorida) |
+| **Informações Financeiras** | MRR Base, Horas Contratadas (se > 0) |
+| **Timeline Contratual** | Data de Início, Data de Renovação + contador (T-minus, expirado, etc.) |
+| **Termos do Contrato** | Tipo (initial/additive/migration/renewal), Plano, Fidelidade, Multa Rescisória |
+| **Notas Estratégicas** | Campo `notes` em card expandido (se preenchido) |
+| **Descontos Progressivos** | Grid de descontos com label e valor (if any) |
+| **Ações** | Botão "Editar Contrato" abre `EditContractDialog` |
+
+**Comportamento:**
+- Modal read-only (sem edição direta, apenas visualização)
+- Ação principal: "Editar Contrato" delega para `EditContractDialog` existente
+- Fechar modal: clique fora, Escape, ou botão "Fechar"
 
 ### 2.3.3 AccountsTable (Dashboard)
 
@@ -188,6 +220,10 @@ Modal para visualização e edição das interações estratégicas registradas 
 | Editar health score manual | Clique no lápis mini (dentro do gauge) | Abre `HealthScoreEditModal` |
 | Ver raciocínio IA | Clique no ícone Info | Expande painel de reasoning |
 | Detalhar Interação | Clique em um item estratégico na timeline | Abre `InteractionDetailModal` para visualização/edição |
+| Visualizar Contrato | Clique em evento de contrato na timeline | Abre `ContractDetailModal` (read-only) |
+| Editar Contrato | Clique em "Editar Contrato" no `ContractDetailModal` | Abre `EditContractDialog` |
+| Filtrar por Estratégia | Clique em aba "Estratégia" | Mostra apenas interações + contratos (isStrategic=true) |
+| Filtrar por Atendimento | Clique em aba "Atendimento & NPS" | Mostra apenas tickets + NPS (exclui contratos) |
 
 ---
 
@@ -354,3 +390,6 @@ type Contract = {
 | Abr/2026 | NPS e SLA movidos para health grid (2ª linha dos mini-gauges, sempre visíveis) |
 | Abr/2026 | Timeline: ícone compacto (w-8), overflow-hidden no card, rail realinhado |
 | Abr/2026 | Layout global full-width (removido max-w-7xl do layout e max-w de formulários) |
+| Mai/2026 | **F2-01-A** — Contract Events Integration: eventos de contrato integrados à AccountUnifiedTimeline |
+| Mai/2026 | Novo componente `ContractDetailModal` para visualização de detalhes de contratos via timeline |
+| Mai/2026 | Contracts agora aparecem em "Feed Geral" e "Estratégia" (isStrategic=true), excludos de "Atendimento & NPS" |

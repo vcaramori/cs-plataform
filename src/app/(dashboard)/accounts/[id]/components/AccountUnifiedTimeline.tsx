@@ -13,7 +13,8 @@ import {
   Sparkles,
   Eye,
   Ticket as TicketIcon,
-  Star
+  Star,
+  DollarSign
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,7 @@ import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { NPSDetailModal } from './NPSDetailModal'
 import { PlaybookHistoryModal } from './PlaybookHistoryModal'
 import { InteractionDetailModal } from './InteractionDetailModal'
+import { ContractDetailModal } from './ContractDetailModal'
 
 interface Props {
   interactions: any[]
@@ -28,28 +30,64 @@ interface Props {
   tickets: any[]
   npsResponses: any[]
   playbooks: any[]
+  contracts?: any[]
   accounts: any[]
   accountName?: string
 }
 
-export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResponses, playbooks, accounts, accountName }: Props) {
+export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResponses, playbooks, contracts = [], accounts, accountName }: Props) {
   const [filter, setFilter] = useState<'all' | 'strategic' | 'atendimento'>('all')
   const [selectedEffort, setSelectedEffort] = useState<any>(null)
   const [selectedPlaybook, setSelectedPlaybook] = useState<any>(null)
   const [selectedNPS, setSelectedNPS] = useState<any>(null)
   const [selectedInteraction, setSelectedInteraction] = useState<any>(null)
+  const [selectedContract, setSelectedContract] = useState<any>(null)
   const router = useRouter()
 
+  // Função helper: determinar o tipo de evento de contrato
+  const determineContractEventType = (contract: any): string => {
+    if (!contract) return 'created'
+
+    // Se renewal_date é "hoje" ou "ontem"
+    if (contract.renewal_date) {
+      const renewalDate = new Date(contract.renewal_date)
+      const today = new Date()
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      if (renewalDate.toDateString() === today.toDateString() || renewalDate.toDateString() === yesterday.toDateString()) {
+        return 'renewal'
+      }
+    }
+
+    // Se status indica mudança recente (at-risk, in-negotiation)
+    if (contract.status === 'at-risk' || contract.status === 'in-negotiation') {
+      return 'status_change'
+    }
+
+    // Padrão: criado
+    return 'created'
+  }
+
   const combined = [
-    ...interactions.map(i => ({ 
-      ...i, 
+    ...interactions.map(i => ({
+      ...i,
       itemType: i.type === 'playbook' ? 'playbook' : 'interaction',
-      date: i.date || i.created_at, 
-      isStrategic: i.type !== 'playbook' 
+      date: i.date || i.created_at,
+      isStrategic: i.type !== 'playbook'
     })),
     ...efforts.map(e => ({ ...e, itemType: 'effort', date: e.date, isStrategic: false })),
     ...tickets.map(t => ({ ...t, itemType: 'ticket', date: t.opened_at, isStrategic: false })),
-    ...npsResponses.map(n => ({ ...n, itemType: 'nps', date: n.responded_at || n.created_at, isStrategic: false }))
+    ...npsResponses.map(n => ({ ...n, itemType: 'nps', date: n.responded_at || n.created_at, isStrategic: false })),
+    ...contracts.map(c => ({
+      ...c,
+      itemType: 'contract_event',
+      date: c.renewal_date || c.created_at,
+      event_type: determineContractEventType(c),
+      isStrategic: true,
+      title: `Contrato: ${c.description || c.service_type || 'N/A'}`,
+      description: c.status
+    }))
   ].sort((a, b) => {
     const dateA = a.date ? new Date(a.date).getTime() : 0
     const dateB = b.date ? new Date(b.date).getTime() : 0
@@ -58,11 +96,12 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
 
   const filtered = combined.filter(item => {
     if (filter === 'strategic') return item.isStrategic
-    if (filter === 'atendimento') return item.itemType === 'ticket' || item.itemType === 'nps'
+    if (filter === 'atendimento') return (item.itemType === 'ticket' || item.itemType === 'nps') && item.itemType !== 'contract_event'
     return true
   })
 
   const getIcon = (item: any) => {
+    if (item.itemType === 'contract_event') return <DollarSign className="w-3.5 h-3.5 text-indigo-500" />
     if (item.itemType === 'ticket') return <TicketIcon className="w-3.5 h-3.5 text-plannera-demand" />
     if (item.itemType === 'nps') return <Star className="w-3.5 h-3.5 text-amber-500" />
     if (item.itemType === 'playbook') return <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
@@ -85,8 +124,8 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
         break
       case 'playbook':
         // Tentar encontrar o objeto completo do playbook nos playbooks da conta
-        const fullPlaybook = playbooks.find(p => 
-          p.id === item.id || 
+        const fullPlaybook = playbooks.find(p =>
+          p.id === item.id ||
           (item.metadata && p.id === item.metadata.playbook_id) ||
           p.template?.name === item.title
         )
@@ -94,6 +133,9 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
         break
       case 'interaction':
         setSelectedInteraction(item)
+        break
+      case 'contract_event':
+        setSelectedContract(item)
         break
       default:
         break
@@ -138,6 +180,7 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
             >
               <div className={cn(
                 "mt-1.5 flex items-center justify-center w-8 h-8 rounded-xl border bg-surface-background z-10 transition-all duration-300 shadow-lg flex-shrink-0 group-hover:scale-105",
+                item.itemType === 'contract_event' ? "border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)]" :
                 item.isStrategic ? "border-plannera-orange/30 shadow-[0_0_12px_rgba(247,148,30,0.15)]" :
                 item.itemType === 'playbook' ? "border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]" :
                 item.itemType === 'ticket' ? "border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]" :
@@ -147,11 +190,12 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                 {getIcon(item)}
               </div>
 
-              <Card 
+              <Card
                 onClick={() => handleItemClick(item)}
                 className={cn(
                   "flex-1 min-w-0 transition-all duration-300 relative overflow-hidden cursor-pointer hover:bg-muted/30 hover:scale-[1.01] active:scale-[0.99]",
-                  item.isStrategic && "ring-1 ring-plannera-orange/20",
+                  item.itemType === 'contract_event' && "ring-1 ring-indigo-500/20 bg-indigo-500/[0.02]",
+                  item.isStrategic && item.itemType !== 'contract_event' && "ring-1 ring-plannera-orange/20",
                   item.itemType === 'playbook' && "ring-1 ring-emerald-500/20 bg-emerald-500/[0.02]",
                   item.itemType === 'ticket' && "ring-1 ring-red-500/10",
                   item.itemType === 'nps' && "ring-1 ring-amber-500/10"
@@ -163,6 +207,7 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                       <span className="text-content-primary text-xs font-bold tracking-tight truncate">
                         {item.itemType === 'ticket' ? `Ticket: ${item.title}` :
                          item.itemType === 'nps' ? `Avaliação NPS: ${item.score}/10` :
+                         item.itemType === 'contract_event' ? item.title :
                          item.title || item.parsed_description}
                       </span>
                       {item.priority === 'critical' && (
@@ -196,9 +241,10 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
 
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] text-plannera-sop font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        <Eye className="w-3 h-3" /> 
-                        {item.itemType === 'ticket' ? 'Abrir Chamado' : 
+                        <Eye className="w-3 h-3" />
+                        {item.itemType === 'ticket' ? 'Abrir Chamado' :
                          item.itemType === 'effort' ? 'Editar Registro' :
+                         item.itemType === 'contract_event' ? 'Ver Contrato' :
                          'Ver Detalhes'}
                       </span>
                     </div>
@@ -238,6 +284,11 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
           router.refresh()
         }}
         accountName={accountName || accounts[0]?.name}
+      />
+
+      <ContractDetailModal
+        contract={selectedContract}
+        onOpenChange={(open) => !open && setSelectedContract(null)}
       />
     </div>
   )

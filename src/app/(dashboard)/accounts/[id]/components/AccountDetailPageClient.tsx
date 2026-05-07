@@ -189,6 +189,7 @@ export function AccountDetailPageClient({
               tickets={tickets}
               npsResponses={npsResponses}
               playbooks={playbooks}
+              contracts={contracts}
               accounts={[{ id, name: accountName }]}
               accountName={accountName}
             />

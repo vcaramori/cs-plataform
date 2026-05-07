@@ -136,7 +136,8 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 13 Suporte (F1-11 a F1-13) | Detecção de Duplicatas (cron + banner), Reabertura Manual (modal + endpoint), Formulário Público/Webhook (3 endpoints + email). | ✅ Concluída 2026-05-05 |
 | Sessão 14 Suporte (F1-14 a F1-16) | Fila com Capacidade (stats + sidebar), Atribuição Automática (cron 5min), Escalonamento SLA (cron hourly + Slack). | ✅ Concluída 2026-05-05 |
 | Sessão 15 Suporte (F1-18, F1-17, F1-19) | Auto-categorização (Gemini + sugestão), RAG Reply Suggestion (pgvector + contexto de tickets similares), Resumo do Ticket (cache 24h + regeneração). | ✅ Concluída 2026-05-05 |
-| Sessão 16 Suporte (F1-20 — Sentiment Trend) | Análise de sentimento por reply (Gemini), sparkline de tendência, timeline de sentimentos, detecção de tendência negativa, cache 24h. | ✅ Concluída 2026-05-05 |
+| Sessão 16 Suporte (F1-20 — Sentiment Trend) | Análise de sentimento por reply (Gemini), sparkline de sentimentos, timeline de sentimentos, detecção de tendência negativa, cache 24h. | ✅ Concluída 2026-05-05 |
+| Sessão 17 Accounts (F2-01-A — Contract Events) | Integração de eventos de contrato à AccountUnifiedTimeline com modal de detalhes, classificação por tipo de evento (renewal, status_change, created), filtros estratégicos. | ✅ Concluída 2026-05-07 |
 
 ### Scripts de Cron (Agendamento)
 
@@ -252,6 +253,34 @@ Gestão completa de contas. Cada logo possui:
 **Navegação de edição**: o ícone de lápis na tabela do dashboard e no cabeçalho da conta redirecionam para `/accounts/[id]/edit`, que carrega o formulário completo com todos os contratos e dados estruturados.
 
 **Header da conta**: exibe dois pills financeiros no canto direito (MRR e Renovação). O grid de saúde abaixo exibe duas linhas de indicadores — linha 1: Adoção | Suporte | Relacionamento; linha 2: NPS (score dos últimos 30 dias, `—` se sem respostas) | SLA (Ativo / Sem SLA conforme `sla_policies` do contrato ativo) | Score IA — todos sempre visíveis sem scroll. A linha do tempo usa ícones `w-8` com trilho alinhado ao centro e card com `overflow-hidden` para evitar overflow de texto.
+
+**Linha do Tempo Unificada (F2-01-A — Contract Events Integration):**
+
+A timeline esquerda da página de detalhe agora consolida **5 tipos de eventos** em ordem cronológica decrescente:
+1. **Interações** (reuniões estratégicas, QBRs, onboardings)
+2. **Esforço** (horas de CSM, preparação, análise, relatórios)
+3. **Tickets de Suporte** (abertos, em atendimento)
+4. **Respostas NPS** (feedback do cliente, scores)
+5. **Eventos de Contrato** (**novo** — F2-01-A)
+
+Eventos de contrato aparecem com ícone de dólar (indigo-500), sempre marcados como estratégicos (`isStrategic=true`). Classificação automática por tipo:
+- `renewal`: renovation_date é hoje ou ontem
+- `status_change`: status em `at-risk` ou `in-negotiation`
+- `created`: padrão para contratos novos ou sem mudanças recentes
+
+**Filtros na timeline:**
+- **Feed Geral**: todos os 5 tipos visíveis
+- **Estratégia**: apenas interações + contratos (isStrategic=true)
+- **Atendimento & NPS**: apenas tickets + NPS respostas (exclui contratos deliberadamente, pois são governança, não operacional)
+
+**Modal de detalhes de contrato (ContractDetailModal):**
+Clique em qualquer evento de contrato abre modal read-only com:
+- Informações financeiras (MRR Base, Horas Contratadas)
+- Timeline contratual (Data Início, Renovação com contador T-minus)
+- Termos (Tipo, Plano, Fidelidade, Multa Rescisória)
+- Notas estratégicas (se preenchidas)
+- Descontos progressivos (se houver)
+- Botão "Editar Contrato" que abre `EditContractDialog` existente
 
 ---
 
