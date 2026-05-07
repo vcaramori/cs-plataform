@@ -1,5 +1,7 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Target, CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react'
@@ -21,6 +23,9 @@ const statusConfig = {
 }
 
 export function SuccessPlan({ goals }: { goals: Goal[] }) {
+  const router = useRouter()
+  const params = useParams()
+  const accountId = params.id as string
   return (
     <div className="space-y-4">
       {goals.length === 0 ? (
@@ -86,10 +91,13 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
       )}
 
       {goals.length > 0 && (
-         <button className="w-full py-3 rounded-xl border border-border-divider bg-surface-background hover:bg-surface-card text-content-secondary hover:text-content-primary transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group">
-            Abrir Plano Completo
-            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-         </button>
+        <button
+          onClick={() => router.push(`/accounts/${accountId}/success-plan`)}
+          className="w-full py-3 rounded-xl border border-border-divider bg-surface-background hover:bg-surface-card text-content-secondary hover:text-content-primary transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group"
+        >
+          Abrir Plano Completo
+          <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+        </button>
       )}
     </div>
   )
