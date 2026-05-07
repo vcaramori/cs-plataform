@@ -3,6 +3,7 @@ import { Coffee } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
 import { EsforcoClient } from './components/EsforcoClient'
+import { AutoCheckInQueue } from './components/AutoCheckInQueue'
 
 export default async function EsforcoPage() {
   const supabase = await getSupabaseServerClient()
@@ -36,6 +37,8 @@ export default async function EsforcoPage() {
           Registro de produtividade indireta via I.A — Processamento autônomo de conta, tipo e duração.
         </p>
       </div>
+
+      <AutoCheckInQueue />
 
       <EsforcoClient
         accounts={accounts ?? []}

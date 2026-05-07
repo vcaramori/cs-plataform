@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Bell, X } from 'lucide-react'
+import { Bell, X, PlayCircle } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +36,8 @@ const severityConfig = {
 export function AlertCenter() {
   const [open, setOpen] = useState(false)
   const [resolving, setResolving] = useState<Set<string>>(new Set())
+  const [initiatingPlaybook, setInitiatingPlaybook] = useState<Set<string>>(new Set())
+  const router = useRouter()
 
   const { data: alerts = [], refetch } = useQuery({
     queryKey: ['proactive-alerts'],
@@ -76,6 +79,47 @@ export function AlertCenter() {
     }
   }
 
+  const handleInitiatePlaybook = async (alert: ProactiveAlert) => {
+    setInitiatingPlaybook(prev => new Set([...prev, alert.id]))
+
+    try {
+      const templateId = alert.metadata?.recommended_playbook_id || '11111111-1111-1111-1111-111111111111'
+
+      // Create the playbook
+      const playbookRes = await fetch(`/api/accounts/${alert.account_id}/playbooks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template_id: templateId })
+      })
+
+      if (!playbookRes.ok) {
+        throw new Error('Erro ao criar playbook')
+      }
+
+      // Resolve the alert
+      const resolveRes = await fetch(`/api/proactive-alerts/${alert.id}/resolve`, {
+        method: 'PATCH'
+      })
+
+      if (resolveRes.ok) {
+        toast.success('Playbook iniciado com sucesso!')
+        refetch()
+        setOpen(false)
+        router.push(`/accounts/${alert.account_id}`)
+      } else {
+        toast.error('Erro ao resolver alerta')
+      }
+    } catch (err) {
+      console.error('Erro ao iniciar playbook:', err)
+      toast.error('Erro ao iniciar playbook')
+      setInitiatingPlaybook(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(alert.id)
+        return newSet
+      })
+    }
+  }
+
   return (
     <>
       {/* Badge no navbar */}
@@ -107,6 +151,8 @@ export function AlertCenter() {
               alerts.map(alert => {
                 const config = severityConfig[alert.severity]
                 const isResolving = resolving.has(alert.id)
+                const isInitiatingPlaybook = initiatingPlaybook.has(alert.id)
+                const isPlaybookTrigger = alert.type === 'playbook_trigger'
 
                 return (
                   <Card key={alert.id} className={cn('p-4', config.bg)}>
@@ -128,15 +174,34 @@ export function AlertCenter() {
                             )}
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleResolve(alert.id)}
-                          disabled={isResolving}
-                          className="text-xs"
-                        >
-                          {isResolving ? '...' : <X className="w-4 h-4" />}
-                        </Button>
+                        {isPlaybookTrigger ? (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleInitiatePlaybook(alert)}
+                            disabled={isInitiatingPlaybook}
+                            className="text-xs flex items-center gap-1 whitespace-nowrap"
+                          >
+                            {isInitiatingPlaybook ? (
+                              <>... Iniciando</>
+                            ) : (
+                              <>
+                                <PlayCircle className="w-3.5 h-3.5" />
+                                Iniciar
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleResolve(alert.id)}
+                            disabled={isResolving}
+                            className="text-xs"
+                          >
+                            {isResolving ? '...' : <X className="w-4 h-4" />}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

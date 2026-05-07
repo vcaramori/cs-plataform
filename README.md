@@ -31,19 +31,26 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
-## 📋 Roadmap — Wave 4 & Wave 5 Refinement Complete
+## 📋 Roadmap — Wave 4 Execution Complete
 
-**Data:** 2026-05-07  
-**Status:** ✅ Refinement completo de Wave 4 (3 stories) + Wave 5 Pré-Condições (Epics 36, 37, 38)
+**Wave 4 Data:** 2026-05-07  
+**Status:** ✅ **Wave 4 CONCLUÍDO** (3 stories, 14 SP, Execução Paralela)
 
-### Wave 4 — Automação Proativa (Pronto para Execução)
+### Wave 4 — Automação Proativa ✅ COMPLETO
 
-| Story | Escopo | SP | Status |
-|-------|--------|----|----|
-| **23.1** | Playbook Governance (DB schema, UI update) | 3 | 📋 Refinado |
-| **14.2** | Playbook Trigger Alert (Health Score < 50 → Alert) | 3 | 📋 Refinado |
-| **15.1** | Auto Check-in por Silêncio (Gemini + Approval Queue) | 8 | 📋 Refinado |
-| | **TOTAL** | **14 SP** | **≈1.5 sprints** |
+| Story | Escopo | SP | Status | Arquivos |
+|-------|--------|----|----|---------|
+| **23.1** | Playbook Governance — Campos de auditoria e comentários em tasks | 3 | ✅ Implementado | migrations, PlaybookWidget, PlaybookHistoryModal, types |
+| **14.2** | Playbook Trigger Alert — Health < 50 → alerta acionável | 3 | ✅ Implementado | AlertService.checkPlaybookTrigger, AlertCenter "Iniciar Playbook", migration |
+| **15.1** | Auto Check-in por Silêncio — Geração Gemini + Fila de Aprovação | 8 | ✅ Implementado | 2 crons (generate/send), auto_checkin_queue table, AutoCheckInQueue UI, /esforço |
+| | **TOTAL** | **14 SP** | **✅ CONCLUÍDO** | **≈6 dias (paralelo)** |
+
+**📝 Detalhes de Implementação:**
+- **Story 23.1:** 5 migrations, 2 componentes UI atualizados, 9 novos campos de governança + comentários JSONB thread
+- **Story 14.2:** Novo método `checkPlaybookTrigger` em AlertService com idempotência, UI com botão "Iniciar Playbook" que cria playbook e resolve alerta
+- **Story 15.1:** `auto_checkin_queue` table com workflow de aprovação (4h), cron diário que gera emails via Gemini por tier de silêncio, cron de envio via SMTP/nodemailer, UI modal com aprovação/edição/cancelamento, logging em time_entries
+
+**Wave 5 — Pré-Condições Arquiteturais (Pronto para Execução)**
 
 ### Wave 5 — Pré-Condições Arquiteturais (Pronto para Execução)
 

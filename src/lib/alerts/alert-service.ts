@@ -257,7 +257,61 @@ export class AlertService {
     }
   }
 
-  // Avaliar todos os 6 tipos para uma conta
+  // 7. PLAYBOOK TRIGGER: health_score_v2 < 50 (Wave 4, Story 14.2)
+  async checkPlaybookTrigger(accountId: string): Promise<AlertCheckResult> {
+    // Get latest health score v2
+    const { data: healthData } = await this.supabase
+      .from('health_scores')
+      .select('health_score_v2')
+      .eq('account_id', accountId)
+      .order('evaluated_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!healthData || !healthData.health_score_v2 || healthData.health_score_v2 >= 50) {
+      return null
+    }
+
+    // Idempotency check 1: no active playbook
+    const { data: activePlaybook } = await this.supabase
+      .from('account_playbooks')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('status', 'in_progress')
+      .limit(1)
+
+    if (activePlaybook && activePlaybook.length > 0) {
+      return null
+    }
+
+    // Idempotency check 2: no existing unresolved playbook_trigger alert
+    const { data: existingAlert } = await this.supabase
+      .from('proactive_alerts')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('type', 'playbook_trigger')
+      .is('resolved_at', null)
+      .limit(1)
+
+    if (existingAlert && existingAlert.length > 0) {
+      return null
+    }
+
+    return {
+      type: 'playbook_trigger',
+      severity: 'warning',
+      message: `Health Score ${healthData.health_score_v2.toFixed(1)}% abaixo do limite. Ativar playbook de salvamento recomendado.`,
+      metadata: {
+        health_score_v2: healthData.health_score_v2,
+        threshold: 50,
+        recommended_playbook_id: '11111111-1111-1111-1111-111111111111',
+        recommended_playbook_name: 'Salvamento de Conta - Risco Alto',
+        recommendation: 'Iniciar playbook estruturado de salvamento de conta'
+      }
+    }
+  }
+
+  // Avaliar todos os 7 tipos para uma conta
   async evaluateAllAlerts(accountId: string, healthScore: number): Promise<AlertCheckResult[]> {
     const results: AlertCheckResult[] = [
       await this.checkChurnRisk(accountId, healthScore),
@@ -265,7 +319,8 @@ export class AlertService {
       await this.checkRenewalUpcoming(accountId),
       await this.checkAdoptionAnomaly(accountId),
       await this.checkExpansionSignal(accountId),
-      await this.checkNPSDetractorUnactioned(accountId)
+      await this.checkNPSDetractorUnactioned(accountId),
+      await this.checkPlaybookTrigger(accountId)
     ]
     return results.filter(r => r !== null)
   }

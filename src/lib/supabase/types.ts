@@ -484,6 +484,7 @@ export type AlertType =
   | 'adoption_anomaly'
   | 'expansion_signal'
   | 'nps_detractor_unactioned'
+  | 'playbook_trigger'
 
 export type AlertSeverity = 'critical' | 'warning' | 'info'
 
@@ -535,6 +536,25 @@ export type SuccessPlanGoal = {
 
 export type SuccessPlanWithGoals = SuccessPlan & {
   goals: SuccessPlanGoal[]
+}
+
+// Auto Check-in Types (F4-15.1)
+export type AutoCheckInQueueStatus = 'pending' | 'approved' | 'edited' | 'cancelled' | 'sent'
+
+export type AutoCheckInQueueItem = {
+  id: string
+  account_id: string
+  csm_id: string
+  generated_subject: string
+  generated_body: string
+  status: AutoCheckInQueueStatus
+  approval_deadline: string
+  approved_at: string | null
+  edited_subject: string | null
+  edited_body: string | null
+  sent_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 export type Database = any
