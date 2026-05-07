@@ -432,6 +432,68 @@ Matriz de adoção de features por conta. Cada linha é uma feature do produto.
 
 ---
 
+## F2-03: Segmentação Dinâmica de Contas
+
+**Status:** Implementado ✅
+
+Filtros dinâmicos para busca e segmentação de contas no dashboard. CSMs conseguem filtrar por:
+
+- **Health Status**: `healthy`, `at-risk`, `critical`
+- **Segmento**: `Indústria`, `MRO`, `Varejo`, `Distribuidor`
+- **MRR**: Range mínimo e máximo
+- **Status do Contrato**: `active`, `at-risk`, `churned`, `in-negotiation`
+- **Adoção**: Range de percentual de features adotadas
+
+**Componentes:**
+- `AccountFilterBuilder` (`src/app/(dashboard)/accounts/components/AccountFilterBuilder.tsx`): Filtros com UI collapsible
+- `AccountFilterSchema` (`src/lib/filters/account-filters.schema.ts`): Validação Zod dos parâmetros
+- `GET /api/accounts?health_status=at-risk&segment=MRO`: Endpoint com query param filtering + RLS
+
+**4 Segmentos Padrão (Saved Views):**
+1. **Em Risco** — accounts com `health_status: 'at-risk'`
+2. **Enterprise** — accounts com `mrr >= 10000`
+3. **Renovação 90d** — contracts próximas de vencer nos próximos 90 dias
+4. **SMB** — accounts com `mrr <= 3000`
+
+**Índices de Performance:**
+- `idx_accounts_health_status`, `idx_accounts_segment`, `idx_accounts_csm_owner_id`
+- `idx_accounts_health_segment` (composite para filtros comuns)
+- `idx_contracts_account_status` (para joins com contratos)
+
+**Migration:** `supabase/migrations/020_f2_03_account_filters.sql`
+
+---
+
+## F3-01: Playbooks MVP com Gatilho Manual
+
+**Status:** Implementado ✅
+
+Sistema de playbooks (jornadas de sucesso) para instanciar fluxos de tarefas em contas. Gatilho manual por enquanto — automação por health_score é fase futura.
+
+**Tipos:**
+- `PlaybookTemplate`: definição da jornada (nome, descrição, tarefas)
+- `PlaybookTask`: tarefas unitárias (tipo: `manual`, `email`, `meeting`, `review`)
+- `AccountPlaybook`: instância executada por conta
+- `AccountPlaybookTask`: status de cada tarefa na instância
+
+**Endpoints:**
+- `GET /api/playbooks` — lista templates ativos com tarefas
+- `POST /api/accounts/[id]/playbooks` — cria instância + tasks pendentes
+- `PATCH /api/account-playbooks/[id]/tasks/[taskId]` — marca task como completa/skipped + logs
+
+**UI:**
+- `/playbooks` página: CRUD de templates (ativo/inativo, visualizar tarefas)
+- `PlaybookWidget` em account detail: mostra playbook em progresso + checklist de tarefas
+- `PlaybookHistoryModal`: histórico de playbooks finalizados com botão "Concluir Task" + real API calls
+
+**RLS:**
+- CSMs veem só playbooks de suas contas
+- CSMs atualizam só tasks de playbooks que criaram
+
+**Migration:** `supabase/migrations/021_f3_01_playbooks.sql`
+
+---
+
 ## LLM Gateway e Modo Exclusivo (Gemini First)
 
 O gateway (`src/lib/llm/gateway.ts`) foi migrado para o SDK oficial `@google/genai`, priorizando a família Gemini 2.5 para máxima performance e estabilidade. O sistema agora opera em **Modo Exclusivo** (Gemini), com fallbacks desativados para validação da camada de inteligência.

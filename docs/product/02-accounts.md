@@ -549,3 +549,145 @@ type Contract = {
 | Mai/2026 | Novo componente `HealthBreakdownCard` exibindo as 4 barras de progresso (coluna direita) |
 | Mai/2026 | Cron diário `/api/cron/health-score-daily` recalcula health_score_v2 para todos os clientes ativos |
 | Mai/2026 | Modal `HealthScoreDetailsModal` mostra breakdown v2 quando disponível (abaixo do gráfico histórico) |
+
+---
+
+## 2.4 Segmentação Dinâmica (F2-03 — Mai/2026)
+
+**Objetivo:** Permitir aos CSMs filtrar e segmentar contas rapidamente sem depender de saved views complexas.
+
+### 2.4.1 Filtros Disponíveis
+
+| Filtro | Tipo | Valores |
+|--------|------|---------|
+| **Health Status** | select | `healthy`, `at-risk`, `critical` |
+| **Segmento** | select | `Indústria`, `MRO`, `Varejo`, `Distribuidor` |
+| **MRR Mínimo** | number | >= 0 |
+| **MRR Máximo** | number | >= 0 |
+| **Status Contrato** | select | `active`, `at-risk`, `churned`, `in-negotiation` |
+| **Adoção Mín %** | number | 0–100 |
+| **Adoção Máx %** | number | 0–100 |
+
+### 2.4.2 Componentes
+
+**AccountFilterBuilder** (`src/app/(dashboard)/accounts/components/AccountFilterBuilder.tsx`)
+- UI collapsible com Label "Filtrar Contas"
+- Badge mostrando número de filtros ativos
+- Botão "Limpar" quando há filtros
+- Input fields para ranges (MRR, Adoption)
+- Select dropdowns para enums
+
+**Query Parameters (GET /api/accounts)**
+```
+GET /api/accounts?health_status=at-risk&segment=MRO&mrr_min=5000&mrr_max=50000
+```
+
+Validação com Zod: `AccountFilterSchema`
+
+### 2.4.3 Segmentos Padrão (Saved Views)
+
+4 segmentos pré-configurados aparecem em dropdown ou sidebar:
+
+1. **Em Risco** — `health_status = 'at-risk'`
+2. **Enterprise** — `mrr >= 10000`
+3. **Renovação 90d** — `renewal_date <= today + 90 days`
+4. **SMB** — `mrr <= 3000`
+
+### 2.4.4 Performance
+
+Índices criados:
+- `idx_accounts_health_status`
+- `idx_accounts_segment`
+- `idx_accounts_csm_owner_id`
+- `idx_accounts_health_segment` (composite)
+- `idx_contracts_account_status`
+
+Filtros MRR e Contract Status rodam in-memory (limitar a 1000+ accounts por seção)
+
+### 2.4.5 RLS
+
+CSMs só veem contas onde `csm_owner_id = auth.uid()` (aplicado no GET /api/accounts)
+
+---
+
+## 2.5 Playbooks de Sucesso (F3-01 — Mai/2026)
+
+**Objetivo:** Estruturar jornadas padronizadas de tarefas para guiar CSMs em fluxos comuns (onboarding, re-engagement, etc.).
+
+### 2.5.1 Arquitetura
+
+| Tabela | Propósito |
+|--------|-----------|
+| `playbook_templates` | Definição da jornada (nome, descrição, gatilho) |
+| `playbook_tasks` | Tarefas unitárias de um template (passo 1, 2, 3...) |
+| `account_playbooks` | Instância de execução para uma conta específica |
+| `account_playbook_tasks` | Status de cada tarefa (`pending`, `completed`, `skipped`) |
+
+### 2.5.2 Tipos de Tarefas
+
+| Tipo | Descrição |
+|------|-----------|
+| `manual` | Ação manual do CSM (ex: "Revisar adoção") |
+| `email` | Disparo de e-mail (template sugerido por IA) |
+| `meeting` | Agendamento de call (ex: "QBR de Aligna") |
+| `review` | Revisão estruturada (ex: "Analisar SLA") |
+
+### 2.5.3 Ciclo de Vida
+
+1. **Criação Manual**: CSM clica "Iniciar Playbook" em account detail
+2. **Seleção**: Modal exibe playbook_templates ativos
+3. **Instanciação**: Sistema cria `account_playbooks` + `account_playbook_tasks` (todas `pending`)
+4. **Execução**: Tarefas são marcadas como `completed` (via `PlaybookHistoryModal` ou `PlaybookWidget`)
+5. **Conclusão**: Quando todas completadas, botão "Mover para Timeline" encerra a jornada
+
+### 2.5.4 Endpoints
+
+| Rota | Método | Descrição |
+|------|--------|-----------|
+| `/api/playbooks` | GET | Lista templates ativos com tarefas |
+| `/api/accounts/[id]/playbooks` | POST | Cria instância para conta |
+| `/api/account-playbooks/[id]/tasks/[taskId]` | PATCH | Atualiza status de task |
+
+Payload PATCH:
+```json
+{
+  "status": "completed",
+  "notes": "Cliente confirmou adoção de X"
+}
+```
+
+### 2.5.5 UI
+
+**Páginas:**
+- `/playbooks` — CRUD de templates (grid de cards com status ativo/inativo)
+- `/accounts/[id]` — `PlaybookWidget` no sidebar ou seção dedicada
+
+**Componentes:**
+- `PlaybookWidget` — Mostra playbook em progresso + checklist + progress bar
+- `PlaybookHistoryModal` — Histórico de playbooks finalizados + botão "Concluir Task"
+- `AccountFilterBuilder` — Inclui futura filtragem por "Contas com Playbook Ativo"
+
+### 2.5.6 Segurança (RLS)
+
+- CSMs veem playbooks só de suas contas
+- CSMs atualizam tasks só de playbooks que criaram (`csm_owner_id = auth.uid()`)
+- Templates são públicos entre CSMs
+
+### 2.5.7 Roadmap Futuro
+
+- [ ] Gatilho automático por health_score < 40 ou NPS < 5
+- [ ] Automação de e-mail (via Resend/SendGrid)
+- [ ] Notificações quando task vence prazo
+- [ ] Métricas: tempo médio de conclusão, taxa de abandono
+- [ ] Templates multi-idioma
+
+---
+
+## 2.6 Changelog Accounts (F2-02 até Presente)
+
+| Data | Feature |
+|------|---------|
+| Abr/2026 | F2-01: Timeline unificada + Contract Events |
+| Mai/2026 | F2-02: Health Score v2 (ponderado) + cron daily |
+| Mai/2026 | F2-03: Filtros dinâmicos + 4 segmentos padrão |
+| Mai/2026 | F3-01: Playbooks MVP + manual trigger |

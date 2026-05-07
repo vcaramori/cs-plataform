@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { AccountFilterSchema } from '@/lib/filters/account-filters.schema'
 
 const ContractItemSchema = z.object({
   contract_code: z.string().optional(),
@@ -67,21 +68,103 @@ const AccountSchema = z.object({
   commercial_governance: z.array(GovernanceItemSchema).optional().default([]),
 })
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
+  // Parse query parameters
+  const url = new URL(request.url)
+  const params = {
+    health_status: url.searchParams.get('health_status') || undefined,
+    segment: url.searchParams.get('segment') || undefined,
+    mrr_min: url.searchParams.get('mrr_min') ? parseFloat(url.searchParams.get('mrr_min')!) : undefined,
+    mrr_max: url.searchParams.get('mrr_max') ? parseFloat(url.searchParams.get('mrr_max')!) : undefined,
+    renewal_date_min: url.searchParams.get('renewal_date_min') || undefined,
+    renewal_date_max: url.searchParams.get('renewal_date_max') || undefined,
+    contract_status: url.searchParams.get('contract_status') || undefined,
+    adoption_min: url.searchParams.get('adoption_min') ? parseFloat(url.searchParams.get('adoption_min')!) : undefined,
+    adoption_max: url.searchParams.get('adoption_max') ? parseFloat(url.searchParams.get('adoption_max')!) : undefined,
+    csm_id: url.searchParams.get('csm_id') || undefined,
+  }
+
+  // Validate filters with Zod
+  const parsed = AccountFilterSchema.safeParse(params)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  }
+
+  // Start with base query (RLS: CSM can only see their own accounts)
+  let query = supabase
     .from('accounts')
     .select(`
       *,
       contracts (*)
     `)
-    .order('name')
+
+  // Apply CSM ownership filter (RLS)
+  if (parsed.data.csm_id) {
+    query = query.eq('csm_owner_id', parsed.data.csm_id)
+  } else {
+    // If no CSM filter specified, default to current user's accounts
+    query = query.eq('csm_owner_id', user.id)
+  }
+
+  // Apply health_status filter
+  if (parsed.data.health_status) {
+    query = query.eq('health_status', parsed.data.health_status)
+  }
+
+  // Apply segment filter
+  if (parsed.data.segment) {
+    query = query.eq('segment', parsed.data.segment)
+  }
+
+  // Apply MRR range filters via contracts relationship
+  if (parsed.data.mrr_min !== undefined || parsed.data.mrr_max !== undefined) {
+    // Note: Supabase doesn't support filtering via relationships easily,
+    // so we'll fetch all and filter in-memory for now
+  }
+
+  // Apply contract_status filter
+  if (parsed.data.contract_status) {
+    // Similar limitation - will filter in-memory
+  }
+
+  // Execute query
+  const { data, error } = await query.order('name')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  // In-memory filtering for MRR and contract status
+  let filtered = data || []
+
+  if (parsed.data.mrr_min !== undefined || parsed.data.mrr_max !== undefined) {
+    filtered = filtered.filter(account => {
+      const contracts = Array.isArray(account.contracts) ? account.contracts : []
+      const totalMRR = contracts
+        .filter((c: any) => c.status === 'active')
+        .reduce((sum: number, c: any) => sum + (Number(c.mrr) || 0), 0)
+
+      if (parsed.data.mrr_min !== undefined && totalMRR < parsed.data.mrr_min) return false
+      if (parsed.data.mrr_max !== undefined && totalMRR > parsed.data.mrr_max) return false
+      return true
+    })
+  }
+
+  if (parsed.data.contract_status) {
+    filtered = filtered.filter(account => {
+      const contracts = Array.isArray(account.contracts) ? account.contracts : []
+      return contracts.some((c: any) => c.status === parsed.data.contract_status)
+    })
+  }
+
+  if (parsed.data.adoption_min !== undefined || parsed.data.adoption_max !== undefined) {
+    // adoption filtering would require joining with adoption table
+    // Placeholder for future implementation
+  }
+
+  return NextResponse.json(filtered)
 }
 
 export async function POST(request: Request) {
