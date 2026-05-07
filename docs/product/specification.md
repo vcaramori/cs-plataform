@@ -20,6 +20,7 @@
 | 7 | Settings | Planos, Features, SLA, HH | [07-settings.md](07-settings.md) |
 | 8 | Usuários | Gestão de Equipe | [08-users.md](08-users.md) |
 | 9 | Login | Autenticação | [09-login.md](09-login.md) |
+| 10 | CS Ops Audit | Auditoria de Performance | [10-cs-ops-audit.md](10-cs-ops-audit.md) |
 
 ---
 

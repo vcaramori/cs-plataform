@@ -4,6 +4,33 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🤖 CS Agents Pack — Squad de Especialistas de IA
+
+**Status:** ✅ Installado e disponível para todas as LLMs do projeto (v1.0)
+
+8 agentes especializados em Customer Success (S&OP/S&OE/IBP):
+
+| Agente | Propósito | Quando Usar |
+|--------|-----------|------------|
+| **cs-manager** | Orquestrador multidimensional | Pergunta complexa, precisa de priorização |
+| **risk-watchdog** | Detecta sinais de churn | Suspeita de risco, antes de renovação |
+| **expansion-scout** | Caça oportunidades de expansão | Conta saudável em plateau, demanda nova |
+| **adoption-coach** | Diagnóstico de adoção/TTV | Onboarding, baixa ativação, bloqueadores |
+| **renewal-strategist** | Estratégia de renovação | A partir D-90 (90 dias antes vencimento) |
+| **qbr-architect** | Desenha QBRs/EBRs estruturados | Preparando reunião executiva |
+| **voc-analyst** | Sintetiza voz do cliente | Análise feedback, descoberta padrões |
+| **cs-ops-auditor** | Auditoria interna do time CS | Snapshot trimestral, análise gargalos |
+
+**📍 Localização:** `/cs-agents-pack/`  
+**📚 Documentação:**
+- [`AGENTS-REGISTRY.md`](AGENTS-REGISTRY.md) — Índice central de descoberta
+- [`CS-AGENTS-PACK-ORIENTATION.md`](CS-AGENTS-PACK-ORIENTATION.md) — Guia para o time
+- [`.claude/agents.json`](.claude/agents.json) — Configuração técnica
+
+**Como usar:** Chamar `@cs-manager` para qualquer pergunta multidimensional. Ele enquadra e roteia para especialistas. [Leia mais →](AGENTS-REGISTRY.md)
+
+---
+
 > **REGRA OBRIGATÓRIA PARA AGENTES DE IA E DESENVOLVEDORES**
 >
 > Este arquivo é a fonte de verdade do projeto. Toda vez que uma funcionalidade for adicionada, alterada ou removida — endpoint, tabela, módulo, componente, variável de ambiente, script, comportamento de sistema — este README **deve ser atualizado na mesma sessão/PR**, antes de considerar a tarefa concluída.
@@ -140,7 +167,8 @@ A plataforma utiliza uma **Fundação Semântica de Tokens** que garante consist
 | Sessão 17 Accounts (F2-01-A — Contract Events) | Integração de eventos de contrato à AccountUnifiedTimeline com modal de detalhes, classificação por tipo de evento (renewal, status_change, created), filtros estratégicos. | ✅ Concluída 2026-05-07 |
 | Sessão 18 Accounts (F2-01-B a F2-01-E) | Health Scores integration, Sort Toggle, Pagination, Semantic Search na timeline. | ✅ Concluída 2026-05-07 |
 | Sessão 19 Accounts (F2-01-F & F2-01-G) | Cleanup de eventos deletados (soft-delete filters), validação de data passing dos 6 types (interactions, efforts, tickets, npsResponses, contracts, healthScores). | ✅ Concluída 2026-05-07 |
-| **Sessão 20 Accounts (F2-02 — Health Score Ponderado)** | **Novo health_score_v2 com 4 dimensões (SLA 35%, NPS 30%, Adoption 25%, Relationship 10%); cron diário; HealthBreakdownCard component; modal com grid de dimensões.** | **✅ Concluída 2026-05-07** |
+| Sessão 20 Accounts (F2-02 — Health Score Ponderado) | Novo health_score_v2 com 4 dimensões (SLA 35%, NPS 30%, Adoption 25%, Relationship 10%); cron diário; HealthBreakdownCard component; modal com grid de dimensões. | ✅ Concluída 2026-05-07 |
+| Sessão 21 CS Ops Audit (Otto Ops Framework) | 3 métricas operacionais para auditoria de performance: HSAI (Health Score Accuracy Index), AACR (Alert-to-Action Conversion Rate), PCR (Playbook Completion Rate). Integra Bloco 1 e Bloco 2. | ✅ Concluída 2026-05-07 |
 
 ### Scripts de Cron (Agendamento)
 
