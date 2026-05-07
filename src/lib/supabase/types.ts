@@ -412,4 +412,49 @@ export type SupportSchedule = {
   created_at: string
 }
 
+// Playbook Types
+export type PlaybookTemplate = {
+  id: string
+  name: string
+  description: string | null
+  trigger_condition: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  tasks?: PlaybookTask[]
+}
+
+export type PlaybookTask = {
+  id: string
+  template_id: string
+  title: string
+  description: string | null
+  step_order: number
+  task_type: 'manual' | 'email' | 'meeting' | 'review'
+  action_payload: Record<string, any> | null
+  created_at: string
+}
+
+export type AccountPlaybook = {
+  id: string
+  account_id: string
+  template_id: string
+  status: 'in_progress' | 'completed' | 'cancelled'
+  started_at: string
+  completed_at: string | null
+  csm_owner_id: string | null
+  template?: PlaybookTemplate
+  tasks?: AccountPlaybookTask[]
+}
+
+export type AccountPlaybookTask = {
+  id: string
+  account_playbook_id: string
+  task_id: string
+  status: 'pending' | 'completed' | 'skipped'
+  completed_at: string | null
+  notes: string | null
+  created_at: string
+}
+
 export type Database = any

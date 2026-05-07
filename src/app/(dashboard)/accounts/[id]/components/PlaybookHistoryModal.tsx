@@ -24,11 +24,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface PlaybookHistoryModalProps {
   playbook: any | null
   onOpenChange: (open: boolean) => void
+  onTaskComplete?: () => void
 }
 
-export function PlaybookHistoryModal({ playbook, onOpenChange }: PlaybookHistoryModalProps) {
+export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }: PlaybookHistoryModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null)
   const [tasks, setTasks] = useState<any[]>([])
 
   useEffect(() => {
@@ -40,11 +42,43 @@ export function PlaybookHistoryModal({ playbook, onOpenChange }: PlaybookHistory
 
   if (!playbook) return null
 
+  const handleCompleteTask = async (taskId: string, taskIndex: number) => {
+    setUpdatingTaskId(taskId)
+    try {
+      const res = await fetch(
+        `/api/account-playbooks/${playbook.id}/tasks/${taskId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'completed' }),
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error('Failed to update task')
+      }
+
+      const updatedTask = await res.json()
+
+      // Update local state
+      const newTasks = [...tasks]
+      newTasks[taskIndex] = updatedTask
+      setTasks(newTasks)
+
+      toast.success('Task concluída com sucesso')
+      onTaskComplete?.()
+    } catch (err) {
+      console.error('Error updating task:', err)
+      toast.error('Erro ao atualizar task')
+    } finally {
+      setUpdatingTaskId(null)
+    }
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // Simulação de salvamento - no mundo real seria uma chamada de API
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Save edited descriptions (if needed in future)
       toast.success('Histórico do playbook atualizado')
       setIsEditing(false)
     } catch (err) {
@@ -160,7 +194,7 @@ export function PlaybookHistoryModal({ playbook, onOpenChange }: PlaybookHistory
                       isEditing ? "bg-white dark:bg-slate-900 border-emerald-500/30 shadow-lg" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800"
                     )}>
                       <div className="flex justify-between items-start mb-3">
-                        <div>
+                        <div className="flex-1">
                           <p className="text-sm font-black text-[#2d3558] dark:text-white tracking-tight">{task.task?.title || 'Tarefa do Playbook'}</p>
                           {task.completed_at && (
                             <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
@@ -168,9 +202,27 @@ export function PlaybookHistoryModal({ playbook, onOpenChange }: PlaybookHistory
                             </span>
                           )}
                         </div>
-                        {isEditing && (
-                           <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest border-emerald-500/20 text-emerald-500">Editável</Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {!task.completed_at && !isEditing && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCompleteTask(task.id, idx)}
+                              disabled={updatingTaskId === task.id}
+                              className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 text-[9px] font-bold uppercase tracking-widest h-7 px-2"
+                            >
+                              {updatingTaskId === task.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Check className="w-3 h-3 mr-1" />
+                              )}
+                              Concluir
+                            </Button>
+                          )}
+                          {isEditing && (
+                            <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest border-emerald-500/20 text-emerald-500">Editável</Badge>
+                          )}
+                        </div>
                       </div>
 
                       {isEditing ? (
