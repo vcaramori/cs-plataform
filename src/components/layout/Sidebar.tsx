@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { AlertCenter } from '@/components/alerts/AlertCenter'
 import { ThemeSelector } from './ThemeSelector'
 
 const navItems = [
@@ -258,7 +259,10 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
         "py-3 border-t border-border-divider bg-muted/20 transition-all duration-300",
         isCollapsed ? "px-2" : "px-4"
       )}>
-        <NotificationCenter isCollapsed={isCollapsed} />
+        <div className="flex items-center gap-2 justify-center">
+          <NotificationCenter isCollapsed={isCollapsed} />
+          <AlertCenter />
+        </div>
       </div>
 
       {/* ── Rodapé do usuário ─────────────────────────────── */}

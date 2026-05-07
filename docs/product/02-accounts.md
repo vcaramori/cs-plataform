@@ -683,7 +683,164 @@ Payload PATCH:
 
 ---
 
-## 2.6 Changelog Accounts (F2-02 até Presente)
+## 2.6 Alertas Proativos (F3-02)
+
+**Visão Geral:**
+
+Motor automático que monitora 6 indicadores-chave de saúde por conta diariamente. Alertas são categorizados por severidade e podem ser manualmente resolvidos. CSMs veem apenas alertas de suas contas (RLS).
+
+### 2.6.1 Os 6 Tipos de Alerta
+
+| Tipo | Severidade | Trigger | Recomendação |
+|------|-----------|---------|--------------|
+| **Churn Risk** | 🔴 Crítico | `health_score_v2 < 40` | Agendar QBR imediato com executivo |
+| **Silent Customer** | 🟡 Aviso | 21+ dias sem interação | Enviar check-in email ou agendar health check call |
+| **Renewal Upcoming** | 🔴 Crítico (≤30d) / 🟡 Aviso (≤60d) | Contrato vence em ≤ 60 dias | Revisar NPS, adoption, preparar renewal proposal |
+| **Adoption Anomaly** | 🟡 Aviso | Adoção cai > 20% vs mês anterior | Investigar qual feature foi desativada e por quê |
+| **Expansion Signal** | 🔵 Info | NPS ≥ 9 + MRR < mediana segmento | Mapear oportunidades de add-on ou upsell |
+| **NPS Detractor Unactioned** | 🟡 Aviso | Score ≤ 6 sem follow-up 7+ dias | Criar ticket de investigação ou QBR |
+
+### 2.6.2 Duração e Frequência
+
+- **Cron diário:** `POST /api/cron/proactive-alerts` executa a cada 24h
+- **Rate deduplicação:** 1 alerta por (account_id, type) por dia máximo
+- **Persistência:** Alertas resolvidos ficam na BD com `resolved_at IS NOT NULL`
+- **Histórico:** CSMs podem ver alertas resolvidos passados (filtrando `?resolved=true`)
+
+### 2.6.3 Fluxo Lifecycle do Alerta
+
+```
+1. Cron dispara a cada dia (configurable)
+   ↓
+2. AlertService avalia todos os 6 checks para cada conta
+   ↓
+3. Se alerta ativado:
+   - Verifica se já existe não-resolvido do mesmo tipo (mesmo dia)
+   - Se SIM: skip (deduplicação)
+   - Se NÃO: insere novo registro
+   ↓
+4. CSM vê alerta em AlertCenter (drawer lateral)
+   ↓
+5. CSM clica "Resolver" → PATCH /api/proactive-alerts/[id]/resolve
+   ↓
+6. Backend marca resolved_at = now() e updated_at = now()
+   ↓
+7. Alerta desaparece da lista de "pendentes" mas fica no histórico
+```
+
+### 2.6.4 Metadados de Contexto
+
+Cada alerta armazena `metadata` JSON com detalhes operacionais:
+
+```typescript
+// Exemplo Churn Risk
+{
+  "health_score": 35.5,
+  "threshold": 40,
+  "recommendation": "Agendar QBR imediato com executivo"
+}
+
+// Exemplo Silent Customer
+{
+  "days_silent": 25,
+  "last_interaction": "2025-04-12T10:30:00Z",
+  "recommendation": "Enviar check-in email ou agendar health check call"
+}
+
+// Exemplo Renewal Upcoming
+{
+  "renewal_date": "2025-06-15T00:00:00Z",
+  "days_until": 39,
+  "current_mrr": 5000,
+  "recommendation": "Revisar NPS, adoption gains, e preparar renewal proposal"
+}
+
+// Exemplo Adoption Anomaly
+{
+  "this_month_rate": "85.0",
+  "last_month_rate": "92.5",
+  "drop_percent": "8.1",
+  "features_disabled": 2,
+  "recommendation": "Analisar qual(is) feature(s) foram desativadas"
+}
+
+// Exemplo Expansion Signal
+{
+  "current_nps": "9.2",
+  "current_mrr": 5000,
+  "segment_median_mrr": 7500,
+  "expansion_potential": "2500.00",
+  "recommendation": "Mapear novas oportunidades (add-on, upsell) com cliente"
+}
+
+// Exemplo NPS Detractor Unactioned
+{
+  "nps_score": 4,
+  "responded_at": "2025-04-28T14:20:00Z",
+  "days_without_followup": 9,
+  "nps_response_id": "uuid-123",
+  "recommendation": "Criar ticket de investigação ou contatar cliente via QBR"
+}
+```
+
+### 2.6.5 UI: AlertCenter
+
+**Localização:** Sidebar (ao lado de NotificationCenter)
+- Ícone Bell com Badge de contagem de críticos
+- Dot pulsante 🔴 quando há alertas críticos
+- Clique abre Drawer lateral (width: 24rem)
+
+**Drawer Content:**
+- Título: "Alertas Proativos (N)"
+- Cards por alerta, coloridos por severidade
+- Cada card mostra: ícone (🔴/🟡/🔵), severidade, mensagem, recomendação
+- Botão "X" para resolver alerta
+- Loading state durante PATCH
+
+**Polling:** 30 segundos (React Query refetchInterval)
+
+### 2.6.6 APIs REST
+
+| Método | Endpoint | Query | Resposta |
+|--------|----------|-------|----------|
+| **GET** | `/api/proactive-alerts` | `?severity=critical&limit=50&resolved=false` | `ProactiveAlert[]` |
+| **PATCH** | `/api/proactive-alerts/[id]/resolve` | — | `ProactiveAlert` (atualizado) |
+
+**Parâmetros GET:**
+- `severity`: Filter por `critical`, `warning`, `info` (opcional)
+- `limit`: Máximo de alertas retornados (default: 50)
+- `resolved`: Se `true`, inclui alertas resolvidos (default: false = pendentes)
+
+**RLS:** CSM vê apenas alertas de contas que gerencia (`csm_owner_id = auth.uid()`)
+
+### 2.6.7 Segurança
+
+- ✅ RLS: CSM SELECT/UPDATE apenas suas contas
+- ✅ Cron usa `getSupabaseAdminClient()` para processar todas as contas
+- ✅ API requer `x-api-secret` header para validar cron
+- ✅ Buscas filtrando por `account_id IN (SELECT id FROM accounts WHERE csm_owner_id = auth.uid())`
+
+### 2.6.8 Performance & Índices
+
+- `idx_proactive_alerts_account_id`: Query por conta (common filter)
+- `idx_proactive_alerts_severity`: Filter por severidade
+- `idx_proactive_alerts_created_at`: Ordenação temporal DESC
+- `idx_proactive_alerts_type`: Agrupamento por tipo de alerta
+- `idx_proactive_alerts_resolved`: Query resolvidos vs pendentes
+- `proactive_alerts_daily_uniq`: UNIQUE INDEX `(account_id, type, DATE(created_at))` WHERE `resolved_at IS NULL`
+
+### 2.6.9 Roadmap Futuro (Pós F3-02)
+
+- [ ] Alertas por e-mail automático (Resend/SendGrid)
+- [ ] Webhooks para integração com Slack/Teams
+- [ ] Bulk resolve (marcar múltiplos como resolvidos)
+- [ ] Snooze alertas (adiar 3/7 dias)
+- [ ] Métricas: tempo médio de resolução, taxa de false positives
+- [ ] Custom thresholds por CSM ou account
+
+---
+
+## 2.7 Changelog Accounts (F2-02 até Presente)
 
 | Data | Feature |
 |------|---------|
@@ -691,3 +848,4 @@ Payload PATCH:
 | Mai/2026 | F2-02: Health Score v2 (ponderado) + cron daily |
 | Mai/2026 | F2-03: Filtros dinâmicos + 4 segmentos padrão |
 | Mai/2026 | F3-01: Playbooks MVP + manual trigger |
+| Mai/2026 | F3-02: Motor de Alertas Proativos (6 tipos + cron diário) |

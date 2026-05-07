@@ -457,4 +457,34 @@ export type AccountPlaybookTask = {
   created_at: string
 }
 
+// Proactive Alerts Types (F3-02)
+export type AlertType =
+  | 'churn_risk'
+  | 'silent_customer'
+  | 'renewal_upcoming'
+  | 'adoption_anomaly'
+  | 'expansion_signal'
+  | 'nps_detractor_unactioned'
+
+export type AlertSeverity = 'critical' | 'warning' | 'info'
+
+export type ProactiveAlert = {
+  id: string
+  account_id: string
+  type: AlertType
+  severity: AlertSeverity
+  message: string
+  metadata: Record<string, any>
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type AlertCheckResult = {
+  type: AlertType
+  severity: AlertSeverity
+  message: string
+  metadata: Record<string, any>
+} | null
+
 export type Database = any

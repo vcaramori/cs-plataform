@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NotificationCenter } from '../notifications/NotificationCenter'
+import { AlertCenter } from '../alerts/AlertCenter'
 
 interface Props {
   user: User

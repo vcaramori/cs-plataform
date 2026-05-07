@@ -494,6 +494,107 @@ Sistema de playbooks (jornadas de sucesso) para instanciar fluxos de tarefas em 
 
 ---
 
+## F3-02: Motor de Alertas Proativos
+
+**Status:** Implementado ✅
+
+Sistema de alertas automáticos que monitora 6 indicadores-chave de saúde de conta diariamente. Cada CSM vê alertas apenas das contas que gerencia. Alertas podem ser manualmente resolvidos.
+
+**6 Tipos de Alerta (com Severidade):**
+
+1. **Churn Risk** (Crítico se health_score_v2 < 40)
+   - Detecção: Health score cai abaixo de 40%
+   - Recomendação: Agendar QBR imediato com executivo
+   - Metadados: health_score, threshold, recommendation
+
+2. **Silent Customer** (Aviso se 21+ dias sem interação)
+   - Detecção: Nenhuma interação registrada ou última foi 21+ dias atrás
+   - Recomendação: Enviar check-in email ou agendar health check call
+   - Metadados: days_silent, last_interaction, recommendation
+
+3. **Renewal Upcoming** (Crítico se <= 30d, Aviso se <= 60d)
+   - Detecção: Renovação de contrato dentro de 60 dias
+   - Recomendação: Revisar NPS, adoption gains, preparar renewal proposal
+   - Metadados: renewal_date, days_until, current_mrr, recommendation
+
+4. **Adoption Anomaly** (Aviso se queda > 20% vs mês anterior)
+   - Detecção: Adoção de features caiu mais de 20% comparado ao mês anterior
+   - Recomendação: Investigar qual(is) feature(s) foram desativadas
+   - Metadados: this_month_rate, last_month_rate, drop_percent, features_disabled
+
+5. **Expansion Signal** (Info se NPS >= 9 + MRR < mediana do segmento)
+   - Detecção: Cliente promovedor com MRR abaixo da mediana da sua vertical
+   - Recomendação: Mapear oportunidades de add-on ou upsell
+   - Metadados: current_nps, current_mrr, segment_median_mrr, expansion_potential
+
+6. **NPS Detractor Unactioned** (Aviso se score <= 6 sem follow-up 7+ dias)
+   - Detecção: Resposta NPS detrator (6 ou menor) sem ticket de suporte criado
+   - Recomendação: Criar ticket de investigação ou contatar cliente em QBR
+   - Metadados: nps_score, responded_at, days_without_followup, nps_response_id
+
+**Enums & Tipos:**
+- `alert_type`: `churn_risk | silent_customer | renewal_upcoming | adoption_anomaly | expansion_signal | nps_detractor_unactioned`
+- `alert_severity`: `critical | warning | info`
+- `ProactiveAlert`: id, account_id, type, severity, message, metadata, resolved_at, created_at, updated_at
+
+**Cron Diário:**
+- Endpoint: `POST /api/cron/proactive-alerts` (auth via `x-api-secret`)
+- Executa: A cada dia (configurável via scheduler externo: Vercel Crons, PlanetScale, ou cURL)
+- Rate: 1 alerta por (account_id, type) por dia (deduplicação por UNIQUE INDEX)
+- Processamento: Batch de 100 contas em paralelo (Promise.allSettled)
+- Limite Vercel: 5 min (maxDuration = 300)
+
+**APIs REST:**
+
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| GET | `/api/proactive-alerts` | JWT (CSM) | Lista alertas de suas contas (RLS) |
+| GET | `/api/proactive-alerts?severity=critical` | JWT | Filtra por severidade |
+| GET | `/api/proactive-alerts?resolved=true` | JWT | Inclui resolvidos |
+| PATCH | `/api/proactive-alerts/[id]/resolve` | JWT (CSM) | Marca alerta como resolvido |
+
+**RLS:**
+- CSM vê apenas alertas de contas que gerencia (`csm_owner_id = auth.uid()`)
+- CSM pode atualizar (marcar resolvido) apenas seus alertas
+- Admin pode ver todos (via `getSupabaseAdminClient`)
+
+**AlertCenter UI (`src/components/alerts/AlertCenter.tsx`):**
+- Ícone Bell no Sidebar (ao lado de NotificationCenter)
+- Badge de contagem de críticos com dot pulsante
+- Drawer lateral: lista de alertas com cards coloridos por severidade
+- Cores: 🔴 Crítico (red), 🟡 Aviso (yellow), 🔵 Info (blue)
+- Cada alerta exibe: tipo, mensagem, recomendação, botão de resolver
+- Polling: 30s refetch automático via React Query
+
+**Metadados de Alerta (JSON):**
+Cada alerta armazena contexto em `metadata` para ações futuras:
+```json
+{
+  "health_score": 35.5,
+  "threshold": 40,
+  "recommendation": "Agendar QBR imediato com executivo",
+  "days_silent": 25,
+  "last_interaction": "2025-04-12T10:30:00Z",
+  "renewal_date": "2025-06-15T00:00:00Z",
+  "days_until": 39,
+  "current_mrr": 5000,
+  "expansion_potential": "2500.00"
+}
+```
+
+**Índices:**
+- `idx_proactive_alerts_account_id`: queries por conta
+- `idx_proactive_alerts_severity`: filtro por severidade
+- `idx_proactive_alerts_created_at`: ordenação temporal
+- `idx_proactive_alerts_type`: agrupamento por tipo
+- `idx_proactive_alerts_resolved`: filtro resolvidos/pendentes
+- `proactive_alerts_daily_uniq`: UNIQUE constraint por dia para deduplicação
+
+**Migrations:**
+- `supabase/migrations/030_f3_02_proactive_alerts.sql`: Enums, tabela, índices, RLS
+
+---
+
 ## LLM Gateway e Modo Exclusivo (Gemini First)
 
 O gateway (`src/lib/llm/gateway.ts`) foi migrado para o SDK oficial `@google/genai`, priorizando a família Gemini 2.5 para máxima performance e estabilidade. O sistema agora opera em **Modo Exclusivo** (Gemini), com fallbacks desativados para validação da camada de inteligência.
