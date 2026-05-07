@@ -48,6 +48,7 @@ interface Props {
   npsResponses: any[]
   playbooks?: any[]
   commercialGovernance: any[]
+  healthScores?: any[]
 }
 
 function daysUntil(dateStr: string | null | undefined) {
@@ -162,7 +163,8 @@ export function AccountDetailPageClient({
   latestRiskAssessment,
   npsResponses,
   playbooks = [],
-  commercialGovernance
+  commercialGovernance,
+  healthScores = []
 }: Props) {
   return (
     <div className="flex flex-col gap-10 w-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -190,6 +192,7 @@ export function AccountDetailPageClient({
               npsResponses={npsResponses}
               playbooks={playbooks}
               contracts={contracts}
+              healthScores={healthScores}
               accounts={[{ id, name: accountName }]}
               accountName={accountName}
             />

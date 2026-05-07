@@ -14,7 +14,8 @@ import {
   Eye,
   Ticket as TicketIcon,
   Star,
-  DollarSign
+  DollarSign,
+  Heart
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -23,6 +24,7 @@ import { NPSDetailModal } from './NPSDetailModal'
 import { PlaybookHistoryModal } from './PlaybookHistoryModal'
 import { InteractionDetailModal } from './InteractionDetailModal'
 import { ContractDetailModal } from './ContractDetailModal'
+import { HealthEventDetailModal } from './HealthEventDetailModal'
 
 interface Props {
   interactions: any[]
@@ -31,17 +33,19 @@ interface Props {
   npsResponses: any[]
   playbooks: any[]
   contracts?: any[]
+  healthScores?: any[]
   accounts: any[]
   accountName?: string
 }
 
-export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResponses, playbooks, contracts = [], accounts, accountName }: Props) {
+export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResponses, playbooks, contracts = [], healthScores = [], accounts, accountName }: Props) {
   const [filter, setFilter] = useState<'all' | 'strategic' | 'atendimento'>('all')
   const [selectedEffort, setSelectedEffort] = useState<any>(null)
   const [selectedPlaybook, setSelectedPlaybook] = useState<any>(null)
   const [selectedNPS, setSelectedNPS] = useState<any>(null)
   const [selectedInteraction, setSelectedInteraction] = useState<any>(null)
   const [selectedContract, setSelectedContract] = useState<any>(null)
+  const [selectedHealthEvent, setSelectedHealthEvent] = useState<any>(null)
   const router = useRouter()
 
   // Função helper: determinar o tipo de evento de contrato
@@ -69,6 +73,20 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
     return 'created'
   }
 
+  // Função helper: determinar a cor do status de health
+  const getHealthStatusColor = (status?: string): string => {
+    switch (status) {
+      case 'healthy':
+        return 'emerald-500'
+      case 'at_risk':
+        return 'amber-500'
+      case 'critical':
+        return 'red-500'
+      default:
+        return 'gray-400'
+    }
+  }
+
   const combined = [
     ...interactions.map(i => ({
       ...i,
@@ -87,7 +105,23 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
       isStrategic: true,
       title: `Contrato: ${c.description || c.service_type || 'N/A'}`,
       description: c.status
-    }))
+    })),
+    ...healthScores
+      .filter(hs => hs.evaluated_at)
+      .map(hs => ({
+        ...hs,
+        itemType: 'health_event',
+        date: hs.evaluated_at,
+        isStrategic: true,
+        title: `Health Score: ${hs.manual_score || hs.shadow_score || 'N/A'}`,
+        description: `${hs.manual_score ?? '—'} manual, ${hs.shadow_score ?? '—'} IA`,
+        health_score: hs.manual_score || hs.shadow_score,
+        manual_score: hs.manual_score,
+        shadow_score: hs.shadow_score,
+        health_status: hs.manual_score
+          ? (hs.manual_score > 75 ? 'healthy' : hs.manual_score >= 50 ? 'at_risk' : 'critical')
+          : (hs.shadow_score > 75 ? 'healthy' : hs.shadow_score >= 50 ? 'at_risk' : 'critical')
+      }))
   ].sort((a, b) => {
     const dateA = a.date ? new Date(a.date).getTime() : 0
     const dateB = b.date ? new Date(b.date).getTime() : 0
@@ -96,11 +130,15 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
 
   const filtered = combined.filter(item => {
     if (filter === 'strategic') return item.isStrategic
-    if (filter === 'atendimento') return (item.itemType === 'ticket' || item.itemType === 'nps') && item.itemType !== 'contract_event'
+    if (filter === 'atendimento') return (item.itemType === 'ticket' || item.itemType === 'nps') && item.itemType !== 'contract_event' && item.itemType !== 'health_event'
     return true
   })
 
   const getIcon = (item: any) => {
+    if (item.itemType === 'health_event') {
+      const color = getHealthStatusColor(item.health_status)
+      return <Heart className={`w-3.5 h-3.5 text-${color}`} />
+    }
     if (item.itemType === 'contract_event') return <DollarSign className="w-3.5 h-3.5 text-indigo-500" />
     if (item.itemType === 'ticket') return <TicketIcon className="w-3.5 h-3.5 text-plannera-demand" />
     if (item.itemType === 'nps') return <Star className="w-3.5 h-3.5 text-amber-500" />
@@ -136,6 +174,9 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
         break
       case 'contract_event':
         setSelectedContract(item)
+        break
+      case 'health_event':
+        setSelectedHealthEvent(item)
         break
       default:
         break
@@ -180,6 +221,7 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
             >
               <div className={cn(
                 "mt-1.5 flex items-center justify-center w-8 h-8 rounded-xl border bg-surface-background z-10 transition-all duration-300 shadow-lg flex-shrink-0 group-hover:scale-105",
+                item.itemType === 'health_event' ? "border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]" :
                 item.itemType === 'contract_event' ? "border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)]" :
                 item.isStrategic ? "border-plannera-orange/30 shadow-[0_0_12px_rgba(247,148,30,0.15)]" :
                 item.itemType === 'playbook' ? "border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]" :
@@ -194,8 +236,9 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                 onClick={() => handleItemClick(item)}
                 className={cn(
                   "flex-1 min-w-0 transition-all duration-300 relative overflow-hidden cursor-pointer hover:bg-muted/30 hover:scale-[1.01] active:scale-[0.99]",
+                  item.itemType === 'health_event' && "ring-1 ring-red-500/20 bg-red-500/[0.02]",
                   item.itemType === 'contract_event' && "ring-1 ring-indigo-500/20 bg-indigo-500/[0.02]",
-                  item.isStrategic && item.itemType !== 'contract_event' && "ring-1 ring-plannera-orange/20",
+                  item.isStrategic && item.itemType !== 'contract_event' && item.itemType !== 'health_event' && "ring-1 ring-plannera-orange/20",
                   item.itemType === 'playbook' && "ring-1 ring-emerald-500/20 bg-emerald-500/[0.02]",
                   item.itemType === 'ticket' && "ring-1 ring-red-500/10",
                   item.itemType === 'nps' && "ring-1 ring-amber-500/10"
@@ -205,7 +248,8 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                   <div className="flex items-start justify-between gap-2 mb-1.5 min-w-0">
                     <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                       <span className="text-content-primary text-xs font-bold tracking-tight truncate">
-                        {item.itemType === 'ticket' ? `Ticket: ${item.title}` :
+                        {item.itemType === 'health_event' ? item.title :
+                         item.itemType === 'ticket' ? `Ticket: ${item.title}` :
                          item.itemType === 'nps' ? `Avaliação NPS: ${item.score}/10` :
                          item.itemType === 'contract_event' ? item.title :
                          item.title || item.parsed_description}
@@ -215,6 +259,16 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                           Crítico
                         </Badge>
                       )}
+                      {item.itemType === 'health_event' && item.health_status === 'critical' && (
+                        <Badge className="bg-red-500/10 text-red-500 border-none text-[7px] font-bold uppercase tracking-widest h-3.5 shrink-0">
+                          Crítico
+                        </Badge>
+                      )}
+                      {item.itemType === 'health_event' && item.health_status === 'at_risk' && (
+                        <Badge className="bg-amber-500/10 text-amber-500 border-none text-[7px] font-bold uppercase tracking-widest h-3.5 shrink-0">
+                          Em Risco
+                        </Badge>
+                      )}
                     </div>
                     <span className="text-content-secondary text-[9px] font-bold font-mono tracking-tighter shrink-0 mt-0.5">
                       {new Date(item.date).toLocaleDateString('pt-BR')}
@@ -222,7 +276,8 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                   </div>
 
                   <p className="text-content-secondary text-[11px] leading-relaxed line-clamp-2 italic">
-                    {item.raw_transcript || item.parsed_description || item.description || item.comment || "Nenhum comentário registrado."}
+                    {item.itemType === 'health_event' ? item.description :
+                     item.raw_transcript || item.parsed_description || item.description || item.comment || "Nenhum comentário registrado."}
                   </p>
 
                   <div className="flex items-center justify-between mt-3">
@@ -245,6 +300,7 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
                         {item.itemType === 'ticket' ? 'Abrir Chamado' :
                          item.itemType === 'effort' ? 'Editar Registro' :
                          item.itemType === 'contract_event' ? 'Ver Contrato' :
+                         item.itemType === 'health_event' ? 'Ver Health Score' :
                          'Ver Detalhes'}
                       </span>
                     </div>
@@ -289,6 +345,11 @@ export function AccountUnifiedTimeline({ interactions, efforts, tickets, npsResp
       <ContractDetailModal
         contract={selectedContract}
         onOpenChange={(open) => !open && setSelectedContract(null)}
+      />
+
+      <HealthEventDetailModal
+        healthEvent={selectedHealthEvent}
+        onOpenChange={(open) => !open && setSelectedHealthEvent(null)}
       />
     </div>
   )

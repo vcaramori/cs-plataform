@@ -89,7 +89,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         currentAdoptionScore={currentAdoptionScore}
       />
 
-      <AccountDetailPageClient 
+      <AccountDetailPageClient
         id={id}
         accountName={account.name}
         displayContracts={displayContracts}
@@ -105,6 +105,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         latestRiskAssessment={latestRiskAssessment}
         npsResponses={npsResponses}
         commercialGovernance={commercialGovernance}
+        healthScores={healthScores}
       />
     </div>
   )
