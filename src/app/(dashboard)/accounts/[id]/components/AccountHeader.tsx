@@ -287,17 +287,26 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
             </div>
           </Card>
 
-          <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shrink-0 shadow-lg">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
-              <Calendar className="w-5 h-5 text-amber-500" />
-            </div>
-            <div className="flex flex-col">
-              <span className="label-premium !text-[9px] opacity-50 mb-1">Renovação</span>
-              <span className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
-                {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
-              </span>
-            </div>
-          </Card>
+          <div className="flex flex-col gap-2 shrink-0">
+            <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shadow-lg">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
+                <Calendar className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="flex flex-col">
+                <span className="label-premium !text-[9px] opacity-50 mb-1">Renovação</span>
+                <span className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
+                  {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
+                </span>
+              </div>
+            </Card>
+            {daysToRenewal !== null && daysToRenewal <= 90 && (
+              <Link href={`/accounts/${account.id}/renewal`}>
+                <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-widest h-10 rounded-xl">
+                  Preparar Renovação
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 

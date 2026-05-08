@@ -593,4 +593,72 @@ export type AuditLog = {
   created_at: string
 }
 
+// Epic 16: Command Center
+export type DailyHomePriorityCategory = 'focar_agora' | 'manter_momentum' | 'oportunidade'
+
+export type DailyHomePriority = {
+  id: string
+  csm_id: string
+  account_id: string
+  category: DailyHomePriorityCategory
+  reason: string
+  score: number
+  action_type: string | null
+  created_at: string
+}
+
+export type DailyBriefingPriority = {
+  title: string
+  account_name: string
+  action: string
+  urgency: 'critical' | 'high' | 'medium'
+}
+
+export type DailyBriefing = {
+  id: string
+  csm_id: string
+  date: string
+  priorities: {
+    priority_1?: DailyBriefingPriority
+    priority_2?: DailyBriefingPriority
+    priority_3?: DailyBriefingPriority
+  }
+  dismissed_at: string | null
+  created_at: string
+}
+
+export type MeetingPrep = {
+  id: string
+  interaction_id: string
+  account_id: string
+  csm_id: string
+  agenda: Record<string, any>
+  key_questions: string[]
+  attention_points: string[]
+  edited_agenda: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Epic 17: Renewal Cockpit
+export type ContractNegotiationOutcome = 'renewed' | 'lost' | 'pending'
+
+export type ContractNegotiationHistory = {
+  id: string
+  contract_id: string
+  account_id: string
+  date: string
+  discount_offered_pct: number
+  discount_accepted_pct: number
+  main_objection: string | null
+  closing_argument: string | null
+  counterpart_name: string | null
+  counterpart_role: string | null
+  outcome: ContractNegotiationOutcome | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Database = any

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Sidebar } from './Sidebar'
+import { QuickActionsFAB } from './QuickActionsFAB'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NotificationCenter } from '../notifications/NotificationCenter'
@@ -62,6 +63,7 @@ export function ClientDashboardLayout({ user, profile, children }: Props) {
           </div>
         </main>
       </div>
+      <QuickActionsFAB />
     </UserProvider>
   )
 }
