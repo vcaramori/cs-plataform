@@ -54,7 +54,6 @@ export async function GET(request: Request) {
     const { data: enum_data, error: enum_error } = await supabase
       .from('pg_enum')
       .select('enumlabel')
-      .eq('enumtypid', 'alert_type'::regtype)
       .eq('enumlabel', 'playbook_trigger')
 
     if (!enum_error && enum_data && enum_data.length > 0) {

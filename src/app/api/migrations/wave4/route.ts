@@ -67,10 +67,14 @@ BEGIN
 END $$;
     `
 
-    await supabase.from('_migrations').insert({
-      name: '14.2',
-      sql: migration14_2
-    }).catch(() => null)
+    try {
+      await supabase.from('_migrations').insert({
+        name: '14.2',
+        sql: migration14_2
+      })
+    } catch {
+      // Ignore errors
+    }
 
     results.push({ story: '14.2', status: 'executed' })
     console.log('✅ Story 14.2 completed')
@@ -131,10 +135,14 @@ FOR EACH ROW
 EXECUTE FUNCTION public.fn_update_auto_checkin_updated_at();
     `
 
-    await supabase.from('_migrations').insert({
-      name: '15.1',
-      sql: migration15_1
-    }).catch(() => null)
+    try {
+      await supabase.from('_migrations').insert({
+        name: '15.1',
+        sql: migration15_1
+      })
+    } catch {
+      // Ignore errors
+    }
 
     results.push({ story: '15.1', status: 'executed' })
     console.log('✅ Story 15.1 completed')

@@ -53,11 +53,11 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ### Wave 5 — Fundação Inteligência + Automação (173 SP — 8.5 sprints)
 
-| Fase | Épicos | SP | Status |
-|------|--------|----|----|
-| **Pré-Condições** | 36 (Roles), 37 (Admin), 38 (Dates) | 49 | 📋 Refinado |
-| **Core** | 16 (Command Center), 17 (Renewal) | 34 | 📋 Refinado |
-| **Suplementar** | 18-23 (RAG, Adoption, VOC, Ops, Alerts, Playbooks) | 90 | 📋 Refinado |
+| Fase | Épicos | SP | Status | Detalhes |
+|------|--------|----|----|---------|
+| **Pré-Condições** | 36 (Roles), 37 (Admin), 38 (Dates) | 49 | 🚀 Em Execução | Epic 36.1 (profiles table + user_role enum + RLS roles), 37.1 (app_settings), 38.1 (DateRangePicker) — Migrations aplicadas, Auth/Permissions matrix criados, Admin page + sidebar gating |
+| **Core** | 16 (Command Center), 17 (Renewal) | 34 | 📋 Refinado | Aguardando Pré-Condições |
+| **Suplementar** | 18-23 (RAG, Adoption, VOC, Ops, Alerts, Playbooks) | 90 | 📋 Refinado | Aguardando Core |
 
 ### Wave 6 — Inteligência Operacional (140 SP — 7 sprints)
 

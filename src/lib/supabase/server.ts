@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { env } from '@/lib/env'
-import { Database } from './types'
+import { Database, UserRole, Profile } from './types'
+import { getSupabaseAdminClient } from './admin'
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()
@@ -27,4 +28,36 @@ export async function getSupabaseServerClient() {
       },
     },
   })
+}
+
+export async function getUserRole(userId: string): Promise<UserRole | null> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user role:', error)
+    return null
+  }
+
+  return data?.role || null
+}
+
+export async function getUserProfile(userId: string): Promise<Profile | null> {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user profile:', error)
+    return null
+  }
+
+  return data || null
 }

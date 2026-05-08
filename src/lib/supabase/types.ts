@@ -557,4 +557,40 @@ export type AutoCheckInQueueItem = {
   updated_at: string
 }
 
+// User Roles & Permissions (Epic 36)
+export type UserRole = 'csm' | 'csm_senior' | 'head_cs' | 'admin' | 'super_admin'
+
+export type Profile = {
+  id: string
+  full_name: string | null
+  role: UserRole
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+// App Settings (Epic 37)
+export type AppSetting = {
+  key: string
+  value: Record<string, any>
+  description: string | null
+  updated_by: string | null
+  updated_at: string
+}
+
+// Audit Log
+export type AuditLogEvent = 'role_changed' | 'setting_updated' | 'user_created'
+
+export type AuditLog = {
+  id: string
+  event_type: AuditLogEvent
+  user_id: string | null
+  target_user_id: string | null
+  changed_by: string | null
+  old_value: string | null
+  new_value: string | null
+  metadata: Record<string, any>
+  created_at: string
+}
+
 export type Database = any

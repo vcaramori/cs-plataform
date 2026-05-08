@@ -20,6 +20,7 @@ import {
   Star,
   BarChart2,
   ShieldCheck,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -28,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { AlertCenter } from '@/components/alerts/AlertCenter'
 import { ThemeSelector } from './ThemeSelector'
+import { UserRole } from '@/lib/supabase/types'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
@@ -39,25 +41,44 @@ const navItems = [
 ]
 
 const settingsItems = [
-  { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users },
+  { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
   { href: '/settings/sla',           label: 'Política SLA', icon: ShieldCheck },
+  { href: '/admin',                 label: 'Admin Panel',    icon: Settings, minRole: 'admin' as const },
 ]
 
 interface SidebarProps {
   user: User
+  role?: UserRole | null
   /** Callback para fechar o drawer mobile ao navegar */
   onMobileClose?: () => void
 }
 
-export function Sidebar({ user, onMobileClose }: SidebarProps) {
+export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const roleHierarchy: Record<UserRole, number> = {
+    'csm': 0,
+    'csm_senior': 1,
+    'head_cs': 2,
+    'admin': 3,
+    'super_admin': 4,
+  }
+
+  const canViewItem = (minRole?: string) => {
+    if (!minRole) return true
+    if (!role) return false
+    return roleHierarchy[role] >= roleHierarchy[minRole as UserRole]
+  }
+
+  const visibleSettingsItems = settingsItems.filter(item => canViewItem(item.minRole))
+
   const [settingsOpen, setSettingsOpen] = useState(
-    settingsItems.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))
+    visibleSettingsItems.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))
   )
 
   async function handleSignOut() {
@@ -246,8 +267,8 @@ export function Sidebar({ user, onMobileClose }: SidebarProps) {
               transition={{ duration: 0.15 }}
               className={cn("space-y-2", !isCollapsed && "pl-4")}
             >
-              {settingsItems.map((item) => (
-                <NavLink key={item.href} {...item} />
+              {visibleSettingsItems.map((item) => (
+                <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
               ))}
             </motion.div>
           )}
