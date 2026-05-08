@@ -17,14 +17,18 @@ ALTER TABLE public.nps_programs ADD COLUMN IF NOT EXISTS target_score INT;
 ALTER TABLE public.nps_global_goals ENABLE ROW LEVEL SECURITY;
 
 -- 4. Políticas de RLS para metas (leitura por todos os CSMs, escrita por administradores ou qualquer CSM autenticado neste contexto simplificado)
+DROP POLICY IF EXISTS "nps_global_goals_select" ON public.nps_global_goals;
 CREATE POLICY "nps_global_goals_select" ON public.nps_global_goals
     FOR SELECT USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "nps_global_goals_insert" ON public.nps_global_goals;
 CREATE POLICY "nps_global_goals_insert" ON public.nps_global_goals
     FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "nps_global_goals_update" ON public.nps_global_goals;
 CREATE POLICY "nps_global_goals_update" ON public.nps_global_goals
     FOR UPDATE USING (auth.role() = 'authenticated');
+
 
 -- 5. Função para fechar meta anterior ao inserir uma nova (Trigger simplificado ou execução manual no backend)
 -- No backend, sempre que inserirmos uma nova meta global, faremos o update da anterior setando end_date = now().

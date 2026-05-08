@@ -12,7 +12,8 @@
 CREATE TABLE IF NOT EXISTS public.auto_assign_stats (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   assigned_ticket_id uuid NOT NULL REFERENCES public.support_tickets(id) ON DELETE CASCADE,
-  assigned_to_csm_id uuid NOT NULL REFERENCES public.auth.users(id) ON DELETE RESTRICT,
+  assigned_to_csm_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
+
   previous_assigned_to uuid,
   assigned_at timestamptz DEFAULT now(),
   capacity_before int NOT NULL,

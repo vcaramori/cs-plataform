@@ -31,10 +31,11 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
-## 📋 Roadmap — Wave 4 Execution Complete
+## 📋 Roadmap — Wave 4-7 Roadmap Confirmed
 
-**Wave 4 Data:** 2026-05-07  
-**Status:** ✅ **Wave 4 CONCLUÍDO** (3 stories, 14 SP, Execução Paralela)
+**Wave 4 Data:** 2026-05-07 — ✅ **CONCLUÍDO**  
+**Wave 5-7 Data:** 2026-05-08 — ✅ **REFINEMENT COMPLETO**  
+**Status:** 🚀 Pronto para execução sequencial W5 → W6 → W7
 
 ### Wave 4 — Automação Proativa ✅ COMPLETO
 
@@ -50,19 +51,27 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 - **Story 14.2:** Novo método `checkPlaybookTrigger` em AlertService com idempotência, UI com botão "Iniciar Playbook" que cria playbook e resolve alerta
 - **Story 15.1:** `auto_checkin_queue` table com workflow de aprovação (4h), cron diário que gera emails via Gemini por tier de silêncio, cron de envio via SMTP/nodemailer, UI modal com aprovação/edição/cancelamento, logging em time_entries
 
-**Wave 5 — Pré-Condições Arquiteturais (Pronto para Execução)**
+### Wave 5 — Fundação Inteligência + Automação (173 SP — 8.5 sprints)
 
-### Wave 5 — Pré-Condições Arquiteturais (Pronto para Execução)
-
-| Epic | Escopo | SP | Status |
+| Fase | Épicos | SP | Status |
 |------|--------|----|----|
-| **36** | User Roles & Permissions (RBAC DB + UI) | 13 | 📋 Refinado |
-| **37** | Admin Control Panel (9 módulos de configuração) | 26 | 📋 Refinado |
-| **38** | Date Intelligence (MTD/YTD/Delta filters) | 10 | 📋 Refinado |
-| | **TOTAL** | **49 SP** | **≈5 sprints** |
+| **Pré-Condições** | 36 (Roles), 37 (Admin), 38 (Dates) | 49 | 📋 Refinado |
+| **Core** | 16 (Command Center), 17 (Renewal) | 34 | 📋 Refinado |
+| **Suplementar** | 18-23 (RAG, Adoption, VOC, Ops, Alerts, Playbooks) | 90 | 📋 Refinado |
 
-📚 **Documento de Refinement Completo:** [`docs/product/refinement-wave4-wave5.md`](docs/product/refinement-wave4-wave5.md)  
-Contém: Critérios de Aceitação, Plano de Testes (124 TCs), Sizing, Sequência de Execução, Definição de Done padrão.
+### Wave 6 — Inteligência Operacional (140 SP — 7 sprints)
+
+6 épicos: RAG Modes, Adoption, VOC, CS Ops, Alertas Avançados, Playbook Excellence
+
+### Wave 7 — Extensibilidade & Integrações (150 SP — 7.5 sprints)
+
+7 épicos: Webhooks, CRM/Support/BI Integrações, Mobile MVP, Permissions, Observability
+
+📚 **Documentos de Refinement Detalhado:**
+- [`docs/product/refinement-wave4-wave5.md`](docs/product/refinement-wave4-wave5.md) — Wave 4-5 detalhado
+- [`docs/product/refinement-wave5-wave6-wave7.md`](docs/product/refinement-wave5-wave6-wave7.md) — Wave 5-7 roadmap completo
+
+**Total Roadmap:** 477 SP (Wave 4-7) ≈ 18 meses de desenvolvimento
 
 ---
 

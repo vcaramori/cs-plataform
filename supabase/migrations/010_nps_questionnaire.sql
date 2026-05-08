@@ -40,6 +40,7 @@ CREATE INDEX IF NOT EXISTS nps_answers_question_id_idx ON public.nps_answers(que
 -- 5. RLS: nps_questions — herdado pelo programa (CSM dono lê/edita)
 ALTER TABLE public.nps_questions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "nps_questions_select" ON public.nps_questions;
 CREATE POLICY "nps_questions_select" ON public.nps_questions
   FOR SELECT USING (
     EXISTS (
@@ -55,6 +56,7 @@ CREATE POLICY "nps_questions_select" ON public.nps_questions
     )
   );
 
+DROP POLICY IF EXISTS "nps_questions_insert" ON public.nps_questions;
 CREATE POLICY "nps_questions_insert" ON public.nps_questions
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -70,6 +72,7 @@ CREATE POLICY "nps_questions_insert" ON public.nps_questions
     )
   );
 
+DROP POLICY IF EXISTS "nps_questions_update" ON public.nps_questions;
 CREATE POLICY "nps_questions_update" ON public.nps_questions
   FOR UPDATE USING (
     EXISTS (
@@ -85,6 +88,7 @@ CREATE POLICY "nps_questions_update" ON public.nps_questions
     )
   );
 
+DROP POLICY IF EXISTS "nps_questions_delete" ON public.nps_questions;
 CREATE POLICY "nps_questions_delete" ON public.nps_questions
   FOR DELETE USING (
     EXISTS (
@@ -103,6 +107,7 @@ CREATE POLICY "nps_questions_delete" ON public.nps_questions
 -- 6. RLS: nps_answers — CSM dono lê; inserção pública via service_role
 ALTER TABLE public.nps_answers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "nps_answers_select" ON public.nps_answers;
 CREATE POLICY "nps_answers_select" ON public.nps_answers
   FOR SELECT USING (
     EXISTS (
@@ -120,6 +125,7 @@ CREATE POLICY "nps_answers_select" ON public.nps_answers
          )
     )
   );
+
 
 -- 7. Atualiza policies de nps_programs para suportar programas globais (csm_owner_id)
 DROP POLICY IF EXISTS "nps_programs_select" ON public.nps_programs;

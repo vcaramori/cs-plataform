@@ -12,22 +12,27 @@
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para clients (leitura pública para authenticated, escrita restrita a usuários autenticados)
+DROP POLICY IF EXISTS "clients_select_all" ON public.clients;
 CREATE POLICY "clients_select_all"
   ON public.clients FOR SELECT TO authenticated
   USING (true);                              -- SELECT com true é intencional (acesso de leitura compartilhado)
 
+DROP POLICY IF EXISTS "clients_insert_auth" ON public.clients;
 CREATE POLICY "clients_insert_auth"
   ON public.clients FOR INSERT TO authenticated
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "clients_update_auth" ON public.clients;
 CREATE POLICY "clients_update_auth"
   ON public.clients FOR UPDATE TO authenticated
   USING  (auth.uid() IS NOT NULL)
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "clients_delete_auth" ON public.clients;
 CREATE POLICY "clients_delete_auth"
   ON public.clients FOR DELETE TO authenticated
   USING (auth.uid() IS NOT NULL);
+
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -123,19 +128,23 @@ CREATE POLICY "accounts_update_all"
 
 -- 3b. adoption_metrics — policy "ALL" genérica → separar em comandos
 DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.adoption_metrics;
+DROP POLICY IF EXISTS "adoption_metrics_select" ON public.adoption_metrics;
 CREATE POLICY "adoption_metrics_select"
   ON public.adoption_metrics FOR SELECT TO authenticated
   USING (true);                              -- SELECT intencional
 
+DROP POLICY IF EXISTS "adoption_metrics_insert" ON public.adoption_metrics;
 CREATE POLICY "adoption_metrics_insert"
   ON public.adoption_metrics FOR INSERT TO authenticated
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "adoption_metrics_update" ON public.adoption_metrics;
 CREATE POLICY "adoption_metrics_update"
   ON public.adoption_metrics FOR UPDATE TO authenticated
   USING  (auth.uid() IS NOT NULL)
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "adoption_metrics_delete" ON public.adoption_metrics;
 CREATE POLICY "adoption_metrics_delete"
   ON public.adoption_metrics FOR DELETE TO authenticated
   USING (auth.uid() IS NOT NULL);
@@ -159,19 +168,23 @@ CREATE POLICY "interactions_insert_all"
 
 -- 3e. success_goals — policy "ALL" genérica → separar
 DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.success_goals;
+DROP POLICY IF EXISTS "success_goals_select" ON public.success_goals;
 CREATE POLICY "success_goals_select"
   ON public.success_goals FOR SELECT TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "success_goals_insert" ON public.success_goals;
 CREATE POLICY "success_goals_insert"
   ON public.success_goals FOR INSERT TO authenticated
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "success_goals_update" ON public.success_goals;
 CREATE POLICY "success_goals_update"
   ON public.success_goals FOR UPDATE TO authenticated
   USING  (auth.uid() IS NOT NULL)
   WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "success_goals_delete" ON public.success_goals;
 CREATE POLICY "success_goals_delete"
   ON public.success_goals FOR DELETE TO authenticated
   USING (auth.uid() IS NOT NULL);
@@ -187,3 +200,4 @@ DROP POLICY IF EXISTS "time_entries_insert_all" ON public.time_entries;
 CREATE POLICY "time_entries_insert_all"
   ON public.time_entries FOR INSERT TO authenticated
   WITH CHECK (auth.uid() IS NOT NULL);
+

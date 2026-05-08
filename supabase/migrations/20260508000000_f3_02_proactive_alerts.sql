@@ -26,10 +26,11 @@ CREATE TABLE proactive_alerts (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Constraint único: 1 alerta por (account_id, type) por dia (não resolvidos)
+-- Constraint único: 1 alerta ativo por (account_id, type)
 CREATE UNIQUE INDEX proactive_alerts_daily_uniq
-  ON proactive_alerts(account_id, type, DATE(created_at))
+  ON proactive_alerts(account_id, type)
   WHERE resolved_at IS NULL;
+
 
 -- Índices para queries rápidas
 CREATE INDEX idx_proactive_alerts_account_id ON proactive_alerts(account_id);

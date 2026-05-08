@@ -39,17 +39,20 @@ ON public.accounts USING GIN(health_breakdown);
 -- ==============================================================================
 
 -- CSM can view health_score_v2 for their accounts
-CREATE POLICY IF NOT EXISTS "CSM can view health_score_v2 for their accounts"
+DROP POLICY IF EXISTS "CSM can view health_score_v2 for their accounts" ON public.accounts;
+CREATE POLICY "CSM can view health_score_v2 for their accounts"
 ON public.accounts
 FOR SELECT TO authenticated
 USING (csm_owner_id = auth.uid());
 
 -- Service role can update health_score_v2 (for cron)
-CREATE POLICY IF NOT EXISTS "Service role can update health_score_v2"
+DROP POLICY IF EXISTS "Service role can update health_score_v2" ON public.accounts;
+CREATE POLICY "Service role can update health_score_v2"
 ON public.accounts
 FOR UPDATE TO service_role
 USING (true)
 WITH CHECK (true);
+
 
 -- ==============================================================================
 -- 4. Function to calculate SLA Score
