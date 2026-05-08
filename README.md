@@ -55,8 +55,8 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 | Fase | Épicos | SP | Status | Detalhes |
 |------|--------|----|----|---------|
-| **Pré-Condições** | 36 (Roles), 37 (Admin), 38 (Dates) | 49 | 🚀 Em Execução | Epic 36.1 (profiles table + user_role enum + RLS roles), 37.1 (app_settings), 38.1 (DateRangePicker) — Migrations aplicadas, Auth/Permissions matrix criados, Admin page + sidebar gating |
-| **Core** | 16 (Command Center), 17 (Renewal) | 34 | 📋 Refinado | Aguardando Pré-Condições |
+| **Pré-Condições** | 36 (Roles), 37 (Admin), 38 (Dates) | 49 | ✅ Implementado | Epic 36.1-3 (profiles table, role enum, RLS, permissions matrix), 37.1 (app_settings), 38.1 (DateRangePicker) |
+| **Core** | 16 (Command Center), 17 (Renewal) | 34 | 🚀 Em Execução | Epic 16 (4 stories: home priorities, daily briefing, quick actions FAB, meeting prep), 17 (4 stories: cockpit 360°, PDF, pipeline, negotiation history) |
 | **Suplementar** | 18-23 (RAG, Adoption, VOC, Ops, Alerts, Playbooks) | 90 | 📋 Refinado | Aguardando Core |
 
 ### Wave 6 — Inteligência Operacional (140 SP — 7 sprints)
