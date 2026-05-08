@@ -45,6 +45,7 @@ csplataform/
 9. Use .env para todas as chaves (não comitar)
 10. **Leia `.claude/napkin.md` para regras de execução (lido automaticamente por napkin)**
 11. **SEGURANÇA DE CÓDIGO: NUNCA execute `git restore .`, `git reset --hard` ou qualquer comando que descarte alterações não trabalhadas sem permissão explícita do usuário.** O trabalho não commitado é sagrado.
+12. **COLABORAÇÃO E QUALIDADE: Sempre critiquem uns aos outros durante a interação (Modo Debate/Party Mode)** e façam alinhamento pré-desenvolvimento com todos os papéis (Arquiteto, QA, Dev, UX) para garantir qualidade. Ao final, envolvam os especialistas de CS na validação da entrega, pois eles são os clientes finais.
 
 ## Skills por Área
 

@@ -747,6 +747,90 @@ Sizing: **3 SP** (table + form + timeline UI + trend calc)
 
 ---
 
+## 🚀 Itens Independentes (Fila Paralela)
+
+> **Status:** Refinado e Pronto para Desenvolvimento (Não depende da Wave 5)  
+> **Foco:** Permitir que um time paralelo avance sem bloquear na Wave 5.
+
+### Épico 23.2 — Playbook Builder (No-Code UI) — Drag & Drop
+
+**Contexto:**  
+Para facilitar a criação de playbooks sem depender de código ou formulários complexos, este módulo traz uma interface visual estilo canvas onde o usuário pode arrastar blocos de ação e condição para desenhar o fluxo de salvamento ou engajamento de uma conta.
+
+#### Critérios de Aceitação (ACs)
+
+**AC 1 — Interface de Canvas (Drag & Drop)**
+- Nova rota `/playbooks/builder`.
+- Área central de Canvas usando uma biblioteca como `ReactFlow` (ou similar) para rendering de nós e conexões.
+- Barra lateral esquerda com "Blocos Disponíveis":
+  - **Ações:** Enviar E-mail, Criar Tarefa, Disparar Alerta, Mudar Status da Conta.
+  - **Condições:** Se Health < X, Se NPS < Y, Se sem interação > Z dias.
+  - **Controle:** Start, End, Delay (Aguardar X dias).
+- Permitir arrastar os blocos da barra lateral para o canvas.
+- Permitir conectar a saída de um bloco na entrada de outro.
+
+**AC 2 — Configuração do Bloco**
+- Ao clicar em um bloco no canvas, abre uma barra lateral direita (drawer) com as configurações daquele bloco:
+  - Ex: Bloco "Enviar E-mail" -> Campos: Assunto, Template de Corpo (com suporte a variáveis como `{{account.name}}`).
+  - Ex: Bloco "Delay" -> Campo: Número de dias.
+
+**AC 3 — Persistência no Banco**
+- Botão "Salvar Playbook" no topo da tela.
+- Salva o fluxo gerado na tabela `playbook_templates`.
+- Como a estrutura de playbooks hoje é linear (lista de tasks), o builder vai converter o fluxo visual em uma sequência de tasks com ordem (`order`) e dependências implícitas (usando o campo `due_days_from_start` adicionado na Wave 4).
+- O JSON do fluxo visual completo deve ser salvo em uma coluna `ui_flow_json` (JSONB) em `playbook_templates` para permitir recarregar o canvas depois.
+
+#### Sizing: **8 SP** (Pela complexidade do Drag & Drop e conversão para o modelo linear).
+
+---
+
+### Épico 20 — Voice of Customer Intelligence (Sentiment & Themes)
+
+**Contexto:**  
+Análise inteligente de sentimentos e dores dos clientes cruzando os dados de interações livres (logs de reuniões) e respostas de NPS.
+
+#### Critérios de Aceitação (ACs)
+
+**AC 1 — Cron de Análise de Sentimento**
+- Novo cron `POST /api/cron/voc/analyze`.
+- Busca interações e respostas de NPS das últimas 24h que ainda não foram processadas.
+- Usa o Gemini para analisar o texto e extrair:
+  - **Sentimento:** Score de -1 (muito negativo) a 1 (muito positivo).
+  - **Temas:** Array de strings (ex: `["performance", "atendimento", "preço"]`).
+  - **Quotes:** Frases marcantes que resumem a dor ou elogio.
+- Atualiza a linha da interação com o `sentiment_score` e salva os temas em uma nova tabela `interaction_themes`.
+
+**AC 2 — Dashboard "Voz do Cliente" (VoC Board)**
+- Nova rota `/voc` ou aba dentro de `/dashboard`.
+- Gráfico de tendência de sentimento ao longo do tempo (Recharts).
+- Nuvem de palavras ou lista de temas mais citados (Top 5 dores / Top 5 elogios).
+- Feed com os "Quotes" mais marcantes destacados pela IA.
+
+#### Sizing: **5 SP** (Lógica do Gemini + Dashboards simples).
+
+---
+
+### Épico 39 & 42 — Webhooks & BI Exports (Infra)
+
+**Contexto:**  
+Exportação de dados e eventos para sistemas externos sem depender das telas da Wave 5.
+
+#### Critérios de Aceitação (ACs)
+
+**AC 1 — Webhook System (Épico 39)**
+- Tabelas: `webhook_endpoints` (id, url, secret, events[]) e `webhook_logs` (id, event_type, payload, status_code, sent_at).
+- Listener no Supabase (ou trigger) que ao mudar `health_score_v2` ou completar um playbook, dispara o payload para as URLs cadastradas.
+- Retry logic básico (3 tentativas se falhar).
+
+**AC 2 — Rota de Exportação BI (Épico 42)**
+- Endpoint `/api/export/bi`.
+- Gera um CSV (ou JSON estendido) com a base consolidada de Contas, Health Score atual, MRR e NPS.
+- Protegido por uma chave de API fixa (API Key) passada no Header, permitindo que ferramentas como Looker ou Tableau puxem os dados direto.
+
+#### Sizing: **5 SP** (Focado em backend e infra).
+
+---
+
 ## 🌊 Wave 6 — Inteligência Operacional (140 SP)
 
 ### Épicos Planejados
