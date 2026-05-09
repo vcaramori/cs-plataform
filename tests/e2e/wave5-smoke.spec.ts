@@ -1,8 +1,36 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Wave 5 — Smoke Tests', () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock auth (in real tests, use proper login)
+  test.beforeEach(async ({ page, context }) => {
+    // Mock authentication for testing
+    // In production QA, use real test user credentials
+    await context.addCookies([
+      {
+        name: 'sb-auth-token',
+        value: 'test-jwt-token',
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        secure: false,
+        sameSite: 'Lax'
+      }
+    ]);
+
+    // Mock Supabase auth state
+    await page.addInitScript(() => {
+      // Mock localStorage for Supabase session
+      const mockSession = {
+        user: {
+          id: 'test-user-id',
+          email: 'qa-test@plannera.test',
+          role: 'csm'
+        },
+        access_token: 'test-jwt-token',
+        refresh_token: 'test-refresh-token'
+      };
+      localStorage.setItem('supabase.auth.token', JSON.stringify(mockSession));
+    });
+
     await page.goto('/');
   });
 
