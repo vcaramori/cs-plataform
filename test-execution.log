@@ -1,0 +1,129 @@
+SyntaxError: C:\Users\Vinicius Caramori\OneDrive - Plannera Tecnologia da Informacao LTDA\Documentos\Antigravity\csplataform\tests\e2e\wave5-smoke.spec.ts: Unexpected token, expected "," (40:7)
+
+[0m [90m 38 |[39m           type[33m:[39m [32m'session'[39m
+ [90m 39 |[39m         }
+[31m[1m>[22m[39m[90m 40 |[39m       }[33m;[39m
+ [90m    |[39m        [31m[1m^[22m[39m
+ [90m 41 |[39m       localStorage[33m.[39msetItem([32m'supabase.auth.token'[39m[33m,[39m [33mJSON[39m[33m.[39mstringify(mockSession))[33m;[39m
+ [90m 42 |[39m
+ [90m 43 |[39m       [90m// Set auth session in IndexedDB if available[39m[0m
+
+   at wave5-smoke.spec.ts:40
+
+  38 |           type: 'session'
+  39 |         }
+> 40 |       };
+     |       ^
+  41 |       localStorage.setItem('supabase.auth.token', JSON.stringify(mockSession));
+  42 |
+  43 |       // Set auth session in IndexedDB if available
+
+{
+  "config": {
+    "configFile": "C:\\Users\\Vinicius Caramori\\OneDrive - Plannera Tecnologia da Informacao LTDA\\Documentos\\Antigravity\\csplataform\\playwright.config.ts",
+    "rootDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "C:/Users/Vinicius Caramori/OneDrive - Plannera Tecnologia da Informacao LTDA/Documentos/Antigravity/csplataform/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ],
+      [
+        "html"
+      ],
+      [
+        "line"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 8,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: C:\\Users\\Vinicius Caramori\\OneDrive - Plannera Tecnologia da Informacao LTDA\\Documentos\\Antigravity\\csplataform\\tests\\e2e\\wave5-smoke.spec.ts: Unexpected token, expected \",\" (40:7)\n\n\u001b[0m \u001b[90m 38 |\u001b[39m           type\u001b[33m:\u001b[39m \u001b[32m'session'\u001b[39m\n \u001b[90m 39 |\u001b[39m         }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m       }\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m       localStorage\u001b[33m.\u001b[39msetItem(\u001b[32m'supabase.auth.token'\u001b[39m\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(mockSession))\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m\n \u001b[90m 43 |\u001b[39m       \u001b[90m// Set auth session in IndexedDB if available\u001b[39m\u001b[0m",
+      "stack": "SyntaxError: C:\\Users\\Vinicius Caramori\\OneDrive - Plannera Tecnologia da Informacao LTDA\\Documentos\\Antigravity\\csplataform\\tests\\e2e\\wave5-smoke.spec.ts: Unexpected token, expected \",\" (40:7)\n\n\u001b[0m \u001b[90m 38 |\u001b[39m           type\u001b[33m:\u001b[39m \u001b[32m'session'\u001b[39m\n \u001b[90m 39 |\u001b[39m         }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m       }\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m       localStorage\u001b[33m.\u001b[39msetItem(\u001b[32m'supabase.auth.token'\u001b[39m\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(mockSession))\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m\n \u001b[90m 43 |\u001b[39m       \u001b[90m// Set auth session in IndexedDB if available\u001b[39m\u001b[0m",
+      "location": {
+        "file": "C:\\Users\\Vinicius Caramori\\OneDrive - Plannera Tecnologia da Informacao LTDA\\Documentos\\Antigravity\\csplataform\\tests\\e2e\\wave5-smoke.spec.ts",
+        "line": 40,
+        "column": 7
+      },
+      "snippet": "\u001b[90m   at \u001b[39mwave5-smoke.spec.ts:40\n\n\u001b[0m \u001b[90m 38 |\u001b[39m           type\u001b[33m:\u001b[39m \u001b[32m'session'\u001b[39m\n \u001b[90m 39 |\u001b[39m         }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 40 |\u001b[39m       }\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 41 |\u001b[39m       localStorage\u001b[33m.\u001b[39msetItem(\u001b[32m'supabase.auth.token'\u001b[39m\u001b[33m,\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mstringify(mockSession))\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m\n \u001b[90m 43 |\u001b[39m       \u001b[90m// Set auth session in IndexedDB if available\u001b[39m\u001b[0m"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-05-09T12:39:57.215Z",
+    "duration": 270.086,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
+[1A[2K
