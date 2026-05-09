@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Coffee } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
-import { EsforcoClient } from './components/EsforcoClient'
+import { EsforcoClient, Entry } from './components/EsforcoClient'
 import { AutoCheckInQueue } from './components/AutoCheckInQueue'
 
 export default async function EsforcoPage() {
@@ -42,7 +42,7 @@ export default async function EsforcoPage() {
 
       <EsforcoClient
         accounts={accounts ?? []}
-        initialEntries={(entries ?? []) as any}
+        initialEntries={(entries ?? []) as Entry[]}
       />
     </PageContainer>
   )

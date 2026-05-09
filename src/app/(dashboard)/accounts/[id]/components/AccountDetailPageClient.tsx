@@ -31,25 +31,43 @@ import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency } from '@/lib/utils'
 
 import { Card, CardContent } from "@/components/ui/card"
+import type { 
+  Contract, 
+  Interaction, 
+  SupportTicket, 
+  Contact, 
+  SuccessPlanGoal, 
+  AdoptionMetrics,
+  NPSResponse, 
+  CommercialGovernance, 
+  HealthScore,
+  AccountPlaybook,
+  TimeEntry
+} from '@/lib/supabase/types'
+import type { Database } from '@/lib/supabase/database.types'
+
+type RiskAssessmentRow = Database['public']['Tables']['account_risk_assessments']['Row']
+
 
 interface Props {
   id: string
   accountName: string
-  displayContracts: any[]
-  contracts: any[]
-  interactions: any[]
-  tickets: any[]
-  efforts: any[]
-  contacts: any[]
-  successGoals: any[]
-  adoptionMetrics: any[]
-  activePlaybook?: any
-  latestRiskAssessment?: any
-  npsResponses: any[]
-  playbooks?: any[]
-  commercialGovernance: any[]
-  healthScores?: any[]
+  displayContracts: Contract[]
+  contracts: Contract[]
+  interactions: Interaction[]
+  tickets: SupportTicket[]
+  efforts: TimeEntry[]
+  contacts: Contact[]
+  successGoals: SuccessPlanGoal[]
+  adoptionMetrics: AdoptionMetrics[]
+  activePlaybook?: AccountPlaybook
+  latestRiskAssessment?: RiskAssessmentRow
+  npsResponses: NPSResponse[]
+  playbooks?: AccountPlaybook[]
+  commercialGovernance: CommercialGovernance[]
+  healthScores?: HealthScore[]
 }
+
 
 function daysUntil(dateStr: string | null | undefined) {
   if (!dateStr) return null
@@ -57,7 +75,8 @@ function daysUntil(dateStr: string | null | undefined) {
   return Math.ceil(diff / 86400000)
 }
 
-function CompactContractCard({ contract, accountId, governanceRules }: { contract: any; accountId: string, governanceRules: any[] }) {
+function CompactContractCard({ contract, accountId, governanceRules }: { contract: Contract; accountId: string, governanceRules: CommercialGovernance[] }) {
+
   const days = daysUntil(contract.renewal_date)
   const renewalColor =
     days === null ? 'text-muted-foreground'
@@ -81,7 +100,8 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
   const hasDiscount = discount > 0
 
   return (
-    <Card variant="glass" className="rounded-2xl p-5 space-y-5 border-border shadow-md hover:bg-accent/10 transition-colors">
+    <Card className="rounded-2xl p-5 space-y-5 border-border shadow-md hover:bg-accent/10 transition-colors">
+
       {/* Cabeçalho do contrato */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -305,12 +325,14 @@ export function AccountDetailPageClient({
             </div>
 
             {displayContracts.length === 0 ? (
-              <Card variant="glass" className="p-10 border-dashed border-border text-center shadow-none bg-accent/5">
+              <Card className="p-10 border-dashed border-border text-center shadow-none bg-accent/5">
+
                 <p className="label-premium opacity-60 !text-[10px]">Sem dados contratuais registrados</p>
               </Card>
             ) : (
               <div className="space-y-5">
-                {displayContracts.map((contract: any) => (
+                {displayContracts.map((contract: Contract) => (
+
                   <CompactContractCard 
                     key={contract.id} 
                     contract={contract} 

@@ -6,16 +6,7 @@ import { Clock, History } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format } from 'date-fns'
-
-interface Entry {
-  id: string
-  account_id: string
-  accounts: { name: string } | null
-  activity_type: string
-  parsed_hours: number
-  parsed_description: string
-  date: string
-}
+import { Entry } from './EsforcoClient'
 
 interface EsforcoTableProps {
   entries: Entry[]

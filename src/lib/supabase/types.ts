@@ -756,4 +756,5 @@ export type PredictiveChurnSignal = {
   confidence: number // 0-1
 }
 
-export type Database = any
+export type { Database } from './database.types'
+

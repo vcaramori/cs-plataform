@@ -10,6 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Plus, TrendingUp, TrendingDown, Minus, AlertTriangle, Building2, Pencil, BrainCircuit } from 'lucide-react'
 import type { Account, Contract } from '@/lib/supabase/types'
+import type { Database } from '@/lib/supabase/database.types'
+
+type RiskAssessmentRow = Database['public']['Tables']['account_risk_assessments']['Row']
+
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatCurrency, formatNumber } from '@/lib/utils'
 import {
@@ -19,7 +23,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-type AccountWithContracts = Account & { contracts: Contract[], discrepancy_alert?: boolean }
+export type AccountWithContracts = Account & { 
+  contracts: Contract[]
+  discrepancy_alert?: boolean
+  account_risk_assessments?: RiskAssessmentRow[]
+}
+
 
 function calculateAccountMetrics(account: AccountWithContracts) {
   const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
@@ -76,9 +85,10 @@ function TrendIcon({ trend }: { trend: string }) {
 
 function SegmentBadge({ segment }: { segment: string }) {
   const colors: Record<string, string> = {
-    'Indústria': 'bg-[#2ba09d] text-white dark:bg-[#2ba09d]/20 dark:text-[#2ba09d] border-[#2ba09d]/20',
-    'MRO': 'bg-[#f8b967] text-[#8a5a15] border-[#f8b967]/20 dark:bg-[#f8b967]/20 dark:text-[#f8b967]',
-    'Varejo': 'bg-[#d85d4b] text-white border-[#d85d4b]/20 dark:bg-[#d85d4b]/20 dark:text-[#d85d4b]',
+    'Indústria': 'bg-teal-500 text-white dark:bg-teal-500/20 dark:text-teal-500 border-teal-500/20',
+    'MRO': 'bg-amber-500 text-white dark:bg-amber-500/20 dark:text-amber-500 border-amber-500/20',
+    'Varejo': 'bg-rose-500 text-white dark:bg-rose-500/20 dark:text-rose-500 border-rose-500/20',
+
   }
   return <Badge variant="outline" className={cn("text-[11px] uppercase font-extrabold tracking-widest px-3 py-1 border shadow-sm", colors[segment] ?? '')}>{segment}</Badge>
 }
@@ -102,8 +112,9 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
     let matchRisk = true
     if (riskFilter) {
       const healthRisk = a.health_score < 40
-      const riskAssessments = Array.isArray((a as any).account_risk_assessments) ? (a as any).account_risk_assessments : []
-      const aiRisk = riskAssessments.some((r: any) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
+      const riskAssessments = Array.isArray(a.account_risk_assessments) ? a.account_risk_assessments : []
+      const aiRisk = riskAssessments.some((r: RiskAssessmentRow) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
+
       matchRisk = healthRisk || aiRisk
     }
 
@@ -213,10 +224,11 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                           <div className="flex items-center gap-2">
                             <p className="text-content-primary font-extrabold text-[13px] tracking-tight transition-colors uppercase">{account.name}</p>
                             {(() => {
-                              const riskAssessments = Array.isArray((account as any).account_risk_assessments) 
-                                ? (account as any).account_risk_assessments 
-                                : ((account as any).account_risk_assessments ? [(account as any).account_risk_assessments] : []);
-                              const latestRisk = riskAssessments.sort((a: any, b: any) => new Date(b.analyzed_at).getTime() - new Date(a.analyzed_at).getTime())[0];
+                              const riskAssessments = Array.isArray(account.account_risk_assessments) 
+                                ? account.account_risk_assessments 
+                                : (account.account_risk_assessments ? [account.account_risk_assessments] : []);
+                              const latestRisk = riskAssessments.sort((a: RiskAssessmentRow, b: RiskAssessmentRow) => new Date(b.analyzed_at).getTime() - new Date(a.analyzed_at).getTime())[0];
+
                               
                               if (latestRisk && (latestRisk.sentiment_label === 'at-risk' || latestRisk.sentiment_label === 'negative')) {
                                 return (

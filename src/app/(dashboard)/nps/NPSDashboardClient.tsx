@@ -28,186 +28,79 @@ import {
 } from 'recharts'
 import { getNPSSegment } from '@/lib/supabase/types'
 import type { NPSStats } from '@/lib/supabase/types'
+import { ScoreBar } from './components/ScoreBar'
+import { NPSGauge } from './components/NPSGauge'
+import { ResponseDetailDialog } from './components/ResponseDetailDialog'
+import ResponseCarousel from './components/ResponseCarousel'
+import { NPSResponseCard } from './components/NPSResponseCard'
+import { NPSFilters } from './components/NPSFilters'
+
 
 interface Props {
   accounts: { id: string; name: string }[]
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-function ScoreBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((count / total) * 100) : 0
-  return (
-    <div className="flex items-center gap-3">
-      <span className="label-premium w-20 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-surface-background rounded-full overflow-hidden">
-        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1 }}
-          className={`h-full rounded-full ${color}`} />
-      </div>
-      <span className="text-content-primary text-[10px] font-extrabold w-8 text-right">{count}</span>
-      <span className="text-content-secondary text-[9px] font-bold w-10 text-right">{pct}%</span>
-    </div>
-  )
+export interface NPSQuestion {
+  id: string
+  title: string
+  type: string
 }
 
-function NPSGauge({ score, goal }: { score: number, goal: number | null }) {
-  const g = goal ?? 75
-  const c = Math.max(-100, Math.min(100, score))
-  const isMet = c >= g
-  const color = isMet ? 'text-success' : 'text-destructive'
-  const label = isMet ? 'Meta Atingida' : 'Abaixo da Meta'
-
-  return (
-    <div className="flex flex-col items-center gap-1 group relative">
-      <div className={`text-6xl font-extrabold tracking-tighter ${color} transition-transform group-hover:scale-105 duration-300`}>
-        {c > 0 ? '+' : ''}{c}
-      </div>
-      <div className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-surface-card border border-border-divider shadow-sm">
-        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isMet ? "bg-success" : "bg-destructive")} />
-        <span className={isMet ? 'text-success' : 'text-destructive'}>{label}</span>
-      </div>
-      <div className="label-premium mt-4 flex items-center gap-2">
-        <span>NPS SCORE</span>
-        <span className="opacity-20">/</span>
-        <span className="text-foreground">META: {g}</span>
-      </div>
-    </div>
-  )
+export interface NPSAnswer {
+  id: string
+  question_id: string
+  text_value: string
+  selected_options: string[]
+  nps_questions: NPSQuestion
 }
 
-// ─── Modal de Detalhes ───────────────────────────────────────────────────────
-function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenChange: (open: boolean) => void }) {
-  if (!render) return null
-
-  const answers = render.nps_answers || []
-  const seg = render.score !== null ? getNPSSegment(render.score) : null
-  const segColor = seg === 'promoter' ? 'text-success bg-success/10 border-success-500/20' : seg === 'passive' ? 'text-warning bg-warning/10 border-warning-500/20' : 'text-destructive bg-destructive/10 border-destructive/20'
-
-  return (
-    <DialogContent aria-describedby={undefined} className="bg-background border-border max-w-xl p-0 overflow-hidden rounded-2xl shadow-2xl">
-      <div className="p-8 space-y-8">
-        <DialogHeader className="flex flex-row items-center justify-between border-b border-border pb-6">
-          <div className="space-y-1">
-            <DialogTitle className="h2-section !text-xl !text-foreground">Feedback Detalhado</DialogTitle>
-            <p className="label-premium opacity-60">{render.account_name}</p>
-          </div>
-          <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-2xl shadow-sm ${segColor}`}>
-            {seg || 'N/A'}
-          </Badge>
-        </DialogHeader>
-
-        <div className="space-y-8 py-2">
-          {/* Respondente */}
-          <div className="flex items-center justify-between bg-surface-background p-4 rounded-2xl border border-border-divider">
-            <div className="flex gap-4 items-center">
-              <div className="w-12 h-12 rounded-2xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
-                <Input type="hidden" />
-                <span className="text-content-primary font-extrabold text-xl">{render.user_email?.charAt(0).toUpperCase() || 'A'}</span>
-              </div>
-              <div>
-                <p className="text-content-primary text-sm font-extrabold tracking-tight">{render.user_email || 'Anônimo'}</p>
-                <p className="label-premium !text-[9px] opacity-50 lowercase tracking-tight font-medium">
-                  {render.responded_at ? new Date(render.responded_at).toLocaleString('pt-BR') : 'Sem data'}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="label-premium !text-[9px]">Nota NPS</p>
-              <p className="text-3xl font-extrabold tracking-tighter text-content-primary">{render.score}<span className="text-xs opacity-60">/10</span></p>
-            </div>
-          </div>
-
-          {/* Respostas */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <AlignLeft className="w-4 h-4 text-primary" />
-              <p className="label-premium">Análise do Questionário</p>
-            </div>
-
-            {render.comment && (
-              <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-2 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                <p className="label-premium opacity-60 mb-1">Comentário Estruturado</p>
-                <p className="text-foreground text-sm italic font-medium leading-relaxed tracking-tight">"{render.comment}"</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {answers.length === 0 && !render.comment ? (
-                <div className="py-12 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center opacity-60">
-                  <p className="label-premium">Sem dados detalhados</p>
-                </div>
-              ) : (
-                answers.map((ans: any) => (
-                  <div key={ans.id} className="space-y-2 p-5 rounded-2xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
-                    <p className="label-premium !text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
-                    <div className="text-content-primary text-sm font-extrabold tracking-tight leading-relaxed">
-                      {ans.nps_questions?.type === 'nps_scale' ? (
-                        <div className="flex items-center gap-3">
-                          <div className="h-2 flex-1 bg-surface-background rounded-full overflow-hidden shadow-inner">
-                            <div className="h-full bg-primary" style={{ width: `${(parseInt(ans.text_value) / 10) * 100}%` }} />
-                          </div>
-                          <span className="text-primary font-extrabold tracking-tighter">{ans.text_value}<span className="text-[10px] opacity-60">/10</span></span>
-                        </div>
-                      ) : ans.nps_questions?.type === 'multiple_choice' ? (
-                        <div className="flex flex-wrap gap-2">
-                          {(ans.selected_options || []).map((opt: string) => (
-                            <Badge key={opt} variant="neutral" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-extrabold uppercase tracking-widest px-3">
-                              {opt}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="whitespace-pre-wrap font-medium text-muted-foreground">{ans.text_value || '—'}</p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="p-6 bg-surface-background border-t border-border-divider flex justify-end">
-        <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl px-8 h-10 label-premium">
-          Fechar Relatório
-        </Button>
-      </div>
-    </DialogContent>
-  )
+export interface NPSResponseDetail {
+  id: string
+  account_id: string
+  program_key: string
+  user_email: string
+  score: number
+  comment?: string
+  responded_at: string
+  account_name: string
+  nps_answers?: NPSAnswer[]
 }
 
-// ─── Carrossel de Respostas ──────────────────────────────────────────────────
-function ResponseCarousel({ ansList, scoreColor }: { ansList: any[], scoreColor: string }) {
-  const [idx, setIdx] = useState(0)
-  const validAnswers = ansList.filter(a => a.is_comment || a.text_value || (a.selected_options && a.selected_options.length > 0))
-
-  useEffect(() => {
-    if (validAnswers.length <= 1) return
-    const timer = setInterval(() => setIdx(prev => (prev + 1) % validAnswers.length), 5000)
-    return () => clearInterval(timer)
-  }, [validAnswers.length])
-
-  if (validAnswers.length === 0) return <p className="label-premium opacity-60 italic">Sem comentários registrados</p>
-
-  const ans = validAnswers[idx]
-  const qTitle = ans.is_comment ? 'Feedback Direto' : (ans.nps_questions?.title || 'Resposta')
-  const val = ans.is_comment ? ans.text_value : (ans.nps_questions?.type === 'multiple_choice'
-    ? (ans.selected_options || []).join(', ')
-    : ans.text_value)
-
-  return (
-    <div className="relative h-10 w-full overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.div key={idx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-          className="absolute inset-0 flex flex-col justify-center">
-          <span className={cn("label-premium !text-[8px] opacity-60 mb-0.5", scoreColor)}>{qTitle}</span>
-          <span className="text-foreground font-medium text-[11px] truncate leading-tight tracking-tight" title={val}>{val}</span>
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  )
+export interface NPSDashboardStats {
+  nps_score: number
+  total_responses: number
+  promoters: number
+  passives: number
+  detractors: number
+  avg_score: number
+  responses: NPSResponseDetail[]
 }
+
+interface Program {
+  id: string
+  program_key: string
+  name?: string
+  is_active?: boolean
+  accounts?: { name: string }
+}
+
+interface ParetoItem {
+  name: string
+  p: number
+  n: number
+  d: number
+  total: number
+  score: number
+}
+
+interface ChartItem {
+  date: string
+  nps: number
+  total: number
+}
+
+// ─── Components extracted to ./components/ ──────────────────────────────────
+
 
 // ─── Main Client ─────────────────────────────────────────────────────────────
 
@@ -215,17 +108,18 @@ export function NPSDashboardClient({ accounts }: Props) {
   const [accountFilter, setAccountFilter] = useState('all')
   const [periodDays, setPeriodDays] = useState('30')
   const [programFilter, setProgramFilter] = useState('default')
-  const [stats, setStats] = useState<NPSStats | null>(null)
-  const [programs, setPrograms] = useState<any[]>([])
+  const [stats, setStats] = useState<NPSDashboardStats | null>(null)
+  const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedResponse, setSelectedResponse] = useState<any>(null)
+  const [selectedResponse, setSelectedResponse] = useState<NPSResponseDetail | null>(null)
   const [goal, setGoal] = useState<number | null>(null)
   const [newGoalValue, setNewGoalValue] = useState('')
   const [isUpdatingGoal, setIsUpdatingGoal] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [paretoSortBy, setParetoSortBy] = useState<'promoters' | 'passives' | 'detractors'>('promoters')
-  const [paretoData, setParetoData] = useState<any[]>([])
-  const [chartData, setChartData] = useState<any[]>([])
+  const [paretoData, setParetoData] = useState<ParetoItem[]>([])
+  const [chartData, setChartData] = useState<ChartItem[]>([])
+
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -286,7 +180,7 @@ export function NPSDashboardClient({ accounts }: Props) {
     const grouped: Record<string, { p: number, n: number, d: number, total: number }> = {}
     const paretoRaw: Record<string, { name: string, p: number, n: number, d: number, total: number }> = {}
 
-    stats.responses.forEach((r: any) => {
+    stats.responses.forEach((r: NPSResponseDetail) => {
       if (!r.responded_at || r.score === null) return
       const dateKey = new Date(r.responded_at).toLocaleDateString('pt-BR')
       if (!grouped[dateKey]) grouped[dateKey] = { p: 0, n: 0, d: 0, total: 0 }
@@ -323,15 +217,15 @@ export function NPSDashboardClient({ accounts }: Props) {
 
   function handleExportExcel() {
     if (!stats?.responses.length) return toast.error('Sem dados para exportar.')
-    const data = stats.responses.map((r: any) => {
-      const base: any = {
+    const data = stats.responses.map((r: NPSResponseDetail) => {
+      const base: Record<string, string | number> = {
         'Respondente': r.user_email || 'Anônimo',
         'Conta': r.account_name,
         'Nota': r.score,
         'Data': r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '',
         'Comentário': r.comment || '',
       }
-      r.nps_answers?.forEach((ans: any) => {
+      r.nps_answers?.forEach((ans: NPSAnswer) => {
         const title = ans.nps_questions?.title || `Questão ${ans.question_id.slice(0, 4)}`
         base[title] = ans.nps_questions?.type === 'multiple_choice' ? (ans.selected_options || []).join(', ') : ans.text_value
       })
@@ -373,108 +267,25 @@ export function NPSDashboardClient({ accounts }: Props) {
         iconName="Star"
       />
 
-      {/* Filter Bar — Two-row layout to prevent overflow on mid-viewports */}
-      <div className="flex flex-col gap-3 bg-surface-card border border-border-divider p-4 rounded-2xl shadow-xl relative overflow-hidden backdrop-blur-md">
-        <div className="absolute top-0 left-0 w-1.5 h-full bg-plannera-orange/60" />
-        
-        {/* Row 1: Selects + Refresh */}
-        <div className="flex flex-wrap items-center gap-3 pl-2">
-          <Select value={programFilter} onValueChange={setProgramFilter}>
-            <SelectTrigger className="w-52 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
-              <Bookmark className="w-4 h-4 text-plannera-primary/40 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-              <SelectItem value="default" className="text-[10px] font-black uppercase tracking-widest">GLOBAL PORTFOLIO</SelectItem>
-              {programs.filter(p => p.is_active).map(p => (
-                <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-widest">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <NPSFilters
+        programFilter={programFilter}
+        onProgramChange={setProgramFilter}
+        accountFilter={accountFilter}
+        onAccountChange={setAccountFilter}
+        periodDays={periodDays}
+        onPeriodChange={setPeriodDays}
+        goal={goal}
+        newGoalValue={newGoalValue}
+        onGoalValueChange={setNewGoalValue}
+        isUpdatingGoal={isUpdatingGoal}
+        onSetGoal={handleSetGoal}
+        onExport={handleExportExcel}
+        onRefresh={fetchData}
+        isLoading={loading}
+        programs={programs}
+        accounts={accounts}
+      />
 
-          <Select value={accountFilter} onValueChange={setAccountFilter}>
-            <SelectTrigger className="w-44 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
-              <Building2 className="w-4 h-4 text-content-secondary/40 mr-2" />
-              <SelectValue placeholder="CONTAS" />
-            </SelectTrigger>
-            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-              <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest">TODAS AS CONTAS</SelectItem>
-              {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase tracking-widest">{a.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={periodDays} onValueChange={setPeriodDays}>
-            <SelectTrigger className="w-36 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
-              <CalendarRange className="w-4 h-4 text-content-secondary/40 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-              {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-black uppercase tracking-widest">{v} DIAS</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Button variant="ghost" size="icon" onClick={fetchData} className="h-10 w-10 text-content-secondary/40 hover:text-plannera-primary bg-surface-background/50 rounded-2xl border border-border-divider shadow-sm transition-all active:scale-90">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-
-        {/* Row 2: Meta NPS (prominent) + Export + Manage */}
-        <div className="flex flex-wrap items-center gap-3 pl-2 pt-1 border-t border-border-divider/50">
-          {/* Goal Display */}
-          <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-plannera-orange/5 border border-plannera-orange/20 shadow-inner group transition-all hover:border-plannera-orange/40">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[8px] font-black text-content-secondary/40 uppercase tracking-[0.25em]">Meta NPS</span>
-              <span className="text-xl font-black text-plannera-orange leading-none tracking-tighter tabular-nums">{goal ?? '—'}</span>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="p-2 rounded-xl bg-plannera-orange/10 hover:bg-plannera-orange text-plannera-orange hover:text-white transition-all group-hover:scale-105 active:scale-90">
-                  <Target className="w-3.5 h-3.5" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="bg-surface-card border border-border-divider text-white max-w-sm rounded-2xl shadow-2xl p-0 overflow-hidden backdrop-blur-3xl">
-                <div className="bg-gradient-to-r from-plannera-orange/40 to-black/40 p-8 border-b border-white/5 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
-                    <Target className="w-6 h-6 text-plannera-orange" />
-                  </div>
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-black text-white uppercase tracking-tighter">Meta Estratégica</DialogTitle>
-                    <p className="text-[9px] font-black text-plannera-orange/60 uppercase tracking-widest">NPS Target Benchmark</p>
-                  </DialogHeader>
-                </div>
-                <div className="p-10 space-y-8">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-content-secondary leading-relaxed opacity-70">Estabeleça o benchmark de satisfação desejado para este programa.</p>
-                  <div className="relative group">
-                    <div className="absolute -inset-2 bg-plannera-orange rounded-2xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                    <Input 
-                      type="number" 
-                      value={newGoalValue} 
-                      onChange={e => setNewGoalValue(e.target.value)} 
-                      placeholder="75" 
-                      className="relative h-20 text-center text-5xl font-black rounded-2xl border-2 border-border-divider bg-surface-background shadow-inner focus-visible:ring-plannera-orange/20" 
-                    />
-                  </div>
-                  <Button onClick={handleSetGoal} disabled={isUpdatingGoal} className="w-full h-16 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black text-[11px] tracking-[0.3em] rounded-2xl shadow-xl shadow-plannera-orange/20 transition-all active:scale-[0.98] uppercase">
-                    {isUpdatingGoal ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sincronizar Meta'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="flex-1" />
-
-          <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-10 border-border-divider text-success hover:bg-success hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
-            <Globe className="w-4 h-4" /> Exportar
-          </Button>
-
-          <Link href="/nps/programs">
-            <Button className="h-10 bg-plannera-primary hover:bg-plannera-primary/90 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 rounded-2xl shadow-xl shadow-plannera-primary/10 transition-all active:scale-95">
-              Gestão
-            </Button>
-          </Link>
-        </div>
-      </div>
 
       {/* Main Stats Card */}
       {loading ? (
@@ -581,51 +392,17 @@ export function NPSDashboardClient({ accounts }: Props) {
       {/* Feed Area */}
       {!loading && responses.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
-          {responses.slice(0, 14).map((r: any, i: number) => {
-            const seg = r.score !== null ? getNPSSegment(r.score) : null
-            const segColor = seg === 'promoter' ? 'text-success border-success-500/20 bg-success/5' : seg === 'passive' ? 'text-amber-400 border-warning-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
-
-            return (
-              <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                onClick={() => setSelectedResponse(r)}
-                className="flex items-stretch gap-8 p-8 rounded-2xl bg-surface-card border border-border-divider cursor-pointer hover:bg-surface-background hover:border-plannera-primary/30 transition-all group overflow-hidden relative shadow-lg shadow-black/5">
-
-                {/* Score Indicator */}
-                <div className={cn("flex flex-col items-center justify-center w-20 rounded-2xl border-2 font-black shrink-0 shadow-xl transition-all group-hover:scale-105 group-hover:rotate-2", segColor)}>
-                  <span className="text-[8px] opacity-60 uppercase leading-none mb-1.5 font-black tracking-widest">Score</span>
-                  <span className="text-3xl leading-none tracking-tighter tabular-nums">{r.score}</span>
-                </div>
-
-                <div className="flex-1 min-w-0 pr-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className="text-content-primary text-[11px] font-black truncate group-hover:text-plannera-primary transition-all uppercase tracking-[0.1em]">{r.user_email || 'ANÔNIMO'}</span>
-                    <span className="text-[9px] font-black text-content-secondary/30 ml-auto shrink-0 flex items-center gap-2 uppercase tracking-widest">
-                      {r.responded_at ? new Date(r.responded_at).toLocaleDateString('pt-BR') : '—'}
-                    </span>
-                  </div>
-
-                  <div className="px-5 py-3.5 rounded-2xl bg-surface-background/50 border border-border-divider shadow-inner group-hover:border-plannera-primary/20 transition-all">
-                    <ResponseCarousel
-                      ansList={r.comment ? [{ is_comment: true, text_value: r.comment }, ...(r.nps_answers || [])] : (r.nps_answers || [])}
-                      scoreColor={seg === 'promoter' ? 'text-success' : seg === 'passive' ? 'text-warning' : 'text-destructive'}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 mt-4">
-                    <Building2 className="w-3.5 h-3.5 text-content-secondary/20" />
-                    <p className="text-[9px] font-black uppercase tracking-widest text-content-secondary/40 group-hover:text-plannera-primary/40 transition-colors truncate">{r.account_name}</p>
-                  </div>
-                </div>
-
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-10 transition-all duration-500 ease-out">
-                  <div className="w-12 h-12 rounded-2xl bg-plannera-primary flex items-center justify-center shadow-2xl shadow-plannera-primary/30">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
+          {responses.slice(0, 14).map((r: NPSResponseDetail, i: number) => (
+            <NPSResponseCard
+              key={r.id}
+              response={r}
+              index={i}
+              onSelect={() => setSelectedResponse(r)}
+            />
+          ))}
         </div>
       )}
+
 
       {!loading && responses.length === 0 && (
         <div className="flex flex-col items-center justify-center py-48 bg-surface-background/30 border-4 border-dashed border-border-divider/50 rounded-2xl opacity-20 grayscale mt-12">

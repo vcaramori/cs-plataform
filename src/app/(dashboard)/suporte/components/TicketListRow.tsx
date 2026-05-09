@@ -68,9 +68,10 @@ export const TicketListRow: React.FC<TicketListRowProps> = ({
       </TableCell>
       <TableCell>
         <StatusBadgeGuard 
-          type={ticket.status as any} 
+          type={ticket.status as keyof typeof statusConfig} 
           label={statusConfig[ticket.status]?.label || ticket.status} 
         />
+
       </TableCell>
       <TableCell>
         <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} />

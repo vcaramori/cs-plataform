@@ -18,7 +18,6 @@ export default async function AdminPage() {
   return (
     <PageContainer>
       <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
             <Settings className="w-5 h-5 text-content-primary" />
@@ -31,7 +30,7 @@ export default async function AdminPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 mt-8">
-        <div className="p-6 bg-surface-card rounded-lg border border-border-divider">
+        <div className="p-6 bg-surface-card rounded-2xl border border-border-divider">
           <h2 className="text-lg font-bold text-content-primary">Sistema em Desenvolvimento</h2>
           <p className="text-content-secondary mt-2">
             O painel de administração será disponibilizado em breve com funcionalidades para gerenciar:

@@ -19,9 +19,25 @@ import { SuporteFilters } from './SuporteFilters'
 import { SuporteTable } from './SuporteTable'
 import { SupportBulkImport } from './SupportBulkImport'
 
-function sortTickets(tickets: any[]) {
-  const priorityMap: any = { critical: 0, high: 1, medium: 2, low: 3 }
-  const slaMap: any = { vencido: 0, atencao: 1, no_prazo: 2 }
+type TicketWithAccount = SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null }
+
+type AccountWithCSM = {
+  csm_owner?: {
+    id: string
+    name: string
+  } | null
+}
+
+type SemanticSearchResult = {
+  id: string
+  similarity: number
+}
+
+
+function sortTickets(tickets: TicketWithAccount[]) {
+  const priorityMap: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+  const slaMap: Record<string, number> = { vencido: 0, atencao: 1, no_prazo: 2 }
+
 
   return [...tickets].sort((a, b) => {
     const slaA = slaMap[a.sla_status_resolution] ?? 99
@@ -57,7 +73,8 @@ export function SuporteClient({
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
   const [semanticResults, setSemanticResults] = useState<{ ids: Set<string>; scores: Map<string, number> } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [undoSnapshot, setUndoSnapshot] = useState<any[] | null>(null)
+  const [undoSnapshot, setUndoSnapshot] = useState<unknown[] | null>(null)
+
   const [bulkActionOpen, setBulkActionOpen] = useState(false)
   const [bulkActionType, setBulkActionType] = useState<'change_status' | 'assign' | 'close' | null>(null)
   const [csms, setCSMs] = useState<Array<{ id: string; name: string }>>([])
@@ -71,10 +88,11 @@ export function SuporteClient({
         const res = await fetch('/api/accounts')
         if (res.ok) {
           const data = await res.json()
-          const csmList = data
-            .filter((account: any) => account.csm_owner?.id && account.csm_owner?.name)
-            .map((account: any) => ({ id: account.csm_owner.id, name: account.csm_owner.name }))
-            .filter((item: any, index: number, self: any[]) => self.findIndex(x => x.id === item.id) === index)
+          const csmList = (data as AccountWithCSM[])
+            .filter((account) => account.csm_owner?.id && account.csm_owner?.name)
+            .map((account) => ({ id: account.csm_owner!.id, name: account.csm_owner!.name }))
+            .filter((item, index, self) => self.findIndex(x => x.id === item.id) === index)
+
           setCSMs(csmList)
         }
       } catch (err) {
@@ -101,8 +119,9 @@ export function SuporteClient({
         })
         if (res.ok) {
           const data = await res.json()
-          const ids = new Set<string>((data.tickets ?? []).map((t: any) => t.id))
-          const scores = new Map<string, number>((data.tickets ?? []).map((t: any) => [t.id, t.similarity]))
+          const ids = new Set<string>((data.tickets as SemanticSearchResult[] ?? []).map((t) => t.id))
+          const scores = new Map<string, number>((data.tickets as SemanticSearchResult[] ?? []).map((t) => [t.id, t.similarity]))
+
           setSemanticResults({ ids, scores })
         }
       } catch (err) {
@@ -165,7 +184,8 @@ export function SuporteClient({
     setSelectedIds(newSelectedIds)
   }
 
-  const toggleSelectAll = (tickets: any[]) => {
+  const toggleSelectAll = (tickets: TicketWithAccount[]) => {
+
     if (selectedIds.size === tickets.length && tickets.length > 0) {
       setSelectedIds(new Set())
     } else {
@@ -179,7 +199,8 @@ export function SuporteClient({
     setBulkActionOpen(true)
   }
 
-  const handleBulkActionConfirm = async (payload: any) => {
+  const handleBulkActionConfirm = async (payload: Record<string, unknown>) => {
+
     try {
       const res = await fetch('/api/bulk-actions', {
         method: 'POST',
@@ -203,9 +224,10 @@ export function SuporteClient({
       setBulkActionOpen(false)
       setBulkActionType(null)
       router.refresh()
-    } catch (err: any) {
-      toast.error('Erro na ação em massa: ' + err.message)
+    } catch (err) {
+      toast.error('Erro na ação em massa: ' + (err as Error).message)
     }
+
   }
 
   const handleUndo = async () => {
@@ -224,9 +246,10 @@ export function SuporteClient({
       toast.success(`${data.restored_count} ticket(s) restaurado(s)!`)
       setUndoSnapshot(null)
       router.refresh()
-    } catch (err: any) {
-      toast.error('Erro ao desfazer: ' + err.message)
+    } catch (err) {
+      toast.error('Erro ao desfazer: ' + (err as Error).message)
     }
+
   }
 
   const handleTicketUpdated = (updatedTicket: SupportTicket) => {

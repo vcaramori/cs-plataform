@@ -21,12 +21,12 @@ const activityLabels: Record<string, string> = {
 }
 
 type Account = { id: string; name: string }
-type Entry = {
+export type Entry = {
   id: string
   account_id: string
   csm_id: string
   activity_type: string
-  natural_language_input: string
+  natural_language_input?: string
   parsed_hours: number
   parsed_description: string
   date: string
@@ -101,7 +101,7 @@ export function EsforcoClient({
     }
   }
 
-  const handleUpdate = (updated: any) => {
+  const handleUpdate = (updated: Entry) => {
     setEntries(prev => prev.map(e => e.id === updated.id ? updated : e))
     setSelectedEntry(updated)
   }
@@ -157,7 +157,7 @@ export function EsforcoClient({
         <EsforcoTable
           entries={entries}
           totalHours={entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
-          onSelectEntry={(e: any) => setSelectedEntry(e)}
+          onSelectEntry={(e: Entry) => setSelectedEntry(e)}
           activityLabels={activityLabels}
         />
       </div>

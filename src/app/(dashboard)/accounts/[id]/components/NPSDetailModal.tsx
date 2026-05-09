@@ -23,10 +23,10 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
 
   return (
     <Dialog open={!!render} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 max-w-xl p-0 overflow-hidden rounded-2xl shadow-2xl text-[#2d3558] dark:text-white">
+      <DialogContent aria-describedby={undefined} className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 max-w-xl p-0 overflow-hidden rounded-2xl shadow-2xl text-foreground dark:text-white">
         <DialogHeader className="flex flex-row items-center justify-between border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 p-6 pr-10">
           <div className="space-y-1">
-            <DialogTitle className="text-xl font-black text-[#2d3558] dark:text-white uppercase tracking-tighter">Feedback de NPS</DialogTitle>
+            <DialogTitle className="text-xl font-black text-foreground dark:text-white uppercase tracking-tighter">Feedback de NPS</DialogTitle>
             <p className="text-[10px] font-bold text-content-secondary dark:text-content-secondary uppercase tracking-widest">{render.account_name || 'Conta Cliente'}</p>
           </div>
           <Badge className={cn("text-[10px] font-black border uppercase px-3 py-1 rounded-full shadow-sm", segColor)}>
@@ -43,7 +43,7 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
                   <Star className="w-6 h-6 text-warning" />
                 </div>
                 <div>
-                  <p className="text-[#2d3558] dark:text-white text-sm font-black tracking-tight">{render.user_email || 'Respondente Anônimo'}</p>
+                  <p className="text-foreground dark:text-white text-sm font-black tracking-tight">{render.user_email || 'Respondente Anônimo'}</p>
                   <p className="text-[9px] font-bold text-content-secondary dark:text-content-secondary uppercase tracking-widest mt-1">
                     {render.date ? new Date(render.date).toLocaleString('pt-BR') : 'Sem data'}
                   </p>
@@ -51,7 +51,7 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
               </div>
               <div className="text-right">
                 <p className="text-[9px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest mb-1">Nota NPS</p>
-                <p className="text-4xl font-black tracking-tighter text-[#2d3558] dark:text-white">{render.score}<span className="text-sm text-content-secondary font-bold ml-1">/10</span></p>
+                <p className="text-4xl font-black tracking-tighter text-foreground dark:text-white">{render.score}<span className="text-sm text-content-secondary font-bold ml-1">/10</span></p>
               </div>
             </div>
 
@@ -66,7 +66,7 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
                 <div className="p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 space-y-2 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
                   <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Comentário Aberto</p>
-                  <p className="text-[#2d3558] dark:text-indigo-100 text-sm italic font-medium leading-relaxed tracking-tight">"{render.comment}"</p>
+                  <p className="text-foreground dark:text-indigo-100 text-sm italic font-medium leading-relaxed tracking-tight">"{render.comment}"</p>
                 </div>
               )}
 
@@ -81,7 +81,7 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
                       <p className="text-[9px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest group-hover:text-content-secondary dark:group-hover:text-content-secondary transition-colors">
                         {ans.nps_questions?.title || 'Componente do Feedback'}
                       </p>
-                      <div className="text-[#2d3558] dark:text-white text-sm font-bold tracking-tight leading-relaxed">
+                      <div className="text-foreground dark:text-white text-sm font-bold tracking-tight leading-relaxed">
                         {ans.nps_questions?.type === 'nps_scale' ? (
                           <div className="flex items-center gap-4">
                             <div className="h-1.5 flex-1 bg-surface-card dark:bg-slate-800 rounded-full overflow-hidden">
@@ -112,7 +112,7 @@ export function NPSDetailModal({ render, onOpenChange }: NPSDetailModalProps) {
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)} 
-            className="rounded-xl px-8 h-10 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-surface-card dark:hover:bg-slate-800 shadow-sm"
+            className="rounded-xl px-8 h-10 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-foreground dark:text-white hover:bg-surface-card dark:hover:bg-slate-800 shadow-sm"
           >
             Fechar Relatório
           </Button>

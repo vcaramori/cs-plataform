@@ -1,31 +1,29 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import VocBoardClient from './components/VocBoardClient'
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+import { PageContainer } from '@/components/ui/page-container'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 
 export default async function VocPage() {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-content-primary">Voice of Customer</h1>
-          <p className="text-slate-600 mt-2">Análise de sentimentos, temas e feedback do cliente</p>
-        </div>
+    <PageContainer>
+      <ModuleHeader 
+        title="Voice of Customer" 
+        subtitle="Análise de sentimentos, temas e feedback do cliente"
+        iconName="SmilePlus"
+      />
 
-        <Suspense fallback={<Skeleton className="h-80 rounded-lg" />}>
+      <div className="mt-8">
+        <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
           <VocBoardClient />
         </Suspense>
       </div>
-    </div>
+    </PageContainer>
   )
 }
