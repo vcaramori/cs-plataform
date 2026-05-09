@@ -1,22 +1,18 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { AdvancedAlertsService } from '@/lib/alerts/advanced-alerts-service'
-import { AlertsListResponseSchema } from '@/lib/schemas/alerts.schema'
+import { CSMCapacityResponseSchema } from '@/lib/schemas/csOps.schema'
+import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
 const QuerySchema = z.object({
-  alertType: z.string().optional(),
-  severity: z.string().optional(),
-  status: z.string().optional(),
+  csmId: z.string().uuid(),
 })
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const params = QuerySchema.safeParse({
-      alertType: url.searchParams.get('alertType'),
-      severity: url.searchParams.get('severity'),
-      status: url.searchParams.get('status'),
+      csmId: url.searchParams.get('csmId'),
     })
 
     if (!params.success) {
@@ -30,7 +26,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's CSM profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, role')
@@ -41,26 +36,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    const service = new AdvancedAlertsService(supabase)
-    const result = await service.getAlerts(profile.id, params.data)
+    // RLS: CSM can see own, csm_senior/admin can see all
+    const isSelf = profile.id === params.data.csmId
+    const canViewAll = ['csm_senior', 'admin'].includes(profile.role)
 
-    const validated = AlertsListResponseSchema.safeParse({
-      alerts: result.alerts,
-      summary: result.summary,
-      filters: params.data,
-    })
+    if (!isSelf && !canViewAll) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
+    const service = new CSOperationsService(supabase)
+    const capacity = await service.calculateCapacity(params.data.csmId)
+
+    const validated = CSMCapacityResponseSchema.safeParse(capacity)
     if (!validated.success) {
-      console.error('[alerts] Schema error:', validated.error)
+      console.error('[cs-ops/capacity] Schema error:', validated.error)
       return NextResponse.json({ error: 'Invalid response' }, { status: 500 })
     }
 
     return NextResponse.json(validated.data)
   } catch (error) {
-    console.error('[alerts] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[cs-ops/capacity] Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
