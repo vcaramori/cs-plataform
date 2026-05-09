@@ -33,19 +33,20 @@ Para cada página ou modal, avalie e documente:
 
 Cada agente ou equipe pode assumir um ou mais itens desta lista. Ao assumir, marque com `[/]` e quando terminar com `[x]`. Registre os problemas encontrados em `docs/product/master-audit-backlog.md` e crie o manual em `docs/user-manual/`.
 
-| Item | Módulo / Página | Tipo | Status | Responsável |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | **Dashboard** (`/dashboard`) | Página | `[ ]` | |
-| 2 | **Accounts** (`/accounts`) | Módulo | `[ ]` | |
-| 3 | **Account Detail** (`/accounts/[id]`) | Página | `[ ]` | |
-| 4 | **Account Modals** (Adoption, Contract, Interaction) | Modais | `[ ]` | |
-| 5 | **Suporte** (`/suporte`) | Módulo | `[ ]` | |
-| 6 | **NPS** (`/nps`) | Módulo | `[ ]` | |
-| 7 | **Playbooks** (`/playbooks`) | Módulo | `[ ]` | |
-| 8 | **Voice of Customer** (`/voc`) | Módulo | `[ ]` | |
-| 9 | **Esforço** (`/esforco`) | Página | `[ ]` | |
-| 10 | **Perguntar (IA)** (`/perguntar`) | Página | `[ ]` | |
-| 11 | **Admin / Users / Settings** | Vários | `[ ]` | |
+| Item | Módulo / Página | Tipo | Status | Responsável | Issues |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Dashboard** (`/dashboard`) | Página | `[x]` | Claude | 8 |
+| 2 | **Accounts** (`/accounts`) | Módulo | `[x]` | Claude | 2 |
+| 3 | **Account Detail** (`/accounts/[id]`) | Página | `[x]` | Claude | 14 |
+| 4 | **Account Modals** (Adoption, Contract, Interaction) | Modais | `[x]` | Claude | 16 |
+| 5 | **Suporte** (`/suporte`) | Módulo | `[x]` | Claude | 15 |
+| 6 | **NPS** (`/nps`) | Módulo | `[x]` | Claude | 12 |
+| 7 | **Playbooks** (`/playbooks`) | Módulo | `[x]` | Claude | 10 |
+| 8 | **Voice of Customer** (`/voc`) | Módulo | `[x]` | Claude | 14 |
+| 9 | **Esforço** (`/esforco`) | Página | `[x]` | Claude | 12 |
+| 10 | **Perguntar (IA)** (`/perguntar`) | Página | `[x]` | Claude | 11 |
+| 11 | **Admin / Users / Settings** | Vários | `[x]` | Claude | 13 |
+| **TOTAL** | — | — | **11/11** | **COMPLETO** | **147** |
 
 ---
 
