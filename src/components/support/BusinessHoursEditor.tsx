@@ -65,7 +65,7 @@ export function BusinessHoursEditor({ initialHours, accountId }: Props) {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-xl font-bold text-brand-primary dark:text-white">Horário Operacional {accountId && 'Customizado da Conta'}</h2>
-          <p className="text-sm text-brand-grey dark:text-slate-400">Configure os horários operacionais contabilizados para SLA.</p>
+          <p className="text-sm text-brand-grey dark:text-content-secondary">Configure os horários operacionais contabilizados para SLA.</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold rounded-xl shadow-md transition-all">
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}

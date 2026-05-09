@@ -63,7 +63,7 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
                 unreadCount > 0 ? "text-accent" : "text-content-secondary group-hover:text-content-primary"
              )} />
             {unreadCount > 0 && (
-               <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-extrabold text-white ring-2 ring-surface-card animate-pulse">
+               <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-extrabold text-white ring-2 ring-surface-card animate-pulse">
                 {unreadCount}
               </span>
             )}
@@ -80,7 +80,7 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
           )}
 
           {unreadCount > 0 && !isCollapsed && (
-            <div className="ml-auto w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+            <div className="ml-auto w-2 h-2 rounded-full bg-destructive animate-pulse" />
           )}
         </Button>
       </SheetTrigger>
@@ -98,7 +98,7 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-surface-background/50 dark:bg-slate-950/50">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-content-secondary">
               <Loader2 className="w-8 h-8 animate-spin text-accent" />

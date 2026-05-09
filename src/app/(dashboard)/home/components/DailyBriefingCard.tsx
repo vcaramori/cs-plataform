@@ -74,8 +74,8 @@ export function DailyBriefingCard() {
                 </div>
                 <div className={cn(
                   'text-xs font-bold uppercase tracking-tight px-2 py-1 rounded',
-                  p.urgency === 'critical' && 'bg-red-500/20 text-red-600',
-                  p.urgency === 'high' && 'bg-amber-500/20 text-amber-600',
+                  p.urgency === 'critical' && 'bg-red-500/20 text-destructive',
+                  p.urgency === 'high' && 'bg-warning/20 text-amber-600',
                   p.urgency === 'medium' && 'bg-blue-500/20 text-blue-600',
                 )}>
                   {p.urgency}

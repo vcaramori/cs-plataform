@@ -48,7 +48,7 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
                 goal.status === 'completed' && "opacity-60 grayscale-[0.5]"
               )}>
                 {goal.status === 'completed' && (
-                  <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />
+                  <div className="absolute inset-0 bg-success/5 pointer-events-none" />
                 )}
 
                 <CardContent className="p-4 flex items-center justify-between gap-6">

@@ -49,7 +49,7 @@ export function HealthScoreCard({
   const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? 'hsl(var(--primary))' : '#10b981'
 
   const trendIcon = {
-    up: <TrendingUp className="w-5 h-5 text-emerald-500" />,
+    up: <TrendingUp className="w-5 h-5 text-success" />,
     down: <TrendingDown className="w-5 h-5 text-destructive" />,
     critical: <AlertTriangle className="w-5 h-5 text-destructive animate-pulse" />,
     stable: <Minus className="w-5 h-5 text-muted-foreground" />,
@@ -157,7 +157,7 @@ export function HealthScoreCard({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-500/20 shadow-sm">{trendIcon}</div>
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-success/10 text-emerald-600 dark:text-success border border-success-100 dark:border-success-500/20 shadow-sm">{trendIcon}</div>
             <span className="text-lg font-black text-foreground uppercase tracking-tighter">
               {{ up: 'Alta', down: 'Queda', critical: 'Crítico', stable: 'Estável' }[healthTrend] ?? healthTrend}
             </span>

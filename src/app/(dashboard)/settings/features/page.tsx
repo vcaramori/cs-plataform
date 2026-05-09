@@ -102,7 +102,7 @@ export default function FeaturesSettingsPage() {
                       <div className="flex items-center justify-between pt-2 border-t border-border-divider">
                         <div className="flex items-center gap-1.5">
                           {feature.is_active ? (
-                            <div className="flex items-center gap-1.5 text-emerald-500">
+                            <div className="flex items-center gap-1.5 text-success">
                               <CheckCircle2 className="w-3 h-3" />
                               <span className="text-[9px] font-bold uppercase">Ativa</span>
                             </div>

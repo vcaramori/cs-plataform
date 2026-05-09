@@ -93,7 +93,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
               className="fixed right-0 top-0 h-full w-full sm:w-[420px] bg-white dark:bg-slate-900 border-l border-border shadow-2xl z-50 flex flex-col"
             >
               {/* Cabeçalho */}
-              <div className="p-4 border-b border-border flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
+              <div className="p-4 border-b border-border flex items-center justify-between bg-surface-background dark:bg-slate-900 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                     <Bot className="w-4 h-4 text-indigo-400" />
@@ -105,7 +105,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-slate-200 dark:hover:bg-slate-800 transition-all"
+                  className="w-8 h-8 rounded-lg bg-transparent flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-card dark:hover:bg-slate-800 transition-all"
                   aria-label="Fechar assistente"
                 >
                   <X className="w-4 h-4" />
@@ -150,7 +150,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="p-4 border-t border-border bg-slate-50 dark:bg-slate-900 shrink-0">
+              <div className="p-4 border-t border-border bg-surface-background dark:bg-slate-900 shrink-0">
                 <form onSubmit={handleSend} className="flex gap-2">
                   <Input
                     value={input}

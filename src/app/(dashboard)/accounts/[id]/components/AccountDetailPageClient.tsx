@@ -63,15 +63,15 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
     days === null ? 'text-muted-foreground'
     : days < 0    ? 'text-destructive font-black'
     : days < 30   ? 'text-destructive font-black'
-    : days < 90   ? 'text-amber-500 font-black'
-    : 'text-emerald-500 font-black'
+    : days < 90   ? 'text-warning font-black'
+    : 'text-success font-black'
 
   const statusLabels: Record<string, string> = {
     active: 'Ativo', 'at-risk': 'Em Risco', churned: 'Churn', 'in-negotiation': 'Negociação',
   }
   const statusColors: Record<string, string> = {
-    active: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-100 dark:border-emerald-500/20',
-    'at-risk': 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-100 dark:border-amber-500/20',
+    active: 'bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20',
+    'at-risk': 'bg-amber-50 dark:bg-warning/10 text-amber-700 dark:text-warning border-warning-100 dark:border-warning-500/20',
     churned: 'bg-red-50 dark:bg-destructive/10 text-red-700 dark:text-destructive border-red-100 dark:border-destructive/20',
     'in-negotiation': 'bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border-indigo-100 dark:border-primary/20',
   }
@@ -107,7 +107,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+            <DollarSign className="w-3.5 h-3.5 text-success" />
             <span className="label-premium !text-[9px] opacity-60">MRR Líquido</span>
           </div>
           <p className="text-foreground text-base font-black tracking-tighter tabular-nums">
@@ -121,7 +121,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         </div>
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
+            <CalendarDays className="w-3.5 h-3.5 text-warning" />
             <span className="label-premium !text-[9px] opacity-60">Renovação</span>
           </div>
           <p className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
@@ -242,12 +242,12 @@ export function AccountDetailPageClient({
           <section className="space-y-6">
             <div className="flex items-center justify-between px-1 h-12">
               <div className="flex items-center gap-4">
-                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-100 dark:border-emerald-500/20 shadow-sm">
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-success/10 text-emerald-600 dark:text-success border border-success-100 dark:border-success-500/20 shadow-sm">
                   <Target className="w-5 h-5" />
                 </div>
                 <h2 className="h2-section !text-base">Success Plan</h2>
               </div>
-              <Badge variant="neutral" className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-100 dark:border-emerald-500/20 px-3 py-1 text-[9px]">
+              <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px]">
                 Validado
               </Badge>
             </div>

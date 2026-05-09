@@ -243,7 +243,7 @@ export function TranscriptUploadModal({ open, onOpenChange, accountId, contractI
                 {ingestResult.chunks} chunks armazenados
               </Badge>
               <Badge className={
-                ingestResult.sentiment >= 0.2 ? 'bg-emerald-500/20 text-emerald-300' :
+                ingestResult.sentiment >= 0.2 ? 'bg-success/20 text-emerald-300' :
                 ingestResult.sentiment <= -0.2 ? 'bg-red-500/20 text-red-300' :
                 'bg-yellow-500/20 text-yellow-300'
               }>

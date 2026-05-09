@@ -132,7 +132,7 @@ export function NPSFilters({
 
         <div className="flex-1" />
 
-        <Button variant="outline" size="sm" onClick={onExport} className="h-10 border-border-divider text-emerald-500 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
+        <Button variant="outline" size="sm" onClick={onExport} className="h-10 border-border-divider text-success hover:bg-success hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
           <Globe className="w-4 h-4" /> Exportar
         </Button>
 

@@ -11,7 +11,7 @@ interface MergedTicketBannerProps {
 
 export function MergedTicketBanner({ primaryTicketId, mergedAt }: MergedTicketBannerProps) {
   return (
-    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 mb-6 flex gap-4 items-start shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="bg-amber-50 dark:bg-amber-950/20 border border-warning-200 dark:border-warning-900/50 rounded-2xl p-4 mb-6 flex gap-4 items-start shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
         <Link2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
       </div>

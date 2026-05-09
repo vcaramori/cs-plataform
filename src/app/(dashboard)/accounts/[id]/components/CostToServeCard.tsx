@@ -30,7 +30,7 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
     'Crítico'
 
   const barWidth = ratio === 0 ? 0 : Math.min((ratio / critical) * 100, 100)
-  const barColor = ratio < warn ? 'bg-emerald-500' : ratio < critical ? 'bg-yellow-500' : 'bg-red-500'
+  const barColor = ratio < warn ? 'bg-success' : ratio < critical ? 'bg-yellow-500' : 'bg-red-500'
 
   return (
     <Card>
@@ -55,7 +55,7 @@ export function CostToServeCard({ directHours, indirectHours, mrr, csmHourCost }
           <div className="flex justify-between text-xs text-content-secondary">
             <span>0%</span>
             <span className="text-yellow-600">{(warn * 100).toFixed(0)}%</span>
-            <span className="text-red-600">{(critical * 100).toFixed(0)}%+</span>
+            <span className="text-destructive">{(critical * 100).toFixed(0)}%+</span>
           </div>
         </div>
 

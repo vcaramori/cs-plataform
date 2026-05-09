@@ -37,16 +37,16 @@ export function HomePrioritiesClient() {
     manter_momentum: {
       label: 'Manter Momentum',
       icon: TrendingUp,
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/20',
+      color: 'text-warning',
+      bg: 'bg-warning/10',
+      border: 'border-warning-500/20',
     },
     oportunidade: {
       label: 'Oportunidade',
       icon: Target,
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/20',
+      color: 'text-success',
+      bg: 'bg-success/10',
+      border: 'border-success-500/20',
     },
   }
 

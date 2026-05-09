@@ -111,24 +111,24 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
 
   return (
     <Dialog open={!!playbook} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl p-0 overflow-hidden rounded-2xl shadow-2xl">
+      <DialogContent aria-describedby={undefined} className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl p-0 overflow-hidden rounded-2xl shadow-2xl">
 
         {/* Header Area with Glow */}
-        <div className="relative h-28 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center px-10 justify-between">
-          <div className="absolute inset-0 bg-emerald-500/5 blur-3xl rounded-full opacity-50 pointer-events-none" />
+        <div className="relative h-28 bg-surface-background dark:bg-slate-800/50 border-b border-border-divider dark:border-slate-800 flex items-center px-10 justify-between">
+          <div className="absolute inset-0 bg-success/5 blur-3xl rounded-full opacity-50 pointer-events-none" />
 
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center shadow-sm">
-              <Sparkles className="w-8 h-8 text-emerald-500" />
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-success/10 border border-success-200 dark:border-success-500/20 flex items-center justify-center shadow-sm">
+              <Sparkles className="w-8 h-8 text-success" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <DialogTitle className="text-xl font-black uppercase tracking-tighter leading-none text-[#2d3558] dark:text-white">
                   Histórico do Playbook
                 </DialogTitle>
-                <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] font-black uppercase tracking-widest px-2">Finalizado</Badge>
+                <Badge className="bg-success/10 text-success border-success-500/20 text-[9px] font-black uppercase tracking-widest px-2">Finalizado</Badge>
               </div>
-              <DialogDescription className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
+              <DialogDescription className="text-content-secondary dark:text-content-secondary text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
                 {trigger}
               </DialogDescription>
             </div>
@@ -140,7 +140,7 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white font-black uppercase tracking-widest text-[10px] h-9 gap-2"
+                className="bg-success/10 border-success-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-success hover:text-white font-black uppercase tracking-widest text-[10px] h-9 gap-2"
               >
                 <Edit2 className="w-3.5 h-3.5" /> Ajustar Checklist
               </Button>
@@ -149,7 +149,7 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsEditing(false)}
-                className="text-slate-500 font-black uppercase tracking-widest text-[10px]"
+                className="text-content-secondary font-black uppercase tracking-widest text-[10px]"
               >
                 Cancelar
               </Button>
@@ -170,14 +170,14 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
+        <div className="p-8 border-t border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
           <div />
 
           {isEditing ? (
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-[0.2em] h-11 px-10 shadow-xl shadow-emerald-500/20 gap-3 group rounded-xl transition-all"
+              className="bg-success hover:bg-emerald-600 text-white font-black uppercase tracking-[0.2em] h-11 px-10 shadow-xl shadow-emerald-500/20 gap-3 group rounded-xl transition-all"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 group-hover:scale-125 transition-transform" />}
               Salvar Ajustes
@@ -186,7 +186,7 @@ export function PlaybookHistoryModal({ playbook, onOpenChange, onTaskComplete }:
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl px-8 h-11 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm"
+              className="rounded-xl px-8 h-11 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white hover:bg-surface-card dark:hover:bg-slate-800 shadow-sm"
             >
               Fechar Histórico
             </Button>

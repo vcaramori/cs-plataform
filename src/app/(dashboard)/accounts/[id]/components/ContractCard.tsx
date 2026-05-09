@@ -41,7 +41,7 @@ export function ContractCard({ activeContract, allContracts, accountId, governan
   const penaltyRule = contractGovernanceRules.find((rule) => rule.rule_type === 'penalty')
 
   const statusColors: Record<string, string> = {
-    active: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    active: 'bg-success/20 text-emerald-300 border-success-500/30',
     'at-risk': 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
     churned: 'bg-red-500/20 text-red-300 border-red-500/30',
     'in-negotiation': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
@@ -75,7 +75,7 @@ export function ContractCard({ activeContract, allContracts, accountId, governan
                 <span className="text-content-secondary text-xs uppercase font-extrabold tracking-widest">MRR Real</span>
               </div>
               {hasDiscount && (
-                <Badge variant="neutral" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[8px] h-4 font-black">
+                <Badge variant="neutral" className="bg-warning/10 text-warning border-warning-500/20 text-[8px] h-4 font-black">
                   -{Math.round((discount / contract.mrr) * 100)}%
                 </Badge>
               )}

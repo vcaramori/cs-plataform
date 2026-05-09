@@ -8,10 +8,10 @@ import { AlertTriangle, CheckCircle2, Minus, X, Sparkles, User, BookOpen, Clock,
 import type { ReplyReviewResult } from '@/app/api/support-tickets/review-reply/route'
 
 const OUTCOME_CFG = {
-  pending_client: { label: 'Aguardando Cliente', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: Clock },
+  pending_client: { label: 'Aguardando Cliente', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-warning/15', border: 'border-warning-500/30', icon: Clock },
   pending_product: { label: 'Aguardando Produto', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/15', border: 'border-indigo-500/30', icon: Wrench },
-  solution: { label: 'Resolver Chamado', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCheck },
-  none: { label: 'Manter Aberto', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-surface-background', border: 'border-border-divider', icon: MinusIcon },
+  solution: { label: 'Resolver Chamado', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-success/15', border: 'border-success-500/30', icon: CheckCheck },
+  none: { label: 'Manter Aberto', color: 'text-slate-600 dark:text-content-secondary', bg: 'bg-surface-background', border: 'border-border-divider', icon: MinusIcon },
 } as const
 
 interface Props {
@@ -24,14 +24,14 @@ interface Props {
 }
 
 const SENTIMENT = {
-  Equilibrado: { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCircle2 },
-  Neutro: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: Minus },
+  Equilibrado: { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-success/15', border: 'border-success-500/30', icon: CheckCircle2 },
+  Neutro: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-warning/15', border: 'border-warning-500/30', icon: Minus },
   Rígido: { color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/15', border: 'border-rose-500/30', icon: AlertTriangle },
 }
 
 function grade(v: number) {
-  if (v >= 7.5) return { text: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-emerald-500', muted: 'text-emerald-500/20' }
-  if (v >= 5.0) return { text: 'text-amber-600 dark:text-amber-400', fill: 'bg-amber-500', muted: 'text-amber-500/20' }
+  if (v >= 7.5) return { text: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-success', muted: 'text-success/20' }
+  if (v >= 5.0) return { text: 'text-amber-600 dark:text-amber-400', fill: 'bg-warning', muted: 'text-warning/20' }
   return { text: 'text-rose-600 dark:text-rose-400', fill: 'bg-rose-500', muted: 'text-rose-500/20' }
 }
 
@@ -80,7 +80,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
               Revisão da Resposta
             </span>
             {review?.show_alert && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg">
+              <div className="flex items-center gap-1 px-2 py-1 bg-warning/15 border border-warning-500/30 rounded-lg">
                 <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest leading-none">Revisão apenas textual</span>
               </div>
@@ -117,7 +117,7 @@ function ModalContent({ originalText, review, onSelectOriginal, onSelectRecommen
         {!review && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4">
             <div className="w-9 h-9 border-2 border-indigo-500/20 border-t-indigo-400 rounded-full animate-spin" />
-            <p className="text-[11px] text-slate-500 uppercase tracking-widest">Analisando com o Padrão Plannera…</p>
+            <p className="text-[11px] text-content-secondary uppercase tracking-widest">Analisando com o Padrão Plannera…</p>
           </div>
         )}
 

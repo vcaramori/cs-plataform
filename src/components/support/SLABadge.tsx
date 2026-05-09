@@ -12,8 +12,8 @@ interface SLABadgeProps {
 }
 
 const config: Record<SLAStatus, { bg: string; text: string; icon: React.ComponentType<any> }> = {
-  no_prazo:  { bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', icon: Clock },
-  atencao:   { bg: 'bg-amber-500/10 border-amber-500/30',    text: 'text-amber-400',   icon: AlertTriangle },
+  no_prazo:  { bg: 'bg-success/10 border-success-500/30', text: 'text-emerald-400', icon: Clock },
+  atencao:   { bg: 'bg-warning/10 border-warning-500/30',    text: 'text-amber-400',   icon: AlertTriangle },
   vencido:   { bg: 'bg-red-500/10 border-red-500/30',        text: 'text-red-400',      icon: XCircle },
   cumprido:  { bg: 'bg-sky-500/10 border-sky-500/30',        text: 'text-sky-400',      icon: CheckCircle2 },
   violado:   { bg: 'bg-red-700/10 border-red-700/30',        text: 'text-red-500',      icon: XCircle },

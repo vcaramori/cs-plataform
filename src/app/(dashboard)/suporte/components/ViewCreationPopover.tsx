@@ -147,7 +147,7 @@ export function ViewCreationPopover({
                       "p-3 rounded-xl transition-all flex items-center justify-center border",
                       selectedIcon === id
                         ? "bg-plannera-primary text-white border-transparent shadow-lg"
-                        : "bg-slate-500/5 border-border/40 text-content-secondary hover:bg-slate-500/10"
+                        : "bg-surface-background0/5 border-border/40 text-content-secondary hover:bg-surface-background0/10"
                     )}
                     title={label}
                   >
@@ -176,10 +176,10 @@ export function ViewCreationPopover({
                 id="name"
                 placeholder="Ex: TICKETS CRÍTICOS"
                 {...register('name')}
-                className="h-10 bg-slate-500/5 dark:bg-slate-400/10 border-border/50 text-foreground rounded-xl text-[10px] font-black uppercase tracking-widest"
+                className="h-10 bg-surface-background0/5 dark:bg-slate-400/10 border-border/50 text-foreground rounded-xl text-[10px] font-black uppercase tracking-widest"
               />
               {errors.name && (
-                <p className="text-[10px] text-red-600 mt-1">{errors.name.message}</p>
+                <p className="text-[10px] text-destructive mt-1">{errors.name.message}</p>
               )}
             </div>
 

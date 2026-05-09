@@ -117,7 +117,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
     }
   }
 
-  const INPUT = 'bg-slate-500/5 dark:bg-slate-400/10 border-border/60 text-foreground h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest focus-visible:ring-primary/30 transition-all placeholder:text-muted-foreground/50 shadow-sm'
+  const INPUT = 'bg-surface-background0/5 dark:bg-slate-400/10 border-border/60 text-foreground h-11 rounded-2xl text-[10px] font-black uppercase tracking-widest focus-visible:ring-primary/30 transition-all placeholder:text-muted-foreground/50 shadow-sm'
   const LABEL = 'text-[10px] font-extrabold text-muted-foreground/90 uppercase tracking-widest ml-1'
 
   return (
@@ -133,10 +133,10 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">Editar Contrato</DialogTitle>
-          <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+          <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium">
             Atualize os parâmetros financeiros e operacionais deste registro.
           </DialogDescription>
         </DialogHeader>
@@ -275,7 +275,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
             </div>
             <div className="space-y-2">
               {(watch('progressive_discounts') || []).map((stage, si) => (
-                <div key={si} className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div key={si} className="flex items-center gap-2 p-2 rounded-xl bg-surface-background dark:bg-slate-800/50 border border-border-divider dark:border-slate-700">
                   <Input
                     value={stage.label}
                     onChange={(e) => {
@@ -283,7 +283,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                       current[si] = { ...current[si], label: e.target.value }
                       setValue('progressive_discounts', current)
                     }}
-                    className="h-8 bg-slate-500/10 dark:bg-slate-400/20 border-none text-[10px] font-bold"
+                    className="h-8 bg-surface-background0/10 dark:bg-slate-400/20 border-none text-[10px] font-bold"
                     placeholder="Rótulo"
                   />
                   <Input
@@ -294,7 +294,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                       current[si] = { ...current[si], discount: parseFloat(e.target.value) || 0 }
                       setValue('progressive_discounts', current)
                     }}
-                    className="h-8 w-16 text-[10px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                    className="h-8 w-16 text-[10px] bg-white dark:bg-slate-900 border-border-divider dark:border-slate-700"
                   />
                   <Select
                     value={stage.type}
@@ -304,7 +304,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                       setValue('progressive_discounts', current)
                     }}
                   >
-                    <SelectTrigger className="h-8 bg-slate-500/10 dark:bg-slate-400/20 border-none text-[10px] font-bold">
+                    <SelectTrigger className="h-8 bg-surface-background0/10 dark:bg-slate-400/20 border-none text-[10px] font-bold">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -316,7 +316,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    className="h-8 w-8 text-red-500 hover:text-destructive hover:bg-red-50"
                     onClick={() => {
                       const current = [...(watch('progressive_discounts') || [])]
                       current.splice(si, 1)
@@ -343,8 +343,8 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
           </div>
         </form>
 
-        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white">
+        <DialogFooter className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white">
             Descartar
           </Button>
           <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)} className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest">

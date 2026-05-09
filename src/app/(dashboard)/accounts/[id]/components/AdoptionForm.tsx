@@ -101,7 +101,7 @@ export function AdoptionForm({
         <Button
           onClick={() => onUpdate(selectedRecord)}
           disabled={!!saving}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-[10px] tracking-widest h-11 rounded-xl px-8 shadow-[0_0_20px_rgba(5,150,105,0.2)] transition-all hover:scale-105 active:scale-95 gap-2"
+          className="bg-emerald-600 hover:bg-success text-white font-bold uppercase text-[10px] tracking-widest h-11 rounded-xl px-8 shadow-[0_0_20px_rgba(5,150,105,0.2)] transition-all hover:scale-105 active:scale-95 gap-2"
         >
           {saving === selectedRecord.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Salvar
@@ -203,7 +203,7 @@ export function AdoptionForm({
               value={selectedRecord.action_plan || ''}
               onChange={(e) => onRecordChange({...selectedRecord, action_plan: e.target.value})}
               placeholder="Quais passos serão tomados para mitigar o bloqueio?"
-              className="bg-surface-background border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-emerald-500"
+              className="bg-surface-background border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-success-500"
             />
           </div>
 
@@ -214,7 +214,7 @@ export function AdoptionForm({
                 value={selectedRecord.action_owner || ''}
                 onChange={(e) => onRecordChange({...selectedRecord, action_owner: e.target.value})}
                 placeholder="Ex: Time de Produto, CSM, Cliente..."
-                className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-emerald-500"
+                className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-success-500"
               />
             </div>
             <div className="space-y-2">

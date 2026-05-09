@@ -127,7 +127,7 @@ export default function PlansSettingsPage() {
                       <div className="mt-6 flex items-center justify-between pt-4 border-t border-border-divider">
                         <div className="flex items-center gap-1.5">
                           {plan.is_active ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 border-none text-[8px] font-extrabold uppercase">Ativo</Badge>
+                            <Badge className="bg-success/10 text-success border-none text-[8px] font-extrabold uppercase">Ativo</Badge>
                           ) : (
                             <Badge className="bg-content-secondary/10 text-content-secondary border-none text-[8px] font-extrabold uppercase">Inativo</Badge>
                           )}

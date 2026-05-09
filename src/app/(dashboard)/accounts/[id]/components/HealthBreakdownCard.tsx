@@ -19,7 +19,7 @@ interface Props {
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 70) return 'bg-emerald-500/20 text-emerald-300'
+  if (score >= 70) return 'bg-success/20 text-emerald-300'
   if (score >= 40) return 'bg-yellow-500/20 text-yellow-300'
   return 'bg-red-500/20 text-red-300'
 }
@@ -33,13 +33,13 @@ function getScoreTextColor(score: number): string {
 function getStatusBadgeClass(status?: string): string {
   switch (status) {
     case 'healthy':
-      return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+      return 'bg-success/20 text-emerald-300 border-success-500/30'
     case 'at-risk':
       return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
     case 'critical':
       return 'bg-red-500/20 text-red-300 border-red-500/30'
     default:
-      return 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+      return 'bg-surface-background0/20 text-slate-300 border-slate-500/30'
   }
 }
 
@@ -62,7 +62,7 @@ export function HealthBreakdownCard({ breakdown, status, classifiedAt }: Props) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[200px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-center h-[200px] text-content-secondary dark:text-content-secondary">
             Sem dados disponíveis
           </div>
         </CardContent>

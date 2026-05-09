@@ -37,8 +37,8 @@ function calculateAccountMetrics(account: AccountWithContracts) {
 }
 
 function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: boolean }) {
-  const color = score >= 70 ? 'text-emerald-500' : score >= 40 ? 'text-primary' : 'text-destructive'
-  const bg = score >= 70 ? 'bg-emerald-500/10' : score >= 40 ? 'bg-primary/10' : 'bg-destructive/10'
+  const color = score >= 70 ? 'text-success' : score >= 40 ? 'text-primary' : 'text-destructive'
+  const bg = score >= 70 ? 'bg-success/10' : score >= 40 ? 'bg-primary/10' : 'bg-destructive/10'
   const ring = score >= 70 ? 'ring-emerald-500/20' : score >= 40 ? 'ring-primary/20' : 'ring-destructive/20'
 
   return (
@@ -66,7 +66,7 @@ function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: bo
 
 function TrendIcon({ trend }: { trend: string }) {
   const trends: any = {
-    up: <TrendingUp className="w-4 h-4 text-emerald-500" />,
+    up: <TrendingUp className="w-4 h-4 text-success" />,
     down: <TrendingDown className="w-4 h-4 text-destructive" />,
     critical: <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />,
     stable: <Minus className="w-4 h-4 text-muted-foreground" />

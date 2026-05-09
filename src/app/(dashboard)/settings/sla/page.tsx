@@ -184,9 +184,9 @@ export default function SLASettingsPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-start gap-4">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[10px] text-amber-500/70 font-medium leading-relaxed uppercase">
+              <div className="mt-4 p-4 rounded-xl bg-warning/5 border border-warning-500/10 flex items-start gap-4">
+                <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                <p className="text-[10px] text-warning/70 font-medium leading-relaxed uppercase">
                   Atenção: Mudanças nos tempos globais não retroagirão para chamados que já estão abertos. O novo SLA será aplicado apenas para novos chamados em clientes que utilizam o padrão Plannera.
                 </p>
               </div>
@@ -265,7 +265,7 @@ export default function SLASettingsPage() {
 
           <Card className="p-6 rounded-2xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="p-2 rounded-lg bg-success/10 border border-success-500/20">
                 <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>

@@ -48,7 +48,7 @@ export function StatCardPremium({
     destructive: { text: 'text-plannera-demand', bg: 'bg-plannera-demand', border: 'hover:border-plannera-demand/50', glow: 'rgba(216,93,75,0.6)' },
     ds: { text: 'text-plannera-ds', bg: 'bg-plannera-ds', border: 'hover:border-plannera-ds/50', glow: 'rgba(43,160,157,0.6)' },
     sop: { text: 'text-plannera-sop', bg: 'bg-plannera-sop', border: 'hover:border-plannera-sop/50', glow: 'rgba(58,76,138,0.6)' },
-    emerald: { text: 'text-emerald-500', bg: 'bg-emerald-500', border: 'hover:border-emerald-500/50', glow: 'rgba(16,185,129,0.6)' },
+    emerald: { text: 'text-success', bg: 'bg-success', border: 'hover:border-success-500/50', glow: 'rgba(16,185,129,0.6)' },
     orange: { text: 'text-plannera-orange', bg: 'bg-plannera-orange', border: 'hover:border-plannera-orange/50', glow: 'rgba(247,148,30,0.6)' }
   }
 
@@ -104,7 +104,7 @@ export function StatCardPremium({
             {trend && (
               <Badge className={cn(
                 "border-none text-[10px] px-1.5 py-0 font-bold",
-                trend.isPositive ? "bg-emerald-500/20 text-emerald-500" : "bg-rose-500/20 text-rose-500"
+                trend.isPositive ? "bg-success/20 text-success" : "bg-rose-500/20 text-rose-500"
               )}>
                 {trend.isPositive ? '↑' : '↓'} {trend.value}
               </Badge>

@@ -14,7 +14,7 @@ interface NPSResponseCardProps {
 
 export function NPSResponseCard({ response, index, onSelect }: NPSResponseCardProps) {
   const seg = response.score !== null ? getNPSSegment(response.score) : null
-  const segColor = seg === 'promoter' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : seg === 'passive' ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
+  const segColor = seg === 'promoter' ? 'text-success border-success-500/20 bg-success/5' : seg === 'passive' ? 'text-amber-400 border-warning-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
 
   return (
     <motion.div
@@ -40,7 +40,7 @@ export function NPSResponseCard({ response, index, onSelect }: NPSResponseCardPr
         <div className="px-5 py-3.5 rounded-2xl bg-surface-background/50 border border-border-divider shadow-inner group-hover:border-plannera-primary/20 transition-all">
           <ResponseCarousel
             ansList={response.comment ? [{ is_comment: true, text_value: response.comment }, ...(response.nps_answers || [])] : (response.nps_answers || [])}
-            scoreColor={seg === 'promoter' ? 'text-emerald-500' : seg === 'passive' ? 'text-amber-500' : 'text-destructive'}
+            scoreColor={seg === 'promoter' ? 'text-success' : seg === 'passive' ? 'text-warning' : 'text-destructive'}
           />
         </div>
         <div className="flex items-center gap-2 mt-4">

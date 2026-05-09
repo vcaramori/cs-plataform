@@ -45,8 +45,8 @@ export default function RenewalPipelineSection() {
               'border-l-blue-500'
             }`}
           >
-            <p className="font-medium text-sm text-slate-900">{item.account_name}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="font-medium text-sm text-content-primary">{item.account_name}</p>
+            <p className="text-xs text-content-secondary mt-1">
               ARR: ${item.arr.toLocaleString()}
             </p>
             <div className={`text-xs font-bold mt-2 inline-block px-2 py-1 rounded ${
@@ -59,7 +59,7 @@ export default function RenewalPipelineSection() {
           </Link>
         ))}
         {items.length === 0 && (
-          <p className="text-xs text-slate-500 text-center py-4">Nenhuma conta</p>
+          <p className="text-xs text-content-secondary text-center py-4">Nenhuma conta</p>
         )}
       </div>
     </div>

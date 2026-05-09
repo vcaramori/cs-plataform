@@ -108,8 +108,8 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
 
   const getTaskIcon = (type: string) => {
     switch (type) {
-      case 'email': return <Mail className="w-4 h-4 text-amber-500" />
-      case 'meeting': return <Calendar className="w-4 h-4 text-emerald-500" />
+      case 'email': return <Mail className="w-4 h-4 text-warning" />
+      case 'meeting': return <Calendar className="w-4 h-4 text-success" />
       case 'review': return <Search className="w-4 h-4 text-indigo-500" />
       default: return <CheckCircle2 className="w-4 h-4 text-content-secondary/40" />
     }
@@ -119,16 +119,16 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
     <>
       <Card variant="glass" className={cn(
         "border-red-500/20 shadow-md bg-white dark:bg-slate-950 transition-all duration-500",
-        isAllDone && "border-emerald-500/40 bg-emerald-500/5 shadow-emerald-500/10"
+        isAllDone && "border-success-500/40 bg-success/5 shadow-emerald-500/10"
       )}>
         <div className={cn(
           "p-4 border-b border-border transition-colors duration-500",
-          isAllDone ? "bg-emerald-500/10" : "bg-red-500/5"
+          isAllDone ? "bg-success/10" : "bg-red-500/5"
         )}>
           <div className="flex justify-between items-center mb-2">
             <h3 className={cn(
               "text-sm font-bold transition-colors duration-500",
-              isAllDone ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+              isAllDone ? "text-emerald-600 dark:text-emerald-400" : "text-destructive dark:text-red-400"
             )}>
               {isAllDone ? '✓ Playbook Finalizado' : `Playbook Ativo: ${playbook.template?.name}`}
             </h3>
@@ -137,7 +137,7 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
               className={cn(
                 "transition-all duration-500 font-bold",
                 isAllDone 
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 animate-pulse" 
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-success/20 dark:text-emerald-400 animate-pulse" 
                   : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"
               )}
             >
@@ -153,7 +153,7 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
             value={progress} 
             className={cn(
               "h-1.5 transition-all duration-500",
-              isAllDone ? "bg-emerald-100 dark:bg-emerald-500/20" : "bg-red-100 dark:bg-red-500/20"
+              isAllDone ? "bg-emerald-100 dark:bg-success/20" : "bg-red-100 dark:bg-red-500/20"
             )} 
           />
           
@@ -181,7 +181,7 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
             >
               <div className="shrink-0">
                 {task.status === 'completed' 
-                  ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> 
+                  ? <CheckCircle2 className="w-5 h-5 text-success" /> 
                   : <Circle className="w-5 h-5 text-muted-foreground" />}
               </div>
               <div className="flex-1 min-w-0">

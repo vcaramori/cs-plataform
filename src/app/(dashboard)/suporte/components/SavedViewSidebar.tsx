@@ -147,7 +147,7 @@ export function SavedViewSidebar({
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group relative",
                   isActive
                     ? "bg-[#101623] border border-border/40 text-white shadow-lg"
-                    : "text-content-secondary hover:bg-slate-500/5 hover:text-content-primary"
+                    : "text-content-secondary hover:bg-surface-background0/5 hover:text-content-primary"
                 )}
                 title={isCollapsed ? view.name : undefined}
               >
@@ -193,7 +193,7 @@ export function SavedViewSidebar({
                       "flex-1 flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                       isActive
                         ? "bg-[#101623] border border-border/40 text-white shadow-lg"
-                        : "text-content-secondary hover:bg-slate-500/5"
+                        : "text-content-secondary hover:bg-surface-background0/5"
                     )}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
@@ -207,7 +207,7 @@ export function SavedViewSidebar({
                   <button
                     onClick={() => handleDeleteView(view.id)}
                     disabled={isDeleting === view.id}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-red-600 rounded transition-all disabled:opacity-50"
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 hover:text-destructive rounded transition-all disabled:opacity-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -235,7 +235,7 @@ export function SavedViewSidebar({
             open={isCreating}
             onOpenChange={setIsCreating}
           >
-            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-500/5 text-content-secondary hover:text-content-primary hover:bg-slate-500/10 transition-all text-[10px] font-black uppercase tracking-widest border border-border/20">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-background0/5 text-content-secondary hover:text-content-primary hover:bg-surface-background0/10 transition-all text-[10px] font-black uppercase tracking-widest border border-border/20">
               <Plus className="w-4 h-4" />
               Nova view
             </button>

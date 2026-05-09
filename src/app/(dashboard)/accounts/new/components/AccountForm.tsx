@@ -401,7 +401,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
           <CardHeader className="px-8 pt-8 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 shadow-inner">
+                <div className="p-2.5 rounded-xl bg-success/10 text-success shadow-inner">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div className="space-y-0.5">
@@ -409,12 +409,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   <p className="text-[10px] text-content-secondary font-medium tracking-wide">Geografia e Operação</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10 self-center">
+              <div className="flex items-center gap-3 px-4 py-2 bg-success/5 rounded-xl border border-success-500/10 self-center">
                 <Label className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 leading-none">Internacional</Label>
                 <Switch
                   checked={isInternational}
                   onCheckedChange={(v) => setValue('is_international', v)}
-                  className="data-[state=checked]:bg-emerald-500"
+                  className="data-[state=checked]:bg-success"
                 />
               </div>
             </div>
@@ -426,7 +426,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   <Label className={LABEL}>CEP</Label>
                   <div className="relative">
                     <Input {...register('cep')} placeholder="00000-000" className={INPUT} />
-                    {searchingCep && <Loader2 className="w-3.5 h-3.5 animate-spin absolute right-3 top-3 text-emerald-500" />}
+                    {searchingCep && <Loader2 className="w-3.5 h-3.5 animate-spin absolute right-3 top-3 text-success" />}
                   </div>
                 </div>
               )}
@@ -707,8 +707,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                           const levelMeta = {
                             critical: { label: 'Crítico', color: 'text-red-500 border-red-500/20 bg-red-500/10' },
                             high:     { label: 'Alto',    color: 'text-orange-500 border-orange-500/20 bg-orange-500/10' },
-                            medium:   { label: 'Médio',   color: 'text-amber-500 border-amber-500/20 bg-amber-500/10' },
-                            low:      { label: 'Baixo',   color: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10' },
+                            medium:   { label: 'Médio',   color: 'text-warning border-warning-500/20 bg-warning/10' },
+                            low:      { label: 'Baixo',   color: 'text-success border-success-500/20 bg-success/10' },
                           }[lvl.level]
 
                           return (

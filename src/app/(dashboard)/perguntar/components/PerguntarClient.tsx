@@ -347,9 +347,9 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
 
           <div className="flex items-center justify-between px-6 mt-4">
             <div className="flex items-center gap-4">
-               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">IA Conectada</span>
+               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/10 border border-success-500/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="text-[8px] font-black text-success uppercase tracking-widest">IA Conectada</span>
                </div>
             </div>
             <p className="text-content-secondary text-[9px] font-black uppercase tracking-[0.3em] opacity-60">

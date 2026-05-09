@@ -42,23 +42,23 @@ export default async function RenewalPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-          <h1 className="text-3xl font-bold text-slate-900">{account.name}</h1>
+        <div className="bg-white rounded-lg shadow-sm border border-border-divider p-6">
+          <h1 className="text-3xl font-bold text-content-primary">{account.name}</h1>
           <p className="text-slate-600 mt-1">{account.company_name}</p>
           <div className="flex gap-4 mt-4">
             <div className="flex flex-col">
-              <span className="text-xs text-slate-500 uppercase">Health Score</span>
+              <span className="text-xs text-content-secondary uppercase">Health Score</span>
               <span className="text-2xl font-bold text-emerald-600">{account.health_score_v2 || 0}%</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-slate-500 uppercase">Days to Renewal</span>
+              <span className="text-xs text-content-secondary uppercase">Days to Renewal</span>
               <span className={`text-2xl font-bold ${
-                daysToRenewal && daysToRenewal <= 30 ? 'text-red-600' :
+                daysToRenewal && daysToRenewal <= 30 ? 'text-destructive' :
                 daysToRenewal && daysToRenewal <= 90 ? 'text-amber-600' : 'text-slate-600'
               }`}>{daysToRenewal ?? 'N/A'}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-slate-500 uppercase">ARR</span>
+              <span className="text-xs text-content-secondary uppercase">ARR</span>
               <span className="text-2xl font-bold">${(contract?.arr || 0).toLocaleString()}</span>
             </div>
           </div>

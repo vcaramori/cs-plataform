@@ -36,7 +36,7 @@ export function SLATimer({ deadline, resolvedAt, className }: SLATimerProps) {
   }, [deadline, resolvedAt])
 
   if (!deadline) return null
-  if (resolvedAt) return <span className={cn('text-xs text-slate-500', className)}>Resolvido</span>
+  if (resolvedAt) return <span className={cn('text-xs text-content-secondary', className)}>Resolvido</span>
   if (remaining === null) return null
 
   const isUrgent = remaining <= 0

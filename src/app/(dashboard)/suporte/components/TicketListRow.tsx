@@ -23,7 +23,7 @@ interface TicketListRowProps {
 const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
   'in_progress': { label: 'Em Progresso', color: 'text-accent', bg: 'bg-accent/10' },
-  resolved: { label: 'Resolvido', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  resolved: { label: 'Resolvido', color: 'text-success', bg: 'bg-success/10' },
   closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-surface-background/50' },
   reopened: { label: 'Reaberto', color: 'text-accent', bg: 'bg-accent/10' },
 }

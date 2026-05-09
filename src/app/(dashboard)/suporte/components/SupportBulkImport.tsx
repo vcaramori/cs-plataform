@@ -171,13 +171,13 @@ export function SupportBulkImport({ accounts, onImported }: SupportBulkImportPro
                 animate={{ opacity: 1, scale: 1 }}
                 className={cn(
                   "p-6 rounded-2xl border-2 flex flex-col gap-4 shadow-lg",
-                  (result.created ?? 0) > 0 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-destructive/5 border-destructive/10'
+                  (result.created ?? 0) > 0 ? 'bg-success/5 border-success-500/10' : 'bg-destructive/5 border-destructive/10'
                 )}
               >
                 <div className="flex items-center gap-4">
-                  <div className={cn("p-2 rounded-xl border", (result.created ?? 0) > 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-destructive/10 border-destructive/20')}>
+                  <div className={cn("p-2 rounded-xl border", (result.created ?? 0) > 0 ? 'bg-success/10 border-success-500/20' : 'bg-destructive/10 border-destructive/20')}>
                     {(result.created ?? 0) > 0
-                      ? <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      ? <CheckCircle2 className="w-6 h-6 text-success" />
                       : <AlertTriangle className="w-6 h-6 text-destructive" />}
                   </div>
                   <span className="text-foreground text-lg font-extrabold tracking-tighter uppercase">

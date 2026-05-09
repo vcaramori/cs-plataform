@@ -54,7 +54,7 @@ function NPSGauge({ score, goal }: { score: number, goal: number | null }) {
   const g = goal ?? 75
   const c = Math.max(-100, Math.min(100, score))
   const isMet = c >= g
-  const color = isMet ? 'text-emerald-500' : 'text-destructive'
+  const color = isMet ? 'text-success' : 'text-destructive'
   const label = isMet ? 'Meta Atingida' : 'Abaixo da Meta'
 
   return (
@@ -63,8 +63,8 @@ function NPSGauge({ score, goal }: { score: number, goal: number | null }) {
         {c > 0 ? '+' : ''}{c}
       </div>
       <div className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest bg-surface-card border border-border-divider shadow-sm">
-        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isMet ? "bg-emerald-500" : "bg-destructive")} />
-        <span className={isMet ? 'text-emerald-500' : 'text-destructive'}>{label}</span>
+        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isMet ? "bg-success" : "bg-destructive")} />
+        <span className={isMet ? 'text-success' : 'text-destructive'}>{label}</span>
       </div>
       <div className="label-premium mt-4 flex items-center gap-2">
         <span>NPS SCORE</span>
@@ -81,7 +81,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
 
   const answers = render.nps_answers || []
   const seg = render.score !== null ? getNPSSegment(render.score) : null
-  const segColor = seg === 'promoter' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : seg === 'passive' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : 'text-destructive bg-destructive/10 border-destructive/20'
+  const segColor = seg === 'promoter' ? 'text-success bg-success/10 border-success-500/20' : seg === 'passive' ? 'text-warning bg-warning/10 border-warning-500/20' : 'text-destructive bg-destructive/10 border-destructive/20'
 
   return (
     <DialogContent aria-describedby={undefined} className="bg-background border-border max-w-xl p-0 overflow-hidden rounded-2xl shadow-2xl">
@@ -464,7 +464,7 @@ export function NPSDashboardClient({ accounts }: Props) {
 
           <div className="flex-1" />
 
-          <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-10 border-border-divider text-emerald-500 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-10 border-border-divider text-success hover:bg-success hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl px-5 shadow-sm transition-all active:scale-95 gap-2">
             <Globe className="w-4 h-4" /> Exportar
           </Button>
 
@@ -515,7 +515,7 @@ export function NPSDashboardClient({ accounts }: Props) {
                 </div>
 
                 <div className="space-y-5 pt-10 border-t border-border-divider/50">
-                  <ScoreBar label="Promotores" count={stats.promoters} total={stats.total_responses} color="bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
+                  <ScoreBar label="Promotores" count={stats.promoters} total={stats.total_responses} color="bg-success shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
                   <ScoreBar label="Neutros" count={stats.passives} total={stats.total_responses} color="bg-amber-400 opacity-50" />
                   <ScoreBar label="Detratores" count={stats.detractors} total={stats.total_responses} color="bg-destructive shadow-[0_0_20px_rgba(239,68,68,0.3)]" />
                 </div>
@@ -536,7 +536,7 @@ export function NPSDashboardClient({ accounts }: Props) {
                         className={cn(
                           "w-6 h-6 rounded-xl transition-all m-1 flex items-center justify-center",
                           paretoSortBy === s
-                            ? (s === 'promoters' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : s === 'passives' ? 'bg-amber-400 shadow-lg shadow-amber-400/20' : 'bg-destructive shadow-lg shadow-destructive/20')
+                            ? (s === 'promoters' ? 'bg-success shadow-lg shadow-emerald-500/20' : s === 'passives' ? 'bg-amber-400 shadow-lg shadow-amber-400/20' : 'bg-destructive shadow-lg shadow-destructive/20')
                             : 'bg-transparent hover:bg-surface-card opacity-60 hover:opacity-100'
                         )} />
                     ))}
@@ -554,12 +554,12 @@ export function NPSDashboardClient({ accounts }: Props) {
                       <div className="flex-1 min-w-0 space-y-3">
                         <div className="flex items-center justify-between">
                           <p className="text-content-primary text-[10px] font-black truncate group-hover:text-plannera-primary transition-all uppercase tracking-tight">{acc.name}</p>
-                          <div className={cn("text-sm font-black tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-emerald-500' : 'text-destructive')}>
+                          <div className={cn("text-sm font-black tracking-tighter tabular-nums", acc.score >= (goal ?? 75) ? 'text-success' : 'text-destructive')}>
                             {acc.score > 0 ? '+' : ''}{acc.score}
                           </div>
                         </div>
                         <div className="flex h-2.5 bg-surface-background rounded-full overflow-hidden shadow-inner border border-border-divider">
-                          {acc.p > 0 && <div className="bg-emerald-500 h-full transition-all duration-1000" style={{ width: `${(acc.p / acc.total) * 100}%` }} />}
+                          {acc.p > 0 && <div className="bg-success h-full transition-all duration-1000" style={{ width: `${(acc.p / acc.total) * 100}%` }} />}
                           {acc.n > 0 && <div className="bg-amber-400 h-full opacity-50 transition-all duration-1000" style={{ width: `${(acc.n / acc.total) * 100}%` }} />}
                           {acc.d > 0 && <div className="bg-destructive h-full transition-all duration-1000" style={{ width: `${(acc.d / acc.total) * 100}%` }} />}
                         </div>
@@ -583,7 +583,7 @@ export function NPSDashboardClient({ accounts }: Props) {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
           {responses.slice(0, 14).map((r: any, i: number) => {
             const seg = r.score !== null ? getNPSSegment(r.score) : null
-            const segColor = seg === 'promoter' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : seg === 'passive' ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
+            const segColor = seg === 'promoter' ? 'text-success border-success-500/20 bg-success/5' : seg === 'passive' ? 'text-amber-400 border-warning-400/20 bg-amber-400/5' : 'text-destructive border-destructive/20 bg-destructive/5'
 
             return (
               <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -607,7 +607,7 @@ export function NPSDashboardClient({ accounts }: Props) {
                   <div className="px-5 py-3.5 rounded-2xl bg-surface-background/50 border border-border-divider shadow-inner group-hover:border-plannera-primary/20 transition-all">
                     <ResponseCarousel
                       ansList={r.comment ? [{ is_comment: true, text_value: r.comment }, ...(r.nps_answers || [])] : (r.nps_answers || [])}
-                      scoreColor={seg === 'promoter' ? 'text-emerald-500' : seg === 'passive' ? 'text-amber-500' : 'text-destructive'}
+                      scoreColor={seg === 'promoter' ? 'text-success' : seg === 'passive' ? 'text-warning' : 'text-destructive'}
                     />
                   </div>
                   <div className="flex items-center gap-2 mt-4">

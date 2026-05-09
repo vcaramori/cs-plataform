@@ -28,7 +28,7 @@ async function SuccessPlanContent({ token }: { token: string }) {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <p className="text-center text-red-600">Plano de sucesso não encontrado ou foi removido.</p>
+            <p className="text-center text-destructive">Plano de sucesso não encontrado ou foi removido.</p>
           </CardContent>
         </Card>
       </div>

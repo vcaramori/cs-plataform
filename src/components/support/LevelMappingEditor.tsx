@@ -129,7 +129,7 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
                       m.internal_level === 'critical' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
                       m.internal_level === 'high' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
                       m.internal_level === 'medium' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
-                      'bg-slate-500/10 text-content-secondary border-border-divider'
+                      'bg-surface-background0/10 text-content-secondary border-border-divider'
                     )}>
                       {lbls[m.internal_level]}
                     </span>

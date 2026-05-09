@@ -121,9 +121,9 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
   return (
     <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl text-[#2d3558] dark:text-white max-w-2xl overflow-hidden p-0 rounded-2xl">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 shadow-2xl text-[#2d3558] dark:text-white max-w-2xl overflow-hidden p-0 rounded-2xl">
 
-        <div className="relative h-24 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center px-10 justify-between">
+        <div className="relative h-24 bg-surface-background dark:bg-slate-800/50 border-b border-border-divider dark:border-slate-800 flex items-center px-10 justify-between">
           <div className="absolute inset-0 bg-plannera-primary/5 blur-3xl rounded-full opacity-50 pointer-events-none" />
 
           <div className="flex items-center gap-4 relative z-10">
@@ -134,7 +134,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
               <DialogTitle className="text-xl font-black uppercase tracking-tighter leading-none mb-1 text-[#2d3558] dark:text-white">
                 {isEditing ? 'Editar Registro' : 'Detalhes do Esforço'}
               </DialogTitle>
-              <DialogDescription className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
+              <DialogDescription className="text-content-secondary dark:text-content-secondary text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none">
                 Refinamento de Log Automático com I.A
               </DialogDescription>
             </div>
@@ -156,7 +156,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsEditing(false)}
-                className="text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[10px]"
+                className="text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white hover:bg-surface-card dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[10px]"
               >
                 Cancelar
               </Button>
@@ -174,10 +174,10 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                 exit={{ opacity: 0, scale: 1.02 }}
                 className="space-y-10"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-surface-background dark:bg-slate-800/50 p-8 rounded-2xl border border-border-divider dark:border-slate-800 shadow-sm">
 
                   <div className="space-y-3">
-                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[9px] text-content-secondary dark:text-content-secondary uppercase font-black tracking-[0.2em] ml-1">
                       <Target className="w-3.5 h-3.5 text-plannera-primary" /> Conta Vinculada
                     </p>
                     {isEditing ? (
@@ -186,7 +186,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         value={editForm.account_id || ''}
                         onValueChange={(val: string) => setEditForm(prev => ({ ...prev, account_id: val }))}
                         placeholder="Selecione a conta..."
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                        className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800"
                       />
                     ) : (
                       <p className="text-sm font-black text-[#2d3558] dark:text-white uppercase tracking-tight pl-1">
@@ -196,7 +196,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[9px] text-content-secondary dark:text-content-secondary uppercase font-black tracking-[0.2em] ml-1">
                       <Calendar className="w-3.5 h-3.5 text-plannera-primary" /> Realizado em
                     </p>
                     {isEditing ? (
@@ -204,7 +204,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         type="date"
                         value={editForm.date || ''}
                         onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white h-11 text-sm font-black uppercase rounded-xl shadow-sm"
+                        className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white h-11 text-sm font-black uppercase rounded-xl shadow-sm"
                       />
                     ) : (
                       <p className="text-sm font-black text-[#2d3558] dark:text-white uppercase tracking-tight pl-1">
@@ -214,7 +214,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[9px] text-content-secondary dark:text-content-secondary uppercase font-black tracking-[0.2em] ml-1">
                       <Zap className="w-3.5 h-3.5 text-plannera-primary" /> Tipo de Atividade
                     </p>
                     {isEditing ? (
@@ -222,12 +222,12 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         value={editForm.activity_type}
                         onValueChange={(val) => setEditForm(prev => ({ ...prev, activity_type: val }))}
                       >
-                        <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-11 text-[11px] font-black uppercase tracking-widest text-plannera-primary rounded-xl shadow-sm">
+                        <SelectTrigger className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 h-11 text-[11px] font-black uppercase tracking-widest text-plannera-primary rounded-xl shadow-sm">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white">
+                        <SelectContent className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white">
                           {Object.entries(activityLabels).map(([val, label]) => (
-                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-black hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-slate-50 dark:focus:bg-slate-800 focus:text-[#2d3558] dark:focus:text-white cursor-pointer transition-colors">{label}</SelectItem>
+                            <SelectItem key={val} value={val} className="uppercase text-[10px] font-black hover:bg-surface-background dark:hover:bg-slate-800 focus:bg-surface-background dark:focus:bg-slate-800 focus:text-[#2d3558] dark:focus:text-white cursor-pointer transition-colors">{label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -241,7 +241,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-[0.2em] ml-1">
+                    <p className="flex items-center gap-2 text-[9px] text-content-secondary dark:text-content-secondary uppercase font-black tracking-[0.2em] ml-1">
                       <Clock className="w-3.5 h-3.5 text-plannera-primary" /> Tempo Alocado
                     </p>
                     {isEditing ? (
@@ -249,7 +249,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                         maskType="decimal"
                         value={String(editForm.direct_hours || 0)}
                         onValueChange={(val: string) => setEditForm(prev => ({ ...prev, direct_hours: Number(val) || 0 }))}
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white h-11 text-sm font-black uppercase rounded-xl shadow-sm"
+                        className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white h-11 text-sm font-black uppercase rounded-xl shadow-sm"
                       />
                     ) : (
                       <p className="text-sm font-black text-[#2d3558] dark:text-white tracking-tight pl-1">
@@ -268,11 +268,11 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                     <Textarea
                       value={editForm.description || ''}
                       onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white min-h-[160px] text-base font-bold tracking-tight rounded-2xl p-8 focus-visible:ring-plannera-primary/30 shadow-inner"
+                      className="bg-surface-background dark:bg-slate-800/50 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white min-h-[160px] text-base font-bold tracking-tight rounded-2xl p-8 focus-visible:ring-plannera-primary/30 shadow-inner"
                       placeholder="Descreva o que foi realizado nesta atividade..."
                     />
                   ) : (
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white text-base font-medium tracking-tight leading-relaxed shadow-inner whitespace-pre-wrap">
+                    <div className="bg-surface-background dark:bg-slate-800/50 p-8 rounded-2xl border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white text-base font-medium tracking-tight leading-relaxed shadow-inner whitespace-pre-wrap">
                       {entry.description ?? entry.parsed_description ?? "Nenhuma descrição detalhada fornecida."}
                     </div>
                   )}
@@ -291,11 +291,11 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                     </div>
 
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 ml-1 text-slate-400">
+                      <div className="flex items-center gap-3 ml-1 text-content-secondary">
                         <History className="w-4 h-4" />
                         <p className="text-[10px] uppercase font-black tracking-[0.2em]">Insight Original</p>
                       </div>
-                      <div className="bg-slate-50 dark:bg-slate-800/20 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-[11px] italic leading-relaxed">
+                      <div className="bg-surface-background dark:bg-slate-800/20 p-6 rounded-xl border border-border-divider dark:border-slate-800 text-content-secondary dark:text-content-secondary text-[11px] italic leading-relaxed">
                         "{entry.metadata.original_insight || "Transcrição bruta não disponível."}"
                       </div>
                     </div>
@@ -306,7 +306,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
           )}
         </div>
 
-        <div className="p-10 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
+        <div className="p-10 border-t border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
           {entry && !isEditing ? (
             <Button
               variant="ghost"

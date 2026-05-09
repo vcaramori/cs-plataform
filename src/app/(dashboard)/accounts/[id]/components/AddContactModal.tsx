@@ -88,8 +88,8 @@ export function AddContactModal({ open, onClose, accountId }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
               <UserPlus className="w-6 h-6 text-plannera-orange" />
@@ -98,7 +98,7 @@ export function AddContactModal({ open, onClose, accountId }: {
               <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
                 Adicionar Stakeholder
               </DialogTitle>
-              <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
+              <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium mt-1">
                 Mapa de Influência
               </DialogDescription>
             </div>
@@ -110,19 +110,19 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* Nome e Sobrenome */}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome *</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nome *</Label>
               <Input
                 {...register('firstName')}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="João"
               />
               {errors.firstName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Sobrenome *</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Sobrenome *</Label>
               <Input
                 {...register('lastName')}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="Silva"
               />
               {errors.lastName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.lastName.message}</p>}
@@ -131,10 +131,10 @@ export function AddContactModal({ open, onClose, accountId }: {
 
           {/* Cargo */}
           <div className="space-y-2">
-            <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Cargo *</Label>
+            <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Cargo *</Label>
             <Input
               {...register('role')}
-              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               placeholder="Head de TI, CEO, Gerente de Projetos..."
             />
             {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
@@ -143,20 +143,20 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* Senioridade e Nível de Influência */}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Senioridade</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Senioridade</Label>
               <SearchableSelect
                 value={watch('seniority')}
                 onValueChange={v => setValue('seniority', v as any)}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nível de Influência</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nível de Influência</Label>
               <SearchableSelect
                 value={watch('influence_level')}
                 onValueChange={v => setValue('influence_level', v as any)}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 options={[
                   { label: 'Campeão', value: 'Campeão' },
                   { label: 'Neutro', value: 'Neutro' },
@@ -170,36 +170,36 @@ export function AddContactModal({ open, onClose, accountId }: {
           {/* E-mail e Telefone */}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">E-mail</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">E-mail</Label>
               <Input
                 {...register('email')}
                 type="email"
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 placeholder="joao@empresa.com"
               />
               {errors.email && <p className="text-destructive text-[10px] font-bold ml-1">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Telefone</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Telefone</Label>
               <MaskedInput
                 maskType="phone"
                 value={watch('phone')}
                 onValueChange={(v) => setValue('phone', v)}
                 placeholder="(00) 00000-0000"
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               />
             </div>
           </div>
 
           {/* LinkedIn e Foto */}
           <div className="space-y-2">
-            <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
+            <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">
               URL do LinkedIn
-              <span className="ml-1 text-slate-400 dark:text-slate-500 normal-case font-medium">— foto carregada automaticamente</span>
+              <span className="ml-1 text-content-secondary dark:text-content-secondary normal-case font-medium">— foto carregada automaticamente</span>
             </Label>
             <Input
               {...register('linkedin_url')}
-              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
               placeholder="https://linkedin.com/in/joaosilva"
             />
             {errors.linkedin_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.linkedin_url.message}</p>}
@@ -209,7 +209,7 @@ export function AddContactModal({ open, onClose, accountId }: {
           <label className="flex items-center gap-3 cursor-pointer group mt-2">
             <div
               onClick={() => setValue('decision_maker', !watch('decision_maker'))}
-              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-slate-200 dark:bg-slate-700'}`}
+              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-surface-card dark:bg-slate-700'}`}
             >
               <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
             </div>
@@ -219,8 +219,8 @@ export function AddContactModal({ open, onClose, accountId }: {
           </label>
         </form>
         
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
-          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white">
+        <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white">
             Cancelar
           </Button>
           <Button

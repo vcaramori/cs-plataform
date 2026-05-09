@@ -136,7 +136,7 @@ export default function SuccessPlanPage() {
   if (error) {
     return (
       <div className="p-6">
-        <p className="text-red-600">Erro ao carregar plano de sucesso</p>
+        <p className="text-destructive">Erro ao carregar plano de sucesso</p>
       </div>
     )
   }
@@ -277,7 +277,7 @@ export default function SuccessPlanPage() {
                           variant="ghost"
                           onClick={() => deleteGoalMutation.mutate(goal.id)}
                           disabled={deleteGoalMutation.isPending}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-destructive hover:text-red-700"
                         >
                           Remover
                         </Button>

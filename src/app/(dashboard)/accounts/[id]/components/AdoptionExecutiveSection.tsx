@@ -126,7 +126,7 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
               </div>
 
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-emerald-500/80 text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="text-success/80 text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <Rocket className="w-3 h-3 shrink-0" /> Adotadas
                 </span>
                 <p className="text-content-primary text-2xl font-black leading-none">{inUse}</p>
@@ -143,7 +143,7 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
                 <span className="text-plannera-demand text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 relative">
                   <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" /> Bloqueio
                   {data.some(r => r.status === 'blocked' && r.action_plan) && (
-                    <Clock className="w-2.5 h-2.5 text-amber-500 animate-pulse absolute -right-3 -top-1" />
+                    <Clock className="w-2.5 h-2.5 text-warning animate-pulse absolute -right-3 -top-1" />
                   )}
                 </span>
                 <p className="text-content-primary text-2xl font-black leading-none">{blocked}</p>
@@ -162,15 +162,15 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
               <div className={`p-4 rounded-2xl border animate-in fade-in slide-in-from-top-2 duration-500 ${
                 planSummary.risk_level === 'high'
                   ? 'bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-                  : 'bg-amber-500/10 border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                  : 'bg-warning/10 border-warning-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
               }`}>
                 <div className="flex items-start gap-4">
                   <div className={`p-2 rounded-xl shrink-0 ${
-                    planSummary.risk_level === 'high' ? 'bg-red-500/20' : 'bg-amber-500/20'
+                    planSummary.risk_level === 'high' ? 'bg-red-500/20' : 'bg-warning/20'
                   }`}>
                     {planSummary.risk_level === 'high'
                       ? <ShieldAlert className="w-5 h-5 text-red-500" />
-                      : <TrendingDown className="w-5 h-5 text-amber-500" />
+                      : <TrendingDown className="w-5 h-5 text-warning" />
                     }
                   </div>
                   <div className="flex-1 space-y-2">
@@ -181,7 +181,7 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
                         {planSummary.risk_level === 'high' ? 'Risco Crítico de Downgrade' : 'Atenção Commercial: Risco de Downgrade'}
                       </h4>
                       <Badge variant="outline" className={`text-[8px] border-none uppercase font-black ${
-                        planSummary.risk_level === 'high' ? 'bg-red-500/20 text-red-200' : 'bg-amber-500/20 text-amber-200'
+                        planSummary.risk_level === 'high' ? 'bg-red-500/20 text-red-200' : 'bg-warning/20 text-amber-200'
                       }`}>
                         Impacto Comercial: {planSummary.risk_level === 'high' ? 'Alto' : 'Médio'}
                       </Badge>
@@ -194,7 +194,7 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
                     <div className="flex flex-wrap gap-2 pt-1">
                       {planSummary.at_risk_features.map((feat, i) => (
                         <div key={i} className="flex items-center gap-1.5 bg-surface-background px-2 py-1 rounded-lg border border-border-divider">
-                           <div className={`w-1 h-1 rounded-full ${planSummary.risk_level === 'high' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                           <div className={`w-1 h-1 rounded-full ${planSummary.risk_level === 'high' ? 'bg-red-500' : 'bg-warning'}`} />
                            <span className="text-[9px] font-bold text-content-primary uppercase tracking-tight">{feat}</span>
                         </div>
                       ))}

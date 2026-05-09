@@ -81,7 +81,7 @@ function formatMinutes(mins: number | null) {
 
 function CompliancePill({ value }: { value: number | null }) {
   if (value === null) return <span className="text-content-secondary font-mono font-extrabold text-[10px]">——</span>
-  const color = value >= 90 ? 'text-emerald-600 dark:text-emerald-400' : value >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
+  const color = value >= 90 ? 'text-emerald-600 dark:text-emerald-400' : value >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive dark:text-red-400'
   return <span className={cn('font-mono font-extrabold text-[10px]', color)}>{value}%</span>
 }
 
@@ -142,7 +142,7 @@ export default function SupportDashboardPage() {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={handleExport} className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
+        <Button size="sm" onClick={handleExport} className="h-12 bg-success hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
           <Download className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Relatório XLSX</span>
         </Button>
@@ -190,14 +190,14 @@ export default function SupportDashboardPage() {
       {/* Camada 2 — KPIs do período + gráficos */}
       <section className="space-y-8">
         <div className="flex items-center gap-4 mb-8">
-          <div className="w-2 h-6 bg-emerald-500 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
+          <div className="w-2 h-6 bg-success rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
           <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Performance Summary</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { label: 'Recebidos', value: periodData?.tickets_received, icon: TicketCheck, color: 'text-plannera-primary' },
-            { label: 'Resolvidos', value: periodData?.tickets_resolved, icon: CheckCircle2, color: 'text-emerald-500' },
+            { label: 'Resolvidos', value: periodData?.tickets_resolved, icon: CheckCircle2, color: 'text-success' },
             { label: 'Compliance SLA', value: periodData?.sla_resolution_compliance_pct != null ? `${periodData.sla_resolution_compliance_pct}%` : '—', icon: ShieldCheck, color: 'text-plannera-orange' },
             { label: 'CSAT Médio', value: periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—', icon: Star, color: 'text-amber-400' },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -248,16 +248,16 @@ export default function SupportDashboardPage() {
           </Card>
 
           <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] -mr-10 -mt-10" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-success/5 blur-[50px] -mr-10 -mt-10" />
             <div className="flex items-center justify-between mb-10">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">TMR — Resolução</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-emerald-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}</p>
+                  <p className="text-4xl font-black text-success tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}</p>
                   <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Média</span>
                 </div>
               </div>
-              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
+              <div className="p-4 rounded-2xl bg-success/10 text-success shadow-inner group-hover:scale-110 transition-transform">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function SupportDashboardPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{a.received}</TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-emerald-500 tabular-nums">{a.resolved}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-success tabular-nums">{a.resolved}</TableCell>
                     <TableCell className="text-right"><CompliancePill value={a.res_compliance_pct} /></TableCell>
                     <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-60 group-hover:opacity-100 tabular-nums">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
                     <TableCell className="text-right pr-10">
@@ -334,9 +334,9 @@ export default function SupportDashboardPage() {
                         ? <div className="flex items-center justify-end gap-2">
                             <div className={cn(
                               "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
-                              a.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : a.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
+                              a.avg_csat >= 4 ? 'bg-success/10 border-success-500/20 text-success' : a.avg_csat >= 3 ? 'bg-warning/10 border-warning-500/20 text-warning' : 'bg-destructive/10 border-destructive/20 text-destructive'
                             )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-60')} />
+                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-success' : 'text-current opacity-60')} />
                               {a.avg_csat}
                             </div>
                           </div>
@@ -410,9 +410,9 @@ export default function SupportDashboardPage() {
                         ? <div className="flex items-center justify-end gap-2">
                             <div className={cn(
                               "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
-                              c.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : c.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
+                              c.avg_csat >= 4 ? 'bg-success/10 border-success-500/20 text-success' : c.avg_csat >= 3 ? 'bg-warning/10 border-warning-500/20 text-warning' : 'bg-destructive/10 border-destructive/20 text-destructive'
                             )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-60')} />
+                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-success' : 'text-current opacity-60')} />
                               {c.avg_csat}
                             </div>
                           </div>

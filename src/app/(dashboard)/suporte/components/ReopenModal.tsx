@@ -98,7 +98,7 @@ export function ReopenModal({ isOpen, onClose, ticketId, ticketNumber, onSuccess
           </div>
 
           {reasonLength > 0 && reasonLength < 10 && (
-            <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg">
+            <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-warning-200 dark:border-warning-900/50 rounded-lg">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700 dark:text-amber-300">
                 Reason must be at least 10 characters to prevent empty submissions

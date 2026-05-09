@@ -27,7 +27,7 @@ interface Props {
 const TYPE_META: Record<NPSQuestionType, { label: string; icon: React.ElementType; color: string }> = {
   nps_scale:        { label: 'NPS 0–10',        icon: Hash,       color: 'text-orange-400 border-orange-500/20 bg-orange-500/10' },
   multiple_choice:  { label: 'Múltipla Escolha', icon: ListChecks, color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/10'  },
-  text:             { label: 'Texto Livre',       icon: AlignLeft,  color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' },
+  text:             { label: 'Texto Livre',       icon: AlignLeft,  color: 'text-emerald-400 border-success-500/20 bg-success/10' },
 }
 
 // ─── Question Row ────────────────────────────────────────────────────────────
@@ -427,7 +427,7 @@ function CreateProgramDialog({ accounts, onCreated }: { accounts: { id: string; 
 
         {step === 'questions' && createdProgram && (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-success/5 border border-success-500/20">
               <Check className="w-4 h-4 text-emerald-400 shrink-0" />
               <div>
                 <p className="text-emerald-400 text-xs font-bold">Programa criado com sucesso!</p>
@@ -693,7 +693,7 @@ export function ProgramsClient({ accounts }: Props) {
             programs.map((p: any) => (
               <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-surface-background border border-border-divider gap-4 shadow-sm hover:bg-surface-background/80 transition-colors">
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0 ${p.is_active ? 'bg-emerald-500' : 'bg-content-secondary/40'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0 ${p.is_active ? 'bg-success' : 'bg-content-secondary/40'}`} />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       {p.account_id
@@ -784,8 +784,8 @@ export function ProgramsClient({ accounts }: Props) {
                       onClick={() => handleToggleActive(p.id, p.is_active, p.name ?? p.accounts?.name ?? 'Global', p.is_default)}
                       className={`gap-1.5 text-xs h-8 flex-1 sm:flex-none transition-all ${
                         p.is_active
-                          ? 'border-border-divider text-content-secondary hover:text-amber-400 hover:border-amber-500/30'
-                          : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'
+                          ? 'border-border-divider text-content-secondary hover:text-amber-400 hover:border-warning-500/30'
+                          : 'border-success-500/30 text-emerald-400 hover:bg-success/10'
                       }`}>
                       {p.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                       {p.is_active ? 'Inativar' : 'Reativar'}

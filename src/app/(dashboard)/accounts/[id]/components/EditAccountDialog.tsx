@@ -119,15 +119,15 @@ export function EditAccountDialog({ account }: { account: Account }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl">
+        <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white hover:bg-surface-background dark:hover:bg-slate-800 rounded-xl">
           <Settings2 className="w-4 h-4 mr-2" />
           Editar Conta
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">Editar Conta</DialogTitle>
-          <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+          <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium">
             Atualize os dados primários da organização e identidade visual.
           </DialogDescription>
         </DialogHeader>
@@ -136,8 +136,8 @@ export function EditAccountDialog({ account }: { account: Account }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
             <div className="space-y-6">
               <div className="space-y-2 text-center">
-                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 w-full text-left block">Logotipo</Label>
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-inner">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1 w-full text-left block">Logotipo</Label>
+                <div className="bg-surface-background dark:bg-slate-800/50 rounded-xl p-4 border border-border-divider dark:border-slate-800 shadow-inner">
                   <ImageUpload
                     value={watch('logo_url') ?? undefined}
                     onChange={(url) => setValue('logo_url', url)}
@@ -146,12 +146,12 @@ export function EditAccountDialog({ account }: { account: Account }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-name" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome da Empresa</Label>
+                <Label htmlFor="edit-name" className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nome da Empresa</Label>
                 <Input
                   id="edit-name"
                   {...register('name')}
                   placeholder="Ex: General Mills"
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
                 {errors.name && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.name.message}</p>}
               </div>
@@ -159,11 +159,11 @@ export function EditAccountDialog({ account }: { account: Account }) {
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Segmento</Label>
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Segmento</Label>
                 <SearchableSelect
                   value={watch('segment')}
                   onValueChange={(v) => setValue('segment', v as any)}
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                   options={[
                     { label: 'Indústria', value: 'Indústria' },
                     { label: 'MRO', value: 'MRO' },
@@ -173,59 +173,59 @@ export function EditAccountDialog({ account }: { account: Account }) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-industry" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Setor / Indústria</Label>
+                <Label htmlFor="edit-industry" className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Setor / Indústria</Label>
                 <Input
                   id="edit-industry"
                   {...register('industry')}
                   placeholder="Ex: Bens de Consumo"
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-website" className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Website Executive</Label>
+                <Label htmlFor="edit-website" className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Website Executive</Label>
                 <Input
                   id="edit-website"
                   {...register('website')}
                   placeholder="https://exemplo.com"
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
                 {errors.website && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.website.message}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">CNPJ / TAX ID</Label>
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">CNPJ / TAX ID</Label>
                 <MaskedInput 
                   maskType="tax_id"
                   value={watch('tax_id') ?? ''}
                   onValueChange={(v) => setValue('tax_id', v)}
                   placeholder="00.000.000/0000-00"
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Plano Estratégico</Label>
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Plano Estratégico</Label>
                 <SearchableSelect
                   value={watch('plan_id') || ''}
                   onValueChange={(v) => setValue('plan_id', v)}
-                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                   options={[
                     { label: 'Portfolio (Nenhum)', value: '' },
                     ...plans.map(p => ({ label: p.name, value: p.id }))
                   ]}
                 />
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">Define as capacidades operacionais contratadas.</p>
+                <p className="text-[10px] text-content-secondary dark:text-content-secondary mt-2">Define as capacidades operacionais contratadas.</p>
               </div>
             </div>
           </div>
 
-          <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+          <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white"
+              className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white"
             >
               Descartar
             </Button>

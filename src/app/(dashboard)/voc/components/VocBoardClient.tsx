@@ -64,15 +64,15 @@ export default function VocBoardClient() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-red-600">Top 5 Pains</CardTitle>
+            <CardTitle className="text-destructive">Top 5 Pains</CardTitle>
           </CardHeader>
           <CardContent>
             {themesData?.pains ? (
               <ul className="space-y-2">
                 {themesData.pains.map((p: any, i: number) => (
-                  <li key={i} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                  <li key={i} className="flex justify-between items-center p-2 bg-surface-background rounded">
                     <span className="text-sm">{p.theme}</span>
-                    <span className="text-xs font-bold text-slate-500">{p.count}x</span>
+                    <span className="text-xs font-bold text-content-secondary">{p.count}x</span>
                   </li>
                 ))}
               </ul>
@@ -90,9 +90,9 @@ export default function VocBoardClient() {
             {themesData?.praises ? (
               <ul className="space-y-2">
                 {themesData.praises.map((p: any, i: number) => (
-                  <li key={i} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                  <li key={i} className="flex justify-between items-center p-2 bg-surface-background rounded">
                     <span className="text-sm">{p.theme}</span>
-                    <span className="text-xs font-bold text-slate-500">{p.count}x</span>
+                    <span className="text-xs font-bold text-content-secondary">{p.count}x</span>
                   </li>
                 ))}
               </ul>
@@ -112,12 +112,12 @@ export default function VocBoardClient() {
           {quotesData?.quotes ? (
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {quotesData.quotes.map((q: any, i: number) => (
-                <div key={i} className="p-3 bg-slate-50 rounded border border-slate-200">
+                <div key={i} className="p-3 bg-surface-background rounded border border-border-divider">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">{q.sentiment > 0 ? '👍' : q.sentiment < 0 ? '👎' : '💭'}</span>
                     <div className="flex-1">
-                      <p className="text-sm text-slate-700">"{q.quote}"</p>
-                      <p className="text-xs text-slate-500 mt-2">{new Date(q.date).toLocaleDateString()}</p>
+                      <p className="text-sm text-content-primary">"{q.quote}"</p>
+                      <p className="text-xs text-content-secondary mt-2">{new Date(q.date).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>

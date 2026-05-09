@@ -63,7 +63,7 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
   }
 
   const statusColors: Record<string, string> = {
-    active: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    active: 'bg-success/20 text-emerald-300 border-success-500/30',
     'at-risk': 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
     churned: 'bg-red-500/20 text-red-300 border-red-500/30',
     'in-negotiation': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
@@ -72,17 +72,17 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white gap-2">
+        <Button size="sm" variant="ghost" className="text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white gap-2">
           <History className="w-4 h-4" /> Histórico de Vigências
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#2d3558] dark:text-white max-w-4xl max-h-[80vh] rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-4xl max-h-[80vh] rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-plannera-orange" />
             <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">Histórico de Vigências: {contractName}</DialogTitle>
           </div>
-          <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+          <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium">
             Revisões passadas deste produto (Aditivos e Renovações).
           </DialogDescription>
         </DialogHeader>
@@ -93,27 +93,27 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-200 dark:border-slate-800 hover:bg-transparent">
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">Data Início</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">Data Fim</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">Ação Relatada</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">Plano</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">MRR</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold">Status</TableHead>
-                  <TableHead className="text-slate-500 dark:text-slate-400 font-bold text-right">Data Modificação</TableHead>
+                <TableRow className="border-border-divider dark:border-slate-800 hover:bg-transparent">
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">Data Início</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">Data Fim</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">Ação Relatada</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">Plano</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">MRR</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold">Status</TableHead>
+                  <TableHead className="text-content-secondary dark:text-content-secondary font-bold text-right">Data Modificação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {history.map((c) => (
-                  <TableRow key={c.id} className="border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
+                  <TableRow key={c.id} className="border-border-divider dark:border-slate-800 hover:bg-surface-background dark:hover:bg-slate-800/50 group">
                     <TableCell className="text-[#2d3558] dark:text-white font-medium">
                       {c.start_date ? new Date(c.start_date).toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
-                    <TableCell className="text-slate-500 dark:text-slate-400 italic">
+                    <TableCell className="text-content-secondary dark:text-content-secondary italic">
                       {c.end_date ? new Date(c.end_date).toLocaleDateString('pt-BR') : '-'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2d3558] dark:text-white">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-border-divider dark:border-slate-800 bg-white dark:bg-slate-900 text-[#2d3558] dark:text-white">
                         {typeLabels[c.contract_type ?? 'initial'] ?? c.contract_type}
                       </Badge>
                     </TableCell>
@@ -122,18 +122,18 @@ export function ContractHistoryDialog({ contractId, contractName }: { contractId
                       R$ {Number(c.mrr).toLocaleString('pt-BR')}
                     </TableCell>
                     <TableCell>
-                      <Badge className="text-[10px] border bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700">
+                      <Badge className="text-[10px] border bg-surface-card dark:bg-slate-800 text-content-secondary dark:text-content-secondary border-border-divider dark:border-slate-700 hover:bg-surface-card dark:hover:bg-slate-700">
                         Antigo
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-slate-500 dark:text-slate-400 text-xs">
+                    <TableCell className="text-right text-content-secondary dark:text-content-secondary text-xs">
                        {new Date(c.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
                   </TableRow>
                 ))}
                 {history.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500 dark:text-slate-400 italic">
+                    <TableCell colSpan={7} className="text-center py-8 text-content-secondary dark:text-content-secondary italic">
                       Nenhuma versão anterior encontrada para este contrato.
                     </TableCell>
                   </TableRow>

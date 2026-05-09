@@ -45,14 +45,14 @@ export default function CSATPage({ params: paramsPromise }: { params: Promise<{ 
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-plannera-primary relative overflow-hidden">
         {/* Success Background Accents */}
-        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-emerald-500/10 blur-[150px] rounded-full" />
+        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-success/10 blur-[150px] rounded-full" />
         
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full glass-card p-12 rounded-2xl text-center space-y-8 relative z-10"
         >
-          <div className="w-24 h-24 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-emerald-500/20">
+          <div className="w-24 h-24 bg-success/10 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-success-500/20">
             <CheckCircle2 className="w-12 h-12 text-emerald-400" />
           </div>
           <div className="space-y-3">

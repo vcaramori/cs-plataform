@@ -14,7 +14,7 @@ const typeLabels: Record<string, string> = {
 
 const typeColors: Record<string, string> = {
   meeting: 'bg-blue-500/20 text-blue-300', qbr: 'bg-purple-500/20 text-purple-300',
-  'churn-risk': 'bg-red-500/20 text-red-300', expansion: 'bg-emerald-500/20 text-emerald-300',
+  'churn-risk': 'bg-red-500/20 text-red-300', expansion: 'bg-success/20 text-emerald-300',
   onboarding: 'bg-indigo-500/20 text-indigo-300', 'health-check': 'bg-yellow-500/20 text-yellow-300',
   email: 'bg-surface-background text-content-secondary',
 }

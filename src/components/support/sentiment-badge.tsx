@@ -19,13 +19,13 @@ export interface SentimentBadgeProps {
 const sentimentConfig = {
   positive: {
     color: 'bg-emerald-100 dark:bg-emerald-900/40',
-    dot: 'bg-emerald-500',
+    dot: 'bg-success',
     label: 'Positivo',
     icon: '🟢',
   },
   neutral: {
-    color: 'bg-slate-100 dark:bg-slate-800',
-    dot: 'bg-slate-500',
+    color: 'bg-surface-card dark:bg-slate-800',
+    dot: 'bg-surface-background0',
     label: 'Neutro',
     icon: '⚪',
   },

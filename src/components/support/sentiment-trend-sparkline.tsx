@@ -58,7 +58,7 @@ const getTrendColor = (direction: string): string => {
     case 'improving':
       return 'text-emerald-600';
     case 'declining':
-      return 'text-red-600';
+      return 'text-destructive';
     case 'stable':
     default:
       return 'text-slate-600';
@@ -124,14 +124,14 @@ export function SentimentTrendSparkline({
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <div className="h-8 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+        <div className="h-8 w-32 bg-surface-card dark:bg-slate-700 rounded animate-pulse" />
       </div>
     );
   }
 
   if (error || !data || data.trend.length === 0) {
     return (
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-content-secondary">
         Sem dados de sentimento
       </div>
     );
@@ -224,7 +224,7 @@ export function SentimentTrendSparkline({
               Tendência: {data.trend_direction === 'improving' ? 'Melhorando ↑' : data.trend_direction === 'declining' ? 'Piorando ↓' : 'Estável →'}
             </div>
             {data.cache_generated_at && (
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-content-secondary">
                 Cache: {new Date(data.cache_generated_at).toLocaleTimeString()}
               </div>
             )}

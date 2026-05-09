@@ -26,7 +26,7 @@ function NPSScaleQuestion({ q, onChange }: { q: NPSQuestion; onChange: (a: Answe
             className={`flex-1 h-9 rounded-lg border text-xs font-extrabold transition-all ${
               selected === n
                 ? 'bg-orange-500 border-orange-500 text-white'
-                : 'bg-transparent border-white/10 text-slate-500 hover:border-orange-500/40 hover:text-white'
+                : 'bg-transparent border-white/10 text-content-secondary hover:border-orange-500/40 hover:text-white'
             }`}
           >{n}</button>
         ))}
@@ -52,7 +52,7 @@ function MultipleChoiceQuestion({ q, onChange }: { q: NPSQuestion; onChange: (a:
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
             selected.includes(opt)
               ? 'border-orange-500/60 bg-orange-500/10 text-white'
-              : 'border-white/8 text-slate-400 hover:border-white/15 hover:text-slate-300'
+              : 'border-white/8 text-content-secondary hover:border-white/15 hover:text-slate-300'
           }`}>
           <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-all ${
             selected.includes(opt) ? 'border-orange-500 bg-orange-500' : 'border-slate-600'
@@ -180,7 +180,7 @@ export default function NPSTestPage() {
         {/* Config */}
         <div className="space-y-2">
           <div>
-            <label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">
+            <label className="text-content-secondary text-[10px] font-bold uppercase tracking-wider block mb-1">
               Program Key
             </label>
             <input type="text" value={programKey} onChange={e => setProgramKey(e.target.value)}
@@ -188,7 +188,7 @@ export default function NPSTestPage() {
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs font-mono placeholder:text-slate-600 outline-none focus:border-orange-500/40" />
           </div>
           <div>
-            <label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block mb-1">
+            <label className="text-content-secondary text-[10px] font-bold uppercase tracking-wider block mb-1">
               E-mail simulado
             </label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -208,7 +208,7 @@ export default function NPSTestPage() {
           ) : (
             <>
               <div className="flex items-center justify-between mb-5">
-                <p className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest">Pesquisa Rápida</p>
+                <p className="text-content-secondary text-[10px] font-extrabold uppercase tracking-widest">Pesquisa Rápida</p>
                 {loadingQ && <span className="text-slate-600 text-[10px]">Carregando...</span>}
               </div>
 
@@ -238,7 +238,7 @@ export default function NPSTestPage() {
               {/* Actions */}
               {questions.length > 0 && (
                 <div className="flex items-center justify-between mt-6 pt-5 border-t border-white/5">
-                  <button onClick={() => setSubmitted(true)} className="text-slate-600 text-xs hover:text-slate-400 transition-colors">
+                  <button onClick={() => setSubmitted(true)} className="text-slate-600 text-xs hover:text-content-secondary transition-colors">
                     Não agora
                   </button>
                   <button onClick={handleSubmit} disabled={!isValid() || loading}

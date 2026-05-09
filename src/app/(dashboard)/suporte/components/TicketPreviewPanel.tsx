@@ -130,7 +130,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
   const statusConfig: Record<string, { label: string, color: string, bg: string }> = {
     open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
     'in_progress': { label: 'Em Progresso', color: 'text-accent', bg: 'bg-accent/10' },
-    resolved: { label: 'Resolvido', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    resolved: { label: 'Resolvido', color: 'text-success', bg: 'bg-success/10' },
     closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-surface-background/50' },
     reopened: { label: 'Reaberto', color: 'text-accent', bg: 'bg-accent/10' },
   }
@@ -191,8 +191,8 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
               <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Collision Warning */}
                 {otherViewers.length > 0 && (
-                  <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2 flex items-center gap-3">
-                    <Users className="w-4 h-4 text-amber-500 animate-pulse" />
+                  <div className="bg-warning/10 border-b border-warning-500/20 px-6 py-2 flex items-center gap-3">
+                    <Users className="w-4 h-4 text-warning animate-pulse" />
                     <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">
                       Colisão: {otherViewers.join(', ')} também visualizando
                     </span>
@@ -265,7 +265,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-plannera-primary shadow-[0_0_8px_var(--primary)]" />
-                          <span className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em]">Insights do Guardião IA</span>
+                          <span className="text-[10px] text-content-secondary uppercase font-black tracking-[0.2em]">Insights do Guardião IA</span>
                         </div>
                         <UrgencyBadge score={ticket.urgency_score} />
                       </div>

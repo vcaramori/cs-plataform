@@ -196,7 +196,7 @@ const statusCfg: Record<string, { label: string; color: string; dot: string }> =
   open: { label: 'Aberto', color: 'text-destructive', dot: 'bg-destructive' },
   in_progress: { label: 'Em Andamento', color: 'text-accent', dot: 'bg-accent' },
   reopened: { label: 'Reaberto', color: 'text-accent', dot: 'bg-accent' },
-  resolved: { label: 'Resolvido', color: 'text-emerald-500', dot: 'bg-emerald-500' },
+  resolved: { label: 'Resolvido', color: 'text-success', dot: 'bg-success' },
   closed: { label: 'Fechado', color: 'text-content-secondary', dot: 'bg-border-divider' },
 }
 
@@ -215,8 +215,8 @@ const eventMeta: Record<string, { icon: React.ElementType; label: string; color:
   first_response: { icon: CheckCircle2, label: '1ª resposta registrada', color: 'text-emerald-600' },
   ticket_resolved: { icon: CheckCircle2, label: 'Ticket resolvido', color: 'text-emerald-600' },
   ticket_closed: { icon: CheckCircle2, label: 'Ticket fechado', color: 'text-content-secondary' },
-  ticket_reopened: { icon: RefreshCw, label: 'Ticket reaberto', color: 'text-orange-600' },
-  sla_breach: { icon: AlertTriangle, label: 'SLA violado', color: 'text-red-600' },
+  ticket_reopened: { icon: RefreshCw, label: 'Ticket reaberto', color: 'text-warning' },
+  sla_breach: { icon: AlertTriangle, label: 'SLA violado', color: 'text-destructive' },
 }
 
 
@@ -313,18 +313,18 @@ function InternalNote({ event }: { event: SLAEvent }) {
   const shortName = authorEmail.split('@')[0]
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+      <div className="w-8 h-8 rounded-full bg-amber-100 border border-warning-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
         <Lock className="w-3.5 h-3.5 text-amber-600" />
       </div>
       <div className="flex-1 max-w-2xl">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-amber-700 text-xs font-semibold">{shortName}</span>
-          <span className="bg-amber-100 border border-amber-200 text-amber-700 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1">
+          <span className="bg-amber-100 border border-warning-200 text-amber-700 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1">
             <Lock className="w-2.5 h-2.5" /> Nota Interna
           </span>
           <Text variant="secondary" className="text-[11px] ml-auto">{fmtTs(event.occurred_at)}</Text>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50 rounded-2xl rounded-tl-sm p-4">
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-warning-100 dark:border-warning-900/50 rounded-2xl rounded-tl-sm p-4">
           <div className="text-amber-950 dark:text-amber-200 text-sm">
             <ReactMarkdown components={markdownComponents}>{event.metadata?.body}</ReactMarkdown>
           </div>
@@ -1022,7 +1022,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 }
                 className={cn(
                   'min-h-[140px] bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-t-xl rounded-b-none resize-none border-x border-t border-b-0 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
-                  tab === 'reply' ? 'border-indigo-200' : 'border-amber-200'
+                  tab === 'reply' ? 'border-indigo-200' : 'border-warning-200'
                 )}
                 disabled={sending || uploading}
               />
@@ -1030,7 +1030,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               {/* Toolbar — abaixo da textarea, sem sobreposição */}
               <div className={cn(
                 'flex items-center gap-0.5 px-2 py-1.5 rounded-b-xl border border-t-0 bg-surface-background',
-                tab === 'reply' ? 'border-indigo-200' : 'border-amber-200'
+                tab === 'reply' ? 'border-indigo-200' : 'border-warning-200'
               )}>
                 <TooltipProvider>
                   {/* Formatação */}
@@ -1132,7 +1132,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     onClick={() => setTab('note')}
                     className={cn(
                       'flex items-center gap-1 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all',
-                      tab === 'note' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'text-content-secondary hover:text-content-primary'
+                      tab === 'note' ? 'bg-amber-100 text-amber-700 border border-warning-200' : 'text-content-secondary hover:text-content-primary'
                     )}
                   >
                     <Lock className="w-3 h-3" /> Nota
@@ -1174,7 +1174,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     disabled={reviewing || !composeBody.trim()}
                     size="sm"
                     variant="outline"
-                    className="font-bold uppercase tracking-widest text-[10px] gap-1.5 border-amber-300 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    className="font-bold uppercase tracking-widest text-[10px] gap-1.5 border-warning-300 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Tentar Revisão
                   </Button>
@@ -1187,9 +1187,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     'font-bold uppercase tracking-widest text-[10px] gap-1.5',
                     tab === 'reply'
                       ? reviewFailed
-                        ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                        ? 'bg-amber-600 hover:bg-warning text-white'
                         : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                      : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border border-amber-200'
+                      : 'bg-amber-100 hover:bg-amber-200 text-amber-700 border border-warning-200'
                   )}
                 >
                   {(reviewing || sending)
@@ -1358,7 +1358,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   onClick={() => setIndicatorsOpen(true)}
                   className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <Zap className="w-3.5 h-3.5 text-warning" />
                   Ver Indicadores 360°
                 </Button>
 
@@ -1532,8 +1532,8 @@ function IndicatorsModal({ open, onClose, indicators }: {
               <div className="flex items-center gap-2">
                 {indicators?.etaStatus === 'no_prazo' ? (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                    <Text className="font-bold text-emerald-500">Compromisso Mantido</Text>
+                    <CheckCircle2 className="w-5 h-5 text-success" />
+                    <Text className="font-bold text-success">Compromisso Mantido</Text>
                   </>
                 ) : indicators?.etaStatus === 'atrasado' ? (
                   <>
@@ -1562,10 +1562,10 @@ function IndicatorsModal({ open, onClose, indicators }: {
               </Text>
             </div>
 
-            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <div className="p-4 rounded-lg bg-warning/10 border border-warning-500/30">
               <div className="flex gap-3">
-                <div className="shrink-0 w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center">
-                  <Star className="w-4 h-4 text-amber-700 dark:text-amber-500" />
+                <div className="shrink-0 w-8 h-8 rounded-full bg-warning/30 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-amber-700 dark:text-warning" />
                 </div>
                 <div className="space-y-1">
                   <Text className="text-xs font-bold text-amber-900 dark:text-amber-100 leading-tight">Insight da IA</Text>

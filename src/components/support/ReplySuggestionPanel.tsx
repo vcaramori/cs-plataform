@@ -170,7 +170,7 @@ export function ReplySuggestionPanel({
                 {/* Suggestion Content */}
                 <div className="space-y-2">
                   {showWarning && (
-                    <div className="flex items-start gap-2 p-2 bg-amber-100 dark:bg-amber-900/30 rounded border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-2 p-2 bg-amber-100 dark:bg-amber-900/30 rounded border border-warning-200 dark:border-warning-800">
                       <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                       <Text variant="secondary" className="text-xs">
                         Confiança baixa ({confidencePercent}%). Revise antes de usar.
@@ -222,7 +222,7 @@ export function ReplySuggestionPanel({
                     variant="ghost"
                     onClick={handleDiscard}
                     disabled={isProcessing}
-                    className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20"
+                    className="text-destructive hover:bg-red-100 dark:hover:bg-red-900/20"
                   >
                     {isProcessing ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

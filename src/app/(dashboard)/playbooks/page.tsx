@@ -38,7 +38,7 @@ export default async function PlaybooksPage() {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg font-bold line-clamp-1">{template.name}</CardTitle>
-                <Badge variant="neutral" className={template.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}>
+                <Badge variant="neutral" className={template.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-surface-card text-content-secondary'}>
                   {template.is_active ? 'Ativo' : 'Inativo'}
                 </Badge>
               </div>

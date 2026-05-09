@@ -10,7 +10,7 @@ import { ViewCreationPopover } from './ViewCreationPopover'
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   open: { label: 'Aberto', color: 'text-destructive', bg: 'bg-destructive/10' },
   'in-progress': { label: 'Em Progresso', color: 'text-accent', bg: 'bg-accent/10' },
-  resolved: { label: 'Resolvido', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  resolved: { label: 'Resolvido', color: 'text-success', bg: 'bg-success/10' },
   closed: { label: 'Fechado', color: 'text-content-secondary', bg: 'bg-surface-background/50' },
 }
 
@@ -89,7 +89,7 @@ export function SuporteFilters({
           placeholder="PESQUISAR TICKETS..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-11 h-11 rounded-2xl border-border/40 bg-slate-500/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
+          className="pl-11 h-11 rounded-2xl border-border/40 bg-surface-background0/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
         />
         {hasSemanticResults && (
           <Badge

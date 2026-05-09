@@ -20,7 +20,7 @@ const badgeVariants = cva(
         info:
           "bg-blue-50 text-blue-700 border-blue-200 dark:bg-primary/10 dark:text-primary dark:border-primary/20",
         neutral:
-          "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+          "bg-surface-card text-content-primary border-border-divider dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
       },
     },
     defaultVariants: {

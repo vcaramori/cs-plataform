@@ -174,7 +174,7 @@ export function CategorySuggestionBadge({
             variant="ghost"
             onClick={handleReject}
             disabled={isProcessing}
-            className="text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20"
+            className="text-destructive hover:bg-red-100 dark:hover:bg-red-900/20"
           >
             {isProcessing ? (
               <Loader2 className="w-4 h-4 animate-spin" />

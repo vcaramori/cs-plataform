@@ -158,7 +158,7 @@ export function MergeTicketModal({ isOpen, onClose, secondaryTicket, onSuccess }
             />
           </div>
 
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/50 flex gap-3 text-xs text-amber-700 dark:text-amber-400">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-warning-200 dark:border-warning-900/50 flex gap-3 text-xs text-amber-700 dark:text-amber-400">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <p>Esta ação não pode ser desfeita. O ticket secundário ficará marcado como mesclado e não poderá mais ser editado.</p>
           </div>

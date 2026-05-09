@@ -56,7 +56,7 @@ export function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between h-11 px-6 bg-slate-100/50 dark:bg-[#101623] border-border/50 text-[#2d3558] dark:text-white hover:bg-slate-100 dark:hover:bg-[#1a2333] transition-all",
+            "w-full justify-between h-11 px-6 bg-surface-card/50 dark:bg-[#101623] border-border/50 text-[#2d3558] dark:text-white hover:bg-surface-card dark:hover:bg-[#1a2333] transition-all",
             "text-[10px] font-black uppercase tracking-[0.1em] rounded-2xl shadow-sm",
             className
           )}
@@ -73,10 +73,10 @@ export function SearchableSelect({
         <Command className="bg-transparent">
           <CommandInput 
             placeholder="Pesquisar..." 
-            className="text-[#2d3558] dark:text-white border-0 focus:ring-0 placeholder:text-slate-400" 
+            className="text-[#2d3558] dark:text-white border-0 focus:ring-0 placeholder:text-content-secondary" 
           />
           <CommandList className="max-h-[250px] overflow-auto">
-            <CommandEmpty className="py-4 text-center text-xs font-bold uppercase tracking-widest text-slate-400">{emptyMessage}</CommandEmpty>
+            <CommandEmpty className="py-4 text-center text-xs font-bold uppercase tracking-widest text-content-secondary">{emptyMessage}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
@@ -87,7 +87,7 @@ export function SearchableSelect({
                     setOpen(false)
                   }}
                   className={cn(
-                    "text-[#2d3558] dark:text-white data-[selected='true']:bg-slate-50 dark:data-[selected='true']:bg-slate-800 cursor-pointer font-bold uppercase tracking-widest text-[9px] py-3",
+                    "text-[#2d3558] dark:text-white data-[selected='true']:bg-surface-background dark:data-[selected='true']:bg-slate-800 cursor-pointer font-bold uppercase tracking-widest text-[9px] py-3",
                     option.className
                   )}
                 >

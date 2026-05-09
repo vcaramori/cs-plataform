@@ -144,7 +144,7 @@ export function AutoCheckInQueue() {
 
   return (
     <>
-      <Card className="mb-6 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20">
+      <Card className="mb-6 border-warning-200 dark:border-warning-900 bg-amber-50 dark:bg-amber-950/20">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export function AutoCheckInQueue() {
               <div
                 key={item.id}
                 onClick={() => handleSelectItem(item)}
-                className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-border cursor-pointer hover:border-amber-400 transition-colors"
+                className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-border cursor-pointer hover:border-warning-400 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export function AutoCheckInQueue() {
                       )}
                       <span className={cn(
                         'text-xs flex items-center gap-1',
-                        isOverdue ? 'text-red-600 font-semibold' : 'text-muted-foreground'
+                        isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground'
                       )}>
                         <Clock className="w-3 h-3" />
                         {isOverdue ? 'Expirado' : `Vence em ${timeUntilDeadline}`}

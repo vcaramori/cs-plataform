@@ -15,15 +15,15 @@ interface TimelineEventProps {
 export function TimelineEvent({ item, idx, onItemClick }: TimelineEventProps) {
   const getIcon = (item: any) => {
     if (item.itemType === 'health_event') {
-      if (item.health_status === 'healthy') return <Heart className="w-3.5 h-3.5 text-emerald-500" />
-      if (item.health_status === 'at_risk') return <Heart className="w-3.5 h-3.5 text-amber-500" />
+      if (item.health_status === 'healthy') return <Heart className="w-3.5 h-3.5 text-success" />
+      if (item.health_status === 'at_risk') return <Heart className="w-3.5 h-3.5 text-warning" />
       if (item.health_status === 'critical') return <Heart className="w-3.5 h-3.5 text-red-500" />
       return <Heart className="w-3.5 h-3.5 text-gray-400" />
     }
     if (item.itemType === 'contract_event') return <DollarSign className="w-3.5 h-3.5 text-indigo-500" />
     if (item.itemType === 'ticket') return <TicketIcon className="w-3.5 h-3.5 text-plannera-demand" />
-    if (item.itemType === 'nps') return <Star className="w-3.5 h-3.5 text-amber-500" />
-    if (item.itemType === 'playbook') return <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+    if (item.itemType === 'nps') return <Star className="w-3.5 h-3.5 text-warning" />
+    if (item.itemType === 'playbook') return <Sparkles className="w-3.5 h-3.5 text-success" />
     if (item.isStrategic) return <Users className="w-3.5 h-3.5 text-plannera-orange" />
     if (item.activity_type === 'email') return <Mail className="w-3.5 h-3.5 text-plannera-sop" />
     if (['preparation', 'analysis', 'reporting'].includes(item.activity_type)) return <Terminal className="w-3.5 h-3.5 text-plannera-ds" />
@@ -65,9 +65,9 @@ export function TimelineEvent({ item, idx, onItemClick }: TimelineEventProps) {
           item.itemType === 'health_event' && "border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]",
           item.itemType === 'contract_event' && "border-indigo-500/30 shadow-[0_0_12px_rgba(99,102,241,0.15)]",
           item.isStrategic && item.itemType !== 'contract_event' && item.itemType !== 'health_event' && "border-plannera-orange/30 shadow-[0_0_12px_rgba(247,148,30,0.15)]",
-          item.itemType === 'playbook' && "border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]",
+          item.itemType === 'playbook' && "border-success-500/30 shadow-[0_0_12px_rgba(16,185,129,0.15)]",
           item.itemType === 'ticket' && "border-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)]",
-          item.itemType === 'nps' && "border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)]",
+          item.itemType === 'nps' && "border-warning-500/30 shadow-[0_0_12px_rgba(245,158,11,0.15)]",
           !item.itemType && "border-border-divider"
         )}
       >
@@ -81,7 +81,7 @@ export function TimelineEvent({ item, idx, onItemClick }: TimelineEventProps) {
           item.itemType === 'health_event' && "ring-1 ring-red-500/20 bg-red-500/[0.02]",
           item.itemType === 'contract_event' && "ring-1 ring-indigo-500/20 bg-indigo-500/[0.02]",
           item.isStrategic && item.itemType !== 'contract_event' && item.itemType !== 'health_event' && "ring-1 ring-plannera-orange/20",
-          item.itemType === 'playbook' && "ring-1 ring-emerald-500/20 bg-emerald-500/[0.02]",
+          item.itemType === 'playbook' && "ring-1 ring-emerald-500/20 bg-success/[0.02]",
           item.itemType === 'ticket' && "ring-1 ring-red-500/10",
           item.itemType === 'nps' && "ring-1 ring-amber-500/10"
         )}
@@ -103,7 +103,7 @@ export function TimelineEvent({ item, idx, onItemClick }: TimelineEventProps) {
                 </Badge>
               )}
               {item.itemType === 'health_event' && item.health_status === 'at_risk' && (
-                <Badge className="bg-amber-500/10 text-amber-500 border-none text-[7px] font-bold uppercase tracking-widest h-3.5 shrink-0">
+                <Badge className="bg-warning/10 text-warning border-none text-[7px] font-bold uppercase tracking-widest h-3.5 shrink-0">
                   Em Risco
                 </Badge>
               )}

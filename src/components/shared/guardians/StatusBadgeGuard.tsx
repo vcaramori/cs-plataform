@@ -29,14 +29,14 @@ export function StatusBadgeGuard({
   const Icon = iconName ? (Icons[iconName] as LucideIcon) : IconProp
 
   const styles: Record<BadgeType, string> = {
-    promoter: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
-    success: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
-    resolved: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
+    promoter: 'text-success bg-success/10 border-success-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
+    success: 'text-success bg-success/10 border-success-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
+    resolved: 'text-success bg-success/10 border-success-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]',
     
-    neutral: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-    warning: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-    high: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-    'in-progress': 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    neutral: 'text-warning bg-warning/10 border-warning-500/20',
+    warning: 'text-warning bg-warning/10 border-warning-500/20',
+    high: 'text-warning bg-warning/10 border-warning-500/20',
+    'in-progress': 'text-warning bg-warning/10 border-warning-500/20',
     
     detractor: 'text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]',
     critical: 'text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]',

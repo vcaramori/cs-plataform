@@ -40,8 +40,8 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
   }
 
   const statusColors: Record<string, string> = {
-    active: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-500 border-emerald-100 dark:border-emerald-500/20',
-    'at-risk': 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-100 dark:border-amber-500/20',
+    active: 'bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20',
+    'at-risk': 'bg-amber-50 dark:bg-warning/10 text-amber-700 dark:text-warning border-warning-100 dark:border-warning-500/20',
     churned: 'bg-red-50 dark:bg-destructive/10 text-red-700 dark:text-destructive border-red-100 dark:border-destructive/20',
     'in-negotiation': 'bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border-indigo-100 dark:border-primary/20',
   }
@@ -54,13 +54,13 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
         : daysUntilRenewal < 30
           ? 'text-destructive font-bold'
           : daysUntilRenewal < 90
-            ? 'text-amber-500 font-bold'
-            : 'text-emerald-500 font-bold'
+            ? 'text-warning font-bold'
+            : 'text-success font-bold'
 
   return (
     <Dialog open={!!contract} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl bg-indigo-50 dark:bg-primary/10 border border-indigo-100 dark:border-primary/20">
@@ -70,7 +70,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                 <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
                   {contract.description || contract.service_type || 'Contrato sem descrição'}
                 </DialogTitle>
-                <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
+                <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium mt-1">
                   Detalhes do evento de contrato na timeline
                 </DialogDescription>
               </div>
@@ -91,10 +91,10 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
           {/* Seção Financeira */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
-                <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-success/10">
+                <DollarSign className="w-4 h-4 text-emerald-600 dark:text-success" />
               </div>
-              <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                 Informações Financeiras
               </h3>
             </div>
@@ -103,7 +103,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                 <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                   MRR Base
                 </div>
-                <p className="text-lg font-black text-emerald-600 dark:text-emerald-500">
+                <p className="text-lg font-black text-emerald-600 dark:text-success">
                   {formatCurrency(contract.mrr || 0)}
                 </p>
               </Card>
@@ -123,10 +123,10 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
           {/* Seção de Datas */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10">
-                <CalendarDays className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+              <div className="p-2 rounded-lg bg-amber-50 dark:bg-warning/10">
+                <CalendarDays className="w-4 h-4 text-amber-600 dark:text-warning" />
               </div>
-              <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                 Timeline Contratual
               </h3>
             </div>
@@ -136,7 +136,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                   <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                     Data de Início
                   </div>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <p className="text-sm font-bold text-content-primary dark:text-slate-300">
                     {new Date(contract.start_date).toLocaleDateString('pt-BR')}
                   </p>
                 </Card>
@@ -171,7 +171,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
               <div className="p-2 rounded-lg bg-indigo-50 dark:bg-primary/10">
                 <Percent className="w-4 h-4 text-primary" />
               </div>
-              <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                 Termos do Contrato
               </h3>
             </div>
@@ -181,7 +181,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                   <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                     Tipo
                   </div>
-                  <p className="text-sm font-bold capitalize text-slate-700 dark:text-slate-300">
+                  <p className="text-sm font-bold capitalize text-content-primary dark:text-slate-300">
                     {contract.contract_type === 'initial'
                       ? 'Inicial'
                       : contract.contract_type === 'additive'
@@ -197,7 +197,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                   <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                     Plano
                   </div>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <p className="text-sm font-bold text-content-primary dark:text-slate-300">
                     {contract.service_type}
                   </p>
                 </Card>
@@ -207,7 +207,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                   <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                     Fidelidade
                   </div>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <p className="text-sm font-bold text-content-primary dark:text-slate-300">
                     {contract.fidelity_months} meses
                   </p>
                 </Card>
@@ -217,7 +217,7 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
                   <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                     Multa Rescisória
                   </div>
-                  <p className="text-sm font-bold text-red-600 dark:text-red-500">
+                  <p className="text-sm font-bold text-destructive dark:text-red-500">
                     {formatCurrency(contract.fine_amount)}
                   </p>
                 </Card>
@@ -229,15 +229,15 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
           {contract.notes && (
             <section className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-                  <AlertCircle className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <div className="p-2 rounded-lg bg-surface-card dark:bg-slate-800">
+                  <AlertCircle className="w-4 h-4 text-slate-600 dark:text-content-secondary" />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                   Notas Estratégicas
                 </h3>
               </div>
-              <Card variant="glass" className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/20">
-                <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+              <Card variant="glass" className="p-4 rounded-xl bg-surface-background/50 dark:bg-slate-800/20">
+                <p className="text-[13px] leading-relaxed text-content-primary dark:text-slate-300">
                   {contract.notes}
                 </p>
               </Card>
@@ -248,20 +248,20 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
           {contract.progressive_discounts && contract.progressive_discounts.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10">
-                  <Percent className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                <div className="p-2 rounded-lg bg-amber-50 dark:bg-warning/10">
+                  <Percent className="w-4 h-4 text-amber-600 dark:text-warning" />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                   Descontos Progressivos
                 </h3>
               </div>
               <div className="space-y-2">
                 {contract.progressive_discounts.map((discount: any, idx: number) => (
                   <Card key={idx} variant="glass" className="p-3 rounded-xl flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <span className="text-sm font-bold text-content-primary dark:text-slate-300">
                       {discount.label}
                     </span>
-                    <Badge variant="outline" className="font-bold text-amber-600 dark:text-amber-500 border-amber-200 dark:border-amber-500/30">
+                    <Badge variant="outline" className="font-bold text-amber-600 dark:text-warning border-warning-200 dark:border-warning-500/30">
                       {discount.discount}{discount.type === 'percentage' ? '%' : ' R$'}
                     </Badge>
                   </Card>
@@ -271,12 +271,12 @@ export function ContractDetailModal({ contract, onOpenChange }: ContractDetailMo
           )}
         </div>
 
-        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+        <DialogFooter className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white"
+            className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white"
           >
             Fechar
           </Button>

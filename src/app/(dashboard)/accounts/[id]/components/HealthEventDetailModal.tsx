@@ -24,9 +24,9 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
   // Determinar status baseado no score
   const getStatusInfo = (score?: number) => {
     if (!score) return { label: 'Neutro', color: 'text-gray-500', bgColor: 'bg-gray-50 dark:bg-gray-500/10', borderColor: 'border-gray-100 dark:border-gray-500/20' }
-    if (score > 75) return { label: 'Saudável', color: 'text-emerald-600 dark:text-emerald-500', bgColor: 'bg-emerald-50 dark:bg-emerald-500/10', borderColor: 'border-emerald-100 dark:border-emerald-500/20' }
-    if (score >= 50) return { label: 'Em Risco', color: 'text-amber-600 dark:text-amber-500', bgColor: 'bg-amber-50 dark:bg-amber-500/10', borderColor: 'border-amber-100 dark:border-amber-500/20' }
-    return { label: 'Crítico', color: 'text-red-600 dark:text-red-500', bgColor: 'bg-red-50 dark:bg-red-500/10', borderColor: 'border-red-100 dark:border-red-500/20' }
+    if (score > 75) return { label: 'Saudável', color: 'text-emerald-600 dark:text-success', bgColor: 'bg-emerald-50 dark:bg-success/10', borderColor: 'border-success-100 dark:border-success-500/20' }
+    if (score >= 50) return { label: 'Em Risco', color: 'text-amber-600 dark:text-warning', bgColor: 'bg-amber-50 dark:bg-warning/10', borderColor: 'border-warning-100 dark:border-warning-500/20' }
+    return { label: 'Crítico', color: 'text-destructive dark:text-red-500', bgColor: 'bg-red-50 dark:bg-red-500/10', borderColor: 'border-red-100 dark:border-red-500/20' }
   }
 
   const manualStatus = getStatusInfo(healthEvent.manual_score)
@@ -37,8 +37,8 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
 
   return (
     <Dialog open={!!healthEvent} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
@@ -48,7 +48,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
                 <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
                   Health Score Avaliação
                 </DialogTitle>
-                <DialogDescription className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
+                <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium mt-1">
                   Detalhes da avaliação de saúde da conta
                 </DialogDescription>
               </div>
@@ -70,15 +70,15 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
           {/* Data de Avaliação */}
           <section className="space-y-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-                <CheckCircle className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <div className="p-2 rounded-lg bg-surface-card dark:bg-slate-800">
+                <CheckCircle className="w-4 h-4 text-slate-600 dark:text-content-secondary" />
               </div>
-              <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                 Data da Avaliação
               </h3>
             </div>
             <Card variant="glass" className="p-4 rounded-xl">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              <p className="text-sm font-bold text-content-primary dark:text-slate-300">
                 {new Date(healthEvent.evaluated_at).toLocaleDateString('pt-BR', {
                   weekday: 'long',
                   year: 'numeric',
@@ -95,7 +95,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
               <div className="p-2 rounded-lg bg-indigo-50 dark:bg-primary/10">
                 <TrendingUp className="w-4 h-4 text-primary" />
               </div>
-              <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                 Score Total
               </h3>
             </div>
@@ -126,7 +126,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
                     <p className="text-sm text-content-secondary italic">Não avaliado</p>
                   )}
                   {healthEvent.manual_notes && (
-                    <p className="text-[10px] text-slate-600 dark:text-slate-400 italic mt-3 pt-3 border-t border-border-divider">
+                    <p className="text-[10px] text-slate-600 dark:text-content-secondary italic mt-3 pt-3 border-t border-border-divider">
                       {healthEvent.manual_notes}
                     </p>
                   )}
@@ -170,7 +170,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
                 <div className="p-2 rounded-lg bg-indigo-50 dark:bg-primary/10">
                   <TrendingUp className="w-4 h-4 text-primary" />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                   Componentes IA
                 </h3>
               </div>
@@ -190,7 +190,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
                     <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                       Tickets
                     </div>
-                    <p className="text-lg font-black text-amber-600 dark:text-amber-500">
+                    <p className="text-lg font-black text-amber-600 dark:text-warning">
                       {healthEvent.ticket_component.toFixed(0)}%
                     </p>
                   </Card>
@@ -200,7 +200,7 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
                     <div className="text-[10px] font-bold uppercase tracking-widest text-content-secondary mb-2">
                       Engajamento
                     </div>
-                    <p className="text-lg font-black text-emerald-600 dark:text-emerald-500">
+                    <p className="text-lg font-black text-emerald-600 dark:text-success">
                       {healthEvent.engagement_component.toFixed(0)}%
                     </p>
                   </Card>
@@ -213,15 +213,15 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
           {healthEvent.shadow_reasoning && (
             <section className="space-y-4">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-                  <AlertCircle className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <div className="p-2 rounded-lg bg-surface-card dark:bg-slate-800">
+                  <AlertCircle className="w-4 h-4 text-slate-600 dark:text-content-secondary" />
                 </div>
-                <h3 className="font-bold text-sm uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                <h3 className="font-bold text-sm uppercase tracking-wide text-content-primary dark:text-slate-300">
                   Análise IA
                 </h3>
               </div>
-              <Card variant="glass" className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/20">
-                <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+              <Card variant="glass" className="p-4 rounded-xl bg-surface-background/50 dark:bg-slate-800/20">
+                <p className="text-[13px] leading-relaxed text-content-primary dark:text-slate-300">
                   {healthEvent.shadow_reasoning}
                 </p>
               </Card>
@@ -231,9 +231,9 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
           {/* Discrepância Alert (se houver) */}
           {healthEvent.discrepancy_alert && healthEvent.discrepancy && (
             <section className="space-y-4">
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-5 shadow-sm">
+              <div className="rounded-2xl border border-warning-500/20 bg-amber-50 dark:bg-warning/10 p-5 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0">
+                  <div className="p-2 rounded-xl bg-amber-100 dark:bg-warning/20 text-amber-600 dark:text-warning shrink-0">
                     <AlertCircle className="w-5 h-5" />
                   </div>
                   <div className="flex-1 space-y-2">
@@ -251,12 +251,12 @@ export function HealthEventDetailModal({ healthEvent, onOpenChange }: HealthEven
           )}
         </div>
 
-        <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+        <DialogFooter className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl font-bold text-slate-500 dark:text-slate-400 hover:text-[#2d3558] dark:hover:text-white"
+            className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white"
           >
             Fechar
           </Button>
