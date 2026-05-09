@@ -167,7 +167,7 @@ export function EsforcoClient({
           entry={selectedEntry}
           accounts={accounts}
           onClose={() => setSelectedEntry(null)}
-          onUpdate={handleUpdate}
+          onUpdate={(updated) => handleUpdate(updated as unknown as Entry)}
         />
       )}
     </div>
