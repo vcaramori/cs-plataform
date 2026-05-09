@@ -105,7 +105,7 @@ export default function SLADashboard() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Performance por Prioridade</h2>
-              <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Conformidade por nível de serviço</p>
+              <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-60">Conformidade por nível de serviço</p>
             </div>
           </div>
           <div className="h-[350px] w-full">
@@ -143,7 +143,7 @@ export default function SLADashboard() {
         <div className="bg-surface-card border border-border-divider rounded-2xl p-8 shadow-2xl backdrop-blur-md flex flex-col">
           <div className="mb-8">
             <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Status de Saúde</h2>
-            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Proporção total de atendimento</p>
+            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-60">Proporção total de atendimento</p>
           </div>
           <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -181,7 +181,7 @@ export default function SLADashboard() {
         <div className="flex items-center justify-between mb-10">
           <div>
             <h2 className="text-sm font-black uppercase tracking-widest text-content-primary">Alertas de Violação</h2>
-            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-40">Incidentes críticos pendentes</p>
+            <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest mt-1 opacity-60">Incidentes críticos pendentes</p>
           </div>
           <Button variant="outline" className="h-11 rounded-xl px-6 border-border-divider hover:bg-white/5 text-[10px] font-black uppercase tracking-widest transition-all">
             Exportar Deep Audit
@@ -204,13 +204,13 @@ export default function SLADashboard() {
                   <div>
                     <h4 className="text-xs font-black uppercase tracking-tight text-content-primary">{t.title}</h4>
                     <div className="flex items-center gap-3 mt-1.5">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40">Prioridade {t.priority}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-60">Prioridade {t.priority}</span>
                       <div className="w-1 h-1 bg-content-secondary opacity-20 rounded-full" />
                       <span className="text-[9px] font-bold uppercase tracking-widest text-red-500/60">Violado</span>
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider hover:bg-white/5 text-content-secondary opacity-40 hover:opacity-100 transition-all">
+                <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider hover:bg-white/5 text-content-secondary opacity-60 hover:opacity-100 transition-all">
                   <ArrowLeft className="w-4 h-4 rotate-180" />
                 </Button>
               </div>

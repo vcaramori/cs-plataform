@@ -95,7 +95,8 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
           sources: data.sources,
         }])
       }
-    } catch {
+    } catch (err) {
+      console.error('[PerguntarClient] Send error:', err)
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: 'Erro de conexão. Tente novamente.',
@@ -303,7 +304,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
                 <span className="w-2 h-2 bg-plannera-orange rounded-full animate-bounce [animation-delay:150ms]" />
                 <span className="w-2 h-2 bg-plannera-orange rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary opacity-40 animate-pulse ml-2">Pensando...</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary opacity-60 animate-pulse ml-2">Pensando...</span>
             </div>
           </div>
         )}
@@ -351,7 +352,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
                   <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">IA Conectada</span>
                </div>
             </div>
-            <p className="text-content-secondary text-[9px] font-black uppercase tracking-[0.3em] opacity-30">
+            <p className="text-content-secondary text-[9px] font-black uppercase tracking-[0.3em] opacity-60">
               ENTER ENVIAR · SHIFT + ENTER QUEBRA DE LINHA
             </p>
           </div>

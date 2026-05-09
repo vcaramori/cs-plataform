@@ -81,7 +81,7 @@ export default function PlansSettingsPage() {
               ))
             ) : plans.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-surface-card border border-border-divider rounded-2xl">
-                <p className="text-content-secondary text-[10px] font-extrabold uppercase tracking-widest opacity-30">Nenhum plano cadastrado.</p>
+                <p className="text-content-secondary text-[10px] font-extrabold uppercase tracking-widest opacity-60">Nenhum plano cadastrado.</p>
               </div>
             ) : (
               plans.map((plan, idx) => (

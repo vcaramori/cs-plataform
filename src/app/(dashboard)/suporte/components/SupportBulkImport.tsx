@@ -231,7 +231,7 @@ export function SupportBulkImport({ accounts, onImported }: SupportBulkImportPro
                   <div className="bg-accent/40 p-4 rounded-xl border border-border/50 font-mono text-[10px] break-all opacity-70 shadow-inner">
                     account_name, title, desc, status, priority
                   </div>
-                  <p className="label-premium !text-[9px] italic opacity-40">Encoding: UTF-8 / RFC 4180</p>
+                  <p className="label-premium !text-[9px] italic opacity-60">Encoding: UTF-8 / RFC 4180</p>
                 </div>
               ) : (
                 <div className="space-y-6">

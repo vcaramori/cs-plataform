@@ -111,7 +111,8 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
       if (!resp.ok) throw new Error()
       toast.success('Registro removido')
       onClose()
-    } catch {
+    } catch (err) {
+      console.error('[EffortEditModal] Delete error:', err)
       toast.error('Erro ao deletar registro')
     } finally {
       setIsSaving(false)

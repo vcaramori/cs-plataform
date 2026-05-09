@@ -94,8 +94,8 @@ export default function CSATPage({ params: paramsPromise }: { params: Promise<{ 
         {/* Rating Section */}
         <div className="space-y-8">
           <div className="flex justify-between items-center px-4">
-             <span className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em] opacity-40">Insatisfeito</span>
-             <span className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em] opacity-40">Muito Satisfeito</span>
+             <span className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em] opacity-60">Insatisfeito</span>
+             <span className="text-[10px] font-black text-content-secondary uppercase tracking-[0.2em] opacity-60">Muito Satisfeito</span>
           </div>
           <div className="flex justify-between gap-3 md:gap-4">
             {[1, 2, 3, 4, 5].map((num) => (

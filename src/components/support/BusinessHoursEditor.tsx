@@ -91,7 +91,7 @@ export function BusinessHoursEditor({ initialHours, accountId }: Props) {
                   "transition-all",
                   h.is_active 
                     ? "bg-transparent hover:bg-white/5" 
-                    : "bg-surface-background/30 opacity-40"
+                    : "bg-surface-background/30 opacity-60"
                 )}
               >
                 <td className="px-8 py-6">

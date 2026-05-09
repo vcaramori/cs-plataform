@@ -83,7 +83,7 @@ export function ContractCard({ activeContract, allContracts, accountId, governan
             <div className="flex flex-col">
               <p className="text-content-primary font-black text-xl tracking-tighter">R$ {netMRR.toLocaleString('pt-BR')}</p>
               {hasDiscount && (
-                <div className="flex items-center gap-1.5 mt-1 opacity-40 group-hover/mrr:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1.5 mt-1 opacity-60 group-hover/mrr:opacity-100 transition-opacity">
                   <span className="text-[10px] text-content-secondary line-through">R$ {Number(contract.mrr).toLocaleString('pt-BR')}</span>
                   <span className="text-[10px] text-content-secondary font-bold">(Nominal)</span>
                 </div>

@@ -113,7 +113,7 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
             </div>
             <div className="text-right">
               <p className="label-premium !text-[9px]">Nota NPS</p>
-              <p className="text-3xl font-extrabold tracking-tighter text-content-primary">{render.score}<span className="text-xs opacity-30">/10</span></p>
+              <p className="text-3xl font-extrabold tracking-tighter text-content-primary">{render.score}<span className="text-xs opacity-60">/10</span></p>
             </div>
           </div>
 
@@ -134,20 +134,20 @@ function ResponseDetailDialog({ render, onOpenChange }: { render: any; onOpenCha
 
             <div className="space-y-4">
               {answers.length === 0 && !render.comment ? (
-                <div className="py-12 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center opacity-30">
+                <div className="py-12 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center opacity-60">
                   <p className="label-premium">Sem dados detalhados</p>
                 </div>
               ) : (
                 answers.map((ans: any) => (
                   <div key={ans.id} className="space-y-2 p-5 rounded-2xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
-                    <p className="label-premium !text-[9px] opacity-40 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
+                    <p className="label-premium !text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
                     <div className="text-content-primary text-sm font-extrabold tracking-tight leading-relaxed">
                       {ans.nps_questions?.type === 'nps_scale' ? (
                         <div className="flex items-center gap-3">
                           <div className="h-2 flex-1 bg-surface-background rounded-full overflow-hidden shadow-inner">
                             <div className="h-full bg-primary" style={{ width: `${(parseInt(ans.text_value) / 10) * 100}%` }} />
                           </div>
-                          <span className="text-primary font-extrabold tracking-tighter">{ans.text_value}<span className="text-[10px] opacity-30">/10</span></span>
+                          <span className="text-primary font-extrabold tracking-tighter">{ans.text_value}<span className="text-[10px] opacity-60">/10</span></span>
                         </div>
                       ) : ans.nps_questions?.type === 'multiple_choice' ? (
                         <div className="flex flex-wrap gap-2">
@@ -188,7 +188,7 @@ function ResponseCarousel({ ansList, scoreColor }: { ansList: any[], scoreColor:
     return () => clearInterval(timer)
   }, [validAnswers.length])
 
-  if (validAnswers.length === 0) return <p className="label-premium opacity-30 italic">Sem comentários registrados</p>
+  if (validAnswers.length === 0) return <p className="label-premium opacity-60 italic">Sem comentários registrados</p>
 
   const ans = validAnswers[idx]
   const qTitle = ans.is_comment ? 'Feedback Direto' : (ans.nps_questions?.title || 'Resposta')
@@ -502,11 +502,11 @@ export function NPSDashboardClient({ accounts }: Props) {
               <div className="lg:col-span-4 p-12 flex flex-col justify-center gap-12">
                 <div className="grid grid-cols-2 gap-y-10">
                   <div className="space-y-3">
-                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-40">Volume Amostral</p>
+                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-60">Volume Amostral</p>
                     <p className="text-5xl font-black text-content-primary tracking-tighter leading-none tabular-nums">{stats.total_responses}</p>
                   </div>
                   <div className="space-y-3 ml-6 border-l border-border-divider pl-10">
-                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-40">Média Ponderada</p>
+                    <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-60">Média Ponderada</p>
                     <div className="flex items-baseline gap-2">
                       <p className="text-5xl font-black text-plannera-primary tracking-tighter leading-none tabular-nums">{stats.avg_score}</p>
                       <span className="text-xs font-black text-content-secondary/20">/10</span>
@@ -537,7 +537,7 @@ export function NPSDashboardClient({ accounts }: Props) {
                           "w-6 h-6 rounded-xl transition-all m-1 flex items-center justify-center",
                           paretoSortBy === s
                             ? (s === 'promoters' ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : s === 'passives' ? 'bg-amber-400 shadow-lg shadow-amber-400/20' : 'bg-destructive shadow-lg shadow-destructive/20')
-                            : 'bg-transparent hover:bg-surface-card opacity-30 hover:opacity-100'
+                            : 'bg-transparent hover:bg-surface-card opacity-60 hover:opacity-100'
                         )} />
                     ))}
                   </div>
@@ -592,7 +592,7 @@ export function NPSDashboardClient({ accounts }: Props) {
 
                 {/* Score Indicator */}
                 <div className={cn("flex flex-col items-center justify-center w-20 rounded-2xl border-2 font-black shrink-0 shadow-xl transition-all group-hover:scale-105 group-hover:rotate-2", segColor)}>
-                  <span className="text-[8px] opacity-40 uppercase leading-none mb-1.5 font-black tracking-widest">Score</span>
+                  <span className="text-[8px] opacity-60 uppercase leading-none mb-1.5 font-black tracking-widest">Score</span>
                   <span className="text-3xl leading-none tracking-tighter tabular-nums">{r.score}</span>
                 </div>
 

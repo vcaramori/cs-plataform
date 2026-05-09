@@ -19,7 +19,7 @@ export function QuickDocuments({ accountName }: Props) {
   if (!SHAREPOINT_BASE) {
     return (
       <div className="p-5 rounded-2xl border border-dashed border-border-divider space-y-3 text-center">
-        <FolderOpen className="w-8 h-8 text-content-secondary mx-auto opacity-40" />
+        <FolderOpen className="w-8 h-8 text-content-secondary mx-auto opacity-60" />
         <div>
           <p className="text-content-secondary text-xs font-bold uppercase tracking-wide">SharePoint não configurado</p>
           <p className="text-content-secondary text-[10px] mt-1 leading-relaxed opacity-60">
@@ -74,12 +74,12 @@ export function QuickDocuments({ accountName }: Props) {
               {label}
             </span>
           </div>
-          <ExternalLink className="w-3 h-3 text-content-secondary opacity-40 group-hover:opacity-100 transition-opacity" />
+          <ExternalLink className="w-3 h-3 text-content-secondary opacity-60 group-hover:opacity-100 transition-opacity" />
         </a>
       ))}
 
       {/* Nota de segurança */}
-      <div className="flex items-center gap-2 px-2 pt-1 opacity-40">
+      <div className="flex items-center gap-2 px-2 pt-1 opacity-60">
         <Shield className="w-3 h-3 text-content-secondary shrink-0" />
         <span className="text-[9px] text-content-secondary font-bold uppercase tracking-wide">Protocolo de segurança Microsoft 365 ativo</span>
       </div>

@@ -108,13 +108,13 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="label-premium !text-[9px] opacity-40">MRR Líquido</span>
+            <span className="label-premium !text-[9px] opacity-60">MRR Líquido</span>
           </div>
           <p className="text-foreground text-base font-black tracking-tighter tabular-nums">
             {formatCurrency(netMRR)}
           </p>
           {hasDiscount && (
-            <p className="label-premium !text-[8px] mt-2 opacity-30 line-through">
+            <p className="label-premium !text-[8px] mt-2 opacity-60 line-through">
               Nominal: {formatCurrency(contract.mrr)}
             </p>
           )}
@@ -122,7 +122,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-3.5 h-3.5 text-amber-500" />
-            <span className="label-premium !text-[9px] opacity-40">Renovação</span>
+            <span className="label-premium !text-[9px] opacity-60">Renovação</span>
           </div>
           <p className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
             {contract.renewal_date
@@ -130,7 +130,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
               : 'Permanent'}
           </p>
           {days !== null && (
-            <p className="label-premium !text-[8px] mt-2 opacity-30">
+            <p className="label-premium !text-[8px] mt-2 opacity-60">
               {days < 0 ? `${Math.abs(days)}d expirado` : `T-minus ${days}d`}
             </p>
           )}
@@ -140,7 +140,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
       {/* Horas contratadas */}
       {contract.contracted_hours_monthly > 0 && (
         <div className="flex items-center justify-between px-2 pt-1">
-          <span className="label-premium !text-[9px] opacity-40">Horas Contratadas</span>
+          <span className="label-premium !text-[9px] opacity-60">Horas Contratadas</span>
           <span className="text-foreground text-[10px] font-black tracking-tight">{contract.contracted_hours_monthly}h / Mês</span>
         </div>
       )}
@@ -182,7 +182,7 @@ export function AccountDetailPageClient({
               </div>
               <h2 className="h2-section !text-base">Linha do Tempo</h2>
             </div>
-            <span className="label-premium !text-[9px] opacity-30">Cognitive Stream</span>
+            <span className="label-premium !text-[9px] opacity-60">Cognitive Stream</span>
           </div>
           <div className="lg:max-h-[85vh] overflow-y-auto custom-scrollbar pr-3">
             <AccountUnifiedTimeline
@@ -306,7 +306,7 @@ export function AccountDetailPageClient({
 
             {displayContracts.length === 0 ? (
               <Card variant="glass" className="p-10 border-dashed border-border text-center shadow-none bg-accent/5">
-                <p className="label-premium opacity-30 !text-[10px]">Sem dados contratuais registrados</p>
+                <p className="label-premium opacity-60 !text-[10px]">Sem dados contratuais registrados</p>
               </Card>
             ) : (
               <div className="space-y-5">

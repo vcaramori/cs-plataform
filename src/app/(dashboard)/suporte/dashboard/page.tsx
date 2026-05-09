@@ -135,7 +135,7 @@ export default function SupportDashboardPage() {
                 "px-5 py-2 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest",
                 period === p 
                   ? "bg-plannera-primary text-white shadow-lg shadow-plannera-primary/20" 
-                  : "text-content-secondary hover:text-plannera-primary opacity-40 hover:opacity-100"
+                  : "text-content-secondary hover:text-plannera-primary opacity-60 hover:opacity-100"
               )}
             >
               {p}
@@ -293,7 +293,7 @@ export default function SupportDashboardPage() {
         {loading ? (
           <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
         ) : agents.length === 0 ? (
-          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-40">
+          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-60">
             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem registros para o horizonte selecionado</p>
           </Card>
         ) : (
@@ -328,7 +328,7 @@ export default function SupportDashboardPage() {
                     <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{a.received}</TableCell>
                     <TableCell className="text-right font-black text-[14px] text-emerald-500 tabular-nums">{a.resolved}</TableCell>
                     <TableCell className="text-right"><CompliancePill value={a.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-40 group-hover:opacity-100 tabular-nums">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-60 group-hover:opacity-100 tabular-nums">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
                     <TableCell className="text-right pr-10">
                       {a.avg_csat != null
                         ? <div className="flex items-center justify-end gap-2">
@@ -336,7 +336,7 @@ export default function SupportDashboardPage() {
                               "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
                               a.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : a.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
                             )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-40')} />
+                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-60')} />
                               {a.avg_csat}
                             </div>
                           </div>
@@ -360,7 +360,7 @@ export default function SupportDashboardPage() {
         {loading ? (
           <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
         ) : clients.length === 0 ? (
-          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-40">
+          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-60">
             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem dados de engajamento no período</p>
           </Card>
         ) : (
@@ -404,7 +404,7 @@ export default function SupportDashboardPage() {
                         : <span className="text-content-secondary font-black text-[14px] opacity-10 tabular-nums">0</span>}
                     </TableCell>
                     <TableCell className="text-right"><CompliancePill value={c.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-40 group-hover:opacity-100 tabular-nums">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
+                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-60 group-hover:opacity-100 tabular-nums">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
                     <TableCell className="text-right pr-10">
                       {c.avg_csat != null
                         ? <div className="flex items-center justify-end gap-2">
@@ -412,7 +412,7 @@ export default function SupportDashboardPage() {
                               "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
                               c.avg_csat >= 4 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : c.avg_csat >= 3 ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-destructive/10 border-destructive/20 text-destructive'
                             )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-40')} />
+                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-emerald-500' : 'text-current opacity-60')} />
                               {c.avg_csat}
                             </div>
                           </div>

@@ -104,7 +104,7 @@ export function InteractionsList({ interactions, tickets, accountId, contractId 
         <CardContent className="space-y-2">
           {recentInteractions.length === 0 ? (
             <div className="text-center py-6">
-              <Activity className="w-8 h-8 text-content-secondary mx-auto mb-2 opacity-40" />
+              <Activity className="w-8 h-8 text-content-secondary mx-auto mb-2 opacity-60" />
               <p className="text-content-secondary text-sm">Nenhuma interação registrada</p>
               {contractId && (
                 <Button

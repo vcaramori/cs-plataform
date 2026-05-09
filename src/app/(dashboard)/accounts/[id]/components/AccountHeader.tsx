@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Pencil, Settings2 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { HealthScoreDetailsModal } from './HealthScoreDetailsModal'
-import { HealthScoreEditModal } from '../../../dashboard/components/HealthScoreEditModal'
+import { ModalSkeleton } from '@/components/LazyLoader'
+
+const HealthScoreEditModal = lazy(() => import('../../../dashboard/components/HealthScoreEditModal').then(m => ({ default: m.HealthScoreEditModal })))
 import { motion } from 'framer-motion'
 import { Account, CommercialGovernance, HealthScore } from '@/lib/supabase/types'
 import { HealthScoreCard } from './HealthScoreCard'
@@ -111,9 +113,9 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
                   <Pencil className="w-3.5 h-3.5" />
                 </Link>
               </div>
-              <p className="label-premium !text-[11px] opacity-40 flex items-center gap-2 mt-2 truncate">
+              <p className="label-premium !text-[11px] opacity-60 flex items-center gap-2 mt-2 truncate">
                 ID: {account.id.split('-')[0]}
-                <span className="opacity-30">/</span>
+                <span className="opacity-60">/</span>
                 {account.industry || 'Global Portfolio'}
               </p>
             </div>
@@ -181,15 +183,17 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
         accountName={account.name}
       />
 
-      <HealthScoreEditModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        account={{ id: account.id, name: account.name, health_score: account.health_score }}
-        onSuccess={() => {
-          router.refresh()
-          fetchHistory()
-        }}
-      />
+      <Suspense fallback={<ModalSkeleton />}>
+        <HealthScoreEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          account={{ id: account.id, name: account.name, health_score: account.health_score }}
+          onSuccess={() => {
+            router.refresh()
+            fetchHistory()
+          }}
+        />
+      </Suspense>
     </div>
   )
 }

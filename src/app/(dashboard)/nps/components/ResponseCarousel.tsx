@@ -19,7 +19,7 @@ export default function ResponseCarousel({ ansList, scoreColor }: ResponseCarous
     return () => clearInterval(timer)
   }, [validAnswers.length])
 
-  if (validAnswers.length === 0) return <p className="label-premium opacity-30 italic">Sem comentários registrados</p>
+  if (validAnswers.length === 0) return <p className="label-premium opacity-60 italic">Sem comentários registrados</p>
 
   const ans = validAnswers[idx]
   const qTitle = ans.is_comment ? 'Feedback Direto' : (ans.nps_questions?.title || 'Resposta')

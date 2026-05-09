@@ -41,7 +41,7 @@ export function EsforcoTable({
             Journal de Atividades
           </CardTitle>
           <div className="flex items-center gap-5">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary opacity-40">Produção Total Bruta:</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary opacity-60">Produção Total Bruta:</span>
             <Badge variant="neutral" className="bg-plannera-primary/10 text-plannera-primary border-plannera-primary/20 font-black text-sm px-6 py-2 rounded-2xl shadow-lg">
               {totalHours.toFixed(1)} HORAS
             </Badge>
@@ -96,7 +96,7 @@ export function EsforcoTable({
                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-12">
-                        <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-40">
+                        <span className="text-content-secondary font-black text-[10px] tracking-widest opacity-60">
                           {format(new Date(e.date + 'T12:00:00'), 'dd/MM/yyyy')}
                         </span>
                       </TableCell>

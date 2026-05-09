@@ -49,7 +49,7 @@ export function EsforcoChart({ paretoData }: EsforcoChartProps) {
                         <div className="flex items-center justify-between">
                           <span className="text-content-primary text-xs font-black uppercase tracking-tight truncate max-w-[250px]">{t.name}</span>
                           <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-30">{t.percentage.toFixed(1)}%</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{t.percentage.toFixed(1)}%</span>
                             <span className="text-plannera-primary font-black text-lg tabular-nums">{t.hours.toFixed(1)}H</span>
                           </div>
                         </div>

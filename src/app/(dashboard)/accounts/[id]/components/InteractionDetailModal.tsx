@@ -102,7 +102,8 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
        if (!resp.ok) throw new Error()
        toast.success('Registro removido')
        onClose()
-    } catch {
+    } catch (err) {
+       console.error('[InteractionDetailModal] Delete error:', err)
        toast.error('Erro ao deletar')
     } finally {
        setIsSaving(false)

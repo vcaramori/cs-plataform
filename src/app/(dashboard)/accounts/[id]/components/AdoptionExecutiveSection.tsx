@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Zap, Rocket, AlertTriangle, Target, ChevronRight, HelpCircle, Clock, PieChart, CircleSlash, ShieldAlert, ShieldCheck, TrendingDown, Info } from 'lucide-react'
-import { AdoptionDetailsModal } from './AdoptionDetailsModal'
+import { ModalSkeleton } from '@/components/LazyLoader'
+
+const AdoptionDetailsModal = lazy(() => import('./AdoptionDetailsModal').then(m => ({ default: m.AdoptionDetailsModal })))
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 
@@ -104,7 +106,9 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
               <p className="text-content-secondary text-[9px] font-bold uppercase tracking-tight">Utilização contratual do produto</p>
             </div>
           </div>
-          <AdoptionDetailsModal accountId={accountId} accountName={accountName} />
+          <Suspense fallback={<ModalSkeleton />}>
+            <AdoptionDetailsModal accountId={accountId} accountName={accountName} />
+          </Suspense>
         </div>
 
         {total === 0 ? (

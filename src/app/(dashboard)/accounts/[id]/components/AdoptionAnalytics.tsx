@@ -55,7 +55,7 @@ export function AdoptionAnalytics({
           <span className="text-[10px] font-bold uppercase text-content-secondary tracking-widest">Sincronizando...</span>
         </div>
       ) : records.length === 0 ? (
-        <div className="text-center py-10 opacity-40">
+        <div className="text-center py-10 opacity-60">
           <p className="text-[10px] font-bold uppercase text-content-secondary">Nenhuma funcionalidade no plano.</p>
         </div>
       ) : (

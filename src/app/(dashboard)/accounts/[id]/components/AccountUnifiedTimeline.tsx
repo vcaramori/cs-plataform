@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { NPSDetailModal } from './NPSDetailModal'
-import { PlaybookHistoryModal } from './PlaybookHistoryModal'
+import { ModalSkeleton } from '@/components/LazyLoader'
+
+const PlaybookHistoryModal = lazy(() => import('./PlaybookHistoryModal').then(m => ({ default: m.PlaybookHistoryModal })))
 import { InteractionDetailModal } from './InteractionDetailModal'
 import { ContractDetailModal } from './ContractDetailModal'
 import { HealthEventDetailModal } from './HealthEventDetailModal'
@@ -229,7 +231,7 @@ export function AccountUnifiedTimeline({
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               ← Anterior
             </button>
@@ -239,7 +241,7 @@ export function AccountUnifiedTimeline({
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               Próxima →
             </button>
@@ -263,10 +265,12 @@ export function AccountUnifiedTimeline({
         onOpenChange={(open) => !open && setSelectedNPS(null)}
       />
 
-      <PlaybookHistoryModal
-        playbook={selectedPlaybook}
-        onOpenChange={(open) => !open && setSelectedPlaybook(null)}
-      />
+      <Suspense fallback={<ModalSkeleton />}>
+        <PlaybookHistoryModal
+          playbook={selectedPlaybook}
+          onOpenChange={(open) => !open && setSelectedPlaybook(null)}
+        />
+      </Suspense>
 
       <InteractionDetailModal
         interaction={selectedInteraction}

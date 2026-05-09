@@ -66,7 +66,7 @@ export function SearchableSelect({
               ? options.find((option) => option.value === value)?.label || placeholder
               : placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-40" />
+          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-60" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-white dark:bg-[#101623] border border-border/50 shadow-2xl rounded-2xl overflow-hidden">

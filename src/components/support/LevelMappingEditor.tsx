@@ -81,7 +81,7 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
           onChange={e => setNewLabel(e.target.value)}
           className="flex-1 bg-surface-background border-border-divider rounded-xl h-12 text-xs font-bold uppercase tracking-tight"
         />
-        <div className="px-2 text-content-secondary opacity-30">
+        <div className="px-2 text-content-secondary opacity-60">
           <ArrowRight className="w-4 h-4" />
         </div>
         <Select value={newLevel} onValueChange={(v) => setNewLevel(v as any)}>
@@ -107,7 +107,7 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
 
       <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-xl">
         {mappings.length === 0 ? (
-          <div className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-content-secondary opacity-40 bg-surface-background/50">
+          <div className="p-12 text-center text-[10px] font-black uppercase tracking-widest text-content-secondary opacity-60 bg-surface-background/50">
             Nenhum mapeamento configurado
           </div>
         ) : (

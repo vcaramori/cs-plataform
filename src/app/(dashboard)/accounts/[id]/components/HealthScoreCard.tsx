@@ -95,7 +95,7 @@ export function HealthScoreCard({
       onClick={onDetailsClick}
       className="lg:col-span-1 p-6 flex flex-col justify-center items-center relative group min-h-[160px] border-border rounded-2xl cursor-pointer hover:bg-accent/20 transition-all overflow-hidden shadow-2xl"
     >
-      <div className="absolute inset-x-0 -bottom-1 h-full opacity-30 pointer-events-none z-0">
+      <div className="absolute inset-x-0 -bottom-1 h-full opacity-60 pointer-events-none z-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={displayChartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -146,7 +146,7 @@ export function HealthScoreCard({
             <Button
               variant="ghost"
               size="icon"
-              className="w-7 h-7 rounded-xl opacity-40 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-transparent hover:border-primary/20"
+              className="w-7 h-7 rounded-xl opacity-60 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-transparent hover:border-primary/20"
               onClick={(e) => {
                 e.stopPropagation()
                 onEditClick()
@@ -163,7 +163,7 @@ export function HealthScoreCard({
             </span>
           </div>
           {latestHealthScore?.classification && (
-            <p className="label-premium !text-[10px] opacity-40 mt-3 truncate font-medium">
+            <p className="label-premium !text-[10px] opacity-60 mt-3 truncate font-medium">
               {latestHealthScore.classification}
             </p>
           )}

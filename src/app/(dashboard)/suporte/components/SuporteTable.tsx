@@ -54,7 +54,7 @@ export function SuporteTable({
               {tickets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-64 text-center">
-                    <div className="flex flex-col items-center justify-center opacity-30 grayscale">
+                    <div className="flex flex-col items-center justify-center opacity-60 grayscale">
                       <TicketCheck className="w-12 h-12 mb-4" />
                       <p className="text-[10px] font-black uppercase tracking-[0.3em]">Nenhum chamado pendente</p>
                     </div>

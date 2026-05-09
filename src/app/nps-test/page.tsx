@@ -242,7 +242,7 @@ export default function NPSTestPage() {
                     Não agora
                   </button>
                   <button onClick={handleSubmit} disabled={!isValid() || loading}
-                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-extrabold uppercase tracking-wide px-5 py-2 rounded-lg transition-colors">
+                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-extrabold uppercase tracking-wide px-5 py-2 rounded-lg transition-colors">
                     {loading ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>

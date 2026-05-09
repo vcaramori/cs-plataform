@@ -115,7 +115,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
               {/* Área de mensagens */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
                 {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-40 px-6">
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-60 px-6">
                     <Sparkles className="w-10 h-10 text-indigo-500 animate-pulse" />
                     <div className="space-y-2">
                       <p className="text-foreground text-sm font-bold">Como posso ajudar hoje?</p>

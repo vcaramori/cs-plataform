@@ -111,7 +111,7 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
           <div className="w-1 h-4 bg-plannera-primary rounded-full" />
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary">Matriz de Prazos (Minutos Úteis)</h3>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-40 mt-1">Acordos de Nível de Serviço Contratuais</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-60 mt-1">Acordos de Nível de Serviço Contratuais</p>
           </div>
         </div>
         <Button 

@@ -565,7 +565,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value === 'none' ? null : value }),
       })
-    } catch {
+    } catch (err) {
+      console.error('[TicketDetail] Save prop error:', err)
       toast.error('Erro ao salvar classificação')
     } finally {
       setSavingProps(false)
@@ -584,7 +585,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
       if (!res.ok) throw new Error()
       toast.success('Chamado reatribuído')
       router.refresh()
-    } catch {
+    } catch (err) {
+      console.error('[TicketDetail] Assign error:', err)
       toast.error('Erro ao reatribuir')
     } finally {
       setAssignLoading(false)
@@ -627,7 +629,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         try {
           const errData = await res.json()
           errorMsg = errData.error || errorMsg
-        } catch {
+        } catch (err) {
+          console.error('[TicketDetail] JSON parse error:', err)
           if (res.status === 404) errorMsg = 'Endpoint não encontrado (404)'
           else errorMsg = `Erro do servidor (${res.status})`
         }
@@ -1539,7 +1542,7 @@ function IndicatorsModal({ open, onClose, indicators }: {
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-5 h-5 text-content-secondary opacity-30" />
+                    <RefreshCw className="w-5 h-5 text-content-secondary opacity-60" />
                     <Text className="text-content-secondary italic">Sem ETA detectado</Text>
                   </>
                 )}
