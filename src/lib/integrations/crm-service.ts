@@ -281,8 +281,9 @@ export class CRMService {
 
     const mapped: any = {};
     for (const [crmField, localField] of Object.entries(mapping)) {
+      const localFieldStr = localField as string;
       if (data[crmField]) {
-        mapped[localField] = data[crmField];
+        mapped[localFieldStr] = data[crmField];
       }
     }
     return mapped;

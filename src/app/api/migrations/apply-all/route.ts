@@ -74,13 +74,18 @@ export async function POST(request: Request) {
 
           for (const stmt of statements) {
             if (!stmt.trim()) continue
-            const { error: stmtError } = await supabase.rpc('exec_sql', {
-              sql_text: stmt + ';'
-            }).catch(() => ({ error: null }))
+            try {
+              const result = await supabase.rpc('exec_sql', {
+                sql_text: stmt + ';'
+              })
+              const stmtError = result.error
 
-            if (stmtError && stmtError.code !== 'PGRST102') {
-              hasError = true
-              break
+              if (stmtError && stmtError.code !== 'PGRST102') {
+                hasError = true
+                break
+              }
+            } catch {
+              // ignore catch errors
             }
           }
 

@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('id, role')
       .eq('auth_id', user.id)
       .single()
 
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
         .update({
           status: 'executed',
           executed_at: new Date().toISOString(),
-          approved_by: profile.id,
+          approved_by: (profile as any).id,
         })
         .eq('id', suggestion.id)
     }

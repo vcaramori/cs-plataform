@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Logger, ErrorTracker } from '@/lib/observability/logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,8 +13,7 @@ const errorTracker = new ErrorTracker(supabaseUrl, supabaseKey);
  */
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -60,8 +58,7 @@ export async function GET(req: NextRequest) {
  */
 export async function PUT(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import BIService from '@/lib/integrations/bi-service';
 import { Logger } from '@/lib/observability/logger';
 import { z } from 'zod';
@@ -21,8 +20,7 @@ const logger = new Logger(supabaseUrl, supabaseKey, 'bi-export-api');
  */
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -64,7 +62,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
     const err = error instanceof Error ? error : new Error(String(error));
@@ -79,8 +77,7 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },

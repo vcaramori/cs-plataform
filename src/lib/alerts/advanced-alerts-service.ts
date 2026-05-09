@@ -191,9 +191,10 @@ export class AdvancedAlertsService {
           ],
         })
 
+        const textContent = message.content.find((b) => b.type === 'text')
         suggestedResponse =
-          message.content.find((b) => b.type === 'text')?.type === 'text'
-            ? message.content[0].text
+          textContent && textContent.type === 'text'
+            ? textContent.text
             : suggestedResponse
       } catch (error) {
         console.error('[AdvancedAlerts] Sentiment analysis error:', error)

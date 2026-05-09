@@ -22,10 +22,10 @@ export const AlertSchema = z.object({
     evidence: z.string().optional(),
   })),
   recommendedAction: z.string(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   triggeredAt: z.string().datetime(),
-  acknowledgedAt: z.string().datetime().nullable().optional(),
-  resolvedAt: z.string().datetime().nullable().optional(),
+  acknowledgedAt: z.string().datetime().nullable(),
+  resolvedAt: z.string().datetime().nullable(),
 })
 
 // Alerts list response

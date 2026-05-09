@@ -294,7 +294,7 @@ export class AdoptionService {
             {
               role: 'user',
               content: `
-              Feature "${adoption.features?.name}" has only ${adoption.adoption_pct}% adoption.
+              Feature "${(adoption.features as any)?.name}" has only ${adoption.adoption_pct}% adoption.
               Recent support tickets: ${tickets?.map((t) => t.title).join(', ') || 'None'}
 
               Analyze what might be blocking adoption. Provide JSON:
@@ -304,13 +304,15 @@ export class AdoptionService {
           ],
         })
 
-        const text = message.content.find((b) => b.type === 'text')?.type === 'text' ? message.content[0].text : ''
-        const analysis = JSON.parse(text.match(/\{[\s\S]*\}/) || '{}')
+        const textContent = message.content.find((b) => b.type === 'text')
+        const text = textContent && textContent.type === 'text' ? textContent.text : ''
+        const jsonMatch = text.match(/\{[\s\S]*\}/)
+        const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
 
         blockers.push({
           blockerId: adoption.id,
           featureId: adoption.feature_id,
-          featureName: adoption.features?.name || 'Unknown',
+          featureName: (adoption.features as any)?.name || 'Unknown',
           blockerType: analysis.type || 'other',
           severity: adoption.adoption_pct < 10 ? 'critical' : 'high',
           description: `Low adoption detected: ${adoption.adoption_pct}%`,

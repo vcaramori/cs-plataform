@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import WebhookService from '@/lib/integrations/webhook-service';
 import { Logger } from '@/lib/observability/logger';
 import { z } from 'zod';
@@ -20,8 +19,7 @@ const logger = new Logger(supabaseUrl, supabaseKey, 'webhooks-test-api');
  */
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -49,7 +47,7 @@ export async function POST(req: NextRequest) {
         message: 'This is a test webhook delivery',
         test: true,
       },
-      account_id: webhook.account_id,
+      account_id: (webhook as any).account_id || '',
     };
 
     // Send test delivery
@@ -73,15 +71,22 @@ export async function POST(req: NextRequest) {
     let errorMessage = null;
 
     try {
-      const response = await fetch(webhook.url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(testPayload),
-        timeout: 30000,
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      statusCode = response.status;
-      responseBody = await response.text();
+      try {
+        const response = await fetch(webhook.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(testPayload),
+          signal: controller.signal,
+        });
+
+        statusCode = response.status;
+        responseBody = await response.text();
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Unknown error';
     }
@@ -115,7 +120,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
     const err = error instanceof Error ? error : new Error(String(error));

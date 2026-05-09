@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { Logger } from '@/lib/observability/logger';
 import { z } from 'zod';
 
@@ -28,8 +27,7 @@ const logger = new Logger(supabaseUrl, supabaseKey, 'permissions-api');
  */
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -82,12 +80,11 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST /api/permissions/role - Assign role to user
+ * POST /api/permissions - Assign role or grant resource access
  */
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user: authUser },
@@ -97,122 +94,100 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const { data: adminRoles } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', authUser.id)
-      .eq('role', 'admin');
-
-    if (!adminRoles || adminRoles.length === 0) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
     const body = await req.json();
-    const validated = createRoleSchema.parse(body);
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get('action') || (body.role ? 'assign_role' : 'grant_access');
 
-    // Create role assignment
-    const { data: role } = await supabase
-      .from('user_roles')
-      .upsert(
-        {
+    if (action === 'assign_role') {
+      // Check if user is admin
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .eq('role', 'admin');
+
+      if (!adminRoles || adminRoles.length === 0) {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      }
+
+      const validated = createRoleSchema.parse(body);
+
+      // Create role assignment
+      const { data: role } = await supabase
+        .from('user_roles')
+        .upsert(
+          {
+            user_id: validated.user_id,
+            account_id: validated.account_id,
+            role: validated.role,
+          },
+          {
+            onConflict: 'user_id,account_id,role',
+          }
+        )
+        .select()
+        .single();
+
+      // Log audit
+      await supabase.from('permission_audit_logs').insert({
+        user_id: validated.user_id,
+        action: 'role_assigned',
+        changed_by: authUser.id,
+        changed_fields: { role: validated.role },
+        resource_type: 'user',
+        resource_id: validated.user_id,
+      });
+
+      await logger.info('Role assigned', {
+        userId: validated.user_id,
+        accountId: validated.account_id,
+        role: validated.role,
+      });
+
+      return NextResponse.json(role, { status: 201 });
+    } else {
+      // Grant resource access
+      const validated = grantAccessSchema.parse(body);
+
+      // Create access grant
+      const { data: access } = await supabase
+        .from('resource_access')
+        .insert({
           user_id: validated.user_id,
           account_id: validated.account_id,
-          role: validated.role,
-        },
-        {
-          onConflict: 'user_id,account_id,role',
-        }
-      )
-      .select()
-      .single();
+          resource_type: validated.resource_type,
+          resource_id: validated.resource_id,
+          permission: validated.permission,
+          granted_by: authUser.id,
+        })
+        .select()
+        .single();
 
-    // Log audit
-    await supabase.from('permission_audit_logs').insert({
-      user_id: validated.user_id,
-      action: 'role_assigned',
-      changed_by: authUser.id,
-      changed_fields: { role: validated.role },
-      resource_type: 'user',
-      resource_id: validated.user_id,
-    });
-
-    await logger.info('Role assigned', {
-      userId: validated.user_id,
-      accountId: validated.account_id,
-      role: validated.role,
-    });
-
-    return NextResponse.json(role, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
-    }
-
-    const err = error instanceof Error ? error : new Error(String(error));
-    await logger.error('Failed to assign role', err);
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-/**
- * POST /api/permissions/access - Grant resource access
- */
-export async function POST(req: NextRequest) {
-  try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
-
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-
-    if (!authUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const validated = grantAccessSchema.parse(body);
-
-    // Create access grant
-    const { data: access } = await supabase
-      .from('resource_access')
-      .insert({
+      // Log audit
+      await supabase.from('permission_audit_logs').insert({
         user_id: validated.user_id,
-        account_id: validated.account_id,
+        action: 'access_granted',
+        changed_by: authUser.id,
         resource_type: validated.resource_type,
         resource_id: validated.resource_id,
-        permission: validated.permission,
-        granted_by: authUser.id,
-      })
-      .select()
-      .single();
+        changed_fields: { permission: validated.permission },
+      });
 
-    // Log audit
-    await supabase.from('permission_audit_logs').insert({
-      user_id: validated.user_id,
-      action: 'access_granted',
-      changed_by: authUser.id,
-      resource_type: validated.resource_type,
-      resource_id: validated.resource_id,
-      changed_fields: { permission: validated.permission },
-    });
+      await logger.info('Resource access granted', {
+        userId: validated.user_id,
+        resourceType: validated.resource_type,
+        resourceId: validated.resource_id,
+      });
 
-    await logger.info('Resource access granted', {
-      userId: validated.user_id,
-      resourceType: validated.resource_type,
-      resourceId: validated.resource_id,
-    });
-
-    return NextResponse.json(access, { status: 201 });
+      return NextResponse.json(access, { status: 201 });
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
     const err = error instanceof Error ? error : new Error(String(error));
-    await logger.error('Failed to grant access', err);
+    await logger.error('Failed to process permissions', err);
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

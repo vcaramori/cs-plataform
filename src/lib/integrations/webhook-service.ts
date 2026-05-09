@@ -175,19 +175,25 @@ export class WebhookService {
       headers['X-API-Key'] = webhook.auth_token;
     }
 
-    const response = await fetch(webhook.url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      timeout: 30000,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    const body = await response.text();
+    try {
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    return {
-      status: response.status,
-      body,
-    };
+      const body = await response.text();
+      return {
+        status: response.status,
+        body,
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**

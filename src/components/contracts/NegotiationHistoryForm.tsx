@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 
-export default function NegotiationHistoryForm({ contractId }) {
+export default function NegotiationHistoryForm({ contractId }: { contractId: string }) {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({

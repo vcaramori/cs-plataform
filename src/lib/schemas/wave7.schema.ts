@@ -38,7 +38,7 @@ export const UpdateWebhookSchema = z.object({
 export const WebhookPayloadSchema = z.object({
   event_type: z.string(),
   timestamp: z.string().datetime(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   account_id: z.string().uuid(),
 });
 
@@ -53,13 +53,13 @@ export const CreateCRMIntegrationSchema = z.object({
   instance_url: z.string().url(),
   api_secret: z.string().optional(),
   sync_direction: CRMSyncDirectionSchema.default('bidirectional'),
-  field_mapping: z.record(z.string()).optional(),
+  field_mapping: z.record(z.string(), z.string()).optional(),
 });
 
 export const UpdateCRMIntegrationSchema = z.object({
   is_active: z.boolean().optional(),
   sync_direction: CRMSyncDirectionSchema.optional(),
-  field_mapping: z.record(z.string()).optional(),
+  field_mapping: z.record(z.string(), z.string()).optional(),
 });
 
 export const CRMSyncSchema = z.object({
@@ -76,12 +76,12 @@ export const CreateSupportIntegrationSchema = z.object({
   api_key: z.string(),
   instance_url: z.string().url(),
   api_secret: z.string().optional(),
-  field_mapping: z.record(z.string()).optional(),
+  field_mapping: z.record(z.string(), z.string()).optional(),
 });
 
 export const UpdateSupportIntegrationSchema = z.object({
   is_active: z.boolean().optional(),
-  field_mapping: z.record(z.string()).optional(),
+  field_mapping: z.record(z.string(), z.string()).optional(),
 });
 
 export const SupportSyncSchema = z.object({

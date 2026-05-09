@@ -41,7 +41,7 @@ async function checkMigrations() {
     console.log('='.repeat(70));
 
     // Check playbook_tasks columns
-    const playbookTasksResult = await client.query(`
+    const playbookTasksResult: any = await client.query(`
       SELECT column_name FROM information_schema.columns
       WHERE table_name = 'playbook_tasks'
       AND column_name IN ('assigned_role', 'due_days_from_start', 'estimated_hours', 'feature_tags')
@@ -62,7 +62,7 @@ async function checkMigrations() {
     });
 
     // Check account_playbook_tasks columns
-    const accountPlaybookTasksResult = await client.query(`
+    const accountPlaybookTasksResult: any = await client.query(`
       SELECT column_name FROM information_schema.columns
       WHERE table_name = 'account_playbook_tasks'
       AND column_name IN ('assigned_to', 'due_date', 'completed_by', 'comments', 'time_spent_hours')
@@ -83,7 +83,7 @@ async function checkMigrations() {
     });
 
     // Check account_playbooks columns
-    const accountPlaybooksResult = await client.query(`
+    const accountPlaybooksResult: any = await client.query(`
       SELECT column_name FROM information_schema.columns
       WHERE table_name = 'account_playbooks'
       AND column_name IN ('expected_end_date', 'objective', 'success_criteria')
@@ -124,7 +124,7 @@ async function checkMigrations() {
 
     // Check if alert_type ENUM has 'playbook_trigger' value
     try {
-      const enumResult = await client.query(`
+      const enumResult: any = await client.query(`
         SELECT enum_range(NULL::alert_type) as alert_types;
       `);
 
@@ -157,7 +157,7 @@ async function checkMigrations() {
     console.log('='.repeat(70));
 
     // Check if auto_checkin_queue table exists
-    const autoCheckinQueueResult = await client.query(`
+    const autoCheckinQueueResult: any = await client.query(`
       SELECT table_name FROM information_schema.tables
       WHERE table_name = 'auto_checkin_queue';
     `);
@@ -168,7 +168,7 @@ async function checkMigrations() {
       console.log(`\n✓ auto_checkin_queue table exists`);
 
       // Check for columns in auto_checkin_queue
-      const columnsResult = await client.query(`
+      const columnsResult: any = await client.query(`
         SELECT column_name FROM information_schema.columns
         WHERE table_name = 'auto_checkin_queue'
         ORDER BY column_name;
@@ -178,7 +178,7 @@ async function checkMigrations() {
       const foundColumns = columnsResult.rows.map((r: any) => r.column_name);
 
       console.log(`\nColumns found:`);
-      foundColumns.forEach(col => console.log(`  ✓ ${col}`));
+      foundColumns.forEach((col: string) => console.log(`  ✓ ${col}`));
 
       const missingColumns = expectedColumns.filter(col => !foundColumns.includes(col));
       if (missingColumns.length > 0) {
@@ -194,7 +194,7 @@ async function checkMigrations() {
     }
 
     // Check opt_out_auto_checkin in accounts table
-    const accountsOptOutResult = await client.query(`
+    const accountsOptOutResult: any = await client.query(`
       SELECT column_name FROM information_schema.columns
       WHERE table_name = 'accounts'
       AND column_name = 'opt_out_auto_checkin';

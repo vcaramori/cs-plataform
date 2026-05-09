@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { Logger } from '@/lib/observability/logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -13,8 +12,7 @@ const logger = new Logger(supabaseUrl, supabaseKey, 'audit-logs-api');
  */
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import WebhookService from '@/lib/integrations/webhook-service';
 import { Logger } from '@/lib/observability/logger';
 import { z } from 'zod';
@@ -21,10 +20,10 @@ const logger = new Logger(supabaseUrl, supabaseKey, 'webhooks-api');
 /**
  * PUT /api/webhooks/[id] - Update webhook
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -38,17 +37,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const validated = updateWebhookSchema.parse(body);
 
     const webhookService = new WebhookService(supabaseUrl, supabaseKey);
-    const webhook = await webhookService.updateWebhook(params.id, validated);
+    const webhook = await webhookService.updateWebhook(id, validated);
 
     await logger.info('Webhook updated', {
-      webhookId: params.id,
+      webhookId: id,
       userId: user.id,
     });
 
     return NextResponse.json(webhook);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 });
+      return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 
     const err = error instanceof Error ? error : new Error(String(error));
@@ -61,10 +60,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 /**
  * DELETE /api/webhooks/[id] - Delete webhook
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -75,10 +74,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     const webhookService = new WebhookService(supabaseUrl, supabaseKey);
-    await webhookService.deleteWebhook(params.id);
+    await webhookService.deleteWebhook(id);
 
     await logger.info('Webhook deleted', {
-      webhookId: params.id,
+      webhookId: id,
       userId: user.id,
     });
 
@@ -94,10 +93,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 /**
  * GET /api/webhooks/[id] - Get webhook metrics
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(supabaseUrl, supabaseKey, { cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = await getSupabaseServerClient();
 
     const {
       data: { user },
@@ -108,8 +107,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const webhookService = new WebhookService(supabaseUrl, supabaseKey);
-    const metrics = await webhookService.getDeliveryMetrics(params.id);
-    const { deliveries, total } = await webhookService.getDeliveryLogs(params.id, 50, 0);
+    const metrics = await webhookService.getDeliveryMetrics(id);
+    const { deliveries, total } = await webhookService.getDeliveryLogs(id, 50, 0);
 
     return NextResponse.json({
       metrics,

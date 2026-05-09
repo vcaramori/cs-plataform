@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     // Count by severity
     const bySeverity = blockers.reduce(
       (acc, b) => {
-        const key = `${b.severity}Count`
+        const key = `${b.severity}Count` as keyof typeof acc
         acc[key] = (acc[key] || 0) + 1
         return acc
       },

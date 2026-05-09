@@ -285,8 +285,9 @@ export class SupportService {
 
     const mapped: any = {};
     for (const [externalField, localField] of Object.entries(mapping)) {
+      const localFieldStr = localField as string;
       if (data[externalField]) {
-        mapped[localField] = data[externalField];
+        mapped[localFieldStr] = data[externalField];
       }
     }
     return mapped;
