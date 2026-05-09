@@ -1,16 +1,51 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { generateText } from '@/lib/llm/gateway'
 
 export const maxDuration = 300
+
+const BATCH_SIZE = 10
+const MAX_RETRIES = 3
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function analyzeWithRetry(text: string, retries = 0): Promise<any> {
+  try {
+    const prompt = `Analyze this customer interaction for sentiment and themes:
+
+"${text}"
+
+Return ONLY valid JSON (no markdown):
+{
+  "sentiment_score": <number from -1 to 1>,
+  "themes": ["theme1", "theme2"],
+  "key_quote": "exact quote from text or null"
+}`
+
+    const { result: responseText } = await generateText(prompt, {
+      temperature: 0.1,
+      maxOutputTokens: 300,
+    })
+
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('No JSON in response')
+
+    const parsed = JSON.parse(jsonMatch[0])
+    return {
+      sentiment_score: Math.max(-1, Math.min(1, parsed.sentiment_score || 0)),
+      themes: (parsed.themes || []).slice(0, 5),
+      key_quote: parsed.key_quote || null,
+    }
+  } catch (error) {
+    if (retries < MAX_RETRIES) {
+      await sleep(Math.pow(2, retries) * 1000) // Exponential backoff
+      return analyzeWithRetry(text, retries + 1)
+    }
+    throw error
+  }
+}
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -20,85 +55,111 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const supabase = getSupabaseAdminClient()
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  let processed = 0
+  let failed = 0
+
   try {
-    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-
-    const { data: interactions } = await supabase
+    // Get unprocessed interactions
+    const { data: interactions, error: interactionsError } = await supabase
       .from('interactions')
-      .select('id, account_id, title, raw_transcript')
+      .select('id, account_id, description, activity_type')
       .is('sentiment_score', null)
       .gte('created_at', last24h)
-      .limit(100)
+      .limit(BATCH_SIZE)
 
-    const { data: npsResponses } = await supabase
+    if (interactionsError) throw interactionsError
+
+    // Get unprocessed NPS responses
+    const { data: npsResponses, error: npsError } = await supabase
       .from('nps_responses')
-      .select('id, account_id, score, comment')
+      .select('id, account_id, score, feedback')
       .is('sentiment_score', null)
       .gte('created_at', last24h)
-      .limit(50)
+      .limit(BATCH_SIZE)
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+    if (npsError) throw npsError
 
-    let processed = 0
-    let failed = 0
+    const processedIds = new Set<string>()
 
-    // Process interactions
-    for (const interaction of interactions || []) {
-      try {
-        const prompt = `Analyze this customer interaction for sentiment and themes:
+    // Process interactions in batches
+    for (let i = 0; i < (interactions || []).length; i += BATCH_SIZE) {
+      const batch = (interactions || []).slice(i, i + BATCH_SIZE)
 
-"${interaction.raw_transcript || interaction.title}"
+      for (const interaction of batch) {
+        try {
+          if (processedIds.has(interaction.id)) continue
 
-Return JSON:
-{
-  "sentiment_score": -1 to 1 number,
-  "themes": ["theme1", "theme2"],
-  "quotes": ["quote1", "quote2"]
-}`
+          const text = interaction.description || `${interaction.activity_type}`
+          const analysis = await analyzeWithRetry(text)
 
-        const result = await model.generateContent(prompt)
-        const text = result.response.text()
-        const match = text.match(/\{[\s\S]*\}/)
-        const parsed = match ? JSON.parse(match[0]) : { sentiment_score: 0, themes: [], quotes: [] }
-
-        await supabase
-          .from('interactions')
-          .update({ sentiment_score: parsed.sentiment_score })
-          .eq('id', interaction.id)
-
-        for (const theme of parsed.themes || []) {
           await supabase
-            .from('interaction_themes')
-            .insert({ interaction_id: interaction.id, theme })
-        }
+            .from('interactions')
+            .update({ sentiment_score: analysis.sentiment_score })
+            .eq('id', interaction.id)
 
-        processed++
-      } catch (err) {
-        failed++
+          // Insert themes
+          for (const theme of analysis.themes) {
+            await supabase
+              .from('interaction_themes')
+              .insert({
+                interaction_id: interaction.id,
+                theme,
+                frequency: 1,
+              })
+              .select()
+          }
+
+          processedIds.add(interaction.id)
+          processed++
+        } catch (error) {
+          console.error(`[VoC] Failed to process interaction ${interaction.id}:`, error)
+          failed++
+        }
       }
     }
 
-    // Process NPS responses similarly
-    for (const nps of npsResponses || []) {
-      try {
-        const prompt = `Sentiment analysis: "${nps.comment}". Return JSON with sentiment_score (-1 to 1 number) and themes (array).`
-        const result = await model.generateContent(prompt)
-        const text = result.response.text()
-        const match = text.match(/\{[\s\S]*\}/)
-        const parsed = match ? JSON.parse(match[0]) : { sentiment_score: 0, themes: [] }
+    // Process NPS responses
+    for (let i = 0; i < (npsResponses || []).length; i += BATCH_SIZE) {
+      const batch = (npsResponses || []).slice(i, i + BATCH_SIZE)
 
-        processed++
-      } catch (err) {
-        failed++
+      for (const nps of batch) {
+        try {
+          if (processedIds.has(nps.id)) continue
+
+          const text = nps.feedback || `NPS Score: ${nps.score}`
+          const analysis = await analyzeWithRetry(text)
+
+          await supabase
+            .from('nps_responses')
+            .update({ sentiment_score: analysis.sentiment_score })
+            .eq('id', nps.id)
+
+          processedIds.add(nps.id)
+          processed++
+        } catch (error) {
+          console.error(`[VoC] Failed to process NPS ${nps.id}:`, error)
+          failed++
+        }
       }
+    }
+
+    if (processed > 1000) {
+      console.warn(`[VoC] Large batch detected: ${processed} interactions processed. Possible double-run.`)
     }
 
     return NextResponse.json({
       success: true,
       processed,
       failed,
+      ran_at: new Date().toISOString(),
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[VoC Cron] Error:', error)
+    return NextResponse.json(
+      { error: error.message, success: false },
+      { status: 500 }
+    )
   }
 }

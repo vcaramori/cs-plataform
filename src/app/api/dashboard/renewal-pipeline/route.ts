@@ -1,64 +1,146 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse } from 'next/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+const RenewalCardSchema = z.object({
+  account_id: z.string().uuid(),
+  account_name: z.string(),
+  arr: z.number(),
+  health_score: z.number().min(0).max(100),
+  nps: z.number().nullable(),
+  readiness_color: z.enum(['green', 'yellow', 'red']),
+  days_to_renewal: z.number(),
+})
 
-export async function GET() {
+const RenewalPipelineSchema = z.object({
+  critico: z.array(RenewalCardSchema),
+  urgente: z.array(RenewalCardSchema),
+  planejamento: z.array(RenewalCardSchema),
+})
+
+type RenewalPipeline = z.infer<typeof RenewalPipelineSchema>
+
+export async function GET(request: Request) {
   try {
-    const { data: contracts } = await supabase
-      .from("contracts")
-      .select("id, account_id, renewal_date, arr, accounts(name, health_score_v2)")
-      .in("status", ["active", "at-risk"])
+    const supabase = await getSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!contracts) {
-      return NextResponse.json({ data: { critical: [], urgent: [], planning: [] } })
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get user's CSM profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('auth_id', user.id)
+      .single()
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+
+    // Build query based on role
+    let query = supabase
+      .from('accounts')
+      .select(`
+        id,
+        name,
+        health_score,
+        contracts(arr, renewal_date),
+        nps_responses(score)
+      `)
+
+    // Apply RLS filtering
+    if (profile.role === 'csm') {
+      query = query.eq('csm_owner_id', profile.id)
+    } else if (profile.role === 'csm_senior') {
+      // CSM Senior sees their team - would need a team mapping table
+      // For now, treat like regular CSM
+      query = query.eq('csm_owner_id', profile.id)
+    }
+    // admin sees all (no filtering)
+
+    const { data: accounts } = await query
+
+    if (!accounts || accounts.length === 0) {
+      const emptyPipeline: RenewalPipeline = {
+        critico: [],
+        urgente: [],
+        planejamento: [],
+      }
+      return NextResponse.json(emptyPipeline)
     }
 
     const today = new Date()
-    const critical = []
-    const urgent = []
-    const planning = []
+    const critico: z.infer<typeof RenewalCardSchema>[] = []
+    const urgente: z.infer<typeof RenewalCardSchema>[] = []
+    const planejamento: z.infer<typeof RenewalCardSchema>[] = []
 
-    for (const contract of contracts) {
+    for (const account of accounts) {
+      const contract = Array.isArray(account.contracts) ? account.contracts[0] : account.contracts
+
+      if (!contract?.renewal_date) continue
+
+      const renewalDate = new Date(contract.renewal_date)
       const daysToRenewal = Math.ceil(
-        (new Date(contract.renewal_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        (renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       )
 
-      if (daysToRenewal > 90) continue
+      // Only include renewals within next 90 days
+      if (daysToRenewal < 0 || daysToRenewal > 90) continue
 
-      const item = {
-        id: contract.id,
-        account_id: contract.account_id,
-        account_name: contract.accounts?.name,
-        arr: contract.arr,
-        health_score: contract.accounts?.health_score_v2 || 0,
-        nps: null,
-        readiness_color:
-          contract.accounts?.health_score_v2 >= 75 ? "green" :
-          contract.accounts?.health_score_v2 >= 50 ? "yellow" : "red"
+      // Get latest NPS
+      const npsScores = Array.isArray(account.nps_responses)
+        ? account.nps_responses.map(r => r.score).filter(Boolean)
+        : []
+      const latestNps = npsScores.length > 0 ? npsScores[0] : null
+
+      // Determine readiness color
+      const health = account.health_score || 0
+      const nps = latestNps || 0
+      let readiness_color: 'green' | 'yellow' | 'red'
+
+      if (health >= 75 && nps >= 7) {
+        readiness_color = 'green'
+      } else if (health >= 50 || nps >= 7) {
+        readiness_color = 'yellow'
+      } else {
+        readiness_color = 'red'
       }
 
-      if (daysToRenewal < 30) {
-        critical.push(item)
-      } else if (daysToRenewal < 60) {
-        urgent.push(item)
+      const card: z.infer<typeof RenewalCardSchema> = {
+        account_id: account.id,
+        account_name: account.name,
+        arr: contract.arr || 0,
+        health_score: health,
+        nps: latestNps,
+        readiness_color,
+        days_to_renewal: daysToRenewal,
+      }
+
+      // Categorize by days to renewal
+      if (daysToRenewal <= 30) {
+        critico.push(card)
+      } else if (daysToRenewal <= 60) {
+        urgente.push(card)
       } else {
-        planning.push(item)
+        planejamento.push(card)
       }
     }
 
-    return NextResponse.json({
-      data: {
-        critical: critical.sort((a, b) => b.arr - a.arr),
-        urgent: urgent.sort((a, b) => b.arr - a.arr),
-        planning: planning.sort((a, b) => b.arr - a.arr),
-      }
-    })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const pipeline: RenewalPipeline = {
+      critico: critico.sort((a, b) => a.days_to_renewal - b.days_to_renewal),
+      urgente: urgente.sort((a, b) => a.days_to_renewal - b.days_to_renewal),
+      planejamento: planejamento.sort((a, b) => a.days_to_renewal - b.days_to_renewal),
+    }
+
+    return NextResponse.json(pipeline)
+  } catch (error) {
+    console.error('[renewal-pipeline] Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

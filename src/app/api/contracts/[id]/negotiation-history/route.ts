@@ -1,61 +1,137 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse } from 'next/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-)
+const NegotiationHistorySchema = z.object({
+  negotiation_date: z.string(),
+  outcome: z.enum(['agreed', 'declined', 'pending']),
+  discount_offered_pct: z.number().min(0).max(100),
+  discount_accepted_pct: z.number().min(0).max(100),
+  main_objection: z.string().min(1),
+  closing_argument: z.string(),
+  counterpart_name: z.string().min(1),
+  counterpart_role: z.string(),
+  notes: z.string().optional(),
+})
 
-export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+type NegotiationHistory = z.infer<typeof NegotiationHistorySchema>
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id: contractId } = await context.params
-    const { data: history } = await supabase
-      .from("contract_negotiation_history")
-      .select("*")
-      .eq("contract_id", contractId)
-      .order("date", { ascending: false })
-    return NextResponse.json({ history })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const { id: contractId } = await params
+    const supabase = await getSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get negotiation history for contract
+    const { data: negotiations, error } = await supabase
+      .from('negotiation_history')
+      .select('*')
+      .eq('contract_id', contractId)
+      .order('negotiation_date', { ascending: false })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Calculate trend
+    let trend = null
+    if (negotiations && negotiations.length >= 2) {
+      const recent = negotiations[0].discount_accepted_pct
+      const previous = negotiations[1].discount_accepted_pct
+      if (recent < previous) {
+        trend = 'declining'
+      } else if (recent > previous) {
+        trend = 'improving'
+      } else {
+        trend = 'stable'
+      }
+    }
+
+    return NextResponse.json({
+      negotiations: negotiations || [],
+      trend,
+    })
+  } catch (error) {
+    console.error('[negotiation-history] Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id: contractId } = await context.params
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { id: contractId } = await params
+    const supabase = await getSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const body = await request.json()
-    const { data: contract } = await supabase
-      .from("contracts")
-      .select("account_id")
-      .eq("id", contractId)
-      .single()
 
-    if (!contract) return NextResponse.json({ error: "Contract not found" }, { status: 404 })
+    // Validate input
+    const parsed = NegotiationHistorySchema.safeParse(body)
+    if (!parsed.success) {
+      console.error('[negotiation-history] Validation Error:', parsed.error.format())
+      return NextResponse.json(
+        { error: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
 
-    const { data: record } = await supabase
-      .from("contract_negotiation_history")
+    // Validate discount logic
+    if (parsed.data.discount_offered_pct < parsed.data.discount_accepted_pct) {
+      return NextResponse.json(
+        { error: 'Discount accepted cannot exceed discount offered' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date is not in future
+    const negDate = new Date(parsed.data.negotiation_date)
+    if (negDate > new Date()) {
+      return NextResponse.json(
+        { error: 'Negotiation date cannot be in the future' },
+        { status: 400 }
+      )
+    }
+
+    // Insert negotiation record
+    const { data, error } = await supabase
+      .from('negotiation_history')
       .insert({
         contract_id: contractId,
-        account_id: contract.account_id,
-        date: body.date || new Date().toISOString(),
-        discount_offered_pct: body.discount_offered_pct || 0,
-        discount_accepted_pct: body.discount_accepted_pct || 0,
-        main_objection: body.main_objection,
-        closing_argument: body.closing_argument,
-        counterpart_name: body.counterpart_name,
-        counterpart_role: body.counterpart_role,
-        outcome: body.outcome,
-        notes: body.notes,
-        created_by: session.user.id,
+        ...parsed.data,
+        created_by: user.id,
+        created_at: new Date().toISOString(),
       })
       .select()
+      .single()
 
-    return NextResponse.json({ record: record?.[0] })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[negotiation-history] Insert Error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(data, { status: 201 })
+  } catch (error) {
+    console.error('[negotiation-history] Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
