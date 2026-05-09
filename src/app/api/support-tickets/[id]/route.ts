@@ -13,6 +13,36 @@ const PatchSchema = z.object({
   assigned_to: z.string().nullable().optional()
 })
 
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await getSupabaseServerClient()
+
+  const { data: ticket, error: ticketError } = await supabase
+    .from('support_tickets')
+    .select('*, accounts(name)')
+    .eq('id', id)
+    .single()
+
+  if (ticketError || !ticket) {
+    return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+  }
+
+  const { data: messages, error: messageError } = await supabase
+    .from('support_ticket_messages')
+    .select('*')
+    .eq('ticket_id', id)
+    .order('created_at', { ascending: true })
+
+  if (messageError) {
+    return NextResponse.json({ error: messageError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ticket, messages: messages || [] })
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

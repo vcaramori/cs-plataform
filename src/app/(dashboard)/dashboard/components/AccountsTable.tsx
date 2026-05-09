@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,21 @@ import {
 } from "@/components/ui/tooltip"
 
 type AccountWithContracts = Account & { contracts: Contract[], discrepancy_alert?: boolean }
+
+function calculateAccountMetrics(account: AccountWithContracts) {
+  const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
+  const activeContracts = contracts.filter(c => c.status === 'active')
+  const totalMRR = activeContracts.reduce((sum, c) => {
+    const baseMrr = Number(c.mrr) || 0
+    const discount = Number(c.discount_percentage) || 0
+    return sum + (baseMrr * (1 - discount / 100))
+  }, 0)
+  const nearestRenewal = activeContracts
+    .filter(c => c.renewal_date)
+    .sort((a, b) => new Date(a.renewal_date!).getTime() - new Date(b.renewal_date!).getTime())[0]
+
+  return { activeContracts, totalMRR, nearestRenewal }
+}
 
 function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: boolean }) {
   const color = score >= 70 ? 'text-emerald-500' : score >= 40 ? 'text-primary' : 'text-destructive'
@@ -177,16 +192,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               <TableBody>
                 <AnimatePresence mode='popLayout'>
                   {filtered.map((account, index) => {
-                    const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
-                    const activeContracts = contracts.filter(c => c.status === 'active')
-                    const totalMRR = activeContracts.reduce((sum, c) => {
-                      const baseMrr = Number(c.mrr) || 0;
-                      const discount = Number(c.discount_percentage) || 0;
-                      return sum + (baseMrr * (1 - discount / 100));
-                    }, 0)
-                    const nearestRenewal = activeContracts
-                      .filter(c => c.renewal_date)
-                      .sort((a, b) => new Date(a.renewal_date!).getTime() - new Date(b.renewal_date!).getTime())[0]
+                    const { activeContracts, totalMRR, nearestRenewal } = calculateAccountMetrics(account)
 
                     return (
                       <motion.tr

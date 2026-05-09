@@ -508,13 +508,6 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
         accountName={account.name}
       />
 
-      <HealthScoreDetailsModal
-        isOpen={showDetails}
-        onClose={() => setShowDetails(false)}
-        accountId={account.id}
-        accountName={account.name}
-      />
-
       <HealthScoreEditModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}

@@ -62,26 +62,12 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
   const fetchTicketData = async (id: string) => {
     setLoading(true)
     try {
-      // Fetch ticket with account info
-      const { data: ticketData, error: ticketError } = await supabase
-        .from('support_tickets')
-        .select('*, accounts(name)')
-        .eq('id', id)
-        .single()
+      const res = await fetch(`/api/support-tickets/${id}`)
+      if (!res.ok) throw new Error('Failed to fetch ticket')
 
-      if (ticketError) throw ticketError
-
-      // Fetch messages
-      const { data: messageData, error: messageError } = await supabase
-        .from('support_ticket_messages')
-        .select('*')
-        .eq('ticket_id', id)
-        .order('created_at', { ascending: true })
-
-      if (messageError) throw messageError
-
-      setTicket(ticketData as any)
-      setMessages(messageData || [])
+      const { ticket, messages } = await res.json()
+      setTicket(ticket)
+      setMessages(messages || [])
     } catch (err: any) {
       console.error('Error fetching ticket details:', err)
       toast.error('Erro ao carregar detalhes do ticket')
