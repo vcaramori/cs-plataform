@@ -10,14 +10,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Loader2, Settings2, CheckCircle2, AlertCircle, Clock, Ban, HelpCircle, User, Calendar, Save } from 'lucide-react'
+import { Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { AdoptionForm } from './AdoptionForm'
+import { AdoptionAnalytics } from './AdoptionAnalytics'
 
 interface Feature {
   id: string
@@ -70,15 +66,14 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
 
       if (adoptionRes.ok) {
         const data = await adoptionRes.json()
-        // API returns { adoption: [], plan_summary: {} }
         setRecords(Array.isArray(data) ? data : (data.adoption ?? []))
       }
       if (usersRes.ok) {
         const data = await usersRes.json()
         setUsers(data)
       }
-    } catch (e) {
-      console.error(e)
+    } catch (err) {
+      console.error('Error fetching adoption data:', err)
       toast.error('Erro ao carregar dados de adoção')
     } finally {
       setLoading(false)
@@ -111,42 +106,13 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
       if (!res.ok) throw new Error('Falha ao salvar')
       toast.success(`Adoção de ${record.product_features.name} atualizada`)
       fetchData()
-    } catch (e) {
+    } catch (err) {
+      console.error('Error updating adoption:', err)
       toast.error('Erro ao salvar alterações')
     } finally {
       setSaving(null)
     }
   }
-
-  const statusOptions = [
-    { label: 'Não Iniciado', value: 'not_started', icon: Clock, color: 'text-content-secondary', bg: 'bg-surface-background' },
-    { label: 'Uso Parcial', value: 'partial', icon: AlertCircle, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-    { label: 'Em Uso', value: 'in_use', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    { label: 'Bloqueado', value: 'blocked', icon: Ban, color: 'text-red-400', bg: 'bg-red-400/10' },
-    { label: 'Não Aplicável', value: 'na', icon: HelpCircle, color: 'text-content-secondary', bg: 'bg-surface-background' },
-  ]
-
-  const blockerCategories = [
-    { label: 'Integração Pendente', value: 'data_integration' },
-    { label: 'Produto / Roadmap', value: 'product_roadmap' },
-    { label: 'Processos / Pessoas', value: 'people_process' },
-    { label: 'Governança', value: 'governance' },
-    { label: 'Sem Relevância Estratégica', value: 'no_strategic_relevance' },
-    { label: 'Outros', value: 'other' },
-  ]
-
-  const priorityOptions = [
-    { label: 'Baixa', value: 'low' },
-    { label: 'Média', value: 'medium' },
-    { label: 'Alta', value: 'high' },
-  ]
-
-  const actionStatuses = [
-    { label: 'Não Iniciado', value: 'not_started' },
-    { label: 'Em Curso', value: 'in_progress' },
-    { label: 'Concluído', value: 'completed' },
-    { label: 'Pausado', value: 'paused' },
-  ]
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -166,239 +132,21 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
         </DialogHeader>
 
         <div className="flex-1 flex min-h-0">
-          {/* List Section */}
-          <div className="w-1/3 border-r border-border-divider overflow-y-auto p-4 space-y-2 custom-scrollbar bg-surface-background">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-3">
-                <Loader2 className="w-6 h-6 animate-spin text-plannera-orange" />
-                <span className="text-[10px] font-bold uppercase text-content-secondary tracking-widest">Sincronizando...</span>
-              </div>
-            ) : records.length === 0 ? (
-              <div className="text-center py-10 opacity-40">
-                <p className="text-[10px] font-bold uppercase text-content-secondary">Nenhuma funcionalidade no plano.</p>
-              </div>
-            ) : (
-              records.map(r => {
-                const status = statusOptions.find(s => s.value === r.status)
-                const Icon = status?.icon || Clock
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => setSelectedRecord(r)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-xl border transition-all flex flex-col gap-2 group",
-                      selectedRecord?.id === r.id
-                        ? "bg-surface-card border-border-divider shadow-lg"
-                        : "bg-transparent border-transparent hover:bg-surface-card",
-                      r.status === 'na' && "opacity-60"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary">{r.product_features.module}</span>
-                      <Icon className={cn("w-3 h-3", status?.color)} />
-                    </div>
-                    <span className={cn(
-                      "text-[11px] font-bold uppercase tracking-tight transition-colors",
-                      selectedRecord?.id === r.id ? "text-content-primary" : "text-content-secondary group-hover:text-content-primary"
-                    )}>
-                      {r.product_features.name}
-                    </span>
-                    <Badge variant="outline" className={cn("w-fit text-[8px] border-none font-black uppercase", status?.bg, status?.color)}>
-                      {status?.label}
-                    </Badge>
-                  </button>
-                )
-              })
-            )}
-          </div>
+          <AdoptionAnalytics
+            records={records}
+            loading={loading}
+            selectedRecord={selectedRecord}
+            onSelectRecord={setSelectedRecord}
+          />
 
-          {/* Edit Section */}
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
-            {!selectedRecord ? (
-              <div className="h-full flex flex-col items-center justify-center opacity-20 gap-4">
-                <Settings2 className="w-16 h-16" />
-                <p className="text-xs font-bold uppercase tracking-widest">Selecione uma funcionalidade para editar</p>
-              </div>
-            ) : (
-              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300 pb-10">
-                <div className="flex items-center justify-between bg-surface-background p-4 rounded-2xl border border-border-divider shadow-sm sticky top-0 z-10 backdrop-blur-md">
-                  <div>
-                    <h3 className="text-xl font-black uppercase text-content-primary tracking-tight leading-tight">{selectedRecord.product_features.name}</h3>
-                    <p className="text-[10px] font-bold uppercase text-content-secondary tracking-widest">{selectedRecord.product_features.module}</p>
-                  </div>
-                  <Button
-                    onClick={() => updateRecord(selectedRecord)}
-                    disabled={!!saving}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-[10px] tracking-widest h-11 rounded-xl px-8 shadow-[0_0_20px_rgba(5,150,105,0.2)] transition-all hover:scale-105 active:scale-95 gap-2"
-                  >
-                    {saving === selectedRecord.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Salvar
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Status de Adoção</Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {statusOptions.map(opt => (
-                          <button
-                            key={opt.value}
-                            onClick={() => setSelectedRecord({...selectedRecord, status: opt.value as any})}
-                            className={cn(
-                              "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                              selectedRecord.status === opt.value
-                                ? "bg-surface-card border-border-divider ring-1 ring-border-divider"
-                                : "bg-surface-background border-border-divider opacity-50 hover:opacity-100"
-                            )}
-                          >
-                            <opt.icon className={cn("w-4 h-4", opt.color)} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-content-primary">{opt.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-2">
-                        <User className="w-3 h-3" /> Responsável (CSM)
-                      </Label>
-                      <SearchableSelect
-                        value={selectedRecord.responsible_id || ''}
-                        onValueChange={(v) => setSelectedRecord({...selectedRecord, responsible_id: v || null})}
-                        options={[
-                          { label: 'Sem Responsável', value: '' },
-                          ...users.map(u => ({ label: u.email, value: u.id }))
-                        ]}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-2">
-                        <Calendar className="w-3 h-3" /> Data Alvo para Evolução
-                      </Label>
-                      <Input
-                        type="date"
-                        value={selectedRecord.target_date || ''}
-                        onChange={(e) => setSelectedRecord({...selectedRecord, target_date: e.target.value || null})}
-                        className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-plannera-orange"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Blocker Details Section - Conditional */}
-                {(selectedRecord.status === 'blocked' || selectedRecord.status === 'na') && (
-                  <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-6 animate-in slide-in-from-top-2">
-                    <div className="flex items-center gap-2 text-red-400">
-                      <Ban className="w-4 h-4" />
-                      <h4 className="text-[10px] font-black uppercase tracking-widest">Detalhamento da Exceção / Bloqueio</h4>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Categoria do Bloqueio</Label>
-                        <SearchableSelect
-                          value={selectedRecord.blocker_category || ''}
-                          onValueChange={(v) => setSelectedRecord({...selectedRecord, blocker_category: v as any})}
-                          options={[
-                            { label: 'Selecione uma categoria', value: '' },
-                            ...blockerCategories
-                          ]}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Justificativa do Não Uso</Label>
-                        <Input
-                          value={selectedRecord.blocker_reason || ''}
-                          onChange={(e) => setSelectedRecord({...selectedRecord, blocker_reason: e.target.value})}
-                          placeholder="Ex: Falta de processo interno..."
-                          className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-red-400"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Focus on Action Plan only if persistent blocker or not in use */}
-                {selectedRecord.status !== 'in_use' && (
-                  <div className="space-y-6 animate-in slide-in-from-top-2">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Plano de Ação para Ativação</Label>
-                      <Textarea
-                        value={selectedRecord.action_plan || ''}
-                        onChange={(e) => setSelectedRecord({...selectedRecord, action_plan: e.target.value})}
-                        placeholder="Quais passos serão tomados para mitigar o bloqueio?"
-                        className="bg-surface-background border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Responsável pela Ação</Label>
-                        <Input
-                          value={selectedRecord.action_owner || ''}
-                          onChange={(e) => setSelectedRecord({...selectedRecord, action_owner: e.target.value})}
-                          placeholder="Ex: Time de Produto, CSM, Cliente..."
-                          className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-emerald-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Prioridade da Ação</Label>
-                        <div className="flex gap-2">
-                          {priorityOptions.map(p => (
-                            <button
-                              key={p.value}
-                              onClick={() => setSelectedRecord({...selectedRecord, priority_level: p.value as any})}
-                              className={cn(
-                                "flex-1 p-2 rounded-lg border text-[9px] font-bold uppercase tracking-widest transition-all",
-                                selectedRecord.priority_level === p.value
-                                  ? "bg-surface-card border-border-divider text-content-primary"
-                                  : "bg-surface-background border-border-divider text-content-secondary hover:text-content-primary"
-                              )}
-                            >
-                              {p.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Status da Ação</Label>
-                      <div className="flex gap-2">
-                        {actionStatuses.map(s => (
-                          <button
-                            key={s.value}
-                            onClick={() => setSelectedRecord({...selectedRecord, action_status: s.value as any})}
-                            className={cn(
-                              "flex-1 p-2 rounded-lg border text-[9px] font-bold uppercase tracking-widest transition-all",
-                              selectedRecord.action_status === s.value
-                                ? "bg-surface-card border-border-divider text-content-primary"
-                                : "bg-surface-background border-border-divider text-content-secondary hover:text-content-primary"
-                            )}
-                          >
-                            {s.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2 border-t border-border-divider pt-6">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Observações Gerais</Label>
-                  <Textarea
-                    value={selectedRecord.observation || ''}
-                    onChange={(e) => setSelectedRecord({...selectedRecord, observation: e.target.value})}
-                    placeholder="Notas adicionais sobre o progresso..."
-                    className="bg-surface-background border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange"
-                  />
-                </div>
-              </div>
-            )}
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <AdoptionForm
+              selectedRecord={selectedRecord}
+              users={users}
+              saving={saving}
+              onUpdate={updateRecord}
+              onRecordChange={setSelectedRecord}
+            />
           </div>
         </div>
       </DialogContent>
