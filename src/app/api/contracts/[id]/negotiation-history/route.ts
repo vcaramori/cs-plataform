@@ -1,92 +1,61 @@
-import { NextResponse } from 'next/server'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
-import { z } from 'zod'
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
-const NegotiationHistorySchema = z.object({
-  date: z.string().datetime().optional(),
-  discount_offered_pct: z.number().min(0).max(100).optional(),
-  discount_accepted_pct: z.number().min(0).max(100).optional(),
-  main_objection: z.string().optional(),
-  closing_argument: z.string().optional(),
-  counterpart_name: z.string().optional(),
-  counterpart_role: z.string().optional(),
-  outcome: z.enum(['renewed', 'lost', 'pending']).optional(),
-  notes: z.string().optional(),
-})
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const supabase = await getSupabaseServerClient()
-
-  const { data, error } = await supabase
-    .from('contract_negotiation_history')
-    .select('*')
-    .eq('contract_id', id)
-    .order('date', { ascending: false })
-
-  if (error) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { id: contractId } = await context.params
+    const { data: history } = await supabase
+      .from("contract_negotiation_history")
+      .select("*")
+      .eq("contract_id", contractId)
+      .order("date", { ascending: false })
+    return NextResponse.json({ history })
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  return NextResponse.json(data)
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const supabase = await getSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // Fetch contract to get account_id
-  const { data: contract, error: contractError } = await supabase
-    .from('contracts')
-    .select('account_id')
-    .eq('id', id)
-    .single()
-
-  if (contractError || !contract) {
-    return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
-  }
-
-  // Verify ownership
-  const { data: account } = await supabase
-    .from('accounts')
-    .select('csm_owner_id')
-    .eq('id', contract.account_id)
-    .single()
-
-  if (account?.csm_owner_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const body = await request.json()
-    const validated = NegotiationHistorySchema.parse(body)
+    const { id: contractId } = await context.params
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { data, error } = await supabase
-      .from('contract_negotiation_history')
-      .insert({
-        contract_id: id,
-        account_id: contract.account_id,
-        created_by: user.id,
-        ...validated
-      })
-      .select()
+    const body = await request.json()
+    const { data: contract } = await supabase
+      .from("contracts")
+      .select("account_id")
+      .eq("id", contractId)
       .single()
 
-    if (error) throw error
+    if (!contract) return NextResponse.json({ error: "Contract not found" }, { status: 404 })
 
-    return NextResponse.json(data, { status: 201 })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 })
+    const { data: record } = await supabase
+      .from("contract_negotiation_history")
+      .insert({
+        contract_id: contractId,
+        account_id: contract.account_id,
+        date: body.date || new Date().toISOString(),
+        discount_offered_pct: body.discount_offered_pct || 0,
+        discount_accepted_pct: body.discount_accepted_pct || 0,
+        main_objection: body.main_objection,
+        closing_argument: body.closing_argument,
+        counterpart_name: body.counterpart_name,
+        counterpart_role: body.counterpart_role,
+        outcome: body.outcome,
+        notes: body.notes,
+        created_by: session.user.id,
+      })
+      .select()
+
+    return NextResponse.json({ record: record?.[0] })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

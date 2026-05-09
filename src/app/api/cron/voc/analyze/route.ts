@@ -1,167 +1,104 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseAdminClient } from '@/lib/supabase/admin'
-import { GoogleGenAI } from '@google/genai'
-import { env } from '@/lib/env'
+import { createClient } from '@supabase/supabase-js'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
-export const maxDuration = 300 // Allow up to 5 minutes
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+
+export const maxDuration = 300
 
 export async function POST(request: Request) {
-  // Check API Secret for internal cron auth
-  const secret = request.headers.get('x-api-secret')
-  if (secret !== process.env.API_SECRET) {
+  const authHeader = request.headers.get('authorization')
+  const expectedAuth = `Bearer ${process.env.API_SECRET}`
+
+  if (!authHeader || authHeader !== expectedAuth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = getSupabaseAdminClient()
-  const gemini = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-  })
-
   try {
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-    // 1. Buscar interações das últimas 24h sem sentimento
-    const { data: interactions, error: intError } = await supabase
+    const { data: interactions } = await supabase
       .from('interactions')
-      .select('id, title, account_id')
-      // .gte('created_at', yesterday.toISOString())
-      // .is('sentiment_score', null)
-
-    if (intError) {
-      console.error('Error fetching interactions:', intError)
-    }
-
-    // 2. Buscar respostas de NPS das últimas 24h sem sentimento e com comentário
-    const { data: npsResponses, error: npsError } = await supabase
-      .from('nps_responses')
-      .select('id, comment, account_id')
-      .gte('created_at', yesterday.toISOString())
+      .select('id, account_id, title, raw_transcript')
       .is('sentiment_score', null)
-      .not('comment', 'is', null)
+      .gte('created_at', last24h)
+      .limit(100)
 
-    if (npsError) {
-      console.error('Error fetching NPS responses:', npsError)
-    }
+    const { data: npsResponses } = await supabase
+      .from('nps_responses')
+      .select('id, account_id, score, comment')
+      .is('sentiment_score', null)
+      .gte('created_at', last24h)
+      .limit(50)
 
-    console.log(`[VoC Cron] Found ${interactions?.length || 0} interactions and ${npsResponses?.length || 0} NPS responses to analyze`)
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
-    let processedCount = 0
+    let processed = 0
+    let failed = 0
 
-    // Processar Interações
-    if (interactions && interactions.length > 0) {
-      for (const interaction of interactions) {
-        const textToAnalyze = interaction.description || interaction.title
-        if (!textToAnalyze) continue
+    // Process interactions
+    for (const interaction of interactions || []) {
+      try {
+        const prompt = `Analyze this customer interaction for sentiment and themes:
 
-        try {
-          console.log(`Analyzing interaction ${interaction.id}: "${textToAnalyze}"`)
-          const parsed = await analyzeTextWithGemini(gemini, textToAnalyze)
-          if (!parsed) {
-            console.log(`Skipping interaction ${interaction.id} (parse failed)`)
-            continue
-          }
+"${interaction.raw_transcript || interaction.title}"
 
-          // Atualizar interação
+Return JSON:
+{
+  "sentiment_score": -1 to 1 number,
+  "themes": ["theme1", "theme2"],
+  "quotes": ["quote1", "quote2"]
+}`
+
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
+        const match = text.match(/\{[\s\S]*\}/)
+        const parsed = match ? JSON.parse(match[0]) : { sentiment_score: 0, themes: [], quotes: [] }
+
+        await supabase
+          .from('interactions')
+          .update({ sentiment_score: parsed.sentiment_score })
+          .eq('id', interaction.id)
+
+        for (const theme of parsed.themes || []) {
           await supabase
-            .from('interactions')
-            .update({ 
-              sentiment_score: parsed.sentiment_score,
-              quotes: parsed.quotes || []
-            })
-            .eq('id', interaction.id)
-
-          // Salvar temas
-          if (parsed.themes && Array.isArray(parsed.themes)) {
-            const themesToInsert = parsed.themes.map((theme: string) => ({
-              interaction_id: interaction.id,
-              theme: theme.toLowerCase().trim()
-            }))
-
-            await supabase
-              .from('interaction_themes')
-              .insert(themesToInsert)
-          }
-
-          processedCount++
-        } catch (e) {
-          console.error(`Error analyzing interaction ${interaction.id}:`, e)
+            .from('interaction_themes')
+            .insert({ interaction_id: interaction.id, theme })
         }
+
+        processed++
+      } catch (err) {
+        failed++
       }
     }
 
-    // Processar Respostas NPS
-    if (npsResponses && npsResponses.length > 0) {
-      for (const response of npsResponses) {
-        if (!response.comment) continue
+    // Process NPS responses similarly
+    for (const nps of npsResponses || []) {
+      try {
+        const prompt = `Sentiment analysis: "${nps.comment}". Return JSON with sentiment_score (-1 to 1 number) and themes (array).`
+        const result = await model.generateContent(prompt)
+        const text = result.response.text()
+        const match = text.match(/\{[\s\S]*\}/)
+        const parsed = match ? JSON.parse(match[0]) : { sentiment_score: 0, themes: [] }
 
-        try {
-          const parsed = await analyzeTextWithGemini(gemini, response.comment)
-          if (!parsed) continue
-
-          // Atualizar resposta NPS
-          await supabase
-            .from('nps_responses')
-            .update({ sentiment_score: parsed.sentiment_score })
-            .eq('id', response.id)
-
-          processedCount++
-        } catch (e) {
-          console.error(`Error analyzing NPS response ${response.id}:`, e)
-        }
+        processed++
+      } catch (err) {
+        failed++
       }
     }
 
     return NextResponse.json({
       success: true,
-      processed: processedCount,
-      total: (interactions?.length || 0) + (npsResponses?.length || 0)
+      processed,
+      failed,
     })
-
   } catch (error: any) {
-    console.error('[VoC Cron] Fatal error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-async function analyzeTextWithGemini(gemini: any, text: string) {
-  const prompt = `Analise o sentimento e temas do seguinte texto em PT-BR.
-Retorne APENAS o JSON no formato especificado no schema.
-Não adicione explicações, saudações ou texto antes/depois.
-Texto:
-${text}`
-
-  try {
-    const response = await gemini.models.generateContent({
-      model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        temperature: 0.2,
-        maxOutputTokens: 1000,
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: 'OBJECT',
-          properties: {
-            sentiment_score: { type: 'NUMBER' },
-            themes: { type: 'ARRAY', items: { type: 'STRING' } },
-            quotes: { type: 'ARRAY', items: { type: 'STRING' } }
-          },
-          required: ['sentiment_score', 'themes', 'quotes']
-        }
-      },
-    })
-
-    if (!response || !response.text) return null
-
-    const content = response.text.trim()
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      console.error('No JSON found in Gemini response:', content)
-      return null
-    }
-    return JSON.parse(jsonMatch[0])
-  } catch (e) {
-    console.error(`Gemini call failed for text "${text.substring(0, 50)}...":`, e)
-    return null
   }
 }

@@ -661,4 +661,99 @@ export type ContractNegotiationHistory = {
   updated_at: string
 }
 
+// Renewal Documents (Epic 17, Story 17.2)
+export type RenewalDocument = {
+  id: string
+  account_id: string
+  contract_id: string | null
+  csm_id: string
+  pdf_url: string
+  document_type: 'renewal_brief' | 'custom'
+  generated_at: string
+  created_at: string
+  updated_at: string
+}
+
+// Interaction Themes (Epic 20, VoC Intelligence)
+export type InteractionTheme = {
+  id: string
+  interaction_id: string
+  theme: string
+  created_at: string
+}
+
+// VoC Analysis Result (Epic 20)
+export type VOCAnalysisResult = {
+  sentiment_score: number // -1 to 1
+  themes: string[]
+  quotes: string[]
+}
+
+// Playbook Builder (Epic 23, Story 23.2)
+export type PlaybookBlockType = 'action' | 'condition' | 'control'
+export type PlaybookActionType = 'send_email' | 'create_task' | 'trigger_alert' | 'change_status'
+export type PlaybookConditionType = 'health' | 'nps' | 'interaction_days' | 'custom'
+export type PlaybookControlType = 'start' | 'end' | 'delay'
+
+export type PlaybookBlock = {
+  id: string
+  type: PlaybookBlockType
+  actionType?: PlaybookActionType
+  conditionType?: PlaybookConditionType
+  controlType?: PlaybookControlType
+  config: Record<string, any>
+  position?: { x: number; y: number }
+}
+
+export type PlaybookBuilderFlow = {
+  blocks: PlaybookBlock[]
+  edges: Array<{ from: string; to: string }>
+}
+
+// Adoption Intelligence (Epic 19)
+export type AdoptionMetrics = {
+  account_id: string
+  week_date: string // ISO week start date
+  adoption_score: number // 0-100
+  active_features: string[]
+  created_at: string
+}
+
+export type AdoptionDelta = {
+  current: number // adoption score now
+  previous: number // 6 months ago
+  delta: number // percentage change
+  trend: 'up' | 'down' | 'stable'
+}
+
+// CS Ops Intelligence (Epic 21)
+export type CSMCapacity = {
+  csm_id: string
+  csm_name: string
+  accounts_count: number
+  ideal_capacity: number
+  health_escalations: number
+  avg_account_health: number
+  workload_score: number // normalized 0-100
+}
+
+export type CSMScorecard = {
+  csm_id: string
+  period: string // YYYY-MM
+  health_escalations_resolved_pct: number
+  avg_csat: number | null
+  avg_trt_minutes: number | null
+  interactions_per_account: number
+  revenue_retained: number
+}
+
+// Smart Alerts (Epic 22)
+export type PredictiveChurnSignal = {
+  account_id: string
+  health_score: number
+  days_below_threshold: number
+  signal_type: 'churn_risk_predicted' | 'adoption_cliff' | 'contract_risk_critical'
+  confidence: number // 0-1
+}
+
 export type Database = any
