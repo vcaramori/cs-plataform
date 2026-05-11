@@ -219,7 +219,7 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 
 ### Wave 7 — Extensibilidade & Integrações (150 SP) ✅ IMPLEMENTADO
 
-**Status:** ✅ **APIs + Services + Migrations 100% pronto para E2E testing**
+**Status:** ✅ **APIs + Services + Migrations 100% pronto** | ✅ **Admin UI (Permissions + Integrations) 100% pronto**
 
 #### **Epic 30 — Webhooks (15 SP)**
 - ✅ Webhook Management API — GET/POST `/api/webhooks`
@@ -259,6 +259,16 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 - ✅ 43 Granular Permissions — per-resource (accounts, contracts, reports, integrations, settings)
 - ✅ Role-Based API Access — RLS policies enforce all endpoints
 - ✅ Audit Trail — logs all permission changes + who did what when
+- ✅ **UI Story 35.4** — `/admin/permissions` page with user role management table
+
+#### **Wave 7 Admin UI — Integrations Management (Epics 30–33)**
+- ✅ `/admin` — Admin Hub with navigation cards (Permissões, Integrações)
+- ✅ `/admin/permissions` — User role assignment table + RoleAssignDialog
+- ✅ `/admin/integrations` — Tabbed interface:
+  - **Webhooks Tab** — List, test, delete webhook endpoints + delivery metrics
+  - **CRM Tab** — Salesforce/HubSpot cards with sync button + last sync timestamp
+  - **Support Tab** — Zendesk/Jira Service Desk cards with sync button + last sync timestamp
+  - **BI Tab** — BigQuery/Snowflake/Tableau/Looker cards with export button + last export timestamp
 
 #### **Epic 37 — Observability (15 SP)**
 - ✅ OpenTelemetry Instrumentation — trace collection
@@ -1067,21 +1077,21 @@ API_SECRET=your-secure-random-secret-for-cron-jobs
 
 ---
 
-## Wave 7 — Extensibility & Integrations (150 SP) ✅ IMPLEMENTADO
+## Wave 7 — Extensibility & Integrations (150 SP) 🚧 EM DESENVOLVIMENTO
 
-**Status:** ✅ **Implementado 100% (Production-Ready)**  
+**Status:** 🟡 **Backend Implementado / UI Pendente**  
 **Data:** 2026-05-09  
 **Total:** 5 Épicos, 21 Histórias, 150 SP
 
-### Épicos Implementados
+### Épicos Implementados / Em Desenvolvimento
 
 #### **Epic 30 — Webhooks Infrastructure (15 SP)**
-- ✅ **Story 30.1:** Webhook Management UI
+- ⏳ **Story 30.1:** Webhook Management UI (Pendente)
   - `POST /api/webhooks` — Criar webhook com autenticação
   - `GET /api/webhooks` — Listar webhooks por account
   - `PUT /api/webhooks/[id]` — Atualizar webhook
   - `DELETE /api/webhooks/[id]` — Deletar webhook
-  - Tabelas: `webhooks`, `webhook_deliveries`
+  - Tabelas: `webhooks`, `webhook_deliveries` (Criadas)
 
 - ✅ **Story 30.2:** Event Dispatcher
   - `WebhookService.dispatchEvent()` — Dispara eventos para webhooks ativos
@@ -1178,7 +1188,7 @@ API_SECRET=your-secure-random-secret-for-cron-jobs
   - `GET /api/audit-logs` — Query com paginação
   - Events: `role_assigned`, `role_revoked`, `permission_granted`, `access_granted`
 
-- ✅ **Story 35.4:** Permission UI (2 SP)
+- ⏳ **Story 35.4:** Permission UI (2 SP) (Pendente)
   - `/admin/permissions` page para RBAC management
   - User list + role assignment grid
 

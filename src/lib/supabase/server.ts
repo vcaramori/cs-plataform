@@ -39,7 +39,11 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
     .single()
 
   if (error) {
-    console.error('Error fetching user role:', error)
+    if (error.code === 'PGRST116') {
+      console.warn(`No profile found for user ${userId} when fetching role`)
+    } else {
+      console.error('Error fetching user role:', error.message || error)
+    }
     return null
   }
 
@@ -55,7 +59,11 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
     .single()
 
   if (error) {
-    console.error('Error fetching user profile:', error)
+    if (error.code === 'PGRST116') {
+      console.warn(`No profile found for user ${userId} when fetching profile`)
+    } else {
+      console.error('Error fetching user profile:', error.message || error)
+    }
     return null
   }
 

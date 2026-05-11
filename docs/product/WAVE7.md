@@ -170,9 +170,12 @@ To implement:
 
 - **Events**: `role_assigned`, `role_revoked`, `permission_granted`, `permission_revoked`
 
-### Story 35.4: Permission UI (2 SP)
-- `/admin/permissions` page for RBAC management
-- User list + role assignment grid
+### Story 35.4: Permission UI (2 SP) ✅ IMPLEMENTED
+- ✅ `/admin/permissions` page with user list table
+- ✅ User role badges + pencil icon for edit action
+- ✅ `RoleAssignDialog` modal with role dropdown + confirm button
+- ✅ Toast feedback on role update
+- **File Structure**: `src/app/(dashboard)/admin/permissions/page.tsx` + `components/PermissionsClient.tsx`, `UserRoleTable.tsx`, `RoleAssignDialog.tsx`
 
 ## Epic 37 — Observability & Monitoring (15 SP)
 
@@ -339,10 +342,40 @@ curl -X POST http://localhost:3000/api/integrations/crm/sync \
   -d '{ "integration_id": "...", "sync_type": "accounts" }'
 ```
 
+## Wave 7 Admin UI Implementation (2026-05-09) ✅ COMPLETE
+
+### Admin Hub & Navigation
+- ✅ `/admin/page.tsx` — Replaced placeholder with working admin hub
+  - Navigation cards: Permissões & RBAC, Integrações
+  - Hover effects, icon badges, gradient backgrounds
+
+### Permissions Management (Story 35.4)
+- ✅ `/admin/permissions/page.tsx` — Server component with role guard
+- ✅ `/admin/permissions/components/PermissionsClient.tsx` — Client orchestrator
+- ✅ `UserRoleTable.tsx` — Animated table with role badges + edit action
+- ✅ `RoleAssignDialog.tsx` — Modal for role assignment
+
+### Integrations Management (Epics 30–33 UI)
+- ✅ `/admin/integrations/page.tsx` — Server component with role guard
+- ✅ `/admin/integrations/components/IntegrationsClient.tsx` — Tabs orchestrator
+- ✅ `WebhooksTab.tsx` — Webhook list + test/delete actions
+- ✅ `CRMTab.tsx` — Salesforce/HubSpot cards + sync button
+- ✅ `SupportTab.tsx` — Zendesk/Jira cards + sync button
+- ✅ `BITab.tsx` — BigQuery/Snowflake/Tableau/Looker cards + export button
+
+All tabs feature:
+- Animated card grid (motion/framer-motion)
+- Status badges (active/inactive with icons)
+- Last sync/export timestamps
+- Sync/export/delete actions with toast feedback
+- Empty states with CTA buttons
+- Skeleton loaders while fetching
+
 ## Next Steps
 
-1. **Mobile Implementation** (Epic 34): Implement React Native app
-2. **Webhook Retry Queue**: Add dedicated job queue (Bull/RabbitMQ)
-3. **Real-time Sync**: Implement WebSocket for real-time updates
-4. **Advanced Analytics**: Add custom dashboards to CSPlataform
-5. **AI-Powered Insights**: Use Perguntar for integration recommendations
+1. **Create Dialog Forms**: Build create/edit dialogs for each integration type (webhook, CRM, support, BI)
+2. **Mobile Implementation** (Epic 34): Implement React Native app
+3. **Webhook Retry Queue**: Add dedicated job queue (Bull/RabbitMQ)
+4. **Real-time Sync**: Implement WebSocket for real-time updates
+5. **Advanced Analytics**: Add custom dashboards to CSPlataform
+6. **AI-Powered Insights**: Use Perguntar for integration recommendations

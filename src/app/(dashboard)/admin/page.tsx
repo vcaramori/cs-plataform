@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getSupabaseServerClient, getUserProfile } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
-import { Settings } from 'lucide-react'
+import { Settings, Lock, Zap, ArrowRight } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await getSupabaseServerClient()
@@ -15,34 +16,71 @@ export default async function AdminPage() {
     redirect('/dashboard')
   }
 
+  const sections = [
+    {
+      href: '/admin/permissions',
+      title: 'Permissões & RBAC',
+      description: 'Gerenciar usuários, roles e controle de acesso',
+      icon: Lock,
+      color: 'from-blue-500/10 to-blue-500/5',
+      accentColor: 'text-blue-600 dark:text-blue-400'
+    },
+    {
+      href: '/admin/integrations',
+      title: 'Integrações',
+      description: 'CRM, Support, BI, Webhooks e conectores externos',
+      icon: Zap,
+      color: 'from-orange-500/10 to-orange-500/5',
+      accentColor: 'text-orange-600 dark:text-orange-400'
+    }
+  ]
+
   return (
-    <PageContainer>
+    <PageContainer className="max-w-[1400px] space-y-10">
+      {/* Header */}
       <div className="flex flex-col gap-2 relative">
+        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
             <Settings className="w-5 h-5 text-content-primary" />
           </div>
           <h1 className="h1-page">Admin Panel</h1>
         </div>
-        <p className="label-premium flex items-center gap-2">
-          Gerenciamento centralizado de configurações do sistema.
-        </p>
+        <p className="label-premium">Gerenciamento centralizado de configurações do sistema</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 mt-8">
-        <div className="p-6 bg-surface-card rounded-2xl border border-border-divider">
-          <h2 className="text-lg font-bold text-content-primary">Sistema em Desenvolvimento</h2>
-          <p className="text-content-secondary mt-2">
-            O painel de administração será disponibilizado em breve com funcionalidades para gerenciar:
-          </p>
-          <ul className="list-disc list-inside mt-4 space-y-2 text-content-secondary text-sm">
-            <li>Configurações de saúde e inteligência</li>
-            <li>Parâmetros de alertas e automações</li>
-            <li>Integração com IA e RAG</li>
-            <li>Integrações externas (SMTP, Slack, etc)</li>
-            <li>Políticas de segurança e acesso</li>
-          </ul>
-        </div>
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {sections.map((section) => {
+          const Icon = section.icon
+          return (
+            <Link
+              key={section.href}
+              href={section.href}
+              className="group relative"
+            >
+              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${section.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+              <div className="relative h-full p-6 bg-surface-card border border-border-divider rounded-2xl shadow-sm hover:shadow-lg hover:border-border-divider/80 transition-all duration-300">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className={`w-10 h-10 rounded-lg bg-surface-background flex items-center justify-center mb-4 ${section.accentColor}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-content-primary group-hover:text-plannera-orange transition-colors">
+                      {section.title}
+                    </h3>
+                    <p className="text-sm text-content-secondary mt-2">
+                      {section.description}
+                    </p>
+                  </div>
+                  <div className="ml-4 text-border-divider group-hover:text-plannera-orange transition-colors opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300">
+                    <ArrowRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </PageContainer>
   )
