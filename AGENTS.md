@@ -9,7 +9,7 @@ Este projeto é o **CS-Continuum**, plataforma interna de Customer Success da Pl
 | Stack | Next.js 16 + React 19 + TypeScript + Tailwind + Radix UI |
 | Banco | Supabase (PostgreSQL + pgvector) |
 | Auth | Supabase Auth (JWT + roles `csm` / `client`) |
-| LLM | Ollama (qwen2.5) → Gemini → Claude (fallback em cascata) |
+| LLM | Gemini (Principal) → Claude (Fallback) |
 | Alvo Futuro | Azure SQL (SQL Server — relacional + VECTOR nativo) |
 | Docs Oficial | https://nextjs.org, https://supabase.com |
 
@@ -40,7 +40,7 @@ csplataform/
 4. Use Server Components por padrão (`app/` router)
 5. Prefira `use()` hook para data fetching em vez de useEffect
 6. Use Radix UI + Tailwind para componentes (não MUI/chakra)
-7. Implemente fallback em cascata para LLM (OLLAMA → GEMINI → CLAUDE)
+7. Implemente fallback para LLM (GEMINI → CLAUDE)
 8. Use Supabase via `src/lib/supabase/` — Azure SQL é o alvo futuro.
 9. Use .env para todas as chaves (não comitar)
 10. **Leia `.claude/napkin.md` para regras de execução (lido automaticamente por napkin)**
@@ -125,6 +125,6 @@ GEMINI_API_KEY=
 ANTHROPIC_API_KEY=
 
 # LLM Gateway
-LLM_PROVIDER=ollama  # ou gemini
-LLM_ALLOW_FALLBACK=true
+LLM_PROVIDER=gemini
+LLM_ALLOW_FALLBACK=false
 ```

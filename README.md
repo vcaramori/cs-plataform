@@ -297,6 +297,7 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 - ✅ Wave 5 complete (May 9)
 - ✅ Wave 6 complete (May 10)
 - ✅ Wave 7 complete (May 11)
+- ✅ Remoção do Ollama (Local) — Foco exclusivo em Gemini — May 11
 - ✅ TypeScript compilation (0 errors) — May 12
 - ⏳ E2E testing phase (Playwright) — May 12-14
 - ⏳ RLS audit (3 roles) — May 14
