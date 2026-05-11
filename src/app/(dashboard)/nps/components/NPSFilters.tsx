@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Bookmark, Building2, CalendarRange, RefreshCw, Target, Loader2, Globe } from 'lucide-react'
+import { Bookmark, Building2, RefreshCw, Target, Loader2, Globe } from 'lucide-react'
 import Link from 'next/link'
 
 interface NPSFiltersProps {
@@ -12,8 +12,6 @@ interface NPSFiltersProps {
   onProgramChange: (value: string) => void
   accountFilter: string
   onAccountChange: (value: string) => void
-  periodDays: string
-  onPeriodChange: (value: string) => void
   goal: number | null
   newGoalValue: string
   onGoalValueChange: (value: string) => void
@@ -31,8 +29,6 @@ export function NPSFilters({
   onProgramChange,
   accountFilter,
   onAccountChange,
-  periodDays,
-  onPeriodChange,
   goal,
   newGoalValue,
   onGoalValueChange,
@@ -70,16 +66,6 @@ export function NPSFilters({
           <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
             <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest">TODAS AS CONTAS</SelectItem>
             {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase tracking-widest">{a.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        <Select value={periodDays} onValueChange={onPeriodChange}>
-          <SelectTrigger className="w-36 text-content-primary text-[10px] font-black h-10 rounded-2xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
-            <CalendarRange className="w-4 h-4 text-content-secondary/40 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-            {['7', '30', '90', '180', '365'].map(v => <SelectItem key={v} value={v} className="text-[10px] font-black uppercase tracking-widest">{v} DIAS</SelectItem>)}
           </SelectContent>
         </Select>
 

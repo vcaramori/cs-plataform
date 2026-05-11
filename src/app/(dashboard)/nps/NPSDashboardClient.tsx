@@ -28,6 +28,8 @@ import {
 } from 'recharts'
 import { getNPSSegment } from '@/lib/supabase/types'
 import type { NPSStats } from '@/lib/supabase/types'
+import { useDateRange } from '@/hooks/useDateRange'
+import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { ScoreBar } from './components/ScoreBar'
 import { NPSGauge } from './components/NPSGauge'
 import { ResponseDetailDialog } from './components/ResponseDetailDialog'
@@ -106,8 +108,8 @@ interface ChartItem {
 
 export function NPSDashboardClient({ accounts }: Props) {
   const [accountFilter, setAccountFilter] = useState('all')
-  const [periodDays, setPeriodDays] = useState('30')
   const [programFilter, setProgramFilter] = useState('default')
+  const { dateFrom, dateTo } = useDateRange('30d')
   const [stats, setStats] = useState<NPSDashboardStats | null>(null)
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
@@ -123,12 +125,9 @@ export function NPSDashboardClient({ accounts }: Props) {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const now = new Date()
-    const dateFrom = new Date(now.getTime() - parseInt(periodDays) * 24 * 60 * 60 * 1000)
-
     const statsParams = new URLSearchParams({
-      date_from: dateFrom.toISOString(),
-      date_to: now.toISOString(),
+      date_from: dateFrom,
+      date_to: dateTo,
     })
     if (accountFilter !== 'all') statsParams.set('account_id', accountFilter)
     if (programFilter !== 'default') statsParams.set('program_key', programFilter)
@@ -149,7 +148,7 @@ export function NPSDashboardClient({ accounts }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [accountFilter, periodDays, programFilter])
+  }, [accountFilter, dateFrom, dateTo, programFilter])
 
   const fetchGoal = useCallback(async () => {
     try {
@@ -267,13 +266,13 @@ export function NPSDashboardClient({ accounts }: Props) {
         iconName="Star"
       />
 
+      <DateRangePicker />
+
       <NPSFilters
         programFilter={programFilter}
         onProgramChange={setProgramFilter}
         accountFilter={accountFilter}
         onAccountChange={setAccountFilter}
-        periodDays={periodDays}
-        onPeriodChange={setPeriodDays}
         goal={goal}
         newGoalValue={newGoalValue}
         onGoalValueChange={setNewGoalValue}

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useDateRange } from '@/hooks/useDateRange'
+import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts'
@@ -23,8 +25,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
-
-type Period = '7d' | '30d' | '90d'
 
 interface OperationalData {
   open_now: number
@@ -64,15 +64,6 @@ interface ClientRow {
   avg_csat: number | null
 }
 
-function kpiDateRange(period: Period) {
-  const now = new Date()
-  const from = new Date()
-  if (period === '7d') from.setDate(now.getDate() - 7)
-  else if (period === '30d') from.setDate(now.getDate() - 30)
-  else from.setDate(now.getDate() - 90)
-  return { dateFrom: from.toISOString(), dateTo: now.toISOString() }
-}
-
 function formatMinutes(mins: number | null) {
   if (mins === null) return '—'
   if (mins < 60) return `${mins}m`
@@ -86,7 +77,7 @@ function CompliancePill({ value }: { value: number | null }) {
 }
 
 export default function SupportDashboardPage() {
-  const [period, setPeriod] = useState<Period>('30d')
+  const { dateFrom, dateTo } = useDateRange('30d')
   const [operational, setOperational] = useState<OperationalData | null>(null)
   const [periodData, setPeriodData] = useState<PeriodData | null>(null)
   const [agents, setAgents] = useState<AgentRow[]>([])
@@ -95,7 +86,6 @@ export default function SupportDashboardPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { dateFrom, dateTo } = kpiDateRange(period)
     const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
 
     const [op, pd, ag, cl] = await Promise.all([
@@ -110,39 +100,23 @@ export default function SupportDashboardPage() {
     setAgents(ag.agents ?? [])
     setClients(cl.clients ?? [])
     setLoading(false)
-  }, [period])
+  }, [dateFrom, dateTo])
 
   useEffect(() => { load() }, [load])
 
   const handleExport = () => {
-    const { dateFrom, dateTo } = kpiDateRange(period)
     window.open(`/api/support-reports/export?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`)
   }
 
   return (
     <PageContainer>
-      <ModuleHeader 
-        title="Painel Tático de Suporte" 
+      <ModuleHeader
+        title="Painel Tático de Suporte"
         subtitle="Métricas de Atendimento, Compliance de SLA e Satisfação do Cliente"
         iconName="TicketCheck"
       >
-        <div className="flex bg-surface-background/50 p-1.5 rounded-2xl border border-border-divider shadow-inner mr-4">
-          {(['7d', '30d', '90d'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={cn(
-                "px-5 py-2 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest",
-                period === p 
-                  ? "bg-plannera-primary text-white shadow-lg shadow-plannera-primary/20" 
-                  : "text-content-secondary hover:text-plannera-primary opacity-60 hover:opacity-100"
-              )}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-        <Button size="sm" onClick={handleExport} className="h-12 bg-success hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
+        <DateRangePicker />
+        <Button size="sm" onClick={handleExport} className="ml-4 h-12 bg-success hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
           <Download className="w-4 h-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Relatório XLSX</span>
         </Button>

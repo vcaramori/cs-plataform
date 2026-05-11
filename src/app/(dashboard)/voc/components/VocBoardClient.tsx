@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { useDateRange } from '@/hooks/useDateRange'
+import { DateRangePicker } from '@/components/ui/DateRangePicker'
 
 interface SentimentItem {
   date: string
@@ -22,36 +24,41 @@ interface QuoteItem {
 }
 
 export default function VocBoardClient() {
+  const { dateFrom, dateTo, label } = useDateRange('30d')
+  const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
+
   const { data: sentimentData } = useQuery<{ data: SentimentItem[] }>({
-    queryKey: ['voc-sentiment-trends'],
+    queryKey: ['voc-sentiment-trends', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await fetch('/api/voc/sentiment-trends')
+      const res = await fetch(`/api/voc/sentiment-trends?${qs}`)
       return res.json()
     },
   })
 
   const { data: themesData } = useQuery<{ pains: ThemeItem[]; praises: ThemeItem[] }>({
-    queryKey: ['voc-top-themes'],
+    queryKey: ['voc-top-themes', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await fetch('/api/voc/top-themes')
+      const res = await fetch(`/api/voc/top-themes?${qs}`)
       return res.json()
     },
   })
 
   const { data: quotesData } = useQuery<{ quotes: QuoteItem[] }>({
-    queryKey: ['voc-quotes'],
+    queryKey: ['voc-quotes', dateFrom, dateTo],
     queryFn: async () => {
-      const res = await fetch('/api/voc/quotes')
+      const res = await fetch(`/api/voc/quotes?${qs}`)
       return res.json()
     },
   })
 
   return (
     <div className="space-y-6">
+      <DateRangePicker />
+
       {/* Sentiment Trend */}
       <Card variant="glass" className="border-border-divider rounded-2xl overflow-hidden shadow-xl bg-surface-card/80 backdrop-blur-xl">
         <CardHeader className="border-b border-border-divider p-6">
-          <CardTitle className="text-content-primary text-sm font-extrabold uppercase tracking-widest">Tendência de Sentimento (30d)</CardTitle>
+          <CardTitle className="text-content-primary text-sm font-extrabold uppercase tracking-widest">Tendência de Sentimento — {label}</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           {sentimentData?.data ? (

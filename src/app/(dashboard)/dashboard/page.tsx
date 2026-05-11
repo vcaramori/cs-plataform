@@ -8,6 +8,8 @@ import { AccountsTable, type AccountWithContracts } from "./components/AccountsT
 
 import { NPSTestLoader } from "./components/NPSTestLoader"
 import { ModuleHeader } from "@/components/shared/guardians/ModuleHeader"
+import RenewalPipelineSection from "./components/RenewalPipelineSection"
+import { KPIDeltas } from "./components/KPIDeltas"
 import { Suspense } from "react"
 import type { Database } from "@/lib/supabase/database.types"
 
@@ -140,13 +142,21 @@ export default async function DashboardPage() {
         </Suspense>
       </section>
 
+      {/* KPI Delta comparison */}
+      <KPIDeltas />
+
+      {/* Renewal Pipeline Kanban */}
+      <section className="relative">
+        <Suspense fallback={<div className="h-64 animate-pulse bg-accent/10 rounded-2xl" />}>
+          <RenewalPipelineSection />
+        </Suspense>
+      </section>
+
       {/* Main Table Section */}
       <section className="relative pb-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none rounded-2xl" />
         <Suspense fallback={<div className="h-96 animate-pulse bg-accent/10 rounded-2xl" />}>
           <AccountsTable accounts={safeAccounts as unknown as AccountWithContracts[]} />
-
-
         </Suspense>
       </section>
     </PageContainer>

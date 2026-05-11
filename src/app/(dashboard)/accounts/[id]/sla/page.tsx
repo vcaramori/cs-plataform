@@ -102,14 +102,14 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-plannera-orange/40 to-transparent" />
             <SLAPolicyEditor
               policyId={currentPolicy.id}
-              initialLevels={currentPolicy.levels || []}
+              initialLevels={(currentPolicy.levels || []) as any}
             />
           </section>
           <section className="bg-surface-card border border-border-divider shadow-xl p-8 rounded-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500/40 to-transparent" />
             <LevelMappingEditor
               policyId={currentPolicy.id}
-              initialMappings={currentPolicy.mappings || []}
+              initialMappings={(currentPolicy.mappings || []) as any}
             />
           </section>
         </div>

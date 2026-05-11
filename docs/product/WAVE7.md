@@ -210,6 +210,15 @@ To implement:
 
 - **Method**: `ErrorTracker.recordError(message, error, severity, context)`
 
+### Story 37.5: Observability UI (2 SP) ✅ IMPLEMENTED
+- ✅ `/admin/observability` page (admin-only, role check)
+- ✅ Summary KPIs: Total Logs, Warnings, Errors
+- ✅ Application Logs tab: search + level filter (debug/info/warn/error), monospace log lines with timestamps
+- ✅ Metrics tab: summary cards with avg/min/max + BarCharts per metric
+- ✅ Errors tab: type/service badges + occurrence count + timestamps
+- ✅ Navigation card added to `/admin` hub
+- **File Structure**: `src/app/(dashboard)/admin/observability/page.tsx` + `components/ObservabilityClient.tsx`
+
 ## Database Schema
 
 ### Core Tables

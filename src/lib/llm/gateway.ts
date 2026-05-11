@@ -41,7 +41,7 @@ export async function generateText(
 ): Promise<LLMResponse<string>> {
   const start = Date.now()
 
-  const modelId = options.model ?? (prompt.length > 2000 ? env.gemini.proModel : env.gemini.flashModel)
+  const modelId = options.model ?? env.gemini.flashModel
 
   try {
     const response = await ai.models.generateContent({

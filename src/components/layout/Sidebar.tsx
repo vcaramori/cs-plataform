@@ -21,6 +21,9 @@ import {
   BarChart2,
   ShieldCheck,
   Settings,
+  Bell,
+  Target,
+  SmilePlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -37,11 +40,15 @@ const navItems = [
   { href: '/suporte',           label: 'Suporte',        icon: TicketCheck },
   { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
   { href: '/nps',               label: 'NPS',            icon: Star },
+  { href: '/voc',               label: 'VoC',            icon: SmilePlus },
+  { href: '/adoption',          label: 'Adoption',       icon: Target },
+  { href: '/alertas',           label: 'Smart Alerts',   icon: Bell },
   { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
 ]
 
 const settingsItems = [
   { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/cs-ops',               label: 'CS Operations',  icon: BarChart2, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },

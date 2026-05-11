@@ -333,6 +333,57 @@ export type Database = {
           },
         ]
       }
+      alerts: {
+        Row: {
+          id: string
+          account_id: string
+          alert_type: string
+          severity: string
+          status: string
+          risk_score: number | null
+          risk_factors: unknown | null
+          recommended_action: string | null
+          metadata: unknown | null
+          triggered_at: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          resolved_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          account_id: string
+          alert_type: string
+          severity: string
+          status?: string
+          risk_score?: number | null
+          risk_factors?: unknown | null
+          recommended_action?: string | null
+          metadata?: unknown | null
+          triggered_at?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          resolved_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          account_id?: string
+          alert_type?: string
+          severity?: string
+          status?: string
+          risk_score?: number | null
+          risk_factors?: unknown | null
+          recommended_action?: string | null
+          metadata?: unknown | null
+          triggered_at?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          resolved_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       adoption_metrics: {
         Row: {
           account_id: string
@@ -1763,6 +1814,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auth_id: string | null
           avatar_url: string | null
           created_at: string | null
           full_name: string | null
@@ -1771,6 +1823,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auth_id?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -1779,6 +1832,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auth_id?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null

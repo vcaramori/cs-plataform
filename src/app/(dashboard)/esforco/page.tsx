@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { Coffee } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
@@ -40,10 +41,12 @@ export default async function EsforcoPage() {
 
       <AutoCheckInQueue />
 
-      <EsforcoClient
-        accounts={accounts ?? []}
-        initialEntries={(entries ?? []) as Entry[]}
-      />
+      <Suspense>
+        <EsforcoClient
+          accounts={accounts ?? []}
+          initialEntries={(entries ?? []) as Entry[]}
+        />
+      </Suspense>
     </PageContainer>
   )
 }

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { toast } from 'sonner'
+import { useDateRange } from '@/hooks/useDateRange'
+import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { EsforcoKPIs } from './EsforcoKPIs'
 import { EsforcoChart } from './EsforcoChart'
 import { EsforcoTable } from './EsforcoTable'
@@ -49,6 +51,7 @@ export function EsforcoClient({
   initialEntries: Entry[]
 }) {
   const router = useRouter()
+  const { dateFrom, dateTo } = useDateRange('mtd')
   const [text, setText] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
@@ -106,8 +109,13 @@ export function EsforcoClient({
     setSelectedEntry(updated)
   }
 
+  const filteredEntries = entries.filter(e => {
+    const d = new Date(e.date ?? e.logged_at)
+    return d >= new Date(dateFrom) && d <= new Date(dateTo)
+  })
+
   // Agrupa horas por conta
-  const totalsByAccount = entries.reduce<Record<string, { name: string; hours: number }>>(
+  const totalsByAccount = filteredEntries.reduce<Record<string, { name: string; hours: number }>>(
     (acc, e) => {
       const name = e.accounts?.name ?? 'LOGO removido'
       if (!acc[e.account_id]) acc[e.account_id] = { name, hours: 0 }
@@ -132,7 +140,10 @@ export function EsforcoClient({
   })
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-700">
+      <DateRangePicker />
+
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Logger Column */}
       <div className="lg:col-span-3 space-y-8">
         <EsforcoKPIs
@@ -155,8 +166,8 @@ export function EsforcoClient({
       {/* History Area */}
       <div className="lg:col-span-4 mt-8">
         <EsforcoTable
-          entries={entries}
-          totalHours={entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
+          entries={filteredEntries}
+          totalHours={filteredEntries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
           onSelectEntry={(e: Entry) => setSelectedEntry(e)}
           activityLabels={activityLabels}
         />
@@ -170,6 +181,7 @@ export function EsforcoClient({
           onUpdate={(updated) => handleUpdate(updated as unknown as Entry)}
         />
       )}
+    </div>
     </div>
   )
 }

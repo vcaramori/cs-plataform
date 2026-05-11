@@ -25,5 +25,6 @@ export default async function EditAccountPage({ params }: EditAccountPageProps) 
     notFound()
   }
 
-  return <AccountForm initialData={account} mode="edit" />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <AccountForm initialData={account as any} mode="edit" />
 }

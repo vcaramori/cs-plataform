@@ -1,94 +1,187 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Badge } from '@/components/ui/badge'
+import { SectionHeader } from '@/components/ui/section-header'
+import { Loader2, Calendar, TrendingUp, DollarSign } from 'lucide-react'
+
+interface RenewalCard {
+  account_id: string
+  account_name: string
+  arr: number
+  health_score: number
+  nps: number | null
+  readiness_color: 'green' | 'yellow' | 'red'
+  days_to_renewal: number
+}
+
+interface RenewalPipeline {
+  critico: RenewalCard[]
+  urgente: RenewalCard[]
+  planejamento: RenewalCard[]
+}
+
+const COLUMNS = [
+  {
+    key: 'critico' as const,
+    label: 'Crítico',
+    sublabel: '< 30 dias',
+    border: 'border-t-red-500',
+    badge: 'bg-red-500/10 text-red-600 border-red-500/20',
+    dot: 'bg-red-500',
+    glow: 'from-red-500/5 to-transparent',
+  },
+  {
+    key: 'urgente' as const,
+    label: 'Urgente',
+    sublabel: '30–60 dias',
+    border: 'border-t-amber-500',
+    badge: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    dot: 'bg-amber-500',
+    glow: 'from-amber-500/5 to-transparent',
+  },
+  {
+    key: 'planejamento' as const,
+    label: 'Planejamento',
+    sublabel: '60–90 dias',
+    border: 'border-t-blue-500',
+    badge: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    dot: 'bg-blue-500',
+    glow: 'from-blue-500/5 to-transparent',
+  },
+]
+
+const READINESS = {
+  green: { label: 'Pronto', cls: 'bg-emerald-500/10 text-emerald-600' },
+  yellow: { label: 'Atenção', cls: 'bg-amber-500/10 text-amber-600' },
+  red: { label: 'Risco', cls: 'bg-red-500/10 text-red-600' },
+}
+
+function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
+  const readiness = READINESS[card.readiness_color]
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.04 }}
+    >
+      <Link
+        href={`/accounts/${card.account_id}/renewal`}
+        className="block p-4 bg-surface-background hover:bg-surface-card border border-border-divider rounded-xl transition-all hover:shadow-md hover:border-border-divider/60 group"
+      >
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <p className="font-bold text-sm text-content-primary leading-tight group-hover:text-plannera-orange transition-colors line-clamp-1">
+            {card.account_name}
+          </p>
+          <Badge className={`text-[9px] shrink-0 ${readiness.cls}`}>
+            {readiness.label}
+          </Badge>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
+            <Calendar className="w-3 h-3" />
+            <span>{card.days_to_renewal}d para renovação</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
+            <DollarSign className="w-3 h-3" />
+            <span>ARR: R$ {card.arr.toLocaleString('pt-BR')}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border-divider">
+            <div className="flex items-center gap-1 text-[10px]">
+              <TrendingUp className="w-3 h-3 text-content-secondary" />
+              <span className={card.health_score >= 70 ? 'text-emerald-600 font-bold' : card.health_score >= 50 ? 'text-amber-600 font-bold' : 'text-red-600 font-bold'}>
+                {card.health_score}%
+              </span>
+              <span className="text-content-secondary">health</span>
+            </div>
+            {card.nps !== null && (
+              <div className="text-[10px] text-content-secondary">
+                NPS <span className="font-bold text-content-primary">{card.nps}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
 
 export default function RenewalPipelineSection() {
-  const { data: renewalData } = useQuery({
-    queryKey: ['renewal-pipeline'],
-    queryFn: async () => {
-      const res = await fetch('/api/dashboard/renewal-pipeline')
-      return res.json()
-    },
-  })
+  const [pipeline, setPipeline] = useState<RenewalPipeline | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  if (!renewalData?.data) {
+  useEffect(() => {
+    fetch('/api/dashboard/renewal-pipeline')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.critico && data?.urgente && data?.planejamento) {
+          setPipeline(data)
+        } else {
+          setPipeline({ critico: [], urgente: [], planejamento: [] })
+        }
+      })
+      .catch(() => setPipeline({ critico: [], urgente: [], planejamento: [] }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const total = pipeline ? pipeline.critico.length + pipeline.urgente.length + pipeline.planejamento.length : 0
+
+  if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Pipeline de Renovações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-96" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <SectionHeader title="Pipeline de Renovações" />
+        <div className="grid grid-cols-3 gap-4">
+          {[0,1,2].map(i => (
+            <div key={i} className="h-64 bg-surface-card border border-border-divider rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
     )
   }
 
-  const { critical = [], urgent = [], planning = [] } = renewalData.data
-
-  const Column = ({ title, items, color }: any) => (
-    <div className="flex-1">
-      <div className={`text-sm font-bold mb-3 px-3 py-2 rounded ${color}`}>
-        {title} ({items.length})
-      </div>
-      <div className="space-y-2 max-h-96 overflow-y-auto">
-        {items.map((item: any) => (
-          <Link
-            key={item.id}
-            href={`/accounts/${item.account_id}/renewal`}
-            className={`p-3 rounded border-l-4 bg-white hover:shadow-md transition cursor-pointer ${
-              color.includes('red') ? 'border-l-red-500' :
-              color.includes('amber') ? 'border-l-amber-500' :
-              'border-l-blue-500'
-            }`}
-          >
-            <p className="font-medium text-sm text-content-primary">{item.account_name}</p>
-            <p className="text-xs text-content-secondary mt-1">
-              ARR: ${item.arr.toLocaleString()}
-            </p>
-            <div className={`text-xs font-bold mt-2 inline-block px-2 py-1 rounded ${
-              item.readiness_color === 'green' ? 'bg-emerald-100 text-emerald-800' :
-              item.readiness_color === 'yellow' ? 'bg-amber-100 text-amber-800' :
-              'bg-red-100 text-red-800'
-            }`}>
-              {item.health_score}% health • {item.nps || 'N/A'} NPS
-            </div>
-          </Link>
-        ))}
-        {items.length === 0 && (
-          <p className="text-xs text-content-secondary text-center py-4">Nenhuma conta</p>
-        )}
-      </div>
-    </div>
-  )
+  if (!pipeline || total === 0) return null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pipeline de Renovações</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex gap-4">
-          <Column
-            title="🔴 Crítico (<30d)"
-            items={critical}
-            color="bg-red-100"
-          />
-          <Column
-            title="🟡 Urgente (30-60d)"
-            items={urgent}
-            color="bg-amber-100"
-          />
-          <Column
-            title="🔵 Planejamento (60-90d)"
-            items={planning}
-            color="bg-blue-100"
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <SectionHeader
+        title="Pipeline de Renovações"
+        subtitle={`${total} conta${total !== 1 ? 's' : ''} nos próximos 90 dias`}
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {COLUMNS.map(col => {
+          const items = pipeline[col.key]
+          return (
+            <div key={col.key} className="space-y-3">
+              <div className={`p-4 bg-surface-card border-t-2 border border-border-divider rounded-2xl bg-gradient-to-b ${col.glow}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">{col.label}</p>
+                    <p className="text-[9px] text-content-secondary/60 mt-0.5">{col.sublabel}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${col.badge}`}>
+                    {items.length}
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
+                  <AnimatePresence mode="popLayout">
+                    {items.map((card, idx) => (
+                      <RenewalCard key={card.account_id} card={card} idx={idx} />
+                    ))}
+                  </AnimatePresence>
+                  {items.length === 0 && (
+                    <p className="text-[10px] text-content-secondary text-center py-6">Nenhuma conta</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }

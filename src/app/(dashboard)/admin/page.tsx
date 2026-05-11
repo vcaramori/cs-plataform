@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseServerClient, getUserProfile } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
-import { Settings, Lock, Zap, ArrowRight } from 'lucide-react'
+import { Settings, Lock, Zap, ArrowRight, SlidersHorizontal, Activity } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await getSupabaseServerClient()
@@ -32,6 +32,22 @@ export default async function AdminPage() {
       icon: Zap,
       color: 'from-orange-500/10 to-orange-500/5',
       accentColor: 'text-orange-600 dark:text-orange-400'
+    },
+    {
+      href: '/admin/settings',
+      title: 'Configurações do Sistema',
+      description: 'Health score, SLA, NPS, alertas, IA, playbooks e segurança',
+      icon: SlidersHorizontal,
+      color: 'from-purple-500/10 to-purple-500/5',
+      accentColor: 'text-purple-600 dark:text-purple-400'
+    },
+    {
+      href: '/admin/observability',
+      title: 'Observability',
+      description: 'Logs de aplicação, métricas de performance e rastreamento de erros',
+      icon: Activity,
+      color: 'from-emerald-500/10 to-emerald-500/5',
+      accentColor: 'text-emerald-600 dark:text-emerald-400'
     }
   ]
 

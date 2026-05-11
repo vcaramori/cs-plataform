@@ -2,6 +2,11 @@ import { notFound } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { AccountHeader } from './components/AccountHeader'
 import { AccountDetailPageClient } from './components/AccountDetailPageClient'
+import type {
+  Contract, Interaction, SupportTicket, TimeEntry, Contact,
+  SuccessPlanGoal, AdoptionMetrics, NPSResponse, CommercialGovernance,
+  AccountPlaybook, HealthScore,
+} from '@/lib/supabase/types'
 
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -45,19 +50,21 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   if (error || !account) notFound()
 
   // Normalização de arrays (Supabase pode retornar null para joins vazios)
-  const contracts = Array.isArray(account.contracts) ? account.contracts : (account.contracts ? [account.contracts] : [])
-  const contacts = Array.isArray(account.contacts) ? account.contacts : (account.contacts ? [account.contacts] : [])
-  const interactions = Array.isArray(account.interactions) ? account.interactions : (account.interactions ? [account.interactions] : [])
-  const tickets = Array.isArray(account.support_tickets) ? account.support_tickets : (account.support_tickets ? [account.support_tickets] : [])
-  const entries = Array.isArray(account.time_entries) ? account.time_entries : (account.time_entries ? [account.time_entries] : [])
-  const healthScores = Array.isArray(account.health_scores) ? account.health_scores : (account.health_scores ? [account.health_scores] : [])
-  const successGoals = Array.isArray(account.success_goals) ? account.success_goals : (account.success_goals ? [account.success_goals] : [])
-  const adoptionMetrics = Array.isArray(account.adoption_metrics) ? account.adoption_metrics : (account.adoption_metrics ? [account.adoption_metrics] : [])
-  const adoptionRecords = Array.isArray(account.feature_adoption) ? account.feature_adoption : (account.feature_adoption ? [account.feature_adoption] : [])
-  const playbooks = Array.isArray(account.account_playbooks) ? account.account_playbooks : (account.account_playbooks ? [account.account_playbooks] : [])
-  const riskAssessments = Array.isArray(account.account_risk_assessments) ? account.account_risk_assessments : (account.account_risk_assessments ? [account.account_risk_assessments] : [])
-  const npsResponses = Array.isArray(account.nps_responses) ? account.nps_responses : (account.nps_responses ? [account.nps_responses] : [])
-  const commercialGovernance = Array.isArray(account.commercial_governance) ? account.commercial_governance : (account.commercial_governance ? [account.commercial_governance] : [])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const norm = (v: unknown): any[] => Array.isArray(v) ? v : v ? [v] : []
+  const contracts        = norm(account.contracts)        as Contract[]
+  const contacts         = norm(account.contacts)         as Contact[]
+  const interactions     = norm(account.interactions)     as Interaction[]
+  const tickets          = norm(account.support_tickets)  as SupportTicket[]
+  const entries          = norm(account.time_entries)     as TimeEntry[]
+  const healthScores     = norm(account.health_scores)    as HealthScore[]
+  const successGoals     = norm(account.success_goals)    as SuccessPlanGoal[]
+  const adoptionMetrics  = norm(account.adoption_metrics) as AdoptionMetrics[]
+  const adoptionRecords  = norm(account.feature_adoption)
+  const playbooks        = norm(account.account_playbooks)      as AccountPlaybook[]
+  const riskAssessments  = norm(account.account_risk_assessments)
+  const npsResponses     = norm(account.nps_responses)    as NPSResponse[]
+  const commercialGovernance = norm(account.commercial_governance) as CommercialGovernance[]
 
   // Identificar o playbook ativo (em progresso)
   const activePlaybook = playbooks.find((pb: any) => pb.status === 'in_progress')

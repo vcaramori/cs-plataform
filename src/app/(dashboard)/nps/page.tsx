@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { NPSDashboardClient } from './NPSDashboardClient'
 
@@ -19,5 +20,9 @@ export default async function NPSPage() {
     .eq('csm_owner_id', user.id)
     .order('name')
 
-  return <NPSDashboardClient accounts={accounts ?? []} />
+  return (
+    <Suspense>
+      <NPSDashboardClient accounts={accounts ?? []} />
+    </Suspense>
+  )
 }

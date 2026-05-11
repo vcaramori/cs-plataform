@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Pencil, Settings2 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { HealthScoreDetailsModal } from './HealthScoreDetailsModal'
+import { MeetingPrepModal } from './MeetingPrepModal'
 import { ModalSkeleton } from '@/components/LazyLoader'
 
 const HealthScoreEditModal = lazy(() => import('../../../dashboard/components/HealthScoreEditModal').then(m => ({ default: m.HealthScoreEditModal })))
@@ -122,7 +123,8 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </div>
         </div>
 
-        <div className="flex items-center gap-4 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+          <MeetingPrepModal accountId={account.id} accountName={account.name} />
           <MRRCard
             activeContract={activeContract}
             commercialGovernance={account.commercial_governance || []}
