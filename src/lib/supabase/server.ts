@@ -47,7 +47,7 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
     return null
   }
 
-  return data?.role || null
+  return (data?.role as UserRole) || null
 }
 
 export async function getUserProfile(userId: string): Promise<Profile | null> {
@@ -67,5 +67,13 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
     return null
   }
 
-  return data || null
+  if (!data) return null
+  return {
+    id: data.id,
+    full_name: data.full_name,
+    role: data.role as UserRole,
+    avatar_url: data.avatar_url,
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || '',
+  }
 }
