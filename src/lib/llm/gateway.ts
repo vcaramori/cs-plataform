@@ -3,7 +3,7 @@ import { env } from '@/lib/env'
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
-export type LLMProvider = 'gemini' | 'gemini-fallback' | 'claude-fallback' | 'ollama'
+export type LLMProvider = 'gemini' | 'gemini-fallback' | 'claude-fallback'
 
 export interface GenerateOptions {
   systemInstruction?: string

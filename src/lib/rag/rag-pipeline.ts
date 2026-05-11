@@ -406,9 +406,7 @@ ${question}`
     systemInstruction: RAG_SYSTEM_INSTRUCTION,
     allowFallback: true,
   })
-  if (provider !== 'ollama') {
-    console.log(`[RAG] Resposta gerada via: ${provider}`)
-  }
+  console.log(`[RAG] Resposta gerada via: ${provider}`)
 
   // 5. Monta lista de fontes
   const sources: RAGSource[] = finalChunks.map((chunk) => {

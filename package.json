@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "ollama:setup": "npx tsx scripts/setup-ollama.ts",
-    "ollama:start": "npx tsx scripts/start-ollama.ts",
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",

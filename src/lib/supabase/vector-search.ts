@@ -30,7 +30,7 @@ export function chunkText(text: string): string[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Gera embedding via LLM Gateway (Ollama com fallback Gemini)
+ * Gera embedding via LLM Gateway
  */
 export async function generateEmbedding(
   text: string
@@ -60,7 +60,7 @@ export async function storeEmbeddings(
     .eq('source_type', sourceType)
     .eq('source_id', sourceId)
 
-  // Gera embeddings em batches paralelos (Ollama local não tem rate limit)
+  // Gera embeddings em batches paralelos
   const BATCH_SIZE = 3
   const rows: {
     account_id: string

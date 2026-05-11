@@ -29,14 +29,10 @@ export const env = {
     proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-pro-latest',
   },
   llm: {
-    provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini' | 'ollama',
+    provider: (process.env.LLM_PROVIDER ?? 'gemini') as 'gemini',
     fallbackProvider: (process.env.LLM_FALLBACK_PROVIDER ?? 'gemini') as 'gemini' | 'claude',
     timeoutMs: parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'),
     allowFallback: process.env.LLM_ALLOW_FALLBACK !== 'false',
-    ollamaUrl: process.env.OLLAMA_URL ?? 'http://localhost:11434',
-    ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen2.5:7b',
-    ollamaEmbeddingModel: process.env.OLLAMA_EMBEDDING_MODEL ?? 'nomic-embed-text',
-    ollamaNumPredict: parseInt(process.env.OLLAMA_NUM_PREDICT ?? '512'),
   },
   claude: {
     apiKey: process.env.ANTHROPIC_API_KEY ?? '',
