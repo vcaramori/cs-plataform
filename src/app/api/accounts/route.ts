@@ -251,7 +251,7 @@ export async function POST(request: Request) {
 
     const { error: contractErr } = await supabase
       .from('contracts')
-      .insert(contractsToInsert)
+      .insert(contractsToInsert as any)
     
     if (contractErr) console.error('Error creating contracts:', contractErr)
   }

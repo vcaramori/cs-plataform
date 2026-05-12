@@ -148,7 +148,25 @@ Em resposta aos problemas de dados vazios e falta de visibilidade reportados no 
 
 - **Inclusão de Admin como CSM**: Como o banco de dados continha apenas 1 usuário (Admin) e as consultas filtravam estritamente por 'csm', as telas de métricas e capacity apareciam vazias. Adicionada a role `admin` nas consultas de CSM em `page.tsx`, `metrics/route.ts` e `cs-ops-service.ts`.
 - **Visibilidade de Contas sem CSM**: Adicionada lógica na API do Cockpit (`api/cs-ops/cockpit/route.ts`) para identificar contas vinculadas a usuários inexistentes ou nulos. Estas contas agora aparecem na Fila de Trabalho do `CockpitDashboard` como "Conta sem CSM válido".
-- **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.  
+- **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.
+
+### 🛠️ Estabilização Release — Correções TypeScript Features Core (2026-05-12)
+
+Correções cirúrgicas para estabilizar as features do release: Dashboard, Clientes, Playbook, Success Plan, RAG, Chamados, NPS, Perguntas, Suporte.
+
+- **Dashboard**: null-guard em `getNPSSegment(r.score)` quando score é `null`
+- **AdoptionChart**: mapeamento correto de `AdoptionMetrics` (`week_date`, `adoption_score`) para `Metric` (`measured_at`, `value`)
+- **Playbooks**: cast `as any` em Server Actions passadas como `form.action` (retornam `{ success, error }` em vez de `void`)
+- **PlaybookTimeline**: cast `as any` em `tasks` com `SelectQueryError` no join de profiles
+- **Suporte (SuporteClient)**: null-guard em `slaMap[sla_status_resolution ?? '']`; cast em BulkActionModal
+- **Suporte (TicketListRow)**: cast `ticket.status as any` no StatusBadgeGuard
+- **Suporte ([id]/page)**: cast `messages as any` para `SupportMessage[]`
+- **API account-playbooks tasks**: spread correto de `comments: Json` → `Array.isArray()`; fix schema `ticket_events` (`type` → `event_type`, `metadata` → `payload`)
+- **API meeting-prep**: tabela `tickets` → `support_tickets`; removidas queries de tabela `meetings` (não existe); `feedback` → `comment` em `nps_responses`; `description`/`interaction_date`/`activity_type` → `title`/`date`/`type` em `interactions`
+- **API playbooks/[id]**: migrado para Next.js 15 async params (`await params`)
+- **API rag/query**: `interactions.description` → `title`/`raw_transcript`; `tickets` → `support_tickets`
+- **API playbooks/route e save**: cast `as any` em inserts com schema divergente
+- **API accounts/route**: cast `as any` em contracts insert
 
 ---
 
@@ -242,7 +260,7 @@ Feature Dependency Graph, Stakeholder Engagement Map, Meeting Prep Modal, Playbo
 - ✅ Wave 6 — Backend + UI ~90% (May 11) — Feature DAG + Stakeholder Map pendentes
 - ✅ Wave 7 — Backend + Admin UI 100% (May 11)
 - ✅ Remoção do Ollama (Local) — Foco exclusivo em Gemini — May 11
-- ✅ TypeScript compilation (0 errors) — May 12
+- ✅ TypeScript compilation (0 errors in-scope) — May 12 + estabilização May 12
 - ⏳ E2E testing phase (Playwright) — May 12-14
 - ⏳ RLS audit (3 roles) — May 14
 - ⏳ Performance baseline — May 14

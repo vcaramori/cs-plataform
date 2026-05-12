@@ -40,8 +40,8 @@ function sortTickets(tickets: TicketWithAccount[]) {
 
 
   return [...tickets].sort((a, b) => {
-    const slaA = slaMap[a.sla_status_resolution] ?? 99
-    const slaB = slaMap[b.sla_status_resolution] ?? 99
+    const slaA = slaMap[a.sla_status_resolution ?? ''] ?? 99
+    const slaB = slaMap[b.sla_status_resolution ?? ''] ?? 99
     if (slaA !== slaB) return slaA - slaB
 
     const pA = priorityMap[a.priority] ?? 99
@@ -367,7 +367,7 @@ export function SuporteClient({
           <BulkActionModal
             open={bulkActionOpen}
             onOpenChange={setBulkActionOpen}
-            selectedTickets={filteredTickets.filter((t) => selectedIds.has(t.id))}
+            selectedTickets={filteredTickets.filter((t) => selectedIds.has(t.id)) as any}
             action={bulkActionType}
             csms={csms}
             onConfirm={handleBulkActionConfirm}

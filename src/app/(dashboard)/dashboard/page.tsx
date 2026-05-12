@@ -88,6 +88,7 @@ export default async function DashboardPage() {
         if (npsResponses && npsResponses.length > 0) {
           let promoters = 0, detractors = 0
           for (const r of npsResponses) {
+            if (r.score === null) continue
             const seg = getNPSSegment(r.score)
             if (seg === 'promoter') promoters++
             else if (seg === 'detractor') detractors++
