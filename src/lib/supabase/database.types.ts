@@ -61,12 +61,16 @@ export type Database = {
           completed_at: string | null
           completed_by: string | null
           created_at: string | null
+          description: string | null
           due_date: string | null
           id: string
+          is_custom: boolean | null
           notes: string | null
           status: string | null
-          task_id: string
+          task_id: string | null
+          task_type: string | null
           time_spent_hours: number | null
+          title: string | null
         }
         Insert: {
           account_playbook_id: string
@@ -75,12 +79,16 @@ export type Database = {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
+          description?: string | null
           due_date?: string | null
           id?: string
+          is_custom?: boolean | null
           notes?: string | null
           status?: string | null
-          task_id: string
+          task_id?: string | null
+          task_type?: string | null
           time_spent_hours?: number | null
+          title?: string | null
         }
         Update: {
           account_playbook_id?: string
@@ -89,12 +97,16 @@ export type Database = {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
+          description?: string | null
           due_date?: string | null
           id?: string
+          is_custom?: boolean | null
           notes?: string | null
           status?: string | null
-          task_id?: string
+          task_id?: string | null
+          task_type?: string | null
           time_spent_hours?: number | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -332,57 +344,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      alerts: {
-        Row: {
-          id: string
-          account_id: string
-          alert_type: string
-          severity: string
-          status: string
-          risk_score: number | null
-          risk_factors: unknown | null
-          recommended_action: string | null
-          metadata: unknown | null
-          triggered_at: string | null
-          acknowledged_at: string | null
-          acknowledged_by: string | null
-          resolved_at: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          account_id: string
-          alert_type: string
-          severity: string
-          status?: string
-          risk_score?: number | null
-          risk_factors?: unknown | null
-          recommended_action?: string | null
-          metadata?: unknown | null
-          triggered_at?: string | null
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          resolved_at?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          account_id?: string
-          alert_type?: string
-          severity?: string
-          status?: string
-          risk_score?: number | null
-          risk_factors?: unknown | null
-          recommended_action?: string | null
-          metadata?: unknown | null
-          triggered_at?: string | null
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
-          resolved_at?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
       }
       adoption_metrics: {
         Row: {
@@ -1652,6 +1613,51 @@ export type Database = {
           },
         ]
       }
+      playbook_audit_logs: {
+        Row: {
+          account_playbook_id: string
+          account_playbook_task_id: string | null
+          action: string
+          actor_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          account_playbook_id: string
+          account_playbook_task_id?: string | null
+          action: string
+          actor_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          account_playbook_id?: string
+          account_playbook_task_id?: string | null
+          action?: string
+          actor_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbook_audit_logs_account_playbook_id_fkey"
+            columns: ["account_playbook_id"]
+            isOneToOne: false
+            referencedRelation: "account_playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playbook_audit_logs_account_playbook_task_id_fkey"
+            columns: ["account_playbook_task_id"]
+            isOneToOne: false
+            referencedRelation: "account_playbook_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playbook_tasks: {
         Row: {
           action_payload: Json | null
@@ -1709,6 +1715,7 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          graph_json: Json | null
           id: string
           is_active: boolean | null
           name: string
@@ -1718,6 +1725,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
+          graph_json?: Json | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -1727,6 +1735,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
+          graph_json?: Json | null
           id?: string
           is_active?: boolean | null
           name?: string
@@ -1814,7 +1823,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          auth_id: string | null
           avatar_url: string | null
           created_at: string | null
           full_name: string | null
@@ -1823,7 +1831,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          auth_id?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -1832,7 +1839,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          auth_id?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null

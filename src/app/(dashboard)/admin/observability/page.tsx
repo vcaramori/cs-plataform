@@ -13,7 +13,7 @@ export default async function ObservabilityPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('auth_id', user.id)
+    .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'admin') redirect('/admin')

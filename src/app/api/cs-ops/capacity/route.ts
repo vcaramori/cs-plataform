@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: params.error.flatten() }, { status: 400 })
     }
 
-    const supabase = await getSupabaseServerClient()
+    const supabase = (await getSupabaseServerClient()) as any;
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('auth_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile) {

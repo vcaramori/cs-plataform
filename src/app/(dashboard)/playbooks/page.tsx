@@ -1,7 +1,9 @@
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Activity, PlayCircle, Plus, Settings2 } from 'lucide-react'
+import { Activity, PlayCircle, Plus, Settings2, Power, PowerOff } from 'lucide-react'
+import Link from 'next/link'
+import { togglePlaybookStatus, instantiatePlaybook } from './actions'
 
 export default async function PlaybooksPage() {
   const supabase = await getSupabaseServerClient()
@@ -11,6 +13,13 @@ export default async function PlaybooksPage() {
     .from('playbook_templates')
     .select('*, tasks:playbook_tasks(*)')
     .order('created_at', { ascending: false })
+
+  // Buscar uma conta para teste
+  const { data: testAccounts } = await supabase
+    .from('accounts')
+    .select('id, name')
+    .limit(1)
+  const testAccountId = testAccounts?.[0]?.id
 
   return (
     <div className="p-6 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 max-w-7xl mx-auto">
@@ -26,9 +35,9 @@ export default async function PlaybooksPage() {
             Gerencie as jornadas e fluxos de tarefas padronizados. Playbooks ativos são instanciados automaticamente em contas baseados em gatilhos de Health Score.
           </p>
         </div>
-        <button className="btn-primary flex items-center gap-2">
+        <Link href="/playbooks/builder" className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" /> Novo Playbook
-        </button>
+        </Link>
       </div>
 
       {/* TEMPLATES LIST */}
@@ -59,9 +68,25 @@ export default async function PlaybooksPage() {
                 <span className="text-xs font-medium text-content-secondary">
                   {template.tasks?.length || 0} Etapas configuradas
                 </span>
-                <button className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
-                  <Settings2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <form action={togglePlaybookStatus.bind(null, template.id, !template.is_active)}>
+                    <button type="submit" className={`p-2 rounded-full transition-colors ${template.is_active ? "text-content-secondary hover:bg-surface-background" : "text-emerald-600 hover:bg-emerald-50"}`} title={template.is_active ? "Inativar" : "Ativar"}>
+                      {template.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                    </button>
+                  </form>
+                  
+                  {testAccountId && (
+                    <form action={instantiatePlaybook.bind(null, testAccountId, template.id)}>
+                      <button type="submit" className="text-amber-600 hover:bg-amber-50 p-2 rounded-full transition-colors" title={`Disparar teste para ${testAccounts?.[0]?.name}`}>
+                        <PlayCircle className="w-4 h-4" />
+                      </button>
+                    </form>
+                  )}
+
+                  <Link href={`/playbooks/builder?id=${template.id}`} className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors" title="Editar">
+                    <Settings2 className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>

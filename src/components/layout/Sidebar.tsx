@@ -24,6 +24,8 @@ import {
   Bell,
   Target,
   SmilePlus,
+  Workflow,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -44,11 +46,14 @@ const navItems = [
   { href: '/adoption',          label: 'Adoption',       icon: Target },
   { href: '/alertas',           label: 'Smart Alerts',   icon: Bell },
   { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
+  { href: '/playbooks', label: 'Playbooks',      icon: Workflow },
+  { href: '/cs-ops/tasks', label: 'Minhas Tarefas', icon: CheckCircle2 },
 ]
 
 const settingsItems = [
   { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users, minRole: 'csm_senior' as const },
-  { href: '/cs-ops',               label: 'CS Operations',  icon: BarChart2, minRole: 'csm_senior' as const },
+  { href: '/cs-ops',               label: 'Capacity Planning',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/cs-ops/playbooks',      label: 'Performance (SLA)', icon: BarChart2, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },

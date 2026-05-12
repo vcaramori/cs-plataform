@@ -15,6 +15,7 @@ const ConnectionSchema = z.object({
 })
 
 const PlaybookFlowSchema = z.object({
+  id: z.string().uuid().optional(),
   blocks: z.array(BlockSchema),
   connections: z.array(ConnectionSchema),
   metadata: z.object({
@@ -72,26 +73,39 @@ export async function POST(request: Request) {
       )
     }
 
-    // Insert playbook template
-    const { data, error } = await supabase
-      .from('playbook_templates')
-      .insert({
-        name: flow.metadata.name,
-        description: flow.metadata.description || '',
-        trigger: flow.metadata.trigger,
-        status: 'draft',
-        created_by: user.id,
-        ui_flow_json: flow,
-      })
-      .select()
-      .single()
+    // Insert or Update playbook template
+    const payload = {
+      name: flow.metadata.name,
+      description: flow.metadata.description || '',
+      trigger_condition: flow.metadata.trigger,
+      is_active: true, // Default to active for now
+      graph_json: flow,
+    }
+
+    let result;
+    if (flow.id) {
+      result = await supabase
+        .from('playbook_templates')
+        .update(payload)
+        .eq('id', flow.id)
+        .select()
+        .single()
+    } else {
+      result = await supabase
+        .from('playbook_templates')
+        .insert(payload)
+        .select()
+        .single()
+    }
+
+    const { data, error } = result
 
     if (error) {
-      console.error('[playbooks/save] Insert Error:', error)
+      console.error('[playbooks/save] DB Error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json(data, { status: flow.id ? 200 : 201 })
   } catch (error) {
     console.error('[playbooks/save] Error:', error)
     return NextResponse.json(

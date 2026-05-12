@@ -157,13 +157,20 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
             )} 
           />
           
-          {isAllDone && (
+          {isAllDone ? (
             <button
               onClick={handleCompletePlaybook}
               disabled={isCompleting}
               className="w-full mt-4 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
             >
               {isCompleting ? 'Processando...' : 'Mover para Timeline'} <ArrowRight className="w-3 h-3" />
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push(`/playbooks/execution/${playbook.id}`)}
+              className="w-full mt-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+            >
+              Executar Playbook <ArrowRight className="w-3 h-3" />
             </button>
           )}
         </div>
@@ -186,14 +193,14 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold truncate">{task.task?.title}</span>
+                  <span className="text-xs font-semibold truncate">{task.title || task.task?.title}</span>
                   {task.task?.assigned_role && (
                     <Badge variant="secondary" className="text-[9px] py-0.5">
                       {task.task.assigned_role}
                     </Badge>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{task.task?.description}</p>
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{task.description || task.task?.description}</p>
                 {task.time_spent_hours && (
                   <p className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-1">
                     ⏱️ {task.time_spent_hours}h gastos
@@ -201,7 +208,7 @@ export function PlaybookWidget({ playbook }: { playbook: any }) {
                 )}
               </div>
               <div className="shrink-0">
-                {getTaskIcon(task.task?.task_type)}
+                {getTaskIcon(task.task_type || task.task?.task_type)}
               </div>
             </div>
           ))}

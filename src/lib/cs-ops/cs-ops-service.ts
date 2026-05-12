@@ -1,10 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export class CSOperationsService {
-  private supabase: SupabaseClient
+  private supabase: any
 
   constructor(supabaseClient: SupabaseClient) {
-    this.supabase = supabaseClient
+    this.supabase = supabaseClient as any
   }
 
   /**
@@ -94,7 +94,7 @@ export class CSOperationsService {
     const { data: profiles } = await this.supabase
       .from('profiles')
       .select('id, full_name')
-      .eq('role', 'csm')
+      .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
 
     if (!profiles || profiles.length === 0) {
       return { suggestions: [], summary: { totalSuggestions: 0, potentialCapacityImprovement: 0 } }

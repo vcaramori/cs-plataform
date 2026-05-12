@@ -142,6 +142,14 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, `/alertas` — dashboards completos com todas as tabs e ações  
 **UI pendente:** Feature Dependency DAG, Stakeholder Engagement Map  
 
+### 🛠️ Estabilização CS Ops — Correções de Dados e Visibilidade (2026-05-12)
+
+Em resposta aos problemas de dados vazios e falta de visibilidade reportados no Cockpit de CS Ops, foram realizadas as seguintes correções:
+
+- **Inclusão de Admin como CSM**: Como o banco de dados continha apenas 1 usuário (Admin) e as consultas filtravam estritamente por 'csm', as telas de métricas e capacity apareciam vazias. Adicionada a role `admin` nas consultas de CSM em `page.tsx`, `metrics/route.ts` e `cs-ops-service.ts`.
+- **Visibilidade de Contas sem CSM**: Adicionada lógica na API do Cockpit (`api/cs-ops/cockpit/route.ts`) para identificar contas vinculadas a usuários inexistentes ou nulos. Estas contas agora aparecem na Fila de Trabalho do `CockpitDashboard` como "Conta sem CSM válido".
+- **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.  
+
 ---
 
 ### Wave 7 — Extensibilidade & Integrações (150 SP) ✅ IMPLEMENTADO

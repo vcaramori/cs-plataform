@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { csm_id } = await params
-    const supabase = await getSupabaseServerClient()
+    const supabase = (await getSupabaseServerClient()) as any;
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

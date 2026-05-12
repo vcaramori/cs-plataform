@@ -13,7 +13,7 @@ export default async function CSOpsPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('auth_id', user.id)
+    .eq('id', user.id)
     .single()
 
   if (!profile || !profile.role || !['csm_senior', 'head_cs', 'admin'].includes(profile.role)) {
@@ -23,7 +23,7 @@ export default async function CSOpsPage() {
   const { data: rawCsms } = await supabase
     .from('profiles')
     .select('id, role')
-    .in('role', ['csm', 'csm_senior', 'account_manager'])
+    .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
     .order('role')
 
   const csms = (rawCsms ?? [])

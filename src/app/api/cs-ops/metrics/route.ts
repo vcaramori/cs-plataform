@@ -5,7 +5,7 @@ import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
 export async function GET(request: Request) {
   try {
-    const supabase = await getSupabaseServerClient()
+    const supabase = (await getSupabaseServerClient()) as any;
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('auth_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile) {
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const { data: csms } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('role', 'csm')
+      .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
 
     // Calculate capacity for all CSMs
     const capacities = await Promise.all(

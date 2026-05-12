@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -21,10 +21,13 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { toast } from 'sonner'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Label } from '@/components/ui/label'
 import { PageContainer } from '@/components/ui/page-container'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import {
@@ -229,7 +232,35 @@ function BuilderCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES)
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES)
   const [saveOpen, setSaveOpen] = useState(false)
+
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id')
+
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/playbooks/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.graph_json) {
+            setNodes(data.graph_json.blocks.map((b: any) => ({
+              id: b.id,
+              type: 'playbookNode',
+              position: b.position,
+              data: { label: NODE_DEFS[b.type as NodeDef]?.label, nodeType: b.type, config: b.config },
+            })))
+            setEdges(data.graph_json.connections.map((c: any) => ({
+              id: `e-${c.from}-${c.to}`,
+              source: c.from,
+              target: c.to,
+              animated: true,
+            })))
+          }
+        })
+        .catch(err => console.error('Error loading playbook:', err))
+    }
+  }, [id, setNodes, setEdges])
   const [saving, setSaving] = useState(false)
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
 
   const nodeTypes: NodeTypes = useMemo(() => ({ playbookNode: PlaybookNode }), [])
 
@@ -280,6 +311,7 @@ function BuilderCanvas() {
     setSaving(true)
     try {
       const body = {
+        id: id || undefined,
         blocks: nodes.map(n => ({
           id: n.id,
           type: n.data.nodeType,
@@ -347,7 +379,7 @@ function BuilderCanvas() {
         <aside className="w-52 shrink-0 bg-surface-card border border-border-divider rounded-2xl p-4 space-y-5 overflow-y-auto">
           {SIDEBAR_GROUPS.map(group => (
             <div key={group.label}>
-              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-content-secondary/60 mb-2">{group.label}</p>
+              <p className="text-xs font-black uppercase tracking-[0.1em] text-content-secondary/60 mb-2">{group.label}</p>
               <div className="space-y-2">
                 {group.items.map(type => {
                   const def = NODE_DEFS[type]
@@ -376,7 +408,7 @@ function BuilderCanvas() {
             </div>
           ))}
           <div className="pt-3 border-t border-border-divider">
-            <p className="text-[8px] text-content-secondary/40 leading-relaxed">
+            <p className="text-xs text-content-secondary/40 leading-relaxed">
               Arraste blocos para o canvas. Conecte saídas (↓) a entradas (↑) para criar o fluxo.
             </p>
           </div>
@@ -396,6 +428,7 @@ function BuilderCanvas() {
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            onNodeClick={(_, node) => setSelectedNode(node)}
             fitView
             snapToGrid
             snapGrid={[16, 16]}
@@ -419,6 +452,124 @@ function BuilderCanvas() {
           </ReactFlow>
         </div>
       </div>
+
+      <Sheet open={!!selectedNode} onOpenChange={(open) => !open && setSelectedNode(null)}>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px] bg-surface-card border-l border-border-divider">
+          <SheetHeader>
+            <SheetTitle className="text-content-primary">
+              Configurar {selectedNode && NODE_DEFS[selectedNode.data.nodeType as NodeDef]?.label}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="py-6">
+            {selectedNode?.data.nodeType === 'start' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-content-primary">Tipo de Gatilho</Label>
+                  <Select defaultValue="manual">
+                    <SelectTrigger className="w-full h-10 rounded-xl border-border-divider bg-surface-background">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="automatic">Baseado em Dados (Automático)</SelectItem>
+                      <SelectItem value="scheduled">Agendado (Temporal)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2 border-t border-border-divider pt-4 mt-4">
+                  <Label className="text-xs font-bold text-content-primary">Regras do Gatilho</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Select defaultValue="health_score">
+                      <SelectTrigger className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-surface-card border-border-divider">
+                        <SelectItem value="health_score">Health Score</SelectItem>
+                        <SelectItem value="sentiment">Sentimento</SelectItem>
+                        <SelectItem value="inactivity">Inatividade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select defaultValue="lt">
+                      <SelectTrigger className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-surface-card border-border-divider">
+                        <SelectItem value="lt">Menor que</SelectItem>
+                        <SelectItem value="gt">Maior que</SelectItem>
+                        <SelectItem value="eq">Igual a</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Input defaultValue="50" className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedNode?.data.nodeType !== 'start' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-content-primary">Configurações da Ação</Label>
+                  <p className="text-content-secondary text-xs">
+                    Configure os parâmetros para a ação de {NODE_DEFS[selectedNode?.data.nodeType as NodeDef]?.label}.
+                  </p>
+                </div>
+                
+                {selectedNode?.data.nodeType === 'send_email' && (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-content-primary">Template de E-mail</Label>
+                      <Select defaultValue="default">
+                        <SelectTrigger className="w-full h-9 rounded-xl border-border-divider bg-surface-background text-[10px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-surface-card border-border-divider">
+                          <SelectItem value="default">E-mail Padrão de Boas-vindas</SelectItem>
+                          <SelectItem value="alert">Aviso de Queda de Saúde</SelectItem>
+                          <SelectItem value="followup">Follow-up de Inatividade</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-content-primary">Assunto (Sobrescrita)</Label>
+                      <Input placeholder="Assunto do e-mail..." className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]" />
+                    </div>
+                  </div>
+                )}
+                
+                {selectedNode?.data.nodeType === 'create_task' && (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-content-primary">Título da Tarefa</Label>
+                      <Input placeholder="Ex: Ligar para o cliente" className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-content-primary">Prazo (Dias relativos)</Label>
+                      <Input type="number" defaultValue="1" className="h-9 rounded-xl border-border-divider bg-surface-background text-[10px]" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t border-border-divider">
+            <Button variant="ghost" onClick={() => setSelectedNode(null)} className="h-9 rounded-xl text-[10px] font-black uppercase">
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                toast.success('Configuração salva com sucesso!')
+                setSelectedNode(null)
+              }}
+              className="h-9 rounded-xl bg-plannera-orange hover:bg-plannera-orange/90 text-white text-[10px] font-black uppercase px-5"
+            >
+              Salvar
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <SaveDialog
         open={saveOpen}

@@ -12,6 +12,7 @@ import { AdoptionChart } from './AdoptionChart'
 import { PlaybookWidget } from './PlaybookWidget'
 import { calculateNetMRR, calculateCurrentDiscount } from '@/lib/utils/contract-utils'
 import Link from 'next/link'
+import { StartPlaybookDialog } from './StartPlaybookDialog'
 import {
   History,
   TrendingUp,
@@ -26,6 +27,7 @@ import {
   Settings2,
   BrainCircuit,
   AlertTriangle,
+  PlayCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -252,9 +254,19 @@ export function AccountDetailPageClient({
           )}
 
           {/* Active Playbook (Se houver) */}
-          {activePlaybook && (
+          {activePlaybook ? (
             <section className="space-y-6">
               <PlaybookWidget playbook={activePlaybook} />
+            </section>
+          ) : (
+            <section className="space-y-6">
+              <div className="flex items-center gap-4 px-1 h-12">
+                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
+                  <PlayCircle className="w-5 h-5" />
+                </div>
+                <h2 className="h2-section !text-base">Playbooks</h2>
+              </div>
+              <StartPlaybookDialog accountId={id} accountName={accountName} />
             </section>
           )}
 

@@ -15,6 +15,8 @@ type User = {
   email: string
   created_at: string
   last_sign_in_at: string | null
+  full_name: string
+  role: string
 }
 
 export default function UsersPage() {
@@ -184,10 +186,17 @@ export default function UsersPage() {
                               <Mail className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-content-primary text-sm font-bold tracking-tight uppercase group-hover:text-plannera-orange transition-colors">{user.email}</p>
-                              <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">
-                                {user.last_sign_in_at ? `Atividade: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Credenciais Pendentes'}
+                              <p className="text-content-primary text-sm font-bold tracking-tight uppercase group-hover:text-plannera-orange transition-colors">
+                                {user.full_name !== 'N/A' ? user.full_name : user.email}
                               </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                  {user.role}
+                                </span>
+                                <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest opacity-60">
+                                  {user.last_sign_in_at ? `Atividade: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Credenciais Pendentes'}
+                                </p>
+                              </div>
                             </div>
                           </div>
                           <div className="text-content-primary text-[10px] font-mono font-bold px-3 py-1 rounded bg-surface-card border border-border-divider shadow-sm">TOKEN: {user.id.split('-')[0].toUpperCase()}</div>

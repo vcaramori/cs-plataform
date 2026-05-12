@@ -40,7 +40,7 @@ export async function GET(
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('auth_id', user.id)
+      .eq('id', user.id)
       .single()
 
     const isCsmOwner = profile?.id === account.csm_owner_id

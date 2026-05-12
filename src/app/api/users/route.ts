@@ -14,18 +14,28 @@ export async function GET() {
   })
 
   const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers()
-
+  
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Format the users to return only necessary info
-  const formattedUsers = users.map(u => ({
-    id: u.id,
-    email: u.email,
-    created_at: u.created_at,
-    last_sign_in_at: u.last_sign_in_at
-  }))
+  // Fetch profiles to get name and role
+  const { data: profiles } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+
+  // Format the users to return necessary info including profile data
+  const formattedUsers = users.map(u => {
+    const profile = profiles?.find(p => p.id === u.id)
+    return {
+      id: u.id,
+      email: u.email,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at,
+      full_name: profile?.full_name || 'N/A',
+      role: profile?.role || 'user'
+    }
+  })
 
   return NextResponse.json(formattedUsers)
 }

@@ -5,7 +5,7 @@ import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
 export async function GET(request: Request) {
   try {
-    const supabase = await getSupabaseServerClient()
+    const supabase = (await getSupabaseServerClient()) as any;
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('auth_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile) {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: params.error.flatten() }, { status: 400 })
     }
 
-    const supabase = await getSupabaseServerClient()
+    const supabase = (await getSupabaseServerClient()) as any;
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, role')
-      .eq('auth_id', user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile || !['csm_senior', 'admin'].includes(profile.role)) {

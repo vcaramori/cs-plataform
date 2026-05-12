@@ -13,6 +13,7 @@ import {
   ArrowRightLeft, Loader2, TrendingUp, Clock, Star
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CockpitDashboard } from './CockpitDashboard'
 
 interface CSM { id: string; role: string }
 
@@ -62,11 +63,19 @@ const WORKLOAD_LABELS = {
   overloaded: 'Sobrecarregado',
 }
 
+interface CockpitData {
+  accountsHealth: any[]
+  delayedPlaybooks: any[]
+  openRisks: any[]
+  unassignedAccounts: any[]
+}
+
 export function CSOpsClient({ csms }: { csms: CSM[] }) {
-  const [tab, setTab] = useState('capacity')
+  const [tab, setTab] = useState('cockpit')
   const [capacities, setCapacities] = useState<CapacityData[]>([])
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [suggestions, setSuggestions] = useState<RebalanceSuggestion[]>([])
+  const [cockpitData, setCockpitData] = useState<CockpitData | null>(null)
   const [loading, setLoading] = useState(true)
   const [rebalancing, setRebalancing] = useState(false)
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set())
@@ -74,9 +83,10 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [metricsRes, rebalRes] = await Promise.all([
+      const [metricsRes, rebalRes, cockpitRes] = await Promise.all([
         fetch('/api/cs-ops/metrics'),
         fetch('/api/cs-ops/rebalancer'),
+        fetch('/api/cs-ops/cockpit'),
       ])
 
       const capacityResults = await Promise.all(
@@ -88,6 +98,7 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
         const rd = await rebalRes.json()
         setSuggestions(rd.suggestions ?? [])
       }
+      if (cockpitRes.ok) setCockpitData(await cockpitRes.json())
 
       setCapacities(capacityResults.filter(Boolean))
     } catch {
@@ -152,6 +163,7 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-surface-card border border-border-divider rounded-2xl p-1 h-auto gap-1">
           {[
+            { value: 'cockpit', label: 'Atenção Necessária' },
             { value: 'capacity', label: 'Capacity Planning' },
             { value: 'rebalancer', label: `Rebalancer${suggestions.length ? ` (${suggestions.length})` : ''}` },
           ].map(t => (
@@ -164,6 +176,16 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
             </TabsTrigger>
           ))}
         </TabsList>
+
+        <TabsContent value="cockpit" className="mt-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-plannera-orange" />
+            </div>
+          ) : (
+            <CockpitDashboard data={cockpitData} onReload={load} />
+          )}
+        </TabsContent>
 
         {/* Capacity Tab */}
         <TabsContent value="capacity" className="mt-6">
