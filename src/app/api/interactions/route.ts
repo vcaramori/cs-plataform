@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { generateText } from '@/lib/llm/gateway'
 import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
+import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 
 const InteractionSchema = z.object({
   account_id: z.string().uuid(),
@@ -91,6 +92,13 @@ export async function POST(request: Request) {
   runPredictiveRiskAnalysis(parsed.data.account_id).catch(err => {
     console.error('[Background AI] Error in predictive risk:', err)
   })
+
+  // Trigger Shadow Score AI quando for uma reunião (evento de alto impacto)
+  if (parsed.data.type === 'meeting') {
+    runAutomatedAccountAnalysis(parsed.data.account_id, user.id, 'meeting_trigger').catch(err => {
+      console.error('[Background AI] Shadow Score error on meeting trigger:', err)
+    })
+  }
 
   return NextResponse.json(data, { status: 201 })
 }

@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { buildResolutionSLAFreeze, logSLAEvent } from '@/lib/support/lifecycle'
 import { sendCSATEmail } from '@/lib/support/csat-service'
+import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 
 const PatchSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'closed', 'reopened']).optional(),
@@ -50,6 +51,7 @@ export async function PATCH(
 ) {
   const { id } = await params
   const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const body = await request.json()
 
   const parsed = PatchSchema.safeParse(body)
@@ -101,6 +103,12 @@ export async function PATCH(
       sendCSATEmail(id).catch(err => {
         console.error(`[CSAT Trigger] Failed to send email for ticket ${id}:`, err)
       })
+      // Trigger Shadow Score AI — chamado fechado é sinal forte de impacto na saúde
+      if (ticket.account_id) {
+        runAutomatedAccountAnalysis(ticket.account_id, user?.id, 'ticket_close_trigger').catch(err => {
+          console.error(`[Background AI] Shadow Score error on ticket close ${id}:`, err)
+        })
+      }
     }
   }
 

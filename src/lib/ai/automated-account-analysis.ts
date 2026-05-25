@@ -7,7 +7,11 @@ import { getHealthClassification } from '../health/utils'
  * Executa a análise unificada de risco e saúde do cliente.
  * Chamada automaticamente após interações críticas ou sincronização de esforço.
  */
-export async function runAutomatedAccountAnalysis(accountId: string, userId: string) {
+export async function runAutomatedAccountAnalysis(
+  accountId: string,
+  userId?: string,
+  sourceType: string = 'effort_sync_auto'
+) {
   console.log(`[AI Analysis] Iniciando análise unificada para a conta ${accountId}`)
   
   const supabase = getSupabaseAdminClient()
@@ -32,8 +36,8 @@ export async function runAutomatedAccountAnalysis(accountId: string, userId: str
         shadow_score: healthResult.score,
         shadow_reasoning: healthResult.justification,
         classification: getHealthClassification(healthResult.score),
-        source_type: 'effort_sync_auto',
-        created_by: userId,
+        source_type: sourceType,
+        created_by: userId ?? null,
         sentiment_component: healthResult.score, // Atribuímos ao componente de relacionamento
         ticket_component: 50, // Valores base para evitar NULL no gráfico/gauge
         engagement_component: 50,
