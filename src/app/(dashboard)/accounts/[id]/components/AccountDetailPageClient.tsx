@@ -32,7 +32,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn, formatCurrency } from '@/lib/utils'
-
+import { Text } from '@/components/ui/typography'
 import { Card, CardContent } from "@/components/ui/card"
 import type { 
   Contract, 
@@ -103,7 +103,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
   const hasDiscount = discount > 0
 
   return (
-    <Card className="rounded-2xl p-5 space-y-5 border-border shadow-md hover:bg-accent/10 transition-colors">
+    <Card className="rounded-2xl p-5 space-y-5 border-border-divider shadow-md hover:bg-accent/10 transition-colors">
 
       {/* Cabeçalho do contrato */}
       <div className="flex items-center justify-between gap-3">
@@ -111,14 +111,14 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
           <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-primary/10 border border-indigo-100 dark:border-primary/20">
             <FileText className="w-4 h-4 text-primary shrink-0" />
           </div>
-          <span className="label-premium !text-[11px] truncate">
+          <Text variant="primary" className="!text-[11px] font-black uppercase tracking-widest truncate">
             {contract.description || contract.service_type || 'Draft Contratual'}
-          </span>
+          </Text>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="neutral" className={cn(
             "text-[9px] font-black uppercase tracking-widest border",
-            statusColors[contract.status] ?? 'bg-accent/30 text-muted-foreground'
+            statusColors[contract.status] ?? 'bg-accent/30 text-content-secondary'
           )}>
             {statusLabels[contract.status] ?? contract.status}
           </Badge>
@@ -131,23 +131,23 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-success" />
-            <span className="label-premium !text-[9px] opacity-60">MRR Líquido R$</span>
+            <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">MRR Líquido R$</Text>
           </div>
-          <p className="text-foreground text-base font-black tracking-tighter tabular-nums">
+          <Text variant="primary" className="text-base font-black tracking-tighter tabular-nums">
             {Math.round(netMRR).toLocaleString('pt-BR')}
-          </p>
+          </Text>
           {hasDiscount && (
-            <p className="label-premium !text-[8px] mt-2 opacity-60 line-through">
+            <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest mt-2 opacity-60 line-through select-none">
               Nominal: {Math.round(contract.mrr).toLocaleString('pt-BR')}
-            </p>
+            </Text>
           )}
         </div>
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-3.5 h-3.5 text-warning" />
-            <span className="label-premium !text-[9px] opacity-60">Renovação</span>
+            <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">Renovação</Text>
           </div>
-          <p className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
+          <Text className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
             {contract.renewal_date
               ? (() => {
                   const parts = contract.renewal_date.split('T')[0].split('-')
@@ -158,11 +158,11 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
                   return contract.renewal_date
                 })()
               : 'Permanent'}
-          </p>
+          </Text>
           {days !== null && (
-            <p className="label-premium !text-[8px] mt-2 opacity-60">
+            <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest mt-2 opacity-60 select-none">
               {days < 0 ? `${Math.abs(days)}d expirado` : `T-minus ${days}d`}
-            </p>
+            </Text>
           )}
         </div>
       </div>
@@ -170,8 +170,8 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
       {/* Horas contratadas */}
       {contract.contracted_hours_monthly > 0 && (
         <div className="flex items-center justify-between px-2 pt-1">
-          <span className="label-premium !text-[9px] opacity-60">Horas Contratadas</span>
-          <span className="text-foreground text-[10px] font-black tracking-tight">{contract.contracted_hours_monthly}h / Mês</span>
+          <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">Horas Contratadas</Text>
+          <Text variant="primary" className="text-[10px] font-black tracking-tight">{contract.contracted_hours_monthly}h / Mês</Text>
         </div>
       )}
     </Card>
@@ -210,9 +210,9 @@ export function AccountDetailPageClient({
               <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
                 <History className="w-5 h-5" />
               </div>
-              <h2 className="h2-section !text-base">Linha do Tempo</h2>
+              <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Linha do Tempo</Text>
             </div>
-            <span className="label-premium !text-[9px] opacity-60">Cognitive Stream</span>
+            <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">Cognitive Stream</Text>
           </div>
           <div className="pr-3 overflow-x-hidden">
             <AccountUnifiedTimeline
@@ -230,7 +230,7 @@ export function AccountDetailPageClient({
         </div>
 
         {/* COLUNA 2 — Valor, Adoção & Atrito */}
-        <div className="space-y-12 lg:border-x lg:border-border lg:px-10">
+        <div className="space-y-12 lg:border-x lg:border-border-divider lg:px-10">
 
           {/* AI Risk Alert */}
           {latestRiskAssessment && (latestRiskAssessment.sentiment_label === 'negative' || latestRiskAssessment.sentiment_label === 'at-risk') && (
@@ -242,19 +242,19 @@ export function AccountDetailPageClient({
                   </div>
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-black text-destructive tracking-tight uppercase">
+                      <Text variant="destructive" className="text-sm font-black tracking-tight uppercase">
                         Alerta IA: {latestRiskAssessment.sentiment_label === 'at-risk' ? 'Risco de Churn' : 'Atrito Severo'}
-                      </h3>
-                      <Badge variant="neutral" className="bg-destructive/20 text-destructive font-black">
+                      </Text>
+                      <Badge variant="neutral" className="bg-destructive/20 text-destructive font-black border-none">
                         Score: {latestRiskAssessment.risk_score}/100
                       </Badge>
                     </div>
-                    <p className="text-sm text-red-900 dark:text-red-200 opacity-80 leading-relaxed font-medium">
+                    <Text variant="secondary" className="text-sm leading-relaxed font-medium">
                       {latestRiskAssessment.ai_reasoning}
-                    </p>
-                    <div className="text-[10px] uppercase tracking-wider font-bold text-destructive/50 pt-2">
+                    </Text>
+                    <Text variant="secondary" className="text-[10px] uppercase tracking-wider font-bold opacity-50 pt-2 select-none">
                       Analisado em: {new Date(latestRiskAssessment.analyzed_at).toLocaleString('pt-BR')}
-                    </div>
+                    </Text>
                   </div>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export function AccountDetailPageClient({
                 <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
                   <PlayCircle className="w-5 h-5" />
                 </div>
-                <h2 className="h2-section !text-base">Playbooks</h2>
+                <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Playbooks</Text>
               </div>
               <StartPlaybookDialog accountId={id} accountName={accountName} />
             </section>
@@ -285,10 +285,10 @@ export function AccountDetailPageClient({
                 <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-success/10 text-emerald-600 dark:text-success border border-success-100 dark:border-success-500/20 shadow-sm">
                   <Target className="w-5 h-5" />
                 </div>
-                <h2 className="h2-section !text-base">Success Plan</h2>
+                <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Success Plan</Text>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px]">
+                <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px] border-none">
                   Validado
                 </Badge>
                 <Link href={`/accounts/${id}/success-plan`}>
@@ -307,7 +307,7 @@ export function AccountDetailPageClient({
               <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
                 <TrendingUp className="w-5 h-5" />
               </div>
-              <h2 className="h2-section !text-base">Adoção Executiva</h2>
+              <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Adoção Executiva</Text>
             </div>
             <AdoptionExecutiveSection accountId={id} accountName={accountName} />
             
@@ -328,7 +328,7 @@ export function AccountDetailPageClient({
               <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
                 <Users className="w-5 h-5" />
               </div>
-              <h2 className="h2-section !text-base">Mapeamento de Poder</h2>
+              <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Mapeamento de Poder</Text>
             </div>
             <ContactsPowerMap contacts={contacts} accountId={id} />
           </section>
@@ -340,11 +340,11 @@ export function AccountDetailPageClient({
                 <div className="p-2.5 rounded-xl bg-surface-background text-content-secondary border border-border-divider shadow-sm">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <h2 className="h2-section !text-base">Governança</h2>
+                <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Governança</Text>
               </div>
               <Link
                 href={`/accounts/${id}/sla`}
-                className="label-premium !text-[10px] text-primary hover:text-primary/80 transition-all flex items-center gap-2 group"
+                className="text-[10px] text-primary hover:text-primary/80 font-black uppercase tracking-widest transition-all flex items-center gap-2 group"
               >
                 <Settings2 className="w-4 h-4 group-hover:rotate-45 transition-transform" /> 
                 SLA
@@ -352,14 +352,12 @@ export function AccountDetailPageClient({
             </div>
 
             {displayContracts.length === 0 ? (
-              <Card className="p-10 border-dashed border-border text-center shadow-none bg-accent/5">
-
-                <p className="label-premium opacity-60 !text-[10px]">Sem dados contratuais registrados</p>
+              <Card className="p-10 border-dashed border-border-divider text-center shadow-none bg-accent/5">
+                <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-widest opacity-60 select-none">Sem dados contratuais registrados</Text>
               </Card>
             ) : (
               <div className="space-y-5">
                 {displayContracts.map((contract: Contract) => (
-
                   <CompactContractCard 
                     key={contract.id} 
                     contract={contract} 
@@ -377,7 +375,7 @@ export function AccountDetailPageClient({
               <div className="p-2.5 rounded-xl bg-surface-background text-content-secondary border border-border-divider shadow-sm">
                 <FolderOpen className="w-5 h-5" />
               </div>
-              <h2 className="h2-section !text-base opacity-60">Evidence Center</h2>
+              <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider opacity-60 select-none">Evidence Center</Text>
             </div>
             <QuickDocuments accountName={accountName} />
           </section>

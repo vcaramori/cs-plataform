@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Card } from "@/components/ui/card"
+import { Text } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'
 import { DollarSign, Calendar } from 'lucide-react'
 import {
@@ -25,15 +26,15 @@ export function RenewalCard({ accountId, activeContract, commercialGovernance }:
   const renewalDate = activeContract?.renewal_date ? new Date(activeContract.renewal_date + 'T12:00:00') : null
   const daysToRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : null
 
-  const renewalColor = !daysToRenewal ? 'text-muted-foreground' :
+  const renewalColor = !daysToRenewal ? 'text-content-secondary' :
     daysToRenewal < 30 ? 'text-destructive font-black' :
-      daysToRenewal < 90 ? 'text-warning' : 'text-success'
+      daysToRenewal < 90 ? 'text-accent font-black' : 'text-emerald-500 font-black'
 
   const cardContent = (
     <Card 
       variant="glass" 
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shadow-lg transition-all duration-300",
+        "flex items-center gap-3 px-4 py-3 rounded-2xl border-border-divider/50 shadow-lg transition-all duration-300",
         "cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/30 hover:scale-[1.02] active:scale-95"
       )}
     >
@@ -41,10 +42,10 @@ export function RenewalCard({ accountId, activeContract, commercialGovernance }:
         <Calendar className="w-5 h-5 text-warning" />
       </div>
       <div className="flex flex-col">
-        <span className="label-premium !text-[9px] opacity-50 mb-1">Renovação</span>
-        <span className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
+        <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest mb-1 opacity-50 select-none">Renovação</Text>
+        <Text className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
           {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
-        </span>
+        </Text>
       </div>
     </Card>
   )
@@ -77,33 +78,33 @@ export function MRRCard({ activeContract, commercialGovernance }: {
   const currentDiscount = calculateCurrentDiscount(activeContract, commercialGovernance)
 
   return (
-    <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shrink-0 shadow-lg">
+    <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border-divider/50 shrink-0 shadow-lg">
       <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-success/10 flex items-center justify-center border border-success-100 dark:border-success-500/20">
         <DollarSign className="w-5 h-5 text-success" />
       </div>
       <div className="flex flex-col">
-        <span className="label-premium !text-[9px] opacity-50 mb-1">Receita Mensal (Líquida)</span>
+        <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest mb-1 opacity-50 select-none">Receita Mensal (Líquida)</Text>
         <TooltipProvider>
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
-              <span className="text-xl font-black text-foreground tracking-tighter tabular-nums cursor-help">
+              <Text variant="primary" className="text-xl font-black tracking-tighter tabular-nums cursor-help">
                 {formatCurrency(netMRR)}
-              </span>
+              </Text>
             </TooltipTrigger>
             {currentDiscount > 0 && (
-              <TooltipContent side="bottom" className="bg-background border-border shadow-2xl p-3 space-y-2">
+              <TooltipContent side="bottom" className="bg-surface-card border-border-divider shadow-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between gap-8">
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Valor Nominal</span>
-                  <span className="text-[10px] font-black text-foreground">{formatCurrency(activeContract.mrr)}</span>
+                  <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">Valor Nominal</Text>
+                  <Text variant="primary" className="text-[10px] font-black">{formatCurrency(activeContract.mrr)}</Text>
                 </div>
                 <div className="flex items-center justify-between gap-8">
-                  <span className="text-[10px] text-warning font-bold uppercase tracking-widest">Desconto Ativo</span>
-                  <span className="text-[10px] font-black text-warning">-{formatCurrency(currentDiscount)}</span>
+                  <Text variant="accent" className="text-[10px] font-bold uppercase tracking-widest">Desconto Ativo</Text>
+                  <Text variant="accent" className="text-[10px] font-black">-{formatCurrency(currentDiscount)}</Text>
                 </div>
-                <div className="h-px bg-border/50" />
+                <div className="h-px bg-border-divider/50" />
                 <div className="flex items-center justify-between gap-8">
-                  <span className="text-[10px] text-success font-bold uppercase tracking-widest">Real MRR</span>
-                  <span className="text-[10px] font-black text-success">{formatCurrency(netMRR)}</span>
+                  <Text className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Real MRR</Text>
+                  <Text className="text-[10px] font-black text-emerald-500">{formatCurrency(netMRR)}</Text>
                 </div>
               </TooltipContent>
             )}

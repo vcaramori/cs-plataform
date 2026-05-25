@@ -2,6 +2,7 @@
 
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Text } from '@/components/ui/typography'
 import { Loader2, Zap, Rocket, AlertTriangle, Target, ChevronRight, HelpCircle, Clock, PieChart, CircleSlash, ShieldAlert, ShieldCheck, TrendingDown, Info } from 'lucide-react'
 import { ModalSkeleton } from '@/components/LazyLoader'
 
@@ -96,14 +97,14 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-content-primary text-sm font-black uppercase tracking-widest leading-none">Adoção Funcional</h3>
+                <Text variant="primary" className="text-sm font-black uppercase tracking-widest leading-none select-none">Adoção Funcional</Text>
                 {planSummary && (
                   <Badge className="bg-surface-background text-content-secondary border-none text-[8px] font-black uppercase tracking-tighter h-4 px-2 whitespace-nowrap">
                     Plano: {planSummary.plan_name}
                   </Badge>
                 )}
               </div>
-              <p className="text-content-secondary text-[9px] font-bold uppercase tracking-tight">Utilização contratual do produto</p>
+              <Text variant="secondary" className="!text-[9px] font-bold uppercase tracking-tight select-none">Utilização contratual do produto</Text>
             </div>
           </div>
           <Suspense fallback={<ModalSkeleton />}>
@@ -113,47 +114,47 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
 
         {total === 0 ? (
           <div className="py-8 text-center border border-dashed border-border-divider rounded-2xl">
-            <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest italic">Nenhum plano configurado no contrato.</p>
+            <Text variant="secondary" className="!text-[10px] font-bold uppercase tracking-widest italic select-none">Nenhum plano configurado no contrato.</Text>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-content-secondary text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Text variant="secondary" as="span" className="!text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 select-none">
                   <Target className="w-3 h-3 text-plannera-ds shrink-0" /> Total
-                </span>
-                <p className="text-content-primary text-2xl font-black leading-none">{total}</p>
+                </Text>
+                <Text variant="primary" className="text-2xl font-black leading-none">{total}</Text>
               </div>
 
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-success/80 text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Text as="span" className="text-emerald-500 !text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 select-none">
                   <Rocket className="w-3 h-3 shrink-0" /> Adotadas
-                </span>
-                <p className="text-content-primary text-2xl font-black leading-none">{inUse}</p>
+                </Text>
+                <Text variant="primary" className="text-2xl font-black leading-none">{inUse}</Text>
               </div>
 
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-content-secondary text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Text variant="secondary" as="span" className="!text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 select-none">
                    <PieChart className="w-3 h-3 text-plannera-operations/60 shrink-0" /> Parcial
-                </span>
-                <p className="text-content-primary text-2xl font-black leading-none">{partial}</p>
+                </Text>
+                <Text variant="primary" className="text-2xl font-black leading-none">{partial}</Text>
               </div>
 
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-plannera-demand text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 relative">
+                <Text as="span" className="text-destructive !text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 relative select-none">
                   <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" /> Bloqueio
                   {data.some(r => r.status === 'blocked' && r.action_plan) && (
                     <Clock className="w-2.5 h-2.5 text-warning animate-pulse absolute -right-3 -top-1" />
                   )}
-                </span>
-                <p className="text-content-primary text-2xl font-black leading-none">{blocked}</p>
+                </Text>
+                <Text variant="primary" className="text-2xl font-black leading-none">{blocked}</Text>
               </div>
 
               <div className="bg-surface-background p-2.5 rounded-2xl border border-border-divider flex flex-col items-center justify-center gap-1.5 min-h-[85px] transition-colors hover:bg-surface-card">
-                <span className="text-content-secondary text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 opacity-60">
+                <Text variant="secondary" as="span" className="!text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 opacity-60 select-none">
                   <CircleSlash className="w-3 h-3 shrink-0" /> N/A
-                </span>
-                <p className="text-content-primary text-2xl font-black leading-none">{notApplicable}</p>
+                </Text>
+                <Text variant="primary" className="text-2xl font-black leading-none">{notApplicable}</Text>
               </div>
             </div>
 
@@ -175,27 +176,25 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
                   </div>
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className={`text-[11px] font-black uppercase tracking-widest ${
-                        planSummary.risk_level === 'high' ? 'text-red-400' : 'text-amber-400'
-                      }`}>
+                      <Text variant={planSummary.risk_level === 'high' ? 'destructive' : 'accent'} className="text-[11px] font-black uppercase tracking-widest select-none">
                         {planSummary.risk_level === 'high' ? 'Risco Crítico de Downgrade' : 'Atenção Commercial: Risco de Downgrade'}
-                      </h4>
+                      </Text>
                       <Badge variant="outline" className={`text-[8px] border-none uppercase font-black ${
                         planSummary.risk_level === 'high' ? 'bg-red-500/20 text-red-200' : 'bg-warning/20 text-amber-200'
                       }`}>
                         Impacto Comercial: {planSummary.risk_level === 'high' ? 'Alto' : 'Médio'}
                       </Badge>
                     </div>
-                    <p className="text-content-secondary text-[10px] leading-relaxed font-medium">
+                    <Text variant="secondary" className="!text-[10px] leading-relaxed font-medium">
                       {planSummary.risk_level === 'high'
                         ? 'O cliente não está utilizando as funcionalidades que justificam o investimento no plano Professional/Essential. Risco imediato de redução de contrato.'
                         : 'Adoção parcial das funcionalidades exclusivas do plano atual. É necessário reforçar o valor estratégico para evitar questionamentos na renovação.'}
-                    </p>
+                    </Text>
                     <div className="flex flex-wrap gap-2 pt-1">
                       {planSummary.at_risk_features.map((feat, i) => (
                         <div key={i} className="flex items-center gap-1.5 bg-surface-background px-2 py-1 rounded-lg border border-border-divider">
                            <div className={`w-1 h-1 rounded-full ${planSummary.risk_level === 'high' ? 'bg-red-500' : 'bg-warning'}`} />
-                           <span className="text-[9px] font-bold text-content-primary uppercase tracking-tight">{feat}</span>
+                           <Text variant="primary" className="!text-[9px] font-black uppercase tracking-tight">{feat}</Text>
                         </div>
                       ))}
                     </div>
@@ -207,10 +206,10 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
             <div className="space-y-4 pt-2">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
-                  <span className="text-content-secondary">Score de Adoção Real</span>
+                  <Text variant="secondary" as="span" className="!text-[10px] font-black uppercase tracking-widest select-none">Score de Adoção Real</Text>
                   <div className="flex items-center gap-3">
-                    <span className="text-content-secondary font-black">{inUse}/{totalApplicable}</span>
-                    <span className="text-plannera-operations">{percentage}%</span>
+                    <Text variant="secondary" as="span" className="font-black">{inUse}/{totalApplicable}</Text>
+                    <Text as="span" className="text-plannera-operations font-black">{percentage}%</Text>
                   </div>
                 </div>
                 <div className="relative h-2.5 w-full bg-surface-background rounded-full overflow-hidden">
@@ -225,17 +224,17 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
                 <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 space-y-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-3 h-3 text-red-500" />
-                    <span className="text-[9px] font-black uppercase text-red-400 tracking-tight">
+                    <Text variant="destructive" as="span" className="!text-[9px] font-black uppercase tracking-tight select-none">
                       Principais Barreiras à Adoção Plena:
-                    </span>
+                    </Text>
                   </div>
                   <div className="space-y-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
                     {data.filter(r => r.status === 'blocked').map((r, idx) => (
                       <div key={idx} className="flex flex-col gap-0.5 border-l-2 border-red-500/20 pl-3 py-1">
-                        <span className="text-content-primary text-[10px] font-bold uppercase tracking-tight">{r.product_features.name}</span>
-                        <span className="text-content-secondary text-[8px] font-medium italic">
+                        <Text variant="primary" className="!text-[10px] font-black uppercase tracking-tight">{r.product_features.name}</Text>
+                        <Text variant="secondary" className="!text-[8px] font-medium italic">
                           {r.action_plan || 'Nenhum plano de ação registrado'}
-                        </span>
+                        </Text>
                       </div>
                     ))}
                   </div>

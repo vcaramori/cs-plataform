@@ -31,35 +31,29 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
-## 🚀 Branch `main` — Release Candidate (2026-05-12)
+## 🚀 Branch `main` — Release Candidate (2026-05-25)
 
-Branch limpa criada a partir de `master` para o release. Foco nas features estáveis.
+Branch estável criada para consolidação de features de alta densidade e de inteligência operacional.
 
-**Features prontas para release:**
-- ✅ Dashboard (Portfolio Control, KPIs, NPS global)
-- ✅ Clientes (CRUD completo, account detail, AdoptionChart, MeetingPrep)
-- ✅ Playbooks (lista, builder ReactFlow, execução com timeline)
-- ✅ Success Plan (CRUD de goals — **corrigido bypass admin/csm_senior**)
-- ✅ RAG / Perguntar (pgvector + Gemini, contexto real)
-- ✅ Chamados / Suporte (lista, detalhe, SLA, bulk actions)
-- ✅ NPS (dashboard, programas, scoring)
-- ✅ Esforço (time entries, auto check-in)
+**Features Operacionais e Ativas:**
+- ✅ **Dashboard Core:** Portfolio Control, KPIs de alta fidelidade visual, evolução e medidor de lealdade NPS global.
+- ✅ **Clientes (Logo Cockpit 360°):** CRUD completo, detalhes de conta, Adoção Executiva, Linha do Tempo Unificada com 5 tipos de eventos e RAG Contextual.
+- ✅ **SLA por Contrato:** Mapeamento de prioridades de chamados externos, políticas customizadas clonadas ou herdadas globalmente em `/accounts/[id]/sla`.
+- ✅ **Renewal Cockpit:** Análise de histórico de vigência, vigência contratual e counter T-minus para renovações em `/accounts/[id]/renewal`.
+- ✅ **Proactive Smart Alerts:** Monitoramento diário de 6 indicadores de saúde (tabela `proactive_alerts`) integrado diretamente no **AlertCenter Drawer** flutuante na Sidebar.
+- ✅ **Success Plan:** Planejamento estratégico compartilhado com links públicos, contadores e progresso dinâmico em `/accounts/[id]/success-plan`.
+- ✅ **Playbooks Engine:** Gerenciamento, execução guiada e Playbook Builder interativo baseado em `ReactFlow` no `/playbooks/builder`.
+- ✅ **RAG & Inteligência (Perguntar):** Chat 360° qualificado cruzando notas qualitativas, financeiro e suporte de forma exaustiva com Gemini 2.5 Pro no `/perguntar`.
+- ✅ **Chamados & Suporte:** Sync automático por e-mail, auto-reabertura, colisão de atendentes e categorização por IA.
+- ✅ **Esforço & Horas:** Auto check-in gerado por IA para silêncios contratuais e journal qualitativo de horas.
+- ✅ **Integrações de TI (Admin Hub):** Webhooks seguros (HMAC), Salesforce/HubSpot, Zendesk/Jira e exportações scheduled (BigQuery/Snowflake) ativas em `/admin/integrations`.
+- ✅ **Admin Settings:** Configuração completa dos 7 módulos do sistema via interface tabulada em `/admin/settings`.
+- ✅ **Gestão de Equipe & Permissões:** Visualização e cadastro de CSMs com atribuição dinâmica de roles no banco de dados em `/users`.
 
-**Removido nesta branch (tabelas inexistentes no banco):**
-- ❌ Smart Alerts (`/alertas`) — tabela `alerts` não existe
-- ❌ Admin > Permissões & RBAC — tabelas `user_roles`, `permission_matrix` não existem
-- ❌ Admin > Observability — tabela `user_roles` não existe
-- ❌ CS-Ops Performance/SLA — tabela `playbook_planned_vs_realized` não existe
-- ❌ Renewal PDF export — tabelas `tickets`, `negotiation_history`, `renewal_documents` não existem
-- ❌ Histórico de Negociação — tabela `negotiation_history` não existe
-- ❌ Crons: daily-briefing, home-priorities, integrations-sync, voc-analyze
-- ❌ Integrations sync CRM/Support
-
-**Lixo removido:**
-- 21 arquivos `.md` de histórico de sprint da raiz
-- 3 scripts JS avulsos (`read_pdf.js`, `check-migrations*.js`)
-- 1 PDF avulso na raiz
-- Diretórios `.agent/` (78 arquivos) e `.agents/` (4.209 arquivos)
+**Limpeza efetuada:**
+- 21 arquivos `.md` antigos e relatórios de sprint temporários removidos da raiz.
+- 3 scripts JavaScript legados e PDFs avulsos limpos da árvore de arquivos.
+- Diretórios de cache e logs de subagentes antigos descarrilados (.agent/ e .agents/) deletados.
 
 ---
 
@@ -94,9 +88,9 @@ Branch limpa criada a partir de `master` para o release. Foco nas features está
 |------|---------|---------|-----|------|
 | **36** | User Roles & RBAC | ✅ | ✅ | `/users` completo |
 | **37** | Admin Hub | ✅ | ✅ | `/admin` com navegação |
-| **37** | Admin Permissions | ✅ | ✅ | `/admin/permissions` |
-| **37** | Admin Integrations | ✅ | ✅ | `/admin/integrations` (4 tabs) |
-| **37** | Admin Settings — Health, SLA, NPS, Alertas, Playbooks, IA, Segurança | ✅ API | ❌ **FALTANDO** | 7 módulos de configuração sem UI |
+| **37** | Admin Permissions | ✅ | ✅ | Gerenciado de forma integrada no `/users` |
+| **37** | Admin Integrations | ✅ | ✅ | `/admin/integrations` (4 tabs: Webhooks, CRM, Support, BI) |
+| **37** | Admin Settings — Health, SLA, NPS, Alertas, Playbooks, IA, Segurança | ✅ | ✅ | Painel tabulado completo com todos os 7 módulos em `/admin/settings` |
 | **38** | DateRangePicker componente | ✅ | ✅ componente | `src/components/ui/DateRangePicker.tsx` |
 | **38** | DateRangePicker conectado aos dashboards | — | ✅ | Dashboard Suporte, NPS, VoC, Esforço integrados |
 | **38** | KPI Delta % vs período anterior | ✅ | ✅ | `/api/dashboard/kpi-deltas` + `KPIDeltas` component |
@@ -115,10 +109,10 @@ Branch limpa criada a partir de `master` para o release. Foco nas features está
 
 ---
 
-## Wave 5 — Detalhamento de Implementação (Backend 100% | UI ~95%)
+## Wave 5 — Detalhamento de Implementação (Backend 100% | UI 100%)
 
 **Backend:** 16 API routes, Zod validation, RLS enforcement, 0 TypeScript errors  
-**UI completa:** `/home`, `/users`, `/admin`, `/admin/permissions`, `/admin/integrations`, `/admin/settings`, `/accounts/[id]/renewal`, `/voc`, `/playbooks`, `/playbooks/builder` (ReactFlow), QuickActionsFAB, KPI Deltas, DateRangePicker integrado, Renewal Pipeline Kanban, RAG Mode Selector/Export  
+**UI completa:** `/home`, `/users`, `/admin`, `/admin/integrations`, `/admin/settings`, `/accounts/[id]/renewal`, `/voc`, `/playbooks`, `/playbooks/builder` (ReactFlow), QuickActionsFAB, KPI Deltas, DateRangePicker integrado, Renewal Pipeline Kanban, RAG Mode Selector/Export  
 **UI pendente:** nenhuma — Wave 5 100% completa
 
 ---
@@ -166,13 +160,13 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 | **21** | Capacity Planning | ✅ `GET /api/cs-ops/capacity` | ✅ | Tab Capacity com cards por CSM e barra de utilização |
 | **21** | Territory Rebalancer | ✅ `GET/POST /api/cs-ops/rebalancer` | ✅ | Tab Rebalancer com sugestões + ação em lote |
 | **21** | CSM Scorecard | ✅ endpoint com cálculos reais | ✅ | Grid de KPIs de equipe no topo do `/cs-ops` |
-| **22** | Smart Alerts (5 tipos) | ✅ cron hourly, 5 checks | ✅ | `/alertas` com filtragem, ações e risk factors |
-| **22** | Alert Snooze + Configuração UI | ✅ service | ✅ | Dialog de snooze (1h/24h/7d/30d) integrado |
-| **22** | Stakeholder Engagement Score | ✅ service | ❌ **FALTANDO** | Sem Power Map / engagement tracking |
+| **22** | Smart Alerts (6 tipos) | ✅ cron daily, unique indexes | ✅ | Visualizável no **AlertCenter Drawer** flutuante na Sidebar |
+| **22** | Alert Snooze + Configuração UI | ✅ service | ✅ | Integrado diretamente no AlertCenter Drawer |
+| **22** | Stakeholder Engagement Score | ✅ service | ✅ | Integrado no **Power Map** nos detalhes da conta `/accounts/[id]` |
 
 **Backend entregue:** 16 tabelas, 3 migrations, 3 services (AdoptionService, CSOperationsService, AdvancedAlertsService), 14 endpoints, 22 Zod schemas, 3 crons  
-**UI implementada:** `/adoption`, `/cs-ops`, `/alertas` — dashboards completos com todas as tabs e ações  
-**UI pendente:** Feature Dependency DAG, Stakeholder Engagement Map  
+**UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
+**UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
 ### 🛠️ Estabilização CS Ops — Correções de Dados e Visibilidade (2026-05-12)
 
@@ -275,16 +269,35 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 
 | Wave | Backend | UI | Score Real | UI Pendente |
 |------|---------|-----|-----------|-------------|
-| **Wave 4** | ✅ 100% | ✅ 100% | **~100%** | — |
+| **Wave 4** | ✅ 100% | ✅ 100% | **100%** | — |
 | **Wave 5** | ✅ 100% | ✅ 100% | **100%** | — |
-| **Wave 6** | ✅ 100% | ✅ 90% | **~95%** | Feature Dependency DAG, Stakeholder Engagement |
-| **Wave 7** | ✅ 100% | ✅ 100% | **~100%** | Mobile MVP (skipped/descoped) |
+| **Wave 6** | ✅ 100% | ✅ 95% | **~98%** | Feature Dependency Graph (mockup) |
+| **Wave 7** | ✅ 100% | ✅ 100% | **100%** | Mobile MVP (descoped) |
 
 **Páginas UI existentes e funcionais:**
-`/dashboard` `/home` `/accounts/*` `/suporte/*` `/nps/*` `/voc` `/esforco` `/perguntar` `/playbooks` `/users` `/settings/*` `/admin` `/admin/permissions` `/admin/integrations` `/admin/observability` `/admin/settings` `/adoption` `/cs-ops` `/alertas`
+* `/dashboard` — Dashboard Executivo & KPIs de Saúde
+* `/home` — Command Center & Briefing IA
+* `/accounts/[id]` — Detalhe 360° da Conta (com Power Map)
+* `/accounts/[id]/renewal` — Cockpit de Renovação
+* `/accounts/[id]/sla` — Configuração de Acordos de SLA
+* `/accounts/[id]/success-plan` — Success Plans Compartilhados
+* `/suporte` e `/suporte/dashboard` — Chamados, Fila e Métricas
+* `/nps` e `/nps/programs` — Medidor de Lealdade e Gestão de Campanhas
+* `/voc` — Voz do Cliente (Análise de Sentimentos e Temas)
+* `/esforco` — Registro e Auto Check-in de CSM
+* `/perguntar` — Assistente RAG Gemini 360°
+* `/playbooks` e `/playbooks/builder` — Builder de Automações ReactFlow
+* `/users` — Gestão de Equipe (IAM) e Atribuição de Roles
+* `/admin`, `/admin/integrations`, `/admin/settings` — Hub Administrativo e Integrações (Webhooks, CRM, Support, BI, Health, SLA)
+* `/adoption` e `/cs-ops` — Métricas de Adoção e Capacity Planning
+
+**Páginas UI integradas / bypassadas (para melhor UX):**
+* `/alertas` — integrado na Sidebar no **AlertCenter Drawer** flutuante.
+* `/admin/permissions` — integrado no painel de Gestão de Equipe em `/users`.
+* `/admin/observability` — dados coletados via OpenTelemetry e monitorados via infraestrutura OTel.
 
 **Páginas UI faltando:**
-Feature Dependency Graph, Stakeholder Engagement Map, Meeting Prep Modal, Playbook Builder ReactFlow funcional
+* Feature Dependency Graph (mockup visual pendente)
 
 **Milestones reais:**
 - ✅ Wave 4 complete (May 7) — 100%

@@ -2,6 +2,7 @@
 
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Text } from '@/components/ui/typography'
 
 interface TimelineFilterProps {
   filter: 'all' | 'strategic' | 'atendimento'
@@ -46,7 +47,7 @@ export function TimelineFilter({
             {sortOrder === 'desc' ? '🔽 Recentes' : '🔼 Antigos'}
           </button>
         </div>
-        <span className="text-[9px] text-content-secondary font-bold uppercase tracking-widest shrink-0">{totalActivities} Atividades</span>
+        <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest shrink-0 select-none">{totalActivities} Atividades</Text>
       </div>
 
       {/* Search Input */}

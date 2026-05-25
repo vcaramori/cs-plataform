@@ -8,9 +8,12 @@ import type {
   AccountPlaybook, HealthScore,
 } from '@/lib/supabase/types'
 
+import { PageContainer } from '@/components/ui/page-container'
+
 export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await getSupabaseServerClient()
+
 
   // Buscar todos os dados da conta em uma única query expandida
   const { data: account, error } = await supabase
@@ -89,7 +92,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const displayContracts = activeContracts.length > 0 ? activeContracts : (contracts.length > 0 ? [contracts[0]] : [])
 
   return (
-    <div className="p-6 space-y-6">
+    <PageContainer noPadding className="p-6 space-y-6">
       <AccountHeader
         account={account as any}
         latestHealthScore={healthScores.sort((a: any, b: any) => new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime())[0] ?? null}
@@ -114,6 +117,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         commercialGovernance={commercialGovernance}
         healthScores={healthScores}
       />
-    </div>
+    </PageContainer>
   )
 }
