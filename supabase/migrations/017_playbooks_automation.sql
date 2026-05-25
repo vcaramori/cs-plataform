@@ -122,9 +122,9 @@ BEGIN
 END;
 $$;
 
--- Vincular a função à tabela health_scores
-DROP TRIGGER IF EXISTS trigger_auto_playbook_on_health_score ON public.health_scores;
-CREATE TRIGGER trigger_auto_playbook_on_health_score
-AFTER INSERT OR UPDATE ON public.health_scores
-FOR EACH ROW
-EXECUTE FUNCTION public.fn_trigger_health_score_playbook();
+-- Vincular a função à tabela health_scores (DESATIVADO TEMPORARIAMENTE)
+-- DROP TRIGGER IF EXISTS trigger_auto_playbook_on_health_score ON public.health_scores;
+-- CREATE TRIGGER trigger_auto_playbook_on_health_score
+-- AFTER INSERT OR UPDATE ON public.health_scores
+-- FOR EACH ROW
+-- EXECUTE FUNCTION public.fn_trigger_health_score_playbook();
