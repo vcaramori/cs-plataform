@@ -223,27 +223,29 @@ export function AccountUnifiedTimeline({
 
       {/* Pagination Footer */}
       {sorted.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border-divider">
-          <span className="text-[9px] text-content-secondary font-bold">
-            {start + 1} a {Math.min(end, sorted.length)} de {sorted.length} atividades
+        <div className="flex items-center justify-between px-2 py-3 border-t border-border-divider text-[10px] font-bold text-content-secondary">
+          <span className="whitespace-nowrap opacity-80">
+            {start + 1}-{Math.min(end, sorted.length)} de {sorted.length}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
-              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="px-1.5 py-0.5 rounded hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
             >
-              ← Anterior
+              ← Ant
             </button>
-            <span className="text-[9px] text-content-secondary font-bold">
-              Página {page} de {totalPages}
+            <span className="opacity-40">|</span>
+            <span className="whitespace-nowrap">
+              {page}/{totalPages}
             </span>
+            <span className="opacity-40">|</span>
             <button
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
-              className="px-2 py-1 rounded text-[10px] font-bold text-content-secondary hover:text-content-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="px-1.5 py-0.5 rounded hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
             >
-              Próxima →
+              Prox →
             </button>
           </div>
         </div>

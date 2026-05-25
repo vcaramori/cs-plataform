@@ -131,14 +131,14 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-3.5 h-3.5 text-success" />
-            <span className="label-premium !text-[9px] opacity-60">MRR Líquido</span>
+            <span className="label-premium !text-[9px] opacity-60">MRR Líquido R$</span>
           </div>
           <p className="text-foreground text-base font-black tracking-tighter tabular-nums">
-            {formatCurrency(netMRR)}
+            {Math.round(netMRR).toLocaleString('pt-BR')}
           </p>
           {hasDiscount && (
             <p className="label-premium !text-[8px] mt-2 opacity-60 line-through">
-              Nominal: {formatCurrency(contract.mrr)}
+              Nominal: {Math.round(contract.mrr).toLocaleString('pt-BR')}
             </p>
           )}
         </div>
@@ -149,7 +149,14 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
           </div>
           <p className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
             {contract.renewal_date
-              ? new Date(contract.renewal_date).toLocaleDateString('pt-BR')
+              ? (() => {
+                  const parts = contract.renewal_date.split('T')[0].split('-')
+                  if (parts.length === 3) {
+                    const [year, month, day] = parts
+                    return `${day}/${month}/${year.slice(-2)}`
+                  }
+                  return contract.renewal_date
+                })()
               : 'Permanent'}
           </p>
           {days !== null && (
@@ -340,7 +347,7 @@ export function AccountDetailPageClient({
                 className="label-premium !text-[10px] text-primary hover:text-primary/80 transition-all flex items-center gap-2 group"
               >
                 <Settings2 className="w-4 h-4 group-hover:rotate-45 transition-transform" /> 
-                Policy
+                SLA
               </Link>
             </div>
 

@@ -89,16 +89,16 @@ export function AdoptionExecutiveSection({ accountId, accountName }: { accountId
       <div className="absolute -right-10 -top-10 w-40 h-40 bg-plannera-operations/5 blur-3xl rounded-full" />
 
       <CardContent className="p-6 space-y-6 relative">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-plannera-operations/10 border border-plannera-operations/20">
               <Zap className="w-5 h-5 text-plannera-operations" />
             </div>
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-content-primary text-sm font-black uppercase tracking-widest leading-none">Adoção Funcional</h3>
                 {planSummary && (
-                  <Badge className="bg-surface-background text-content-secondary border-none text-[8px] font-black uppercase tracking-tighter h-4 px-2">
+                  <Badge className="bg-surface-background text-content-secondary border-none text-[8px] font-black uppercase tracking-tighter h-4 px-2 whitespace-nowrap">
                     Plano: {planSummary.plan_name}
                   </Badge>
                 )}

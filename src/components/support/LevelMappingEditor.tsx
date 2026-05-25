@@ -18,9 +18,10 @@ import { cn } from '@/lib/utils'
 interface Props {
   policyId: string
   initialMappings: SLALevelMapping[]
+  readOnly?: boolean
 }
 
-export function LevelMappingEditor({ policyId, initialMappings }: Props) {
+export function LevelMappingEditor({ policyId, initialMappings, readOnly = false }: Props) {
   const [mappings, setMappings] = useState<SLALevelMapping[]>(initialMappings)
   const [newLabel, setNewLabel] = useState('')
   const [newLevel, setNewLevel] = useState<'critical'|'high'|'medium'|'low'>('medium')
@@ -74,36 +75,38 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary">Mapeamento de Prioridades Externas</h3>
       </div>
 
-      <div className="flex gap-3 items-center bg-surface-card/50 backdrop-blur-md p-4 border border-border-divider rounded-2xl shadow-sm">
-        <Input
-          placeholder="Ex: Urgent, P1, Urgente"
-          value={newLabel}
-          onChange={e => setNewLabel(e.target.value)}
-          className="flex-1 bg-surface-background border-border-divider rounded-xl h-12 text-xs font-bold uppercase tracking-tight"
-        />
-        <div className="px-2 text-content-secondary opacity-60">
-          <ArrowRight className="w-4 h-4" />
+      {!readOnly && (
+        <div className="flex gap-3 items-center bg-surface-card/50 backdrop-blur-md p-4 border border-border-divider rounded-2xl shadow-sm">
+          <Input
+            placeholder="Ex: Urgent, P1, Urgente"
+            value={newLabel}
+            onChange={e => setNewLabel(e.target.value)}
+            className="flex-1 bg-surface-background border-border-divider rounded-xl h-12 text-xs font-bold uppercase tracking-tight"
+          />
+          <div className="px-2 text-content-secondary opacity-60">
+            <ArrowRight className="w-4 h-4" />
+          </div>
+          <Select value={newLevel} onValueChange={(v) => setNewLevel(v as any)}>
+            <SelectTrigger className="w-40 bg-surface-background border-border-divider text-content-primary rounded-xl h-12 text-[10px] font-black uppercase tracking-widest">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-surface-card border-border-divider rounded-xl">
+              <SelectItem value="critical" className="text-[10px] font-black uppercase tracking-widest py-3">Crítico</SelectItem>
+              <SelectItem value="high" className="text-[10px] font-black uppercase tracking-widest py-3">Alto</SelectItem>
+              <SelectItem value="medium" className="text-[10px] font-black uppercase tracking-widest py-3">Médio</SelectItem>
+              <SelectItem value="low" className="text-[10px] font-black uppercase tracking-widest py-3">Baixo</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={handleAdd} 
+            disabled={isAdding || !newLabel.trim()}
+            className="bg-plannera-orange hover:bg-plannera-orange/90 text-white h-12 px-6 rounded-xl shadow-lg shadow-plannera-orange/20 active:scale-95 transition-all"
+          >
+            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            <span className="text-[10px] font-black uppercase tracking-widest">Adicionar</span>
+          </Button>
         </div>
-        <Select value={newLevel} onValueChange={(v) => setNewLevel(v as any)}>
-          <SelectTrigger className="w-40 bg-surface-background border-border-divider text-content-primary rounded-xl h-12 text-[10px] font-black uppercase tracking-widest">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-surface-card border-border-divider rounded-xl">
-            <SelectItem value="critical" className="text-[10px] font-black uppercase tracking-widest py-3">Crítico</SelectItem>
-            <SelectItem value="high" className="text-[10px] font-black uppercase tracking-widest py-3">Alto</SelectItem>
-            <SelectItem value="medium" className="text-[10px] font-black uppercase tracking-widest py-3">Médio</SelectItem>
-            <SelectItem value="low" className="text-[10px] font-black uppercase tracking-widest py-3">Baixo</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button 
-          onClick={handleAdd} 
-          disabled={isAdding || !newLabel.trim()}
-          className="bg-plannera-orange hover:bg-plannera-orange/90 text-white h-12 px-6 rounded-xl shadow-lg shadow-plannera-orange/20 active:scale-95 transition-all"
-        >
-          {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-          <span className="text-[10px] font-black uppercase tracking-widest">Adicionar</span>
-        </Button>
-      </div>
+      )}
 
       <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-xl">
         {mappings.length === 0 ? (
@@ -134,16 +137,18 @@ export function LevelMappingEditor({ policyId, initialMappings }: Props) {
                       {lbls[m.internal_level]}
                     </span>
                   </td>
-                  <td className="px-8 py-5 text-right w-16">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 text-content-secondary opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" 
-                      onClick={() => handleDelete(m.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </td>
+                  {!readOnly && (
+                    <td className="px-8 py-5 text-right w-16">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 text-content-secondary opacity-20 hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all" 
+                        onClick={() => handleDelete(m.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

@@ -125,7 +125,7 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </div>
         </div>
 
-        <div className="flex items-center gap-3 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
           <MeetingPrepModal accountId={account.id} accountName={account.name} />
           <MRRCard
             activeContract={activeContract}

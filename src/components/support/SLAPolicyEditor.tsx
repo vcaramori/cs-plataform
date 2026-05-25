@@ -15,14 +15,15 @@ import { toast } from 'sonner'
 import { Loader2, Save } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type LevelMap = Record<'critical' | 'high' | 'medium' | 'low', SLAPolicyLevel | undefined>
-type UnitKey = `${'critical'|'high'|'medium'|'low'}_${'first'|'res'}`
-type UnitType = 'min' | 'h' | 'dia'
-
 interface Props {
   policyId: string
   initialLevels: SLAPolicyLevel[]
+  readOnly?: boolean
 }
+
+type LevelMap = Record<'critical' | 'high' | 'medium' | 'low', SLAPolicyLevel | undefined>
+type UnitKey = `${'critical'|'high'|'medium'|'low'}_${'first'|'res'}`
+type UnitType = 'min' | 'h' | 'dia'
 
 const DEFAULT_LEVELS: Array<{level: 'critical' | 'high' | 'medium' | 'low', first: number, res: number}> = [
   { level: 'critical', first: 30, res: 120 },
@@ -43,7 +44,7 @@ function displayVal(mins: number, unit: UnitType) {
   return mins === 0 ? '' : String(mins / FACTORS[unit])
 }
 
-export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
+export function SLAPolicyEditor({ policyId, initialLevels, readOnly = false }: Props) {
   const [levels, setLevels] = useState<LevelMap>({} as LevelMap)
   const [units, setUnits] = useState<Record<UnitKey, UnitType>>({} as Record<UnitKey, UnitType>)
   const [isSaving, setIsSaving] = useState(false)
@@ -114,14 +115,16 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
             <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary opacity-60 mt-1">Acordos de Nível de Serviço Contratuais</p>
           </div>
         </div>
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving} 
-          className="bg-plannera-primary hover:bg-plannera-primary/90 text-white rounded-xl h-12 px-6 shadow-lg shadow-plannera-primary/20 active:scale-95 transition-all"
-        >
-          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          <span className="text-[10px] font-black uppercase tracking-widest">Salvar Matriz</span>
-        </Button>
+        {!readOnly && (
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            className="bg-plannera-primary hover:bg-plannera-primary/90 text-white rounded-xl h-12 px-6 shadow-lg shadow-plannera-primary/20 active:scale-95 transition-all"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            <span className="text-[10px] font-black uppercase tracking-widest">Salvar Matriz</span>
+          </Button>
+        )}
       </div>
 
       <div className="bg-surface-card border border-border-divider rounded-2xl overflow-hidden shadow-xl">
@@ -152,12 +155,13 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
                      <Input
                        type="number"
                        min="1"
+                       disabled={readOnly}
                        className="w-24 bg-surface-background border-border-divider rounded-xl h-11 text-xs font-black text-content-primary focus:ring-2 focus:ring-plannera-primary/50 transition-all"
                        value={displayVal(levels[lev]?.first_response_minutes ?? 0, units[`${lev}_first`])}
                        onChange={e => handleUpdate(lev, 'first_response_minutes', e.target.value, units[`${lev}_first`])}
                      />
                      <Select value={units[`${lev}_first`]} onValueChange={v => handleUnitChange(`${lev}_first`, v as UnitType)}>
-                       <SelectTrigger className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
+                       <SelectTrigger disabled={readOnly} className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
                          <SelectValue />
                        </SelectTrigger>
                        <SelectContent className="bg-surface-card border-border-divider rounded-xl">
@@ -173,12 +177,13 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
                      <Input
                        type="number"
                        min="1"
+                       disabled={readOnly}
                        className="w-24 bg-surface-background border-border-divider rounded-xl h-11 text-xs font-black text-content-primary focus:ring-2 focus:ring-plannera-primary/50 transition-all"
                        value={displayVal(levels[lev]?.resolution_minutes ?? 0, units[`${lev}_res`])}
                        onChange={e => handleUpdate(lev, 'resolution_minutes', e.target.value, units[`${lev}_res`])}
                      />
                      <Select value={units[`${lev}_res`]} onValueChange={v => handleUnitChange(`${lev}_res`, v as UnitType)}>
-                       <SelectTrigger className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
+                       <SelectTrigger disabled={readOnly} className="w-24 bg-surface-background border-border-divider text-content-secondary rounded-xl h-11 text-[9px] font-black uppercase tracking-widest">
                          <SelectValue />
                        </SelectTrigger>
                        <SelectContent className="bg-surface-card border-border-divider rounded-xl">
@@ -197,4 +202,3 @@ export function SLAPolicyEditor({ policyId, initialLevels }: Props) {
     </div>
   )
 }
-
