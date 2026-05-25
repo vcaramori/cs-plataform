@@ -111,7 +111,7 @@ export function HealthMiniGauges({
                   <span className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums" style={{ color: getScoreColor(shadowVal) }}>
                     {Math.round(shadowVal)}
                   </span>
-                  {latestHealthScore.shadow_reasoning && (
+                  {latestHealthScore?.shadow_reasoning && (
                     <Info className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
                   )}
                 </div>
