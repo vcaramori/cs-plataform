@@ -19,12 +19,11 @@ export async function POST(request: Request) {
 
   const { account_id } = parsed.data
 
-  // Valida ownership
+  // Valida se a conta existe (RLS já garante o acesso)
   const { data: account } = await supabase
     .from('accounts')
     .select('id')
     .eq('id', account_id)
-    .eq('csm_owner_id', user.id)
     .single()
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
 
