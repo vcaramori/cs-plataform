@@ -12,6 +12,8 @@ interface HealthMiniGaugesProps {
   slaActive: boolean | null
   onShowReasoning?: (show: boolean) => void
   showReasoning: boolean
+  onGenerateShadowScore?: () => void
+  generating?: boolean
 }
 
 function HealthMiniGauge({ label, value, icon: Icon, color, index, displayLabel }: {
@@ -49,6 +51,8 @@ export function HealthMiniGauges({
   slaActive,
   onShowReasoning,
   showReasoning,
+  onGenerateShadowScore,
+  generating,
 }: HealthMiniGaugesProps) {
 
   const getScoreColor = (val: number) => {
@@ -95,7 +99,13 @@ export function HealthMiniGauges({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className="flex flex-col items-center justify-center gap-3 relative overflow-hidden rounded-2xl border border-border-divider bg-surface-background h-[120px] shadow-sm group hover:border-primary/30 transition-all cursor-pointer"
-          onClick={() => latestHealthScore?.shadow_reasoning && onShowReasoning?.(!showReasoning)}
+          onClick={() => {
+            if (shadowVal != null && latestHealthScore?.shadow_reasoning) {
+              onShowReasoning?.(!showReasoning)
+            } else if (shadowVal == null && onGenerateShadowScore) {
+              onGenerateShadowScore()
+            }
+          }}
         >
           {shadowVal != null ? (
             <>
@@ -120,10 +130,10 @@ export function HealthMiniGauges({
           ) : (
             <>
               <div className="absolute bottom-0 left-0 w-full h-[5%] bg-muted-foreground opacity-10 z-0" />
-              <Sparkles className="w-6 h-6 relative z-10 text-muted-foreground opacity-50" />
+              <Sparkles className={`w-6 h-6 relative z-10 text-muted-foreground ${generating ? 'animate-spin' : 'opacity-50'}`} />
               <div className="text-center relative z-10 w-full px-1 opacity-50">
                 <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">Pontuação IA</p>
-                <p className="text-xs font-black italic">Proc.</p>
+                <p className="text-xs font-black italic">{generating ? 'Gerando...' : 'Proc.'}</p>
               </div>
             </>
           )}

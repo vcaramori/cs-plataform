@@ -42,9 +42,6 @@ export function HealthScoreCard({
   onDetailsClick,
   accountId,
 }: HealthScoreCardProps) {
-  const router = useRouter()
-  const [generating, setGenerating] = useState(false)
-
   const scoreValue = Math.round(healthScore)
   const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? 'hsl(var(--primary))' : '#10b981'
 
@@ -58,36 +55,6 @@ export function HealthScoreCard({
   const displayChartData = chartData.length === 1
     ? [{ date: 'Start', score: chartData[0].score }, { date: 'End', score: chartData[0].score }]
     : chartData
-
-  const handleGenerateShadowScore = async () => {
-    setGenerating(true)
-    try {
-      const res = await fetch('/api/health-scores/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_id: accountId }),
-      })
-
-      const contentType = res.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        toast.error(`Erro crítico do servidor (500).`)
-        return
-      }
-
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error ?? 'Erro ao gerar Shadow Score')
-        return
-      }
-
-      toast.success(`Shadow Score gerado: ${data.shadow_score}`)
-      router.refresh()
-    } catch (err: any) {
-      toast.error('Erro de conexão ou falha no processamento.')
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   return (
     <Card
@@ -170,28 +137,6 @@ export function HealthScoreCard({
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-20">
-        <TooltipProvider>
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleGenerateShadowScore()
-                }}
-                disabled={generating}
-                variant="premium"
-                className="h-8 w-8 p-0 rounded-xl shadow-lg transition-all hover:scale-110 active:scale-95 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-background border-border shadow-2xl">
-              <p className="label-premium !text-[9px]">Gatilhar Análise Cognitiva</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
     </Card>
   )
 }

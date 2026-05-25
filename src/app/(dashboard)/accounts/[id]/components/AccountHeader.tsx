@@ -4,8 +4,9 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Pencil, Settings2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Settings2, Sparkles, Loader2 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 import { HealthScoreDetailsModal } from './HealthScoreDetailsModal'
 import { MeetingPrepModal } from './MeetingPrepModal'
 import { ModalSkeleton } from '@/components/LazyLoader'
@@ -31,12 +32,43 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
   const [summaryData, setSummaryData] = useState<any>(null)
   const [npsScore, setNpsScore] = useState<number | null>(null)
   const [slaActive, setSlaActive] = useState<boolean | null>(null)
+  const [generating, setGenerating] = useState(false)
 
   useEffect(() => {
     fetchHistory()
     fetchNPS()
     fetchSLA()
   }, [account.id])
+
+  const handleGenerateShadowScore = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/health-scores/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: account.id }),
+      })
+
+      const contentType = res.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        toast.error(`Erro crítico do servidor (500).`)
+        return
+      }
+
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? 'Erro ao gerar Shadow Score')
+        return
+      }
+
+      toast.success(`Shadow Score gerado: ${data.shadow_score}`)
+      router.refresh()
+    } catch (err: any) {
+      toast.error('Erro de conexão ou falha no processamento.')
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   async function fetchHistory() {
     try {
@@ -167,6 +199,8 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           slaActive={slaActive}
           onShowReasoning={setShowReasoning}
           showReasoning={showReasoning}
+          onGenerateShadowScore={handleGenerateShadowScore}
+          generating={generating}
         />
       </div>
 
@@ -177,11 +211,22 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           className="bg-surface-background border border-primary/20 rounded-2xl p-6 relative overflow-hidden shadow-2xl backdrop-blur-xl"
         >
           <div className="absolute top-0 left-0 w-2 h-full bg-primary/50" />
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-              <Settings2 className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                <Settings2 className="w-5 h-5 text-primary" />
+              </div>
+              <span className="label-premium !text-xs text-primary">Strategic Reasoning Intelligence</span>
             </div>
-            <span className="label-premium !text-xs text-primary">Strategic Reasoning Intelligence</span>
+            <Button
+              onClick={handleGenerateShadowScore}
+              disabled={generating}
+              variant="premium"
+              className="h-8 w-8 p-0 rounded-xl shadow-lg transition-all hover:scale-110 active:scale-95 bg-primary hover:bg-primary/90 text-primary-foreground"
+              title="Gatilhar Análise Cognitiva"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            </Button>
           </div>
           <p className="text-foreground text-sm italic font-medium leading-relaxed tracking-tight max-w-4xl">
             &quot;{latestHealthScore.shadow_reasoning}&quot;
