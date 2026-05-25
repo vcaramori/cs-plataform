@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createClient(cookies())
-    const accountId = params.id
-
+    const { id: accountId } = await params
+    const supabase = await getSupabaseServerClient()
     const { data, error } = await supabase
       .from('account_indicators')
       .select(`
@@ -36,11 +34,11 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createClient(cookies())
-    const accountId = params.id
+    const { id: accountId } = await params
+    const supabase = await getSupabaseServerClient()
     const body = await request.json()
 
     const { name, target_value, unit, icon, color } = body

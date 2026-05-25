@@ -217,6 +217,91 @@ export type Database = {
           },
         ]
       }
+      account_indicators: {
+        Row: {
+          account_id: string
+          color: string | null
+          created_at: string | null
+          current_value: number | null
+          icon: string | null
+          id: string
+          name: string
+          target_value: number
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          color?: string | null
+          created_at?: string | null
+          current_value?: number | null
+          icon?: string | null
+          id?: string
+          name: string
+          target_value: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          color?: string | null
+          created_at?: string | null
+          current_value?: number | null
+          icon?: string | null
+          id?: string
+          name?: string
+          target_value?: number
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_indicators_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      account_indicator_history: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          indicator_id: string
+          notes: string | null
+          source_type: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          indicator_id: string
+          notes?: string | null
+          source_type?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          indicator_id?: string
+          notes?: string | null
+          source_type?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_indicator_history_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "account_indicators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           account_status: string | null

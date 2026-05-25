@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string, indicatorId: string } }
+  { params }: { params: Promise<{ id: string, indicatorId: string }> }
 ) {
   try {
-    const supabase = createClient(cookies())
-    const { indicatorId } = params
+    const { indicatorId } = await params
+    const supabase = await getSupabaseServerClient()
 
     const { error } = await supabase
       .from('account_indicators')
