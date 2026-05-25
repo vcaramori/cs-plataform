@@ -77,26 +77,28 @@ export default function SuccessPlanPage() {
   return (
     <PageContainer className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <ModuleHeader 
-          title="Indicadores" 
-          subtitle={`Plano de Sucesso para ${accountData?.name || 'Cliente'}`}
-          iconName="Target"
-        />
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+        <div className="flex items-start gap-4">
+          <Link href={`/accounts/${accountId}`} className="shrink-0 mt-1">
+            <Button className="w-12 h-12 rounded-2xl bg-plannera-orange hover:bg-plannera-orange/90 text-white shadow-xl flex items-center justify-center group p-0">
+              <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+          <ModuleHeader 
+            title="Indicadores" 
+            subtitle={`Plano de Sucesso para ${accountData?.name || 'Cliente'}`}
+            iconName="Target"
+            className="mb-0"
+          />
+        </div>
+        <div className="flex items-center gap-3 mt-2 sm:mt-0">
           <Button
             onClick={() => setIsAddIndicatorOpen(true)}
-            className="gap-2 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] h-10 rounded-xl"
+            className="gap-2 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] h-12 px-6 rounded-2xl shadow-xl"
           >
             <Plus className="w-4 h-4" />
             Novo Indicador
           </Button>
-          <Link href={`/accounts/${accountId}`} className="shrink-0">
-            <button className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-content-secondary hover:text-content-primary transition-colors border border-border-divider rounded-xl bg-surface-background h-10">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </button>
-          </Link>
         </div>
       </div>
 
