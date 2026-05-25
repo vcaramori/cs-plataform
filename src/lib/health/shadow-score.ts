@@ -104,7 +104,12 @@ escalation_risk, insufficient_data, sla_breached
 - declining: piora nos últimos registros
 - critical: situação crítica imediata`
 
-  const { result: raw, provider } = await generateText(prompt, { allowFallback: true, timeoutMs: 120000 })
+  const { result: raw, provider } = await generateText(prompt, { 
+    allowFallback: true, 
+    timeoutMs: 120000,
+    disableThinking: true,
+    maxOutputTokens: 2048
+  })
   console.log(`[Shadow Score] Resposta bruta do ${provider}: ${raw}`)
 
   try {
