@@ -29,26 +29,42 @@ export function RenewalCard({ accountId, activeContract, commercialGovernance }:
     daysToRenewal < 30 ? 'text-destructive font-black' :
       daysToRenewal < 90 ? 'text-warning' : 'text-success'
 
+  const cardContent = (
+    <Card 
+      variant="glass" 
+      className={cn(
+        "flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shadow-lg transition-all duration-300",
+        "cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/30 hover:scale-[1.02] active:scale-95"
+      )}
+    >
+      <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-warning/10 flex items-center justify-center border border-warning-100 dark:border-warning-500/20">
+        <Calendar className="w-5 h-5 text-warning" />
+      </div>
+      <div className="flex flex-col">
+        <span className="label-premium !text-[9px] opacity-50 mb-1">Renovação</span>
+        <span className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
+          {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
+        </span>
+      </div>
+    </Card>
+  )
+
   return (
     <div className="flex flex-col gap-2 shrink-0">
-      <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border/50 shadow-lg">
-        <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-warning/10 flex items-center justify-center border border-warning-100 dark:border-warning-500/20">
-          <Calendar className="w-5 h-5 text-warning" />
-        </div>
-        <div className="flex flex-col">
-          <span className="label-premium !text-[9px] opacity-50 mb-1">Renovação</span>
-          <span className={cn("text-xl font-black tracking-tighter tabular-nums", renewalColor)}>
-            {daysToRenewal !== null ? (daysToRenewal < 0 ? 'Expirado' : `em ${daysToRenewal}d`) : 'N/A'}
-          </span>
-        </div>
-      </Card>
-      {daysToRenewal !== null && daysToRenewal <= 90 && (
-        <Link href={`/accounts/${accountId}/renewal`}>
-          <Button size="sm" className="w-full bg-warning hover:bg-amber-600 text-white font-bold uppercase tracking-widest h-10 rounded-xl">
-            Preparar Renovação
-          </Button>
-        </Link>
-      )}
+      <TooltipProvider>
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Link href={`/accounts/${accountId}/renewal`} className="focus:outline-none">
+              {cardContent}
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="bg-background border-border shadow-2xl p-2.5">
+            <span className="text-[10px] text-warning font-black uppercase tracking-widest">
+              (PREPARAR RENOVAÇÃO)
+            </span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   )
 }
