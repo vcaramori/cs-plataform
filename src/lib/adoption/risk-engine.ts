@@ -10,23 +10,52 @@ export async function getAccountPlanSummary(
   accountId: string,
   supabase: SupabaseClient
 ): Promise<PlanSummary> {
-  // 1. Get current plan info
-  const { data: accountPlan } = await supabase
-    .from('account_plans')
-    .select(`
-      subscription_plans (
-        id,
-        name,
-        tier_rank
-      )
-    `)
+  // 1. Get active contracts first
+  const { data: activeContracts } = await supabase
+    .from('contracts')
+    .select('id, service_type')
     .eq('account_id', accountId)
-    .single()
+    .eq('status', 'active')
 
-  const currentPlan = (accountPlan as any)?.subscription_plans
+  const activePlanNames = activeContracts?.map(c => c.service_type).filter(Boolean) || []
 
+  let plans: any[] = []
+  let currentPlan: any = null
+
+  if (activePlanNames.length > 0) {
+    const { data: fetchedPlans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, tier_rank')
+      .in('name', activePlanNames)
+      .order('tier_rank', { ascending: false })
+    
+    plans = fetchedPlans || []
+    currentPlan = plans[0] || null
+  }
+
+  // Fallback to account_plans if no plan found in active contracts
+  if (!currentPlan) {
+    const { data: accountPlan } = await supabase
+      .from('account_plans')
+      .select(`
+        subscription_plans (
+          id,
+          name,
+          tier_rank
+        )
+      `)
+      .eq('account_id', accountId)
+      .maybeSingle()
+    
+    currentPlan = (accountPlan as any)?.subscription_plans || null
+    if (currentPlan) {
+      plans = [currentPlan]
+    }
+  }
+
+  const planNames = plans.map(p => p.name).filter(Boolean)
   const summary: PlanSummary = {
-    plan_name: currentPlan?.name || 'Nenhum plano',
+    plan_name: planNames.join(' + ') || 'Nenhum plano',
     risk_level: 'none',
     at_risk_features: []
   }
@@ -116,7 +145,8 @@ export async function getPortfolioSummary(
       total_accounts: 0,
       health_dist: { healthy: 0, attention: 0, risk: 0 },
       top_downgrade_risks: [],
-      top_blockers: []
+      top_blockers: [],
+      at_risk_accounts: []
     }
   }
 

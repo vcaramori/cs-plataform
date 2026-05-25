@@ -27,7 +27,55 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // 1. Get adoption records joined with feature details
+  // 1. Get active contracts and sync features automatically (self-healing)
+  const { data: activeContracts } = await supabase
+    .from('contracts')
+    .select('id, service_type')
+    .eq('account_id', accountId)
+    .eq('status', 'active')
+
+  const activePlanNames = activeContracts?.map(c => c.service_type).filter(Boolean) || []
+
+  if (activePlanNames.length > 0) {
+    const { data: plans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, tier_rank')
+      .in('name', activePlanNames)
+
+    if (plans && plans.length > 0) {
+      const planIds = plans.map(p => p.id)
+      const { data: planFeatures } = await supabase
+        .from('plan_features')
+        .select('feature_id')
+        .in('plan_id', planIds)
+
+      if (planFeatures && planFeatures.length > 0) {
+        const featureIds = planFeatures.map(f => f.feature_id)
+
+        const { data: existingAdoption } = await supabase
+          .from('feature_adoption')
+          .select('feature_id')
+          .eq('account_id', accountId)
+
+        const existingIds = new Set(existingAdoption?.map(a => a.feature_id) || [])
+        const missingFeatures = featureIds.filter(id => !existingIds.has(id))
+
+        if (missingFeatures.length > 0) {
+          const newInserts = missingFeatures.map(featureId => ({
+            account_id: accountId,
+            feature_id: featureId,
+            status: 'not_started'
+          }))
+
+          await supabase
+            .from('feature_adoption')
+            .insert(newInserts)
+        }
+      }
+    }
+  }
+
+  // 2. Get adoption records joined with feature details
   const { data: adoption, error: adoptionError } = await supabase
     .from('feature_adoption')
     .select(`
@@ -38,7 +86,7 @@ export async function GET(
 
   if (adoptionError) return NextResponse.json({ error: adoptionError.message }, { status: 500 })
 
-  // 2. Get Plan Summary and Downstream Risk via Shared Engine
+  // 3. Get Plan Summary and Downstream Risk via Shared Engine
   const planSummary = await getAccountPlanSummary(accountId, supabase)
 
   return NextResponse.json({
