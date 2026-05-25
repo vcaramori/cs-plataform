@@ -305,16 +305,6 @@ export function AccountDetailPageClient({
                 </div>
                 <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Success Plan</Text>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px] border-none">
-                  Validado
-                </Badge>
-                <Link href={`/accounts/${id}/success-plan`}>
-                  <Button size="sm" variant="outline" className="text-xs h-8">
-                    Gerenciar
-                  </Button>
-                </Link>
-              </div>
             </div>
             <SuccessPlan accountName={accountName} />
           </section>
