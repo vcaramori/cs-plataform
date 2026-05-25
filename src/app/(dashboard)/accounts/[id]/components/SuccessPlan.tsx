@@ -1,96 +1,75 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useParams } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Target, CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { useRouter, useParams } from 'next/navigation'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { Card } from '@/components/ui/card'
+import { ChevronRight, Loader2 } from 'lucide-react'
+import { IndicatorCard } from './IndicatorCard'
+import { IndicatorDetailsModal } from './IndicatorDetailsModal'
+import { IndicatorEditModal } from './IndicatorEditModal'
 
-interface Goal {
-  id: string
-  title: string
-  status: 'pending' | 'ongoing' | 'delayed' | 'completed'
-  target_date: string | null
-}
-
-const statusConfig = {
-  completed: { label: 'Sucesso', color: 'text-plannera-ds', bg: 'bg-plannera-ds/10', icon: CheckCircle2, border: 'border-plannera-ds/20' },
-  ongoing: { label: 'Foco', color: 'text-plannera-sop', bg: 'bg-plannera-sop/10', icon: Clock, border: 'border-plannera-sop/20' },
-  delayed: { label: 'Atraso', color: 'text-plannera-demand', bg: 'bg-plannera-demand/10', icon: AlertCircle, border: 'border-plannera-demand/20' },
-  pending: { label: 'Pendente', color: 'text-content-secondary', bg: 'bg-surface-background', icon: Target, border: 'border-border-divider' },
-}
-
-export function SuccessPlan({ goals }: { goals: Goal[] }) {
+export function SuccessPlan({ accountName }: { accountName?: string }) {
   const router = useRouter()
   const params = useParams()
   const accountId = params.id as string
+  const queryClient = useQueryClient()
+
+  const [selectedIndicator, setSelectedIndicator] = useState<any>(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+
+  // Fetch indicators
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['account-indicators', accountId],
+    queryFn: async () => {
+      const res = await fetch(`/api/accounts/${accountId}/indicators`)
+      if (!res.ok) throw new Error('Failed to fetch indicators')
+      return res.json() as Promise<{ indicators: any[] }>
+    }
+  })
+
+  const indicators = data?.indicators || []
+  const currentSelectedIndicator = indicators.find(i => i.id === selectedIndicator?.id)
+
+  const handleOpenDetails = (indicator: any) => {
+    setSelectedIndicator(indicator)
+    setIsDetailsOpen(true)
+  }
+
+  const handleOpenEdit = () => {
+    setIsEditOpen(true)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-6 h-6 animate-spin text-plannera-orange" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {goals.length === 0 ? (
-        <Card className="border-dashed p-10 text-center">
+      {indicators.length === 0 ? (
+        <Card className="border-dashed p-10 text-center bg-surface-background/50">
           <p className="text-content-secondary text-[10px] font-black uppercase tracking-widest">Nenhuma meta estratégica definida</p>
         </Card>
       ) : (
-        goals.map((goal, idx) => {
-          const config = statusConfig[goal.status] || statusConfig.pending
-          const Icon = config.icon
-          return (
-            <motion.div
-              key={goal.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <Card className={cn(
-                "group transition-all duration-300 relative overflow-hidden",
-                goal.status === 'completed' && "opacity-60 grayscale-[0.5]"
-              )}>
-                {goal.status === 'completed' && (
-                  <div className="absolute inset-0 bg-success/5 pointer-events-none" />
-                )}
-
-                <CardContent className="p-4 flex items-center justify-between gap-6">
-                  <div className="flex items-center gap-4 overflow-hidden">
-                    <div className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
-                      config.bg, config.color
-                    )}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className={cn(
-                        "text-content-primary text-sm font-black uppercase tracking-tight truncate",
-                        goal.status === 'completed' && "line-through text-content-secondary"
-                      )}>{goal.title}</span>
-                      {goal.target_date && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                           <Clock className="w-3 h-3 text-content-secondary" />
-                           <span className="text-[10px] text-content-secondary font-bold uppercase tracking-tighter">
-                            Meta: {new Date(goal.target_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={cn(
-                      "text-[9px] font-black uppercase tracking-widest px-2 py-0 border-none h-5",
-                      config.bg, config.color
-                    )}>
-                      {config.label}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )
-        })
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+          {indicators.map((indicator, idx) => (
+            <IndicatorCard
+              key={indicator.id}
+              index={idx}
+              indicator={indicator}
+              history={indicator.history || []}
+              onClick={() => handleOpenDetails(indicator)}
+            />
+          ))}
+        </div>
       )}
 
-      {goals.length > 0 && (
+      {indicators.length > 0 && (
         <button
           onClick={() => router.push(`/accounts/${accountId}/success-plan`)}
           className="w-full py-3 rounded-xl border border-border-divider bg-surface-background hover:bg-surface-card text-content-secondary hover:text-content-primary transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group"
@@ -99,6 +78,24 @@ export function SuccessPlan({ goals }: { goals: Goal[] }) {
           <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
         </button>
       )}
+
+      <IndicatorDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        indicator={currentSelectedIndicator}
+        history={currentSelectedIndicator?.history || []}
+        accountName={accountName || 'Cliente'}
+        onAddDataPoint={handleOpenEdit}
+      />
+
+      <IndicatorEditModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        indicator={currentSelectedIndicator}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })
+        }}
+      />
     </div>
   )
 }

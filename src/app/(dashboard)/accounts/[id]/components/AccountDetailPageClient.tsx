@@ -61,7 +61,6 @@ interface Props {
   tickets: SupportTicket[]
   efforts: TimeEntry[]
   contacts: Contact[]
-  successGoals: SuccessPlanGoal[]
   adoptionMetrics: AdoptionMetrics[]
   activePlaybook?: AccountPlaybook
   latestRiskAssessment?: RiskAssessmentRow
@@ -317,7 +316,7 @@ export function AccountDetailPageClient({
                 </Link>
               </div>
             </div>
-            <SuccessPlan goals={successGoals} />
+            <SuccessPlan accountName={accountName} />
           </section>
 
           {/* Uso & Adoção Funcional */}
