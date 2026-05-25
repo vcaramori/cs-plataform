@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateShadowScore } from '@/lib/health/shadow-score'
 import { getHealthClassification } from '@/lib/health/utils'
 
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
   const discrepancyAlert = manualScore !== null ? Math.abs(manualScore - shadowResult.score) > 20 : false
 
   // Inserção da nova entrada histórica de IA
-  const { data: newEntry, error: insertError } = await supabase
+  const adminSupabase = getSupabaseAdminClient()
+  const { data: newEntry, error: insertError } = await adminSupabase
     .from('health_scores')
     .insert({
       account_id,
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
   // Atualiza alerta de discrepância na tabela accounts
-  await supabase
+  await adminSupabase
     .from('accounts')
     .update({ 
       discrepancy_alert: discrepancyAlert,
