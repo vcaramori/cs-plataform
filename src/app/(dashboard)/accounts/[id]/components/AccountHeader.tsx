@@ -89,7 +89,7 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-top-4 duration-700">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
         <div className="flex items-center gap-4 sm:gap-8 min-w-0">
           <Link href="/dashboard" className="shrink-0">
             <Button variant="outline" size="icon" className="w-12 h-12 rounded-2xl shadow-sm border-border/50 group">
@@ -98,9 +98,20 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
           </Link>
 
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-xl sm:text-2xl shadow-xl border border-primary/20 shrink-0">
-              {account.name?.charAt(0) || '?'}
-            </div>
+            {account.logo_url ? (
+              <div className="w-20 h-12 sm:w-24 sm:h-14 rounded-2xl bg-surface-background border border-border-divider/60 shadow-xl overflow-hidden shrink-0 flex items-center justify-center p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={account.logo_url}
+                  alt={`${account.name} logo`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-20 h-12 sm:w-24 sm:h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl sm:text-3xl shadow-xl border border-primary/20 shrink-0">
+                {account.name?.charAt(0) || '?'}
+              </div>
+            )}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tighter uppercase leading-none">

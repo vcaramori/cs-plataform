@@ -195,7 +195,7 @@ export function AccountUnifiedTimeline({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <TimelineFilter
         filter={filter}
         setFilter={setFilter}
@@ -206,8 +206,8 @@ export function AccountUnifiedTimeline({
         totalActivities={sorted.length}
       />
 
-      <div className="relative space-y-4 px-4">
-        <div className="absolute left-8 top-4 bottom-4 w-px bg-border-divider" />
+      <div className="relative space-y-2 pl-1">
+        <div className="absolute left-5 top-4 bottom-4 w-px bg-border-divider" />
 
         <AnimatePresence mode="popLayout">
           {paginatedItems.map((item, idx) => (

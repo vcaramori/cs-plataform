@@ -224,7 +224,7 @@ export function AccountDetailPageClient({
 
         {/* COLUNA 1 — Linha do Tempo & Esforço */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between px-3 h-12">
+          <div className="flex items-center justify-between px-1 h-12">
             <div className="flex items-center gap-4">
               <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
                 <History className="w-5 h-5" />
@@ -233,7 +233,7 @@ export function AccountDetailPageClient({
             </div>
             <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">Cognitive Stream</Text>
           </div>
-          <div className="pr-3 overflow-x-hidden">
+          <div>
             <AccountUnifiedTimeline
               interactions={interactions}
               efforts={efforts}

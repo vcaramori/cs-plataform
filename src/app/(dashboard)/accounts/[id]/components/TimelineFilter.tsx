@@ -1,7 +1,6 @@
 'use client'
 
 import { Search } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Text } from '@/components/ui/typography'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
@@ -32,29 +31,29 @@ export function TimelineFilter({
 }: TimelineFilterProps) {
   return (
     <div className="space-y-3">
-      {/* Selector + Sort Toggle in equal cols */}
-      <div className="grid grid-cols-2 gap-2 px-2">
-        {/* Select Dropdown replacing the filter buttons */}
+      {/* Selector + Sort Toggle */}
+      <div className="flex items-center gap-2 pl-1 pr-0">
+        {/* Select Dropdown */}
         <SearchableSelect
           options={filterOptions}
           value={filter}
           onValueChange={(val) => setFilter(val as any)}
           size="sm"
           placeholder="Feed Geral"
-          className="w-full !h-9 border-border-divider bg-surface-background dark:bg-[#101623] hover:bg-surface-card hover:border-border-divider/80 text-[10px] font-black uppercase tracking-widest rounded-xl"
+          className="flex-1 min-w-0 !h-9 border-border-divider bg-surface-background dark:bg-[#101623] hover:bg-surface-card hover:border-border-divider/80 text-[10px] font-black uppercase tracking-widest rounded-xl"
         />
 
-        {/* Sort Toggle Button */}
+        {/* Sort Toggle Button — compact fixed width */}
         <button
           onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold text-content-secondary hover:text-content-primary hover:bg-surface-background border border-border-divider transition-colors h-9"
+          className="shrink-0 flex items-center justify-center gap-1 px-3 rounded-xl text-[10px] font-bold text-content-secondary hover:text-content-primary hover:bg-surface-background border border-border-divider transition-colors h-9 whitespace-nowrap"
         >
           {sortOrder === 'desc' ? '🔽 Recentes' : '🔼 Antigos'}
         </button>
       </div>
 
       {/* Search Input & Info Labels */}
-      <div className="px-2 space-y-2">
+      <div className="pl-1 pr-0 space-y-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-3 w-3.5 h-3.5 text-content-secondary" />
           <input
