@@ -249,7 +249,7 @@ export function AccountDetailPageClient({
         </div>
 
         {/* COLUNA 2 — Valor, Adoção & Atrito */}
-        <div className="space-y-12 lg:border-x lg:border-border-divider lg:px-6">
+        <div className="space-y-6 lg:border-x lg:border-border-divider lg:px-6">
 
           {/* AI Risk Alert */}
           {latestRiskAssessment && (latestRiskAssessment.sentiment_label === 'negative' || latestRiskAssessment.sentiment_label === 'at-risk') && (
@@ -339,7 +339,7 @@ export function AccountDetailPageClient({
         </div>
 
         {/* COLUNA 3 — Mapa de Influência, Governança, Arquivos */}
-        <div className="space-y-12">
+        <div className="space-y-6">
 
           {/* Mapa de Influência */}
           <section className="space-y-6">

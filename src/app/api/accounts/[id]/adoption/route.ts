@@ -30,26 +30,33 @@ export async function GET(
   // 1. Get active contracts and sync features automatically (self-healing)
   const { data: activeContracts } = await supabase
     .from('contracts')
-    .select('id, service_type')
+    .select('id, service_type, contract_code, description')
     .eq('account_id', accountId)
     .eq('status', 'active')
 
   const activePlanNames = activeContracts?.map(c => c.service_type).filter(Boolean) || []
 
+  let plans: any[] = []
+  let planFeatures: any[] = []
+
   if (activePlanNames.length > 0) {
-    const { data: plans } = await supabase
+    const { data: fetchedPlans } = await supabase
       .from('subscription_plans')
       .select('id, name, tier_rank')
       .in('name', activePlanNames)
 
-    if (plans && plans.length > 0) {
+    plans = fetchedPlans || []
+
+    if (plans.length > 0) {
       const planIds = plans.map(p => p.id)
-      const { data: planFeatures } = await supabase
+      const { data: fetchedFeatures } = await supabase
         .from('plan_features')
-        .select('feature_id')
+        .select('plan_id, feature_id')
         .in('plan_id', planIds)
 
-      if (planFeatures && planFeatures.length > 0) {
+      planFeatures = fetchedFeatures || []
+
+      if (planFeatures.length > 0) {
         const featureIds = planFeatures.map(f => f.feature_id)
 
         const { data: existingAdoption } = await supabase
@@ -91,7 +98,10 @@ export async function GET(
 
   return NextResponse.json({
     adoption,
-    plan_summary: planSummary
+    plan_summary: planSummary,
+    contracts: activeContracts || [],
+    plans: plans || [],
+    plan_features: planFeatures || []
   })
 }
 
