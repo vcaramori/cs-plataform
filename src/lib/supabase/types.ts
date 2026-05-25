@@ -538,6 +538,33 @@ export type SuccessPlanWithGoals = SuccessPlan & {
   goals: SuccessPlanGoal[]
 }
 
+export type AccountIndicator = {
+  id: string
+  account_id: string
+  name: string
+  target_value: number
+  current_value: number
+  unit: string
+  icon: string
+  color: string
+  created_at: string
+  updated_at: string
+}
+
+export type AccountIndicatorHistory = {
+  id: string
+  indicator_id: string
+  value: number
+  date: string
+  notes: string | null
+  source_type: string
+  created_at: string
+}
+
+export type AccountIndicatorWithHistory = AccountIndicator & {
+  history: AccountIndicatorHistory[]
+}
+
 // Auto Check-in Types (F4-15.1)
 export type AutoCheckInQueueStatus = 'pending' | 'approved' | 'edited' | 'cancelled' | 'sent'
 
