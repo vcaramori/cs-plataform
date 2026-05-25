@@ -38,8 +38,8 @@ export function RenewalCard({ accountId, activeContract, commercialGovernance }:
         "cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/30 hover:scale-[1.02] active:scale-95"
       )}
     >
-      <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-warning/10 flex items-center justify-center border border-warning-100 dark:border-warning-500/20">
-        <Calendar className="w-5 h-5 text-warning" />
+      <div className="w-11 h-11 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center border border-amber-500/20 text-amber-600 dark:text-amber-500">
+        <Calendar className="w-5 h-5" />
       </div>
       <div className="flex flex-col">
         <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest mb-1 opacity-50 select-none">Renovação</Text>
@@ -79,8 +79,8 @@ export function MRRCard({ activeContract, commercialGovernance }: {
 
   return (
     <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border-divider/50 shrink-0 shadow-lg">
-      <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-success/10 flex items-center justify-center border border-success-100 dark:border-success-500/20">
-        <DollarSign className="w-5 h-5 text-success" />
+      <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center border border-emerald-500/20 text-emerald-600 dark:text-emerald-500">
+        <DollarSign className="w-5 h-5" />
       </div>
       <div className="flex flex-col">
         <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest mb-1 opacity-50 select-none">Receita Mensal (Líquida)</Text>

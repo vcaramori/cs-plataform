@@ -85,17 +85,17 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
     days === null ? 'text-muted-foreground'
     : days < 0    ? 'text-destructive font-black'
     : days < 30   ? 'text-destructive font-black'
-    : days < 90   ? 'text-warning font-black'
-    : 'text-success font-black'
+    : days < 90   ? 'text-amber-500 font-black'
+    : 'text-emerald-500 font-black'
 
   const statusLabels: Record<string, string> = {
     active: 'Ativo', 'at-risk': 'Em Risco', churned: 'Churn', 'in-negotiation': 'Negociação',
   }
   const statusColors: Record<string, string> = {
-    active: 'bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20',
-    'at-risk': 'bg-amber-50 dark:bg-warning/10 text-amber-700 dark:text-warning border-warning-100 dark:border-warning-500/20',
-    churned: 'bg-red-50 dark:bg-destructive/10 text-red-700 dark:text-destructive border-red-100 dark:border-destructive/20',
-    'in-negotiation': 'bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border-indigo-100 dark:border-primary/20',
+    active: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    'at-risk': 'bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20',
+    churned: 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20',
+    'in-negotiation': 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20',
   }
 
   const netMRR = calculateNetMRR(contract, governanceRules)
@@ -108,8 +108,8 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
       {/* Cabeçalho do contrato */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-primary/10 border border-indigo-100 dark:border-primary/20">
-            <FileText className="w-4 h-4 text-primary shrink-0" />
+          <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+            <FileText className="w-4 h-4 shrink-0" />
           </div>
           <Text variant="primary" className="!text-[11px] font-black uppercase tracking-widest truncate">
             {contract.description || contract.service_type || 'Draft Contratual'}
@@ -117,7 +117,7 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="neutral" className={cn(
-            "text-[9px] font-black uppercase tracking-widest border",
+            "text-[9px] font-black uppercase tracking-widest border px-2 py-0.5",
             statusColors[contract.status] ?? 'bg-accent/30 text-content-secondary'
           )}>
             {statusLabels[contract.status] ?? contract.status}
@@ -127,43 +127,62 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
       </div>
 
       {/* Dados principais */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-3.5 h-3.5 text-success" />
-            <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">MRR Líquido R$</Text>
+      <div className="flex flex-col gap-3">
+        {/* Card MRR */}
+        <div className="flex items-center justify-between p-4 bg-surface-background/50 rounded-xl hover:bg-surface-background transition-colors border border-border-divider/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">
+                MRR Líquido R$
+              </Text>
+              {hasDiscount && (
+                <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest opacity-40 line-through select-none">
+                  Nominal: {Math.round(contract.mrr).toLocaleString('pt-BR')}
+                </Text>
+              )}
+            </div>
           </div>
-          <Text variant="primary" className="text-base font-black tracking-tighter tabular-nums">
-            {Math.round(netMRR).toLocaleString('pt-BR')}
-          </Text>
-          {hasDiscount && (
-            <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest mt-2 opacity-60 line-through select-none">
-              Nominal: {Math.round(contract.mrr).toLocaleString('pt-BR')}
+          <div className="text-right">
+            <Text variant="primary" className="text-base font-black tracking-tighter tabular-nums">
+              {Math.round(netMRR).toLocaleString('pt-BR')}
             </Text>
-          )}
+          </div>
         </div>
-        <div className="bg-surface-background border border-border-divider rounded-2xl p-4 shadow-inner">
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDays className="w-3.5 h-3.5 text-warning" />
-            <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">Renovação</Text>
+
+        {/* Card Renovação */}
+        <div className="flex items-center justify-between p-4 bg-surface-background/50 rounded-xl hover:bg-surface-background transition-colors border border-border-divider/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500">
+              <CalendarDays className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <Text variant="secondary" className="!text-[9px] font-black uppercase tracking-widest opacity-60 select-none">
+                Renovação
+              </Text>
+              {days !== null && (
+                <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest opacity-50 select-none">
+                  {days < 0 ? `${Math.abs(days)}d expirado` : `T-minus ${days}d`}
+                </Text>
+              )}
+            </div>
           </div>
-          <Text className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
-            {contract.renewal_date
-              ? (() => {
-                  const parts = contract.renewal_date.split('T')[0].split('-')
-                  if (parts.length === 3) {
-                    const [year, month, day] = parts
-                    return `${day}/${month}/${year.slice(-2)}`
-                  }
-                  return contract.renewal_date
-                })()
-              : 'Permanent'}
-          </Text>
-          {days !== null && (
-            <Text variant="secondary" className="!text-[8px] font-black uppercase tracking-widest mt-2 opacity-60 select-none">
-              {days < 0 ? `${Math.abs(days)}d expirado` : `T-minus ${days}d`}
+          <div className="text-right">
+            <Text className={cn("text-base font-black tracking-tighter tabular-nums", renewalColor)}>
+              {contract.renewal_date
+                ? (() => {
+                    const parts = contract.renewal_date.split('T')[0].split('-')
+                    if (parts.length === 3) {
+                      const [year, month, day] = parts
+                      return `${day}/${month}/${year.slice(-2)}`
+                    }
+                    return contract.renewal_date
+                  })()
+                : 'Permanent'}
             </Text>
-          )}
+          </div>
         </div>
       </div>
 
