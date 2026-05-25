@@ -4,7 +4,10 @@ import { useParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, Plus, Target } from 'lucide-react'
+import { Loader2, Plus, Target, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { PageContainer } from '@/components/ui/page-container'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import { toast } from 'sonner'
 import { IndicatorCard } from '../components/IndicatorCard'
 import { IndicatorDetailsModal } from '../components/IndicatorDetailsModal'
@@ -72,29 +75,29 @@ export default function SuccessPlanPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <PageContainer className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-plannera-orange/10 text-plannera-orange border border-plannera-orange/20 shadow-sm">
-            <Target className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tighter uppercase leading-none">
-              Indicadores
-            </h1>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary mt-1">
-              Plano de Sucesso
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <ModuleHeader 
+          title="Indicadores" 
+          subtitle={`Plano de Sucesso para ${accountData?.name || 'Cliente'}`}
+          iconName="Target"
+        />
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => setIsAddIndicatorOpen(true)}
+            className="gap-2 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] h-10 rounded-xl"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Indicador
+          </Button>
+          <Link href={`/accounts/${accountId}`} className="shrink-0">
+            <button className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-content-secondary hover:text-content-primary transition-colors border border-border-divider rounded-xl bg-surface-background h-10">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </button>
+          </Link>
         </div>
-        <Button
-          onClick={() => setIsAddIndicatorOpen(true)}
-          className="gap-2 bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] h-10 rounded-xl"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Indicador
-        </Button>
       </div>
 
       {/* Grid de Indicadores */}
@@ -147,6 +150,6 @@ export default function SuccessPlanPage() {
           queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })
         }}
       />
-    </div>
+    </PageContainer>
   )
 }
