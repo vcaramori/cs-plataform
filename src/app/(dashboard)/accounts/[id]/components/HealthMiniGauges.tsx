@@ -50,28 +50,43 @@ export function HealthMiniGauges({
   onShowReasoning,
   showReasoning,
 }: HealthMiniGaugesProps) {
+
+  const getScoreColor = (val: number) => {
+    if (val >= 80) return "#10b981"; // Green
+    if (val >= 50) return "#f59e0b"; // Amber
+    return "#ef4444"; // Red
+  }
+
+  const adoptionVal = currentAdoptionScore ?? latestHealthScore?.engagement_component ?? 50
+  const chamadosVal = latestHealthScore?.ticket_component || 50
+  const relacVal = latestHealthScore?.sentiment_component || 50
+  const npsVal = npsScore === null ? 50 : Math.max(0, (npsScore + 100) / 2)
+  const slaVal = slaActive === null ? 50 : slaActive ? 100 : 15
+  
+  const shadowVal = latestHealthScore?.shadow_score
+
   return (
     <Card variant="glass" className="lg:col-span-3 p-5 flex items-center justify-between gap-4 border-border shadow-2xl rounded-2xl overflow-hidden min-h-[160px]">
       <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
-        <HealthMiniGauge index={0} label="Adoção" value={currentAdoptionScore ?? latestHealthScore?.engagement_component ?? 50} icon={Zap} color="#10b981" />
-        <HealthMiniGauge index={1} label="Chamados" value={latestHealthScore?.ticket_component || 50} icon={Ticket} color="#f59e0b" />
-        <HealthMiniGauge index={2} label="Relacionamento" value={latestHealthScore?.sentiment_component || 50} icon={Heart} color="hsl(var(--primary))" />
+        <HealthMiniGauge index={0} label="Adoção" value={adoptionVal} icon={Zap} color={getScoreColor(adoptionVal)} />
+        <HealthMiniGauge index={1} label="Chamados" value={chamadosVal} icon={Ticket} color={getScoreColor(chamadosVal)} />
+        <HealthMiniGauge index={2} label="Relacionamento" value={relacVal} icon={Heart} color={getScoreColor(relacVal)} />
 
         <HealthMiniGauge
           index={3}
           label="NPS"
-          value={npsScore === null ? 50 : Math.max(0, (npsScore + 100) / 2)}
+          value={npsVal}
           icon={MessageSquare}
-          color={npsScore !== null && npsScore > 50 ? "#10b981" : "hsl(var(--primary))"}
+          color={npsScore === null ? "hsl(var(--muted-foreground))" : getScoreColor(npsVal)}
           displayLabel={npsScore === null ? '—' : npsScore > 0 ? `+${npsScore}` : String(npsScore)}
         />
 
         <HealthMiniGauge
           index={4}
           label="SLA"
-          value={slaActive === null ? 50 : slaActive ? 100 : 15}
+          value={slaVal}
           icon={slaActive ? ShieldCheck : ShieldOff}
-          color={slaActive ? "#10b981" : "hsl(var(--destructive))"}
+          color={slaActive === null ? "hsl(var(--muted-foreground))" : slaActive ? "#10b981" : "#ef4444"}
           displayLabel={slaActive === null ? '—' : slaActive ? 'OK' : 'Err.'}
         />
 
@@ -82,19 +97,19 @@ export function HealthMiniGauges({
           className="flex flex-col items-center justify-center gap-3 relative overflow-hidden rounded-2xl border border-border-divider bg-surface-background h-[120px] shadow-sm group hover:border-primary/30 transition-all cursor-pointer"
           onClick={() => latestHealthScore?.shadow_reasoning && onShowReasoning?.(!showReasoning)}
         >
-          {latestHealthScore?.shadow_score != null ? (
+          {shadowVal != null ? (
             <>
               <div
                 className="absolute bottom-0 left-0 w-full transition-all duration-1000 z-0"
-                style={{ height: `${Math.max(5, latestHealthScore.shadow_score)}%`, backgroundColor: "hsl(var(--primary))", opacity: 0.2 }}
+                style={{ height: `${Math.max(5, shadowVal)}%`, backgroundColor: getScoreColor(shadowVal), opacity: 0.2 }}
               />
-              <div className="absolute bottom-0 left-0 w-full h-[2px] z-10" style={{ backgroundColor: "hsl(var(--primary))", opacity: 0.5 }} />
-              <Sparkles className="w-6 h-6 relative z-10 text-primary animate-pulse" />
+              <div className="absolute bottom-0 left-0 w-full h-[2px] z-10" style={{ backgroundColor: getScoreColor(shadowVal), opacity: 0.5 }} />
+              <Sparkles className="w-6 h-6 relative z-10 animate-pulse" style={{ color: getScoreColor(shadowVal) }} />
               <div className="text-center relative z-10 w-full px-1">
                 <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">Pontuação IA</p>
                 <div className="flex items-center gap-1 justify-center">
-                  <span className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums">
-                    {Math.round(latestHealthScore.shadow_score)}
+                  <span className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums" style={{ color: getScoreColor(shadowVal) }}>
+                    {Math.round(shadowVal)}
                   </span>
                   {latestHealthScore.shadow_reasoning && (
                     <Info className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
