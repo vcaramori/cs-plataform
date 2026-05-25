@@ -52,14 +52,19 @@ export function MeetingPrepModal({ accountId, accountName }: Props) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 rounded-xl border-border-divider text-content-secondary hover:text-content-primary"
+        <button 
+          className="flex items-center text-left gap-3 px-4 py-3 rounded-2xl border border-border-divider/50 bg-white dark:bg-slate-900/50 backdrop-blur-md shadow-lg transition-all duration-300 cursor-pointer hover:bg-indigo-500/10 hover:border-indigo-500/30 hover:scale-[1.02] active:scale-95 shrink-0"
         >
-          <CalendarDays className="w-4 h-4" />
-          <span className="hidden sm:inline">Meeting Prep</span>
-        </Button>
+          <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 dark:bg-primary/10 flex items-center justify-center border border-indigo-500/20 dark:border-primary/20 text-indigo-600 dark:text-primary">
+            <CalendarDays className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-50 select-none text-content-secondary">Pauta Reunião</span>
+            <span className="text-sm font-black tracking-tight text-indigo-600 dark:text-primary uppercase leading-tight">
+              Meeting Prep
+            </span>
+          </div>
+        </button>
       </DialogTrigger>
 
       <DialogContent className="max-w-xl bg-surface-card border-border-divider">

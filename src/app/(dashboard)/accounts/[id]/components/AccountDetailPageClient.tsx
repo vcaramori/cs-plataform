@@ -220,7 +220,7 @@ export function AccountDetailPageClient({
       {/* Assistente IA Flutuante */}
       <AccountChat accountId={id} accountName={accountName} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,31fr)_minmax(0,45fr)_minmax(0,24fr)] gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,31fr)_minmax(0,45fr)_minmax(0,24fr)] gap-6 items-start">
 
         {/* COLUNA 1 — Linha do Tempo & Esforço */}
         <div className="space-y-6">
@@ -249,7 +249,7 @@ export function AccountDetailPageClient({
         </div>
 
         {/* COLUNA 2 — Valor, Adoção & Atrito */}
-        <div className="space-y-12 lg:border-x lg:border-border-divider lg:px-10">
+        <div className="space-y-12 lg:border-x lg:border-border-divider lg:px-6">
 
           {/* AI Risk Alert */}
           {latestRiskAssessment && (latestRiskAssessment.sentiment_label === 'negative' || latestRiskAssessment.sentiment_label === 'at-risk') && (

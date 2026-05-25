@@ -64,15 +64,17 @@ export function StartPlaybookDialog({ accountId, accountName }: { accountId: str
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full flex items-center justify-center gap-2" variant="outline">
-          <PlayCircle className="w-4 h-4" />
+        <button className="w-full py-3.5 rounded-xl border border-border-divider bg-surface-background hover:bg-surface-card text-content-secondary hover:text-content-primary transition-all text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group">
+          <PlayCircle className="w-4 h-4 text-indigo-600 dark:text-primary shrink-0 group-hover:scale-110 transition-transform" />
           Iniciar Novo Playbook
-        </Button>
+        </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-slate-950 border-border">
+      <DialogContent className="sm:max-w-[425px] rounded-2xl bg-surface-card border-border-divider shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="h2-section text-lg">Instanciar Playbook</DialogTitle>
-          <DialogDescription className="text-muted-foreground text-sm">
+          <DialogTitle className="text-sm font-black uppercase tracking-widest text-content-primary">
+            Instanciar Playbook
+          </DialogTitle>
+          <DialogDescription className="text-[10px] text-content-secondary uppercase tracking-wider mt-1 select-none opacity-60">
             Selecione o playbook para iniciar em {accountName}.
           </DialogDescription>
         </DialogHeader>
