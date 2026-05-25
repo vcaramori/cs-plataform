@@ -60,8 +60,8 @@ async function runChatPipeline(
   const contextParts: string[] = []
 
   if (accountId) {
-    // Modo conta específica
-    const [healthRes, contractRes] = await Promise.all([
+    // Modo conta específica - Busca saúde, contrato, interações, esforços e chamados de suporte
+    const [healthRes, contractRes, interactionsRes, effortsRes, ticketsRes] = await Promise.all([
       db.from('health_scores')
         .select('evaluated_at, manual_score, shadow_score, classification, manual_notes, shadow_reasoning')
         .eq('account_id', accountId)
@@ -72,6 +72,21 @@ async function runChatPipeline(
         .eq('account_id', accountId)
         .eq('status', 'active')
         .limit(1),
+      db.from('interactions')
+        .select('title, raw_transcript, date, type')
+        .eq('account_id', accountId)
+        .order('date', { ascending: false })
+        .limit(10),
+      db.from('time_entries')
+        .select('activity_type, parsed_description, natural_language_input, date, parsed_hours')
+        .eq('account_id', accountId)
+        .order('date', { ascending: false })
+        .limit(10),
+      db.from('support_tickets')
+        .select('title, status, opened_at, description')
+        .eq('account_id', accountId)
+        .order('opened_at', { ascending: false })
+        .limit(10),
     ])
 
     if (accountName) contextParts.push(`## Cliente: ${accountName}`)
@@ -88,6 +103,27 @@ async function runChatPipeline(
       contextParts.push(
         `## Contrato\nMRR: R$ ${c.mrr?.toLocaleString('pt-BR') ?? '—'} | Plano: ${c.service_type ?? '—'} | Renovação: ${c.renewal_date ?? '—'}`
       )
+    }
+
+    if (interactionsRes.data && interactionsRes.data.length > 0) {
+      const ints = interactionsRes.data.map((i: any) => 
+        `- [${i.date}] ${i.title}${i.raw_transcript ? ` (Detalhe/Transcrição: ${i.raw_transcript})` : ''}`
+      ).join('\n')
+      contextParts.push(`## Reuniões e Interações Recentes\n${ints}`)
+    }
+
+    if (effortsRes.data && effortsRes.data.length > 0) {
+      const effs = effortsRes.data.map((e: any) => 
+        `- [${e.date}] Esforço de ${e.activity_type} (${e.parsed_hours ?? 0}h): ${e.parsed_description || e.natural_language_input || 'Sem detalhes'}`
+      ).join('\n')
+      contextParts.push(`## Registros de Esforço Recentes\n${effs}`)
+    }
+
+    if (ticketsRes.data && ticketsRes.data.length > 0) {
+      const tks = ticketsRes.data.map((t: any) => 
+        `- [${t.opened_at}] Chamado: ${t.title} | Status: ${t.status}${t.description ? ` (Descrição: ${t.description})` : ''}`
+      ).join('\n')
+      contextParts.push(`## Chamados de Suporte Recentes\n${tks}`)
     }
   } else {
     // Modo portfólio completo — busca resumo agregado
