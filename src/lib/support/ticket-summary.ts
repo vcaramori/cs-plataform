@@ -71,10 +71,12 @@ Forneça APENAS o resumo, sem explicações adicionais. Máximo 150 caracteres.`
 
     const response = await generateText(prompt, {
       maxOutputTokens: 100,
-      temperature: 0.3
+      temperature: 0.3,
+      disableThinking: true
     })
 
-    const summary = response.result.trim().substring(0, MAX_SUMMARY_LENGTH)
+    const cleanResult = response.result.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    const summary = cleanResult.substring(0, MAX_SUMMARY_LENGTH)
 
     return summary
   } catch (error) {

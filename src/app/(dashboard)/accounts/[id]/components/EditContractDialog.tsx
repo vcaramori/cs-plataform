@@ -19,15 +19,35 @@ import { toast } from 'sonner'
 
 const schema = z.object({
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']),
+  service_type: z.string().min(1, 'Selecione um plano'),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']),
-  mrr: z.preprocess(v => parseFloat(String(v)), z.number().positive('MRR deve ser positivo')),
+  mrr: z.preprocess(v => {
+    const val = String(v ?? '').replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }, z.number().positive('MRR deve ser positivo')),
   start_date: z.string().optional().or(z.literal('')),
   renewal_date: z.string().optional().or(z.literal('')),
-  contracted_hours_monthly: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
-  csm_hour_cost: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
-  fine_amount: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
-  fidelity_months: z.preprocess(v => parseFloat(String(v)), z.number().min(0)),
+  contracted_hours_monthly: z.preprocess(v => {
+    const val = String(v ?? '').replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }, z.number().min(0)),
+  csm_hour_cost: z.preprocess(v => {
+    const val = String(v ?? '').replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }, z.number().min(0)),
+  fine_amount: z.preprocess(v => {
+    const val = String(v ?? '').replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }, z.number().min(0)),
+  fidelity_months: z.preprocess(v => {
+    const val = String(v ?? '').replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }, z.number().min(0)),
   progressive_discounts: z.array(z.object({
     label: z.string(),
     discount: z.number(),
@@ -35,6 +55,7 @@ const schema = z.object({
   })).default([]),
   notes: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  instance_url: z.string().optional().nullable(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -48,7 +69,17 @@ interface EditContractDialogProps {
 export function EditContractDialog({ contract, onSuccess, triggerText }: EditContractDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [plans, setPlans] = useState<any[]>([])
   const router = useRouter()
+
+  useEffect(() => {
+    if (open) {
+      fetch('/api/product/plans')
+        .then(r => r.json())
+        .then(setPlans)
+        .catch(console.error)
+    }
+  }, [open])
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
@@ -66,6 +97,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
       progressive_discounts: contract.progressive_discounts || [],
       notes: contract.notes || '',
       description: contract.description || '',
+      instance_url: contract.instance_url || '',
     }
   })
 
@@ -86,6 +118,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
         progressive_discounts: contract.progressive_discounts || [],
         notes: contract.notes || '',
         description: contract.description || '',
+        instance_url: contract.instance_url || '',
       })
     }
   }, [open, contract, reset])
@@ -181,9 +214,7 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
                 onValueChange={(v) => setValue('service_type', v as any)}
                 className={INPUT}
                 options={[
-                  { label: 'Basic', value: 'Basic' },
-                  { label: 'Professional', value: 'Professional' },
-                  { label: 'Enterprise', value: 'Enterprise' },
+                  ...plans.map(p => ({ label: p.name, value: p.name })),
                   { label: 'Custom', value: 'Custom' }
                 ]}
               />
@@ -334,6 +365,12 @@ export function EditContractDialog({ contract, onSuccess, triggerText }: EditCon
             <Label className={LABEL}>Produto / Descrição</Label>
             <Input {...register('description')} className={INPUT} placeholder="Ex: Licenciamento Enterprise + Suporte Premium" />
             {errors.description && <p className="text-destructive text-[10px] font-bold ml-1">{errors.description.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label className={LABEL}>Instância (URL)</Label>
+            <Input {...register('instance_url')} className={INPUT} placeholder="https://cliente.plannera.com.br" />
+            {errors.instance_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.instance_url.message}</p>}
           </div>
 
           <div className="space-y-2">

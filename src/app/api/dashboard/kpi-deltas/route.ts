@@ -89,7 +89,7 @@ export async function GET() {
 
     const mrrDeltaPct = prevMRR > 0
       ? Math.round(((currentMRR - prevMRR) / prevMRR) * 100)
-      : null
+      : 0
 
     const npsDelta = npsCurrentScore !== null && npsPriorScore !== null
       ? npsCurrentScore - npsPriorScore

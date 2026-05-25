@@ -57,37 +57,37 @@ export const TicketListRow: React.FC<TicketListRowProps> = ({
           onCheckedChange={(checked) => onSelect(ticket.id, !!checked)} 
         />
       </TableCell>
-      <TableCell className="font-medium whitespace-nowrap">
+      <TableCell className="text-xs font-semibold whitespace-nowrap">
         {ticket.accounts?.name || 'N/A'}
       </TableCell>
-      <TableCell className="max-w-[300px]">
-        <div className="flex flex-col">
-          <span className="font-semibold text-content-primary line-clamp-1">{ticket.title}</span>
-          <span className="text-xs text-muted-foreground line-clamp-1">{ticket.description}</span>
+      <TableCell className="max-w-[300px] py-2">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-bold text-content-primary line-clamp-1">{ticket.title}</span>
+          <span className="text-[11px] text-muted-foreground line-clamp-1">{ticket.description}</span>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <StatusBadgeGuard 
-          type={ticket.status as keyof typeof statusConfig} 
+          type={ticket.status as any}
           label={statusConfig[ticket.status]?.label || ticket.status} 
+          size="sm"
         />
-
       </TableCell>
-      <TableCell>
-        <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} />
+      <TableCell className="py-2 text-center">
+        <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} className="text-[9px] font-bold px-2 py-0.5 rounded-md" />
       </TableCell>
-      <TableCell>
-        <Badge variant="outline" className={cn(priorityConfig[ticket.priority]?.bg, priorityConfig[ticket.priority]?.color, "border-none shadow-none font-bold")}>
+      <TableCell className="py-2 text-center">
+        <Badge variant="outline" className={cn(priorityConfig[ticket.priority]?.bg, priorityConfig[ticket.priority]?.color, "border-none shadow-none text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md")}>
           {priorityConfig[ticket.priority]?.label}
         </Badge>
       </TableCell>
-      <TableCell>
-        <div className="flex flex-col gap-1">
+      <TableCell className="py-2">
+        <div className="flex flex-col gap-1 items-center">
           <SLABadge status={ticket.sla_status_first_response} label="Resposta" />
           <SLABadge status={ticket.sla_status_resolution} label="Resolução" />
         </div>
       </TableCell>
-      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+      <TableCell className="text-muted-foreground whitespace-nowrap text-[11px] text-right">
         {formatDate(new Date(ticket.opened_at), 'dd/MM/yyyy', { locale: ptBR })}
       </TableCell>
     </TableRow>

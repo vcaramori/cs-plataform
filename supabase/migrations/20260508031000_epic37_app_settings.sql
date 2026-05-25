@@ -36,7 +36,7 @@ INSERT INTO public.app_settings (key, value, description) VALUES
   ('support_similarity_threshold', '0.75', 'Similarity threshold for duplicate ticket detection'),
   ('nps_promoter_score', '9', 'NPS score threshold for promoter'),
   ('nps_detractor_score', '6', 'NPS score threshold for detractor'),
-  ('ai_model_active', 'gemini-pro', 'Active AI model for content generation'),
+  ('ai_model_active', '"gemini-pro"', 'Active AI model for content generation'),
   ('ai_confidence_threshold', '0.75', 'Confidence threshold for AI-generated content'),
   ('ai_cache_ttl_hours', '24', 'TTL in hours for AI response caching'),
   ('smtp_enabled', 'true', 'Enable SMTP for email sending'),

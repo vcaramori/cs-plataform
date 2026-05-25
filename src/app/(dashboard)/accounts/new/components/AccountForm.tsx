@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,7 +66,7 @@ const ContractSchema = z.object({
   start_date: z.string().optional().nullable(),
   renewal_date: z.string().optional().nullable(),
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).default('initial'),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).default('Professional'),
+  service_type: z.string().default('Professional'),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
   pricing_type: z.enum(['standard', 'custom']).default('standard'),
   pricing_explanation: z.string().optional().nullable(),
@@ -74,6 +74,7 @@ const ContractSchema = z.object({
   sla_use_global: z.boolean().default(true),
   sla_levels: z.array(SLALevelSchema).default(DEFAULT_SLA_LEVELS),
   notes: z.string().optional().nullable(),
+  instance_url: z.string().optional().nullable(),
 })
 
 const GovernanceSchema = z.object({
@@ -137,8 +138,10 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   const [loading, setLoading] = useState(false)
   const [searchingCep, setSearchingCep] = useState(false)
   const [users, setUsers] = useState<{ id: string, email: string }[]>([])
+  const [plans, setPlans] = useState<{ id: string, name: string }[]>([])
+  const isCepUserEdited = useRef(false)
 
-  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, control, formState: { errors, dirtyFields } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: initialData ? {
@@ -167,11 +170,14 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
 
   useEffect(() => {
     fetch('/api/users').then(r => r.json()).then(setUsers).catch(console.error)
+    fetch('/api/product/plans').then(r => r.json()).then(setPlans).catch(console.error)
   }, [])
 
   useEffect(() => {
     const clean = cepValue?.replace(/\D/g, '')
-    if (clean?.length === 8 && !isInternational) handleCepSearch(clean)
+    if (clean?.length === 8 && !isInternational && isCepUserEdited.current) {
+      handleCepSearch(clean)
+    }
   }, [cepValue, isInternational])
 
   async function handleCepSearch(cep: string) {
@@ -307,7 +313,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, (errors) => toast.error('Erros de validação: ' + Object.keys(errors).join(', ') + (errors.contracts ? ' em contracts' : '')))}
             disabled={loading}
             variant="premium"
             className="h-11 px-8 rounded-xl font-bold uppercase tracking-widest text-xs gap-2"
@@ -318,7 +324,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit, (errors) => toast.error('Erros de validação: ' + Object.keys(errors).join(', ') + (errors.contracts ? ' em contracts' : '')))} className="space-y-8">
 
         {/* ── BLOCO 1: IDENTIFICAÇÃO ─────────────────────────────── */}
         <Card variant="glass" className="overflow-hidden border-none shadow-xl">
@@ -425,7 +431,15 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                 <div className="space-y-2">
                   <Label className={LABEL}>CEP</Label>
                   <div className="relative">
-                    <Input {...register('cep')} placeholder="00000-000" className={INPUT} />
+                    <Input
+                      {...register('cep')}
+                      onChange={(e) => {
+                        isCepUserEdited.current = true
+                        register('cep').onChange(e)
+                      }}
+                      placeholder="00000-000"
+                      className={INPUT}
+                    />
                     {searchingCep && <Loader2 className="w-3.5 h-3.5 animate-spin absolute right-3 top-3 text-success" />}
                   </div>
                 </div>
@@ -493,6 +507,7 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   contracted_hours_monthly: 0,
                   sla_use_global: true,
                   sla_levels: DEFAULT_SLA_LEVELS,
+                  instance_url: '',
                 })}
                 className="h-10 px-5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest gap-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
               >
@@ -558,12 +573,18 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                       onValueChange={(v) => setValue(`contracts.${index}.service_type`, v as any)}
                       className={cn(INPUT, "h-10 text-xs")}
                       options={[
-                        { label: 'Basic', value: 'Basic' },
-                        { label: 'Professional', value: 'Professional' },
-                        { label: 'Enterprise', value: 'Enterprise' },
+                        ...plans.map(p => ({ label: p.name, value: p.name })),
                         { label: 'Custom', value: 'Custom' }
                       ]}
                     />
+                  </div>
+
+                  <div className="col-span-2 md:col-span-4 space-y-2">
+                    <Label className={LABEL}>Instância (URL)</Label>
+                    <Input {...register(`contracts.${index}.instance_url`)} placeholder="https://cliente.plannera.com.br" className="h-10 text-xs bg-surface-background/50 border-border/50" />
+                    {errors.contracts?.[index]?.instance_url && (
+                      <p className="text-destructive text-[10px] font-bold ml-1">{errors.contracts[index].instance_url.message}</p>
+                    )}
                   </div>
 
                   {/* Financial Engine */}
@@ -571,32 +592,34 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                     <div className="flex items-center justify-between">
                       <Label className="label-premium text-foreground">Financial Engine</Label>
                       <div className="flex items-center gap-1 bg-background/50 rounded-xl p-1 border border-border">
-                        {(['standard', 'custom'] as const).map(type => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setValue(`contracts.${index}.pricing_type`, type)}
-                            className={cn(
-                              'px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all',
-                              watch(`contracts.${index}.pricing_type`) === type
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                            )}
-                          >
-                            {type}
-                          </button>
-                        ))}
+                        {(['standard', 'custom'] as const).map(type => {
+                          const isSelected = watch(`contracts.${index}.pricing_type`) === type
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setValue(`contracts.${index}.pricing_type`, type)}
+                              className={cn(
+                                'px-3 py-1 rounded-lg text-[9px] font-extrabold uppercase tracking-widest transition-all border',
+                                isSelected && type === 'standard'
+                                  ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                                  : isSelected && type === 'custom'
+                                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                  : 'text-muted-foreground/50 border-transparent hover:text-foreground hover:border-border'
+                              )}
+                            >
+                              {type}
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className={LABEL}>MRR Base</Label>
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        min="0"
-                        step="0.01"
-                        {...register(`contracts.${index}.mrr`, { valueAsNumber: true })}
-                        placeholder="0,00"
+                      <MaskedInput
+                        maskType="currency"
+                        value={watch(`contracts.${index}.mrr`) || ''}
+                        onValueChange={(value) => setValue(`contracts.${index}.mrr`, parseFloat(value) || 0)}
                         className={cn(INPUT, "h-11 text-lg font-black bg-muted border-primary/20")}
                       />
                     </div>

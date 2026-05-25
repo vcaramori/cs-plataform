@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseServerClient, getUserProfile } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
-import { Settings, Lock, Zap, ArrowRight, SlidersHorizontal, Activity } from 'lucide-react'
+import { Settings, Zap, ArrowRight, SlidersHorizontal } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await getSupabaseServerClient()
@@ -17,14 +17,6 @@ export default async function AdminPage() {
   }
 
   const sections = [
-    {
-      href: '/admin/permissions',
-      title: 'Permissões & RBAC',
-      description: 'Gerenciar usuários, roles e controle de acesso',
-      icon: Lock,
-      color: 'from-blue-500/10 to-blue-500/5',
-      accentColor: 'text-blue-600 dark:text-blue-400'
-    },
     {
       href: '/admin/integrations',
       title: 'Integrações',
@@ -41,14 +33,6 @@ export default async function AdminPage() {
       color: 'from-purple-500/10 to-purple-500/5',
       accentColor: 'text-purple-600 dark:text-purple-400'
     },
-    {
-      href: '/admin/observability',
-      title: 'Observability',
-      description: 'Logs de aplicação, métricas de performance e rastreamento de erros',
-      icon: Activity,
-      color: 'from-emerald-500/10 to-emerald-500/5',
-      accentColor: 'text-emerald-600 dark:text-emerald-400'
-    }
   ]
 
   return (

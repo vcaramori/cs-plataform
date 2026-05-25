@@ -84,7 +84,7 @@ export async function PATCH(
       text: comment,
       created_at: new Date().toISOString(),
     }
-    updateData.comments = [...currentComments, newComment]
+    updateData.comments = [...(Array.isArray(currentComments) ? currentComments : []), newComment]
   }
 
   // Update the task
@@ -100,12 +100,13 @@ export async function PATCH(
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
 
-  // Log event for auditability
+  // Log event for auditability — ticket_events schema: event_type, payload, ticket_id, triggered_by
   try {
     await supabase.from('ticket_events').insert({
-      type: 'playbook_task_updated',
-      account_id: playbook.account_id,
-      metadata: {
+      event_type: 'playbook_task_updated',
+      ticket_id: taskId,
+      triggered_by: user.id,
+      payload: {
         task_id: taskId,
         playbook_id: task.account_playbook_id,
         new_status: status,

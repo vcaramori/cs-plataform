@@ -35,65 +35,78 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-plannera-primary flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Visual background accents */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-plannera-sop/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-plannera-orange/5 blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-[#070d1e] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* High-end decorative blurred background orbs */}
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-plannera-sop/15 blur-[130px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-plannera-orange/10 blur-[130px] rounded-full pointer-events-none" />
+      <div className="absolute center w-[300px] h-[300px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
       
-      <div className="w-full max-w-sm relative z-10">
+      <div className="w-full max-w-[400px] relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-plannera-orange to-plannera-sop mb-6 shadow-2xl shadow-plannera-orange/20">
-             <Sparkles className="w-7 h-7 text-white" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-plannera-orange to-plannera-soe mb-5 shadow-xl shadow-plannera-orange/20 border border-white/10 relative group overflow-hidden">
+             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+             <Sparkles className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-heading font-extrabold text-white tracking-tight uppercase">CS-Continuum</h1>
-          <p className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Control Tower — Plannera DS</p>
+          <h1 className="text-3xl font-heading font-black text-white tracking-tight uppercase text-glow">CS-Continuum</h1>
+          <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-[0.34em] mt-2">Control Tower — Plannera DS</p>
         </div>
 
-        <Card className="glass-card border-none shadow-2xl overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-plannera-orange to-plannera-sop w-full" />
-          <CardHeader className="pb-4 pt-8">
-            <CardTitle className="text-white text-lg font-bold uppercase tracking-tight">Autenticação</CardTitle>
-            <CardDescription className="text-content-secondary/80 text-xs font-medium uppercase tracking-widest">Insira suas credenciais Plannera</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">E-mail Corporativo</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="usuario@plannera.tech"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-black/20 border-white/5 text-white placeholder:text-content-secondary/30 focus:border-plannera-orange h-11 rounded-xl transition-all"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">Senha de Acesso</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-black/20 border-white/5 text-white placeholder:text-content-secondary/30 focus:border-plannera-orange h-11 rounded-xl transition-all"
-                />
-              </div>
-              {error && (
-                <p className="text-plannera-demand text-[10px] font-bold uppercase tracking-widest bg-plannera-demand/10 p-2 rounded-lg text-center">{error}</p>
-              )}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold uppercase tracking-widest h-12 rounded-xl shadow-xl transition-all active:scale-95"
-              >
-                {loading ? 'Processando...' : 'Iniciar Sessão'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        {/* Premium Dark Glassmorphic Card Container */}
+        <div className="relative bg-slate-950/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl overflow-hidden">
+          {/* Top glowing gradient border */}
+          <div className="absolute top-0 left-0 h-[2px] bg-gradient-to-r from-plannera-orange via-plannera-soe to-plannera-sop w-full" />
+          
+          <div className="mb-6">
+            <h2 className="text-white text-lg font-black uppercase tracking-tight">Autenticação</h2>
+            <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mt-1">Insira suas credenciais Plannera</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-slate-300 text-[10px] font-extrabold uppercase tracking-widest block">
+                E-mail Corporativo
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="usuario@plannera.tech"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-slate-900/60 border border-white/15 text-white placeholder:text-slate-500/80 focus:border-plannera-orange focus:ring-1 focus:ring-plannera-orange/30 outline-none h-11 px-4 rounded-xl transition-all text-sm font-medium"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-slate-300 text-[10px] font-extrabold uppercase tracking-widest block">
+                Senha de Acesso
+              </label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full bg-slate-900/60 border border-white/15 text-white placeholder:text-slate-500/80 focus:border-plannera-orange focus:ring-1 focus:ring-plannera-orange/30 outline-none h-11 px-4 rounded-xl transition-all text-sm font-medium"
+              />
+            </div>
+
+            {error && (
+              <p className="text-plannera-demand text-[10px] font-bold uppercase tracking-widest bg-plannera-demand/10 p-3 rounded-xl text-center border border-plannera-demand/20">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-plannera-orange to-plannera-soe hover:from-plannera-orange/90 hover:to-plannera-soe/90 text-white font-extrabold uppercase tracking-widest h-12 rounded-xl shadow-lg shadow-plannera-orange/20 transition-all hover:scale-[1.02] active:scale-95 duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {loading ? 'Processando...' : 'Iniciar Sessão'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

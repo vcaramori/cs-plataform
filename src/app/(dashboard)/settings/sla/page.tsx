@@ -103,7 +103,7 @@ export default function SLASettingsPage() {
   if (!policy) return null
 
   return (
-    <PageContainer className="max-w-[1200px] space-y-10">
+    <PageContainer className="max-w-[960px] space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-2 relative">
         <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
@@ -119,29 +119,25 @@ export default function SLASettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Settings */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border-none shadow-xl overflow-hidden">
-            <div className="h-[3px] bg-indigo-500/50" />
-            <CardHeader className="px-8 pt-6 pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="h2-section flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary" />
-                    Prazos por Criticidade
-                  </CardTitle>
-                </div>
-              </div>
+        <div className="lg:col-span-2">
+          <Card className="border-none shadow-sm overflow-hidden">
+            <div className="h-[2px] bg-indigo-500/50" />
+            <CardHeader className="px-5 pt-4 pb-2">
+              <CardTitle className="h2-section flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" />
+                Prazos por Criticidade
+              </CardTitle>
             </CardHeader>
-            <CardContent className="px-8 pb-8 pt-4">
+            <CardContent className="px-5 pb-5 pt-2">
               <div className="overflow-hidden rounded-xl border border-border-divider">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-surface-background">
-                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest pl-8">Nível Interno</th>
-                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center">1ª Resposta (Min)</th>
-                      <th className="p-4 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center pr-8">Resolução (Min)</th>
+                      <th className="p-3 pl-5 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest">Nível</th>
+                      <th className="p-3 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center">1ª Resposta (Min)</th>
+                      <th className="p-3 text-[10px] font-extrabold text-content-secondary uppercase tracking-widest text-center pr-5">Resolução (Min)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-divider">
@@ -150,12 +146,12 @@ export default function SLASettingsPage() {
                       return order[a.level] - order[b.level]
                     }).map((level) => (
                       <tr key={level.level} className="hover:bg-surface-background/60 transition-colors">
-                        <td className="p-4 pl-8">
+                        <td className="p-3 pl-5">
                           <span className={cn("text-xs font-extrabold uppercase tracking-wider", INTERNAL_LEVEL_COLORS[level.level])}>
                             {INTERNAL_LEVEL_LABELS[level.level]}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2">
                           <Input
                             type="number"
                             value={level.first_response_minutes}
@@ -164,10 +160,10 @@ export default function SLASettingsPage() {
                               newLevels[policy.levels.findIndex(l => l.level === level.level)].first_response_minutes = parseInt(e.target.value) || 0
                               setPolicy({ ...policy, levels: newLevels })
                             }}
-                            className="w-24 mx-auto h-9 text-center text-xs font-mono"
+                            className="w-24 mx-auto h-8 text-center text-xs font-mono"
                           />
                         </td>
-                        <td className="p-4 pr-8">
+                        <td className="p-2 pr-5">
                           <Input
                             type="number"
                             value={level.resolution_minutes}
@@ -176,7 +172,7 @@ export default function SLASettingsPage() {
                               newLevels[policy.levels.findIndex(l => l.level === level.level)].resolution_minutes = parseInt(e.target.value) || 0
                               setPolicy({ ...policy, levels: newLevels })
                             }}
-                            className="w-24 mx-auto h-9 text-center text-xs font-mono"
+                            className="w-24 mx-auto h-8 text-center text-xs font-mono"
                           />
                         </td>
                       </tr>
@@ -184,10 +180,10 @@ export default function SLASettingsPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="mt-4 p-4 rounded-xl bg-warning/5 border border-warning-500/10 flex items-start gap-4">
-                <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+              <div className="mt-3 p-3 rounded-xl bg-warning/5 border border-warning-500/10 flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <p className="text-[10px] text-warning/70 font-medium leading-relaxed uppercase">
-                  Atenção: Mudanças nos tempos globais não retroagirão para chamados que já estão abertos. O novo SLA será aplicado apenas para novos chamados em clientes que utilizam o padrão Plannera.
+                  Mudanças nos tempos globais não retroagem para chamados abertos. O novo SLA é aplicado apenas para novos chamados.
                 </p>
               </div>
             </CardContent>
@@ -195,45 +191,45 @@ export default function SLASettingsPage() {
         </div>
 
         {/* Sidebar Settings */}
-        <div className="space-y-6">
-          <Card className="border-none shadow-xl overflow-hidden">
-            <div className="h-[3px] bg-sky-500/50" />
-            <CardHeader className="px-6 pt-6 pb-2">
+        <div className="space-y-4">
+          <Card className="border-none shadow-sm overflow-hidden">
+            <div className="h-[2px] bg-sky-500/50" />
+            <CardHeader className="px-5 pt-4 pb-2">
               <CardTitle className="h2-section flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary" />
                 Engenharia de Alerta
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-6 pb-6 space-y-6 pt-2">
-              <div className="space-y-2">
+            <CardContent className="px-5 pb-5 space-y-4 pt-2">
+              <div className="space-y-1.5">
                 <Label className="label-premium ml-1">Alerta de Proximidade (%)</Label>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     value={policy.alert_threshold_pct}
                     onChange={(e) => setPolicy({ ...policy, alert_threshold_pct: parseInt(e.target.value) || 0 })}
-                    className="h-10 text-xs font-mono"
+                    className="h-9 text-xs font-mono"
                   />
-                  <span className="text-content-secondary text-xs font-bold">%</span>
+                  <span className="text-content-secondary text-xs font-bold shrink-0">%</span>
                 </div>
-                <p className="text-[9px] text-content-secondary italic">Disparar alerta visual quando restar X% do tempo total.</p>
+                <p className="text-[9px] text-content-secondary italic">Alerta visual quando restar X% do tempo total.</p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="label-premium ml-1">Fechamento Automático (H)</Label>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     value={policy.auto_close_hours}
                     onChange={(e) => setPolicy({ ...policy, auto_close_hours: parseInt(e.target.value) || 0 })}
-                    className="h-10 text-xs font-mono"
+                    className="h-9 text-xs font-mono"
                   />
-                  <span className="text-content-secondary text-xs font-bold">HRS</span>
+                  <span className="text-content-secondary text-xs font-bold shrink-0">HRS</span>
                 </div>
-                <p className="text-[9px] text-content-secondary italic">Tempo após resolução para fechar o ticket automaticamente sem interação.</p>
+                <p className="text-[9px] text-content-secondary italic">Tempo após resolução para fechar automaticamente.</p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="label-premium ml-1">Fuso Horário Base</Label>
                 <SearchableSelect
                   value={policy.timezone}
@@ -242,13 +238,13 @@ export default function SLASettingsPage() {
                     { label: 'Brasília (GMT-3)', value: 'America/Sao_Paulo' },
                     { label: 'London (UTC)', value: 'UTC' }
                   ]}
-                  className="h-10 text-xs"
+                  className="h-9 text-xs"
                 />
               </div>
 
               <Button
                 onClick={handleSave}
-                className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-600/20 gap-2"
+                className="w-full h-9 bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm gap-2 text-[10px]"
                 disabled={saving}
               >
                 {saving ? (
@@ -263,18 +259,18 @@ export default function SLASettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="p-6 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10 border border-success-500/20">
-                <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <Card className="p-4 rounded-2xl space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-success/10 border border-success-500/20">
+                <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h4 className="text-content-primary text-xs font-bold uppercase tracking-wider">Modo Plannera</h4>
+                <h4 className="text-content-primary text-[10px] font-bold uppercase tracking-wider">Modo Plannera</h4>
                 <p className="label-premium !text-[9px] opacity-60">Consistência e Excelência</p>
               </div>
             </div>
             <p className="text-content-secondary text-[10px] leading-relaxed">
-              Este SLA garante que o suporte da Plannera mantenha o mesmo padrão de qualidade para todos os clientes que não possuem contratos customizados. Ele é o coração do monitoramento operacional.
+              Este SLA garante que o suporte da Plannera mantenha o mesmo padrão de qualidade para todos os clientes sem contratos customizados.
             </p>
           </Card>
         </div>

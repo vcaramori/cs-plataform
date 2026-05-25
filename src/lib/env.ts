@@ -76,4 +76,7 @@ export const env = {
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
   },
+  app: {
+    instanceName: process.env.NEXT_PUBLIC_INSTANCE_NAME ?? 'CS-Continuum',
+  },
 } as const

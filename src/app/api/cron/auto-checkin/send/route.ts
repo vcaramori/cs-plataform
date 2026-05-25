@@ -5,23 +5,6 @@ import nodemailer from 'nodemailer'
 export const maxDuration = 300 // 5 minutes
 
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@plannera.com'
-const SMTP_HOST = process.env.SMTP_HOST
-const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587
-const SMTP_USER = process.env.SMTP_USER
-const SMTP_PASS = process.env.SMTP_PASS
-
-// Create transporter
-const transporter = SMTP_HOST && SMTP_USER && SMTP_PASS
-  ? nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    })
-  : null
 
 export async function POST(request: Request) {
   // Check API Secret for internal cron auth
@@ -36,6 +19,35 @@ export async function POST(request: Request) {
   let errors: string[] = []
 
   try {
+    // Load Dynamic SMTP & Override settings from DB
+    const { data: dbSettingsRow } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'support_email_integration')
+      .single()
+
+    const emailSettings = dbSettingsRow?.value || {}
+    
+    const smtpHost = emailSettings.smtp_host || process.env.SMTP_HOST
+    const smtpPort = parseInt(emailSettings.smtp_port || process.env.SMTP_PORT || '587')
+    const smtpUser = emailSettings.smtp_user || process.env.SMTP_USER
+    const smtpPass = emailSettings.smtp_password || process.env.SMTP_PASS
+
+    // Create transporter dynamically
+    const transporter = smtpHost && smtpUser && smtpPass
+      ? nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass
+          }
+        })
+      : null
+
+    const emailTestRecipient = emailSettings.email_test_recipient || process.env.EMAIL_TEST_RECIPIENT
+
     // Find items to send:
     // - status='approved' OR
     // - status='pending' AND approval_deadline < NOW() (auto-approve after deadline)
@@ -84,6 +96,15 @@ export async function POST(request: Request) {
 
         const recipientEmail = contacts?.[0]?.email || csm.email
 
+        // Apply email test override logic
+        let finalTo = recipientEmail
+        let subjectPrefix = ''
+        
+        if (emailTestRecipient) {
+          finalTo = emailTestRecipient
+          subjectPrefix = `[TESTE - Destinatário Original: ${recipientEmail}] `
+        }
+
         // Send email via nodemailer
         if (transporter) {
           const htmlContent = `
@@ -116,16 +137,16 @@ export async function POST(request: Request) {
 
           await transporter.sendMail({
             from: EMAIL_FROM,
-            to: recipientEmail,
-            subject: subject,
+            to: finalTo,
+            subject: `${subjectPrefix}${subject}`,
             html: htmlContent,
             text: body
           })
 
-          console.log(`[Auto-Checkin] Sent check-in email for account ${item.account_id}`)
+          console.log(`[Auto-Checkin] Sent check-in email for account ${item.account_id} to ${finalTo} (Original: ${recipientEmail})`)
         } else {
           console.log(`[Auto-Checkin] SMTP not configured, logging email instead`)
-          console.log(`To: ${recipientEmail}, Subject: ${subject}`)
+          console.log(`To: ${finalTo}, Subject: ${subjectPrefix}${subject}`)
         }
 
         // Update queue item status

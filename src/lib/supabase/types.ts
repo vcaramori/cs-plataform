@@ -323,7 +323,7 @@ export type SLAPolicy = {
   account_id: string | null
   contract_id: string | null
   is_global: boolean
-  use_global_standard: boolean
+  use_global_standard?: boolean
   alert_threshold_pct: number
   auto_close_hours: number
   timezone: string

@@ -28,25 +28,25 @@ export function SuporteTable({
   const isIndeterminate = selectedIds.size > 0 && selectedIds.size < tickets.length
 
   return (
-    <div className="bg-surface-card border border-border-divider rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
+    <div className="bg-surface-card border border-border-divider rounded-xl shadow-lg overflow-hidden backdrop-blur-md">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader className="bg-surface-background/50">
             <TableRow className="hover:bg-transparent border-b border-border-divider">
-              <TableHead className="w-12 h-16 flex items-center justify-center">
+              <TableHead className="w-12 h-11 flex items-center justify-center">
                 <Checkbox
                   checked={isAllSelected}
                   onCheckedChange={() => onSelectAll(tickets)}
                   aria-label="Selecionar todos"
                 />
               </TableHead>
-              <TableHead className="pl-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">LOGO / Cliente</TableHead>
-              <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">Título do Chamado</TableHead>
-              <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Status</TableHead>
-              <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Urgência</TableHead>
-              <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">Prioridade</TableHead>
-              <TableHead className="h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-center">SLA Resolução</TableHead>
-              <TableHead className="pr-10 h-16 text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary text-right">Abertura</TableHead>
+              <TableHead className="pl-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">LOGO / Cliente</TableHead>
+              <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">Título do Chamado</TableHead>
+              <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Status</TableHead>
+              <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Urgência</TableHead>
+              <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Prioridade</TableHead>
+              <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">SLA Resolução</TableHead>
+              <TableHead className="pr-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-right">Abertura</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

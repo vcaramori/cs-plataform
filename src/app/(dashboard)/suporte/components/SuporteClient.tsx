@@ -18,6 +18,7 @@ import { SuporteKPIs } from './SuporteKPIs'
 import { SuporteFilters } from './SuporteFilters'
 import { SuporteTable } from './SuporteTable'
 import { SupportBulkImport } from './SupportBulkImport'
+import { CreateTicketModal } from './CreateTicketModal'
 
 type TicketWithAccount = SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null }
 
@@ -40,8 +41,8 @@ function sortTickets(tickets: TicketWithAccount[]) {
 
 
   return [...tickets].sort((a, b) => {
-    const slaA = slaMap[a.sla_status_resolution] ?? 99
-    const slaB = slaMap[b.sla_status_resolution] ?? 99
+    const slaA = slaMap[a.sla_status_resolution ?? ''] ?? 99
+    const slaB = slaMap[b.sla_status_resolution ?? ''] ?? 99
     if (slaA !== slaB) return slaA - slaB
 
     const pA = priorityMap[a.priority] ?? 99
@@ -79,7 +80,13 @@ export function SuporteClient({
   const [bulkActionType, setBulkActionType] = useState<'change_status' | 'assign' | 'close' | null>(null)
   const [csms, setCSMs] = useState<Array<{ id: string; name: string }>>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { previewId, openPreview, closePreview } = usePreviewPanel()
+
+  // Sincronizar prop de tickets quando alterado no servidor
+  useEffect(() => {
+    setTickets(initialTickets)
+  }, [initialTickets])
 
   // Fetch CSMs on mount
   useEffect(() => {
@@ -289,14 +296,14 @@ export function SuporteClient({
         </Link>
       </div>
 
-      <div className="flex justify-between items-center border-b border-border-divider/50 pb-6">
-        <div className="flex bg-surface-card border border-border-divider p-1.5 rounded-2xl shadow-inner">
+      <div className="flex justify-between items-center border-b border-border-divider/50 pb-4">
+        <div className="flex bg-surface-card border border-border-divider p-1 rounded-xl shadow-inner gap-1">
           {(['list', 'import'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative z-10",
+                "px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all relative z-10",
                 activeTab === tab ? "text-white" : "text-content-secondary hover:text-content-primary"
               )}
             >
@@ -304,7 +311,7 @@ export function SuporteClient({
               {activeTab === tab && (
                 <motion.div
                   layoutId="active-tab-support"
-                  className="absolute inset-0 bg-plannera-primary rounded-xl -z-10 shadow-lg shadow-plannera-primary/20"
+                  className="absolute inset-0 bg-plannera-primary rounded-lg -z-10 shadow-md shadow-plannera-primary/20"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -313,20 +320,30 @@ export function SuporteClient({
         </div>
 
         {activeTab === 'list' && (
-          <Button
-            variant="premium"
-            size="sm"
-            disabled={isSubmitting}
-            onClick={handleEmailSync}
-            className="bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-2xl h-11 px-8 shadow-lg shadow-plannera-orange/20 text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Mail className="w-4 h-4 mr-2" />
-            )}
-            Sincronizar E-mails
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="border border-border-divider hover:bg-surface-background/50 text-content-secondary hover:text-content-primary rounded-lg h-9 px-4 text-[11px] font-bold uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Novo Ticket
+            </Button>
+            <Button
+              variant="premium"
+              size="sm"
+              disabled={isSubmitting}
+              onClick={handleEmailSync}
+              className="bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-lg h-9 px-4 shadow-md shadow-plannera-orange/20 text-[11px] font-bold uppercase tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4 mr-2" />
+              )}
+              Sincronizar E-mails
+            </Button>
+          </div>
         )}
       </div>
 
@@ -367,7 +384,7 @@ export function SuporteClient({
           <BulkActionModal
             open={bulkActionOpen}
             onOpenChange={setBulkActionOpen}
-            selectedTickets={filteredTickets.filter((t) => selectedIds.has(t.id))}
+            selectedTickets={filteredTickets.filter((t) => selectedIds.has(t.id)) as any}
             action={bulkActionType}
             csms={csms}
             onConfirm={handleBulkActionConfirm}
@@ -414,6 +431,21 @@ export function SuporteClient({
         ticketId={previewId}
         onClose={closePreview}
         onTicketUpdated={handleTicketUpdated}
+      />
+
+      <CreateTicketModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        accounts={accounts}
+        onSuccess={(newTicket) => {
+          const acc = accounts.find((a) => a.id === newTicket.account_id)
+          const enriched = {
+            ...newTicket,
+            accounts: acc ? { id: acc.id, name: acc.name } : null,
+          }
+          setTickets((prev) => [enriched, ...prev])
+          router.refresh()
+        }}
       />
     </div>
   )

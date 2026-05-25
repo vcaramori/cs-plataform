@@ -151,7 +151,7 @@ export class AlertService {
     return null
   }
 
-  // 5. EXPANSION SIGNAL: NPS >= 9 + MRR < mediana segmento
+  // 5. EXPANSION SIGNAL: NPS >= 9 + MRR < mediana segmento OR effort logged opportunity
   async checkExpansionSignal(accountId: string): Promise<AlertCheckResult> {
     const { data: account } = await this.supabase
       .from('accounts')
@@ -161,6 +161,149 @@ export class AlertService {
 
     if (!account) return null
 
+    // --- DYNAMIC EFFORT RAG EXPANSION OPPORTUNITIES CHECK ---
+    try {
+      const { data: contract } = await this.supabase
+        .from('contracts')
+        .select('service_type, mrr')
+        .eq('account_id', accountId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle()
+
+      if (contract) {
+        const serviceType = contract.service_type
+
+        // Fetch all subscription plans
+        const { data: allPlans } = await this.supabase
+          .from('subscription_plans')
+          .select('id, name, tier_rank')
+          .eq('is_active', true)
+
+        const currentPlan = allPlans?.find((p: any) => p.name.toLowerCase() === serviceType?.toLowerCase())
+        const currentTierRank = currentPlan?.tier_rank ?? 0
+
+        // Find higher-tier plans
+        const higherPlans = allPlans?.filter((p: any) => p.tier_rank > currentTierRank) || []
+        const higherPlanNames = higherPlans.map((p: any) => p.name)
+
+        // Fetch all product features
+        const { data: allFeatures } = await this.supabase
+          .from('product_features')
+          .select('id, name, module')
+          .eq('is_active', true)
+
+        let currentPlanFeatureIds: string[] = []
+        if (currentPlan?.id) {
+          const { data: planFeatures } = await this.supabase
+            .from('plan_features')
+            .select('feature_id')
+            .eq('plan_id', currentPlan.id)
+
+          currentPlanFeatureIds = planFeatures?.map((pf: any) => pf.feature_id) || []
+        }
+
+        // Excluded features / modules (not in the current plan)
+        const excludedFeatures = allFeatures?.filter((f: any) => !currentPlanFeatureIds.includes(f.id)) || []
+
+        const opportunityKeywords = new Set<string>()
+
+        // Add higher-tier plans to keywords
+        higherPlanNames.forEach((name: string) => {
+          opportunityKeywords.add(name.trim().toLowerCase())
+        })
+
+        // Add excluded features and modules to keywords
+        excludedFeatures.forEach((f: any) => {
+          if (f.name) opportunityKeywords.add(f.name.trim().toLowerCase())
+          if (f.module) opportunityKeywords.add(f.module.trim().toLowerCase())
+        })
+
+        // Standard sales opportunity terms
+        opportunityKeywords.add('expansão')
+        opportunityKeywords.add('expansao')
+        opportunityKeywords.add('upsell')
+        opportunityKeywords.add('cross-sell')
+        opportunityKeywords.add('crosssell')
+        opportunityKeywords.add('drp') // "DRP" is a system module
+
+        // Fetch recent interactions (past 30 days)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        const { data: recentInteractions } = await this.supabase
+          .from('interactions')
+          .select('title, raw_transcript, type, created_at')
+          .eq('account_id', accountId)
+          .gte('created_at', thirtyDaysAgo)
+
+        // Fetch recent time entries (past 30 days)
+        const { data: recentTimeEntries } = await this.supabase
+          .from('time_entries')
+          .select('parsed_description, natural_language_input, activity_type, date')
+          .eq('account_id', accountId)
+          .gte('date', thirtyDaysAgo.split('T')[0])
+
+        let matchedKeyword = ''
+        let matchingTextSnippet = ''
+        let foundSource = ''
+
+        const keywordsList = Array.from(opportunityKeywords).filter((k: string) => k.length > 2)
+
+        // Look for keyword match in recent interactions
+        if (recentInteractions) {
+          for (const inter of recentInteractions) {
+            const textToSearch = `${inter.title || ''} ${inter.raw_transcript || ''}`.toLowerCase()
+            for (const kw of keywordsList) {
+              if (textToSearch.includes(kw)) {
+                matchedKeyword = kw
+                matchingTextSnippet = inter.raw_transcript
+                  ? (inter.raw_transcript.length > 120 ? `${inter.raw_transcript.slice(0, 120)}...` : inter.raw_transcript)
+                  : inter.title || ''
+                foundSource = `Interação: "${inter.title || inter.type}"`
+                break
+              }
+            }
+            if (matchedKeyword) break
+          }
+        }
+
+        // Look for keyword match in recent time entries
+        if (!matchedKeyword && recentTimeEntries) {
+          for (const entry of recentTimeEntries) {
+            const textToSearch = `${entry.natural_language_input || ''} ${entry.parsed_description || ''}`.toLowerCase()
+            for (const kw of keywordsList) {
+              if (textToSearch.includes(kw)) {
+                matchedKeyword = kw
+                matchingTextSnippet = entry.natural_language_input
+                  ? (entry.natural_language_input.length > 120 ? `${entry.natural_language_input.slice(0, 120)}...` : entry.natural_language_input)
+                  : entry.parsed_description || ''
+                foundSource = `Log de esforço em ${entry.date}`
+                break
+              }
+            }
+            if (matchedKeyword) break
+          }
+        }
+
+        if (matchedKeyword) {
+          const displayKeyword = matchedKeyword.toUpperCase()
+          return {
+            type: 'expansion_signal',
+            severity: 'info',
+            message: `Oportunidade de expansão identificada via Esforço/Interação: menção ao termo/módulo "${displayKeyword}".`,
+            metadata: {
+              matched_keyword: displayKeyword,
+              source: foundSource,
+              snippet: matchingTextSnippet,
+              recommendation: `Mapear a oportunidade de upsell/cross-sell para o módulo/feature "${displayKeyword}" detectado.`
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[AlertService] Error during dynamic effort expansion check:', err)
+    }
+
+    // --- FALLBACK STANDARD NPS + MRR CHECK ---
     // Buscar NPS médio (últimas 5 respostas)
     const { data: npsData } = await this.supabase
       .from('nps_responses')

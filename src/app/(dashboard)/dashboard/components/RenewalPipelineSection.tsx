@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { SectionHeader } from '@/components/ui/section-header'
-import { Loader2, Calendar, TrendingUp, DollarSign } from 'lucide-react'
+import { Loader2, Calendar, TrendingUp, DollarSign, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface RenewalCard {
   account_id: string
@@ -112,6 +112,7 @@ function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
 export default function RenewalPipelineSection() {
   const [pipeline, setPipeline] = useState<RenewalPipeline | null>(null)
   const [loading, setLoading] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     fetch('/api/dashboard/renewal-pipeline')
@@ -119,11 +120,17 @@ export default function RenewalPipelineSection() {
       .then(data => {
         if (data?.critico && data?.urgente && data?.planejamento) {
           setPipeline(data)
+          const t = data.critico.length + data.urgente.length + data.planejamento.length
+          setCollapsed(t === 0)
         } else {
           setPipeline({ critico: [], urgente: [], planejamento: [] })
+          setCollapsed(true)
         }
       })
-      .catch(() => setPipeline({ critico: [], urgente: [], planejamento: [] }))
+      .catch(() => {
+        setPipeline({ critico: [], urgente: [], planejamento: [] })
+        setCollapsed(true)
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -135,53 +142,72 @@ export default function RenewalPipelineSection() {
         <SectionHeader title="Pipeline de Renovações" />
         <div className="grid grid-cols-3 gap-4">
           {[0,1,2].map(i => (
-            <div key={i} className="h-64 bg-surface-card border border-border-divider rounded-2xl animate-pulse" />
+            <div key={i} className="h-32 bg-surface-card border border-border-divider rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
     )
   }
 
-  if (!pipeline || total === 0) return null
-
   return (
-    <div className="space-y-4">
-      <SectionHeader
-        title="Pipeline de Renovações"
-        subtitle={`${total} conta${total !== 1 ? 's' : ''} nos próximos 90 dias`}
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {COLUMNS.map(col => {
-          const items = pipeline[col.key]
-          return (
-            <div key={col.key} className="space-y-3">
-              <div className={`p-4 bg-surface-card border-t-2 border border-border-divider rounded-2xl bg-gradient-to-b ${col.glow}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">{col.label}</p>
-                    <p className="text-[9px] text-content-secondary/60 mt-0.5">{col.sublabel}</p>
-                  </div>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${col.badge}`}>
-                    {items.length}
-                  </span>
-                </div>
-
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
-                  <AnimatePresence mode="popLayout">
-                    {items.map((card, idx) => (
-                      <RenewalCard key={card.account_id} card={card} idx={idx} />
-                    ))}
-                  </AnimatePresence>
-                  {items.length === 0 && (
-                    <p className="text-[10px] text-content-secondary text-center py-6">Nenhuma conta</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <SectionHeader
+          title="Pipeline de Renovações"
+          subtitle={total > 0 ? `${total} conta${total !== 1 ? 's' : ''} nos próximos 90 dias` : 'Nenhuma renovação nos próximos 90 dias'}
+        />
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-content-secondary/60 hover:text-content-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface-card border border-transparent hover:border-border-divider"
+        >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {collapsed ? 'Expandir' : 'Recolher'}
+        </button>
       </div>
+
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {COLUMNS.map(col => {
+                const items = (pipeline ?? { critico: [], urgente: [], planejamento: [] })[col.key]
+                return (
+                  <div key={col.key} className="space-y-3">
+                    <div className={`p-4 bg-surface-card border-t-2 border border-border-divider rounded-2xl bg-gradient-to-b ${col.glow} min-h-[120px]`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-secondary">{col.label}</p>
+                          <p className="text-[9px] text-content-secondary/60 mt-0.5">{col.sublabel}</p>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${col.badge}`}>
+                          {items.length}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin">
+                        <AnimatePresence mode="popLayout">
+                          {items.map((card, idx) => (
+                            <RenewalCard key={card.account_id} card={card} idx={idx} />
+                          ))}
+                        </AnimatePresence>
+                        {items.length === 0 && (
+                          <p className="text-[10px] text-content-secondary text-center py-4">Nenhuma conta</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

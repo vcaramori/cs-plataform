@@ -57,3 +57,6 @@ scripts/email-sync-loop.mjs
 # Playwright
 /test-results/
 /playwright-report/
+
+# MCP Local Configuration
+/.mcp.json

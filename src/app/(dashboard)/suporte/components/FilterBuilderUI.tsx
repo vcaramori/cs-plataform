@@ -128,36 +128,48 @@ function FilterConditionUI({ condition, path, index, fields }: FilterConditionUI
   const field = fields.find((f) => f.name === condition.field)
 
   return (
-    <div className="flex gap-2 items-end bg-surface-card p-3 rounded">
-      {/* Field Selector */}
-      <SearchableSelect
-        value={condition.field}
-        onValueChange={(value) => updateCondition(path, index, { field: value })}
-        options={fields.map((f) => ({ label: f.label, value: f.name }))}
-        className="h-8 text-xs w-40"
-        placeholder="Campo"
-      />
+    <div className="flex flex-col gap-2 bg-surface-card p-3 rounded-xl border border-border-divider/50">
+      <div className="flex items-center gap-2">
+        {/* Field Selector */}
+        <SearchableSelect
+          value={condition.field}
+          onValueChange={(value) => updateCondition(path, index, { field: value })}
+          options={fields.map((f) => ({ label: f.label, value: f.name }))}
+          className="h-8 text-xs flex-1"
+          placeholder="Campo"
+        />
 
-      {/* Operator Selector */}
-      {field && (
-        <Select
-          value={condition.op}
-          onValueChange={(op) => updateCondition(path, index, { op: op as any })}
+        {/* Operator Selector */}
+        {field && (
+          <Select
+            value={condition.op}
+            onValueChange={(op) => updateCondition(path, index, { op: op as any })}
+          >
+            <SelectTrigger className="h-8 text-xs w-28 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {field.operators.map((op) => (
+                <SelectItem key={op} value={op}>
+                  {op}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Delete Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => removeCondition(path, index)}
+          className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8 p-0"
         >
-          <SelectTrigger className="h-8 text-xs w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {field.operators.map((op) => (
-              <SelectItem key={op} value={op}>
-                {op}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
 
-      {/* Value Input */}
+      {/* Value Input — linha separada para mais espaço */}
       {field && condition.op !== 'is_null' && condition.op !== 'not_null' && (
         <ValueInput
           field={field}
@@ -172,16 +184,6 @@ function FilterConditionUI({ condition, path, index, fields }: FilterConditionUI
           }}
         />
       )}
-
-      {/* Delete Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => removeCondition(path, index)}
-        className="text-destructive hover:bg-destructive/10"
-      >
-        <X className="w-4 h-4" />
-      </Button>
     </div>
   )
 }

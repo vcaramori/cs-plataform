@@ -27,19 +27,28 @@ const CRM_COLORS: Record<string, { bg: string; text: string }> = {
   hubspot: { bg: 'from-orange-500/10 to-orange-500/5', text: 'text-orange-600' }
 }
 
-export function CRMTab() {
+interface CRMTabProps {
+  accountId?: string
+}
+
+export function CRMTab({ accountId }: CRMTabProps) {
   const [integrations, setIntegrations] = useState<CRMIntegration[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState<string | null>(null)
 
   useEffect(() => {
-    loadIntegrations()
-  }, [])
+    if (accountId) {
+      loadIntegrations()
+    } else {
+      setIntegrations([])
+    }
+  }, [accountId])
 
   async function loadIntegrations() {
+    if (!accountId) return
     try {
       setLoading(true)
-      const response = await fetch('/api/integrations/crm')
+      const response = await fetch(`/api/integrations/crm?account_id=${accountId}`)
       if (!response.ok) throw new Error('Failed to fetch CRM integrations')
       const data = await response.json()
       setIntegrations(data.integrations || [])

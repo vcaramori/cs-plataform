@@ -64,7 +64,7 @@ export function AccountChat({ accountId, accountName }: { accountId: string; acc
       {/* Botão flutuante */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_24px_rgba(99,102,241,0.5)] z-40 transition-all hover:scale-110 flex items-center justify-center group"
+        className="fixed bottom-24 right-8 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_24px_rgba(99,102,241,0.5)] z-40 transition-all hover:scale-110 flex items-center justify-center group"
         aria-label="Abrir assistente IA"
       >
         <MessageSquareText className="w-6 h-6 text-white group-hover:rotate-12 transition-transform" />

@@ -31,11 +31,43 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🚀 Branch `main` — Release Candidate (2026-05-12)
+
+Branch limpa criada a partir de `master` para o release. Foco nas features estáveis.
+
+**Features prontas para release:**
+- ✅ Dashboard (Portfolio Control, KPIs, NPS global)
+- ✅ Clientes (CRUD completo, account detail, AdoptionChart, MeetingPrep)
+- ✅ Playbooks (lista, builder ReactFlow, execução com timeline)
+- ✅ Success Plan (CRUD de goals — **corrigido bypass admin/csm_senior**)
+- ✅ RAG / Perguntar (pgvector + Gemini, contexto real)
+- ✅ Chamados / Suporte (lista, detalhe, SLA, bulk actions)
+- ✅ NPS (dashboard, programas, scoring)
+- ✅ Esforço (time entries, auto check-in)
+
+**Removido nesta branch (tabelas inexistentes no banco):**
+- ❌ Smart Alerts (`/alertas`) — tabela `alerts` não existe
+- ❌ Admin > Permissões & RBAC — tabelas `user_roles`, `permission_matrix` não existem
+- ❌ Admin > Observability — tabela `user_roles` não existe
+- ❌ CS-Ops Performance/SLA — tabela `playbook_planned_vs_realized` não existe
+- ❌ Renewal PDF export — tabelas `tickets`, `negotiation_history`, `renewal_documents` não existem
+- ❌ Histórico de Negociação — tabela `negotiation_history` não existe
+- ❌ Crons: daily-briefing, home-priorities, integrations-sync, voc-analyze
+- ❌ Integrations sync CRM/Support
+
+**Lixo removido:**
+- 21 arquivos `.md` de histórico de sprint da raiz
+- 3 scripts JS avulsos (`read_pdf.js`, `check-migrations*.js`)
+- 1 PDF avulso na raiz
+- Diretórios `.agent/` (78 arquivos) e `.agents/` (4.209 arquivos)
+
+---
+
 ## 📋 Roadmap — Wave 4-7 Roadmap Confirmed
 
 **Wave 4:** 2026-05-07 — ✅ ~90% (builder mockup pendente)  
 **Wave 5:** Backend ✅ | UI ✅ 95% — Admin Settings 7 módulos + Meeting Prep únicos pendentes  
-**Wave 6:** Backend ✅ | UI ✅ 90% — `/adoption`, `/cs-ops`, `/alertas` implementados  
+**Wave 6:** Backend ✅ | UI ✅ 90% — `/adoption`, `/cs-ops` implementados  
 **Wave 7:** Backend ✅ | UI ✅ 100% — Observability UI completo, Mobile (skipped)  
 **Última Auditoria:** 2026-05-11 — [ver tabela completa abaixo](#-status-real--waves-4-7-auditoria-2026-05-11)
 
@@ -148,7 +180,25 @@ Em resposta aos problemas de dados vazios e falta de visibilidade reportados no 
 
 - **Inclusão de Admin como CSM**: Como o banco de dados continha apenas 1 usuário (Admin) e as consultas filtravam estritamente por 'csm', as telas de métricas e capacity apareciam vazias. Adicionada a role `admin` nas consultas de CSM em `page.tsx`, `metrics/route.ts` e `cs-ops-service.ts`.
 - **Visibilidade de Contas sem CSM**: Adicionada lógica na API do Cockpit (`api/cs-ops/cockpit/route.ts`) para identificar contas vinculadas a usuários inexistentes ou nulos. Estas contas agora aparecem na Fila de Trabalho do `CockpitDashboard` como "Conta sem CSM válido".
-- **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.  
+- **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.
+
+### 🛠️ Estabilização Release — Correções TypeScript Features Core (2026-05-12)
+
+Correções cirúrgicas para estabilizar as features do release: Dashboard, Clientes, Playbook, Success Plan, RAG, Chamados, NPS, Perguntas, Suporte.
+
+- **Dashboard**: null-guard em `getNPSSegment(r.score)` quando score é `null`
+- **AdoptionChart**: mapeamento correto de `AdoptionMetrics` (`week_date`, `adoption_score`) para `Metric` (`measured_at`, `value`)
+- **Playbooks**: cast `as any` em Server Actions passadas como `form.action` (retornam `{ success, error }` em vez de `void`)
+- **PlaybookTimeline**: cast `as any` em `tasks` com `SelectQueryError` no join de profiles
+- **Suporte (SuporteClient)**: null-guard em `slaMap[sla_status_resolution ?? '']`; cast em BulkActionModal
+- **Suporte (TicketListRow)**: cast `ticket.status as any` no StatusBadgeGuard
+- **Suporte ([id]/page)**: cast `messages as any` para `SupportMessage[]`
+- **API account-playbooks tasks**: spread correto de `comments: Json` → `Array.isArray()`; fix schema `ticket_events` (`type` → `event_type`, `metadata` → `payload`)
+- **API meeting-prep**: tabela `tickets` → `support_tickets`; removidas queries de tabela `meetings` (não existe); `feedback` → `comment` em `nps_responses`; `description`/`interaction_date`/`activity_type` → `title`/`date`/`type` em `interactions`
+- **API playbooks/[id]**: migrado para Next.js 15 async params (`await params`)
+- **API rag/query**: `interactions.description` → `title`/`raw_transcript`; `tickets` → `support_tickets`
+- **API playbooks/route e save**: cast `as any` em inserts com schema divergente
+- **API accounts/route**: cast `as any` em contracts insert
 
 ---
 
@@ -242,7 +292,7 @@ Feature Dependency Graph, Stakeholder Engagement Map, Meeting Prep Modal, Playbo
 - ✅ Wave 6 — Backend + UI ~90% (May 11) — Feature DAG + Stakeholder Map pendentes
 - ✅ Wave 7 — Backend + Admin UI 100% (May 11)
 - ✅ Remoção do Ollama (Local) — Foco exclusivo em Gemini — May 11
-- ✅ TypeScript compilation (0 errors) — May 12
+- ✅ TypeScript compilation (0 errors in-scope) — May 12 + estabilização May 12
 - ⏳ E2E testing phase (Playwright) — May 12-14
 - ⏳ RLS audit (3 roles) — May 14
 - ⏳ Performance baseline — May 14

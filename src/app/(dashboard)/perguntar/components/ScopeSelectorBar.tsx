@@ -38,7 +38,7 @@ export function ScopeSelectorBar({
   hasMessages,
 }: ScopeSelectorBarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-card border-b border-border-divider px-6 py-3 z-20">
+    <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-card border-b border-border-divider px-4 py-2 z-20">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-plannera-orange/10 flex items-center justify-center border border-plannera-orange/20 shadow-inner">

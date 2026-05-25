@@ -69,14 +69,14 @@ export default async function PlaybooksPage() {
                   {template.tasks?.length || 0} Etapas configuradas
                 </span>
                 <div className="flex items-center gap-2">
-                  <form action={togglePlaybookStatus.bind(null, template.id, !template.is_active)}>
+                  <form action={togglePlaybookStatus.bind(null, template.id, !template.is_active) as any}>
                     <button type="submit" className={`p-2 rounded-full transition-colors ${template.is_active ? "text-content-secondary hover:bg-surface-background" : "text-emerald-600 hover:bg-emerald-50"}`} title={template.is_active ? "Inativar" : "Ativar"}>
                       {template.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                     </button>
                   </form>
-                  
+
                   {testAccountId && (
-                    <form action={instantiatePlaybook.bind(null, testAccountId, template.id)}>
+                    <form action={instantiatePlaybook.bind(null, testAccountId, template.id) as any}>
                       <button type="submit" className="text-amber-600 hover:bg-amber-50 p-2 rounded-full transition-colors" title={`Disparar teste para ${testAccounts?.[0]?.name}`}>
                         <PlayCircle className="w-4 h-4" />
                       </button>

@@ -54,14 +54,14 @@ export async function GET(
     // Get last 3 interactions
     const { data: interactions } = await supabase
       .from('interactions')
-      .select('description, interaction_date, activity_type')
+      .select('title, raw_transcript, date, type')
       .eq('account_id', accountId)
-      .order('interaction_date', { ascending: false })
+      .order('date', { ascending: false })
       .limit(3)
 
     // Get latest 3 tickets
     const { data: tickets } = await supabase
-      .from('tickets')
+      .from('support_tickets')
       .select('title, status, created_at')
       .eq('account_id', accountId)
       .order('created_at', { ascending: false })
@@ -70,53 +70,23 @@ export async function GET(
     // Get latest NPS response
     const { data: npsResponses } = await supabase
       .from('nps_responses')
-      .select('score, feedback, created_at')
+      .select('score, comment, created_at')
       .eq('account_id', accountId)
-      .not('feedback', 'is', null)
+      .not('comment', 'is', null)
       .order('created_at', { ascending: false })
       .limit(1)
 
-    // Get scheduled meetings (future meetings)
+    // Use last interaction as meeting context (meetings table not available)
     const today = new Date()
-    const { data: scheduledMeetings } = await supabase
-      .from('meetings')
-      .select('meeting_date, title, agenda')
-      .eq('account_id', accountId)
-      .gte('meeting_date', today.toISOString())
-      .order('meeting_date', { ascending: true })
-      .limit(1)
-
-    const nextMeeting = scheduledMeetings?.[0]
-    if (!nextMeeting) {
-      return NextResponse.json(
-        {
-          last_meeting_notes: 'No upcoming meetings scheduled',
-          next_meeting_date: null,
-          suggested_topics: [],
-          ai_talking_points: [],
-        },
-        { status: 200 }
-      )
-    }
-
-    // Get previous meeting notes
-    const { data: pastMeetings } = await supabase
-      .from('meetings')
-      .select('title, notes, meeting_date')
-      .eq('account_id', accountId)
-      .lt('meeting_date', today.toISOString())
-      .order('meeting_date', { ascending: false })
-      .limit(1)
-
-    const lastMeetingNotes = pastMeetings?.[0]?.notes || 'No previous meeting notes'
+    const lastMeetingNotes = interactions?.[0]?.title || 'No recent interactions recorded'
 
     // Generate talking points with Gemini
     const context = `
 Account: ${account.name}
-Last Meeting: ${lastMeetingNotes}
-Recent Interactions: ${interactions?.map(i => i.description).join('; ') || 'None'}
+Last Interaction: ${lastMeetingNotes}
+Recent Interactions: ${interactions?.map(i => i.title).join('; ') || 'None'}
 Recent Tickets: ${tickets?.map(t => t.title).join('; ') || 'None'}
-Latest NPS: ${npsResponses?.[0]?.score || 'N/A'} - ${npsResponses?.[0]?.feedback || ''}
+Latest NPS: ${npsResponses?.[0]?.score || 'N/A'} - ${npsResponses?.[0]?.comment || ''}
     `.trim()
 
     const prompt = `Generate 3-5 talking points for a meeting with a customer account.
@@ -151,8 +121,8 @@ Each point should be 1-2 sentences, specific to the account context, and actiona
 
     const meetingPrep: MeetingPrep = {
       last_meeting_notes: lastMeetingNotes,
-      next_meeting_date: new Date(nextMeeting.meeting_date).toISOString().split('T')[0],
-      suggested_topics: (typeof nextMeeting.agenda === 'string' ? nextMeeting.agenda : 'Account Review').split(';').filter(Boolean),
+      next_meeting_date: today.toISOString().split('T')[0],
+      suggested_topics: ['Account Review', 'Health Check', 'Next Steps'],
       ai_talking_points: aiTalkingPoints.slice(0, 5),
     }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { loadInstruction } from '@/lib/ai/load-instruction'
 
 export const maxDuration = 300 // 5 minutes
 
@@ -119,7 +120,11 @@ export async function POST(request: Request) {
           .limit(3)
 
         // 6. Generate personalized email with Gemini
-        const prompt = `Você é um gerente de sucesso do cliente em uma plataforma SaaS. Gere um email de check-in profissional e personalizado.
+        const baseInstruction = await loadInstruction(
+          'instruction_auto_checkin',
+          'Você é um gerente de sucesso do cliente em uma plataforma SaaS. Gere um email de check-in profissional e personalizado. Tom: consultivo, não vendedor. Retorne APENAS JSON com: subject, body.'
+        )
+        const prompt = `${baseInstruction}
 
 Contexto:
 - Nome da conta: ${account.name}

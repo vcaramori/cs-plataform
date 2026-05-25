@@ -78,8 +78,8 @@ export async function POST(request: Request) {
       name: flow.metadata.name,
       description: flow.metadata.description || '',
       trigger_condition: flow.metadata.trigger,
-      is_active: true, // Default to active for now
-      graph_json: flow,
+      is_active: true,
+      graph_json: flow as any,
     }
 
     let result;

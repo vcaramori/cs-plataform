@@ -31,19 +31,28 @@ const BI_COLORS: Record<string, { bg: string; text: string }> = {
   looker: { bg: 'from-indigo-500/10 to-indigo-500/5', text: 'text-indigo-600' }
 }
 
-export function BITab() {
+interface BITabProps {
+  accountId?: string
+}
+
+export function BITab({ accountId }: BITabProps) {
   const [integrations, setIntegrations] = useState<BIIntegration[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState<string | null>(null)
 
   useEffect(() => {
-    loadIntegrations()
-  }, [])
+    if (accountId) {
+      loadIntegrations()
+    } else {
+      setIntegrations([])
+    }
+  }, [accountId])
 
   async function loadIntegrations() {
+    if (!accountId) return
     try {
       setLoading(true)
-      const response = await fetch('/api/integrations/bi')
+      const response = await fetch(`/api/integrations/bi?account_id=${accountId}`)
       if (!response.ok) throw new Error('Failed to fetch BI integrations')
       const data = await response.json()
       setIntegrations(data.integrations || [])

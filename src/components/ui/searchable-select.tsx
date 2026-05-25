@@ -33,6 +33,7 @@ export interface SearchableSelectProps {
   emptyMessage?: string
   className?: string
   disabled?: boolean
+  size?: "default" | "sm"
 }
 
 export function SearchableSelect({
@@ -43,6 +44,7 @@ export function SearchableSelect({
   emptyMessage = "Nenhuma opção encontrada.",
   className,
   disabled = false,
+  size = "default",
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -56,8 +58,10 @@ export function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between h-11 px-6 bg-surface-card/50 dark:bg-[#101623] border-border/50 text-[#2d3558] dark:text-white hover:bg-surface-card dark:hover:bg-[#1a2333] transition-all",
-            "text-[10px] font-black uppercase tracking-[0.1em] rounded-2xl shadow-sm",
+            "w-full justify-between bg-surface-card/50 dark:bg-[#101623] border-border/50 text-[#2d3558] dark:text-white hover:bg-surface-card dark:hover:bg-[#1a2333] transition-all",
+            size === "sm"
+              ? "h-9 px-3 text-xs font-normal rounded-lg shadow-sm"
+              : "h-11 px-6 text-[10px] font-black uppercase tracking-[0.1em] rounded-2xl shadow-sm",
             className
           )}
         >
@@ -69,7 +73,7 @@ export function SearchableSelect({
           <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[60] bg-white dark:bg-[#101623] border border-border/50 shadow-2xl rounded-2xl overflow-hidden">
+      <PopoverContent className={cn("w-[--radix-popover-trigger-width] p-0 z-[60] bg-white dark:bg-[#101623] border border-border/50 shadow-2xl overflow-hidden", size === "sm" ? "rounded-lg" : "rounded-2xl")}>
         <Command className="bg-transparent">
           <CommandInput 
             placeholder="Pesquisar..." 
@@ -87,7 +91,10 @@ export function SearchableSelect({
                     setOpen(false)
                   }}
                   className={cn(
-                    "text-[#2d3558] dark:text-white data-[selected='true']:bg-surface-background dark:data-[selected='true']:bg-slate-800 cursor-pointer font-bold uppercase tracking-widest text-[9px] py-3",
+                    "text-[#2d3558] dark:text-white data-[selected='true']:bg-surface-background dark:data-[selected='true']:bg-slate-800 cursor-pointer",
+                    size === "sm"
+                      ? "text-xs font-normal py-2 px-3 normal-case"
+                      : "font-bold uppercase tracking-widest text-[9px] py-3",
                     option.className
                   )}
                 >

@@ -16,6 +16,7 @@ interface StatusBadgeGuardProps {
   iconName?: keyof typeof Icons
   type?: BadgeType
   className?: string
+  size?: 'default' | 'sm'
 }
 
 export function StatusBadgeGuard({
@@ -23,7 +24,8 @@ export function StatusBadgeGuard({
   icon: IconProp,
   iconName,
   type = 'info',
-  className
+  className,
+  size = 'default'
 }: StatusBadgeGuardProps) {
   
   const Icon = iconName ? (Icons[iconName] as LucideIcon) : IconProp
@@ -53,11 +55,14 @@ export function StatusBadgeGuard({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-extrabold uppercase tracking-widest shadow-sm transition-all hover:scale-105",
+      "inline-flex items-center gap-1.5 border shadow-sm transition-all",
+      size === 'sm'
+        ? "px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider"
+        : "px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest hover:scale-105",
       styles[type],
       className
     )}>
-      {Icon && <Icon className="w-3.5 h-3.5" />}
+      {Icon && <Icon className={size === 'sm' ? "w-3 h-3" : "w-3.5 h-3.5"} />}
       {label}
     </div>
   )

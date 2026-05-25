@@ -1,5 +1,6 @@
 import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { loadInstruction } from '@/lib/ai/load-instruction'
 
 export type ShadowScoreResult = {
   score: number
@@ -58,7 +59,12 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
     return `- [${t.opened_at}] ${t.priority.toUpperCase()}: ${t.title} (${t.status})${level}${slaBreach}${resolved}\n  ${t.description?.slice(0, 150) ?? ''}`
   }).join('\n')
 
-  const prompt = `Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para este LOGO.
+  const systemInstruction = await loadInstruction(
+    'instruction_shadow_score',
+    'Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para este LOGO. Retorne APENAS JSON válido com: score (0-100), trend, justification, risk_factors, confidence.'
+  )
+
+  const prompt = `${systemInstruction}
 
 ## Interações recentes
 ${interactionsContext || 'Nenhuma interação registrada'}

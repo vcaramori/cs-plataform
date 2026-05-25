@@ -115,7 +115,7 @@ export function ViewCreationPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       {children && <PopoverTrigger asChild>{children}</PopoverTrigger>}
-      <PopoverContent className="w-80 p-6 bg-white dark:bg-[#101623] border border-border/50 shadow-2xl rounded-2xl" align="start">
+      <PopoverContent className="w-80 p-6 bg-surface-card border border-border-divider shadow-2xl rounded-2xl" align="start">
         <div className="space-y-4">
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-content-primary mb-5 border-b border-border/50 pb-2">

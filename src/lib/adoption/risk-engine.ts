@@ -89,6 +89,7 @@ export interface PortfolioSummary {
   health_dist: { healthy: number; attention: number; risk: number }
   top_downgrade_risks: Array<{ name: string; plan: string; risk: string; features: string[] }>
   top_blockers: Array<{ category: string; count: number }>
+  at_risk_accounts: Array<{ name: string; health_score: number; risk_reason: string }>
 }
 
 export async function getPortfolioSummary(
@@ -150,6 +151,34 @@ export async function getPortfolioSummary(
     .sort((a, b) => (a.risk === 'high' ? -1 : 1))
     .slice(0, 5)
 
+  // Clientes em risco: health < 40 OU flagados pela IA em account_risk_assessments
+  const healthRiskAccounts = accounts
+    .filter(a => Number(a.health_score) < 40)
+    .map(a => ({ name: a.name, health_score: Number(a.health_score), risk_reason: 'Health Score Crítico (<40)' }))
+
+  const { data: riskRows } = await (supabase as any)
+    .from('account_risk_assessments')
+    .select('account_id, risk_score, sentiment_label')
+    .or('risk_score.gte.80,sentiment_label.in.(at-risk,negative)')
+
+  const healthRiskIds = new Set(accounts.filter(a => Number(a.health_score) < 40).map(a => a.id))
+  const aiRiskAccounts = (accounts as any[])
+    .filter(a => {
+      if (healthRiskIds.has(a.id)) return false // já incluso acima
+      return (riskRows || []).some((r: any) => r.account_id === a.id)
+    })
+    .map(a => {
+      const assessment = (riskRows || []).find((r: any) => r.account_id === a.id)
+      return {
+        name: a.name,
+        health_score: Number(a.health_score),
+        risk_reason: `Avaliação IA — score: ${assessment?.risk_score ?? 'N/A'} | sentimento: ${assessment?.sentiment_label ?? 'N/A'}`
+      }
+    })
+
+  const at_risk_accounts = [...healthRiskAccounts, ...aiRiskAccounts]
+    .sort((a, b) => a.health_score - b.health_score)
+
   // Top Blockers
   const { data: blockers } = await supabase
     .from('feature_adoption')
@@ -172,7 +201,8 @@ export async function getPortfolioSummary(
     total_accounts: total,
     health_dist,
     top_downgrade_risks: topDowngradeRisks,
-    top_blockers: topBlockers
+    top_blockers: topBlockers,
+    at_risk_accounts,
   }
 }
 

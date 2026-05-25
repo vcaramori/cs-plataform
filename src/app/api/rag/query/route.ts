@@ -73,23 +73,24 @@ export async function GET(request: Request) {
       // Get interactions
       const { data: interactions } = await supabase
         .from('interactions')
-        .select('id, description, activity_type, created_at')
+        .select('id, title, raw_transcript, type, created_at')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false })
         .limit(5)
 
       for (const interaction of interactions || []) {
-        context += `\n- Interaction (${interaction.activity_type}): ${interaction.description}`
+        const excerpt = interaction.raw_transcript || interaction.title || ''
+        context += `\n- Interaction (${interaction.type}): ${interaction.title}`
         sources.push({
           source_type: 'interaction',
           source_id: interaction.id,
-          excerpt: interaction.description?.substring(0, 200) || '',
+          excerpt: excerpt.substring(0, 200),
         })
       }
 
       // Get recent tickets
       const { data: tickets } = await supabase
-        .from('tickets')
+        .from('support_tickets')
         .select('id, title, status')
         .eq('account_id', accountId)
         .order('created_at', { ascending: false })

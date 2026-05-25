@@ -30,6 +30,7 @@ import {
   PlayCircle,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { cn, formatCurrency } from '@/lib/utils'
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -279,9 +280,16 @@ export function AccountDetailPageClient({
                 </div>
                 <h2 className="h2-section !text-base">Success Plan</h2>
               </div>
-              <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px]">
-                Validado
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="neutral" className="bg-emerald-50 dark:bg-success/10 text-emerald-700 dark:text-success border-success-100 dark:border-success-500/20 px-3 py-1 text-[9px]">
+                  Validado
+                </Badge>
+                <Link href={`/accounts/${id}/success-plan`}>
+                  <Button size="sm" variant="outline" className="text-xs h-8">
+                    Gerenciar
+                  </Button>
+                </Link>
+              </div>
             </div>
             <SuccessPlan goals={successGoals} />
           </section>
@@ -298,7 +306,7 @@ export function AccountDetailPageClient({
             
             {adoptionMetrics.length > 0 && (
               <div className="scale-[0.98] origin-top -mt-2 opacity-80">
-                <AdoptionChart metrics={adoptionMetrics} />
+                <AdoptionChart metrics={adoptionMetrics.map(m => ({ measured_at: m.week_date, value: m.adoption_score }))} />
               </div>
             )}
           </section>

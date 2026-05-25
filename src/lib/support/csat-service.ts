@@ -11,7 +11,7 @@ export async function generateCSATToken(ticketId: string): Promise<string | null
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + 7)
 
-const token = crypto.randomUUID()
+  const token = crypto.randomUUID()
 
   // Try to insert or update (if already exists and not used)
   const { data, error } = await supabase
@@ -70,15 +70,33 @@ export async function sendCSATEmail(ticketId: string, retryCount = 0): Promise<b
   const token = await generateCSATToken(ticketId)
   if (!token) return false
 
-  // 3. Prepare Email
+  // 3. Load Dynamic SMTP & Override settings from DB
+  const { data: dbSettingsRow } = await (supabase as any)
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'support_email_integration')
+    .single()
+
+  const emailSettings = dbSettingsRow?.value || {}
+  
   const smtpConfig = {
-    host: process.env.SMTP_HOST || 'smtp.office365.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
+    host: emailSettings.smtp_host || process.env.SMTP_HOST || 'smtp.office365.com',
+    port: parseInt(emailSettings.smtp_port || process.env.SMTP_PORT || '587'),
+    secure: parseInt(emailSettings.smtp_port || process.env.SMTP_PORT || '587') === 465,
     auth: {
-      user: process.env.SMTP_USER || process.env.IMAP_USER,
-      pass: process.env.SMTP_PASS || process.env.IMAP_PASSWORD,
+      user: emailSettings.smtp_user || process.env.SMTP_USER || process.env.IMAP_USER || '',
+      pass: emailSettings.smtp_password || process.env.SMTP_PASS || process.env.IMAP_PASSWORD || '',
     },
+  }
+
+  // Override de E-mail de Teste
+  const emailTestRecipient = emailSettings.email_test_recipient || process.env.EMAIL_TEST_RECIPIENT
+  let finalTo = recipientEmail
+  let subjectPrefix = ''
+  
+  if (emailTestRecipient) {
+    finalTo = emailTestRecipient
+    subjectPrefix = `[TESTE - Destinatário Original: ${recipientEmail}] `
   }
 
   const transporter = nodemailer.createTransport(smtpConfig)
@@ -112,12 +130,12 @@ export async function sendCSATEmail(ticketId: string, retryCount = 0): Promise<b
   try {
     await transporter.sendMail({
       from: `"Suporte Plannera" <${smtpConfig.auth.user}>`,
-      to: recipientEmail,
-      subject: `Como foi nosso suporte? — ${ticket.title}`,
+      to: finalTo,
+      subject: `${subjectPrefix}Como foi nosso suporte? — ${ticket.title}`,
       html: htmlContent,
     })
 
-    console.log(`[CSAT Service] Email sent to ${recipientEmail} for ticket ${ticketId}`)
+    console.log(`[CSAT Service] Email sent to ${finalTo} for ticket ${ticketId} (Original: ${recipientEmail})`)
     return true
   } catch (err) {
     console.error(`[CSAT Service] Failed to send email for ticket ${ticketId} (Attempt ${retryCount + 1}):`, err)

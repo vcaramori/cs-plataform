@@ -1,199 +1,358 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { SectionHeader } from '@/components/ui/section-header'
-import { Loader2, CheckCircle, AlertCircle, Trash2, Zap } from 'lucide-react'
+import { Loader2, CheckCircle, Save, Mail, Key, Server, Folder, Clock, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
 
-interface SupportIntegration {
-  id: string
-  support_type: 'zendesk' | 'jira_sd'
-  is_active: boolean
-  created_at: string
-  last_sync?: string
-}
-
-const SUPPORT_ICONS: Record<string, React.ReactNode> = {
-  zendesk: '🎟️',
-  jira_sd: '⚙️'
-}
-
-const SUPPORT_COLORS: Record<string, { bg: string; text: string }> = {
-  zendesk: { bg: 'from-teal-500/10 to-teal-500/5', text: 'text-teal-600' },
-  jira_sd: { bg: 'from-blue-500/10 to-blue-500/5', text: 'text-blue-600' }
-}
-
 export function SupportTab() {
-  const [integrations, setIntegrations] = useState<SupportIntegration[]>([])
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  // Campos do formulário
+  const [imapHost, setImapHost] = useState('')
+  const [imapPort, setImapPort] = useState('993')
+  const [imapUser, setImapUser] = useState('')
+  const [imapPassword, setImapPassword] = useState('')
+  const [imapFolder, setImapFolder] = useState('Helpdesk')
+
+  const [smtpHost, setSmtpHost] = useState('')
+  const [smtpPort, setSmtpPort] = useState('587')
+  const [smtpUser, setSmtpUser] = useState('')
+  const [smtpPassword, setSmtpPassword] = useState('')
+
+  const [emailTestRecipient, setEmailTestRecipient] = useState('')
+  const [syncIntervalMinutes, setSyncIntervalMinutes] = useState('1')
 
   useEffect(() => {
-    loadIntegrations()
+    loadSettings()
   }, [])
 
-  async function loadIntegrations() {
+  async function loadSettings() {
     try {
       setLoading(true)
-      const response = await fetch('/api/integrations/support')
-      if (!response.ok) throw new Error('Failed to fetch support integrations')
+      const response = await fetch('/api/admin/support-settings')
+      if (!response.ok) throw new Error('Falha ao carregar configurações de e-mail')
       const data = await response.json()
-      setIntegrations(data.integrations || [])
+      
+      if (data.settings) {
+        const s = data.settings
+        setImapHost(s.imap_host || '')
+        setImapPort(String(s.imap_port || '993'))
+        setImapUser(s.imap_user || '')
+        setImapPassword(s.imap_password || '')
+        setImapFolder(s.imap_folder || 'Helpdesk')
+
+        setSmtpHost(s.smtp_host || '')
+        setSmtpPort(String(s.smtp_port || '587'))
+        setSmtpUser(s.smtp_user || '')
+        setSmtpPassword(s.smtp_password || '')
+
+        setEmailTestRecipient(s.email_test_recipient || '')
+        setSyncIntervalMinutes(String(s.sync_interval_minutes || '1'))
+      }
     } catch (error) {
-      console.error('Error loading support integrations:', error)
-      toast.error('Falha ao carregar integrações de suporte')
+      console.error('Error loading settings:', error)
+      toast.error('Erro ao carregar configurações de e-mail')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSync = async (id: string) => {
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
     try {
-      setSyncing(id)
-      const response = await fetch('/api/integrations/support/sync', {
+      setSaving(true)
+      const response = await fetch('/api/admin/support-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ integration_id: id, sync_type: 'tickets' })
+        body: JSON.stringify({
+          settings: {
+            imap_host: imapHost,
+            imap_port: parseInt(imapPort) || 993,
+            imap_user: imapUser,
+            imap_password: imapPassword,
+            imap_folder: imapFolder,
+            smtp_host: smtpHost,
+            smtp_port: parseInt(smtpPort) || 587,
+            smtp_user: smtpUser,
+            smtp_password: smtpPassword,
+            email_test_recipient: emailTestRecipient,
+            sync_interval_minutes: parseInt(syncIntervalMinutes) || 1
+          }
+        })
       })
-      const data = await response.json()
-      if (data.success) {
-        toast.success(`Sincronização iniciada (${data.synced} tickets)`)
-        loadIntegrations()
-      } else {
-        toast.error(data.error || 'Erro ao sincronizar')
-      }
+
+      if (!response.ok) throw new Error('Falha ao salvar configurações')
+      toast.success('Configurações salvas com sucesso!')
     } catch (error) {
-      console.error('Error syncing support:', error)
-      toast.error('Falha ao sincronizar')
+      console.error('Error saving settings:', error)
+      toast.error('Falha ao salvar configurações')
     } finally {
-      setSyncing(null)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja deletar esta integração?')) return
-
-    try {
-      const response = await fetch(`/api/integrations/support/${id}`, { method: 'DELETE' })
-      if (!response.ok) throw new Error('Failed to delete')
-      toast.success('Integração deletada')
-      setIntegrations(integrations.filter(i => i.id !== id))
-    } catch (error) {
-      console.error('Error deleting integration:', error)
-      toast.error('Falha ao deletar')
+      setSaving(false)
     }
   }
 
   return (
-    <>
+    <div className="space-y-8">
       <SectionHeader
-        title={`Integrações de Suporte${integrations.length > 0 ? ` (${integrations.length})` : ''}`}
-        action={<Button className="bg-plannera-orange hover:bg-plannera-orange/90">Adicionar Suporte</Button>}
+        title="Integração de E-mail de Suporte (IMAP/SMTP)"
+        subtitle="Configure as caixas de correio de entrada e saída utilizadas pela ferramenta de atendimento."
       />
 
       {loading ? (
         <div className="flex items-center justify-center p-12">
-          <Loader2 className="w-6 h-6 animate-spin text-plannera-orange" />
-        </div>
-      ) : integrations.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <AnimatePresence mode="popLayout">
-            {integrations.map((integration, idx) => {
-              const colors = SUPPORT_COLORS[integration.support_type] || SUPPORT_COLORS.zendesk
-              const label = integration.support_type === 'jira_sd' ? 'Jira Service Desk' : 'Zendesk'
-              return (
-                <motion.div
-                  key={integration.id}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: idx * 0.05 }}
-                >
-                  <Card className={`p-6 hover:shadow-lg transition-shadow bg-gradient-to-br ${colors.bg}`}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg bg-surface-background flex items-center justify-center text-lg ${colors.text}`}>
-                          {SUPPORT_ICONS[integration.support_type] || '🎟️'}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-content-primary">
-                            {label}
-                          </h4>
-                          <p className="text-[10px] text-content-secondary">
-                            Integração ativa
-                          </p>
-                        </div>
-                      </div>
-                      {integration.is_active ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <AlertCircle className="w-5 h-5 text-yellow-600" />
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">
-                          Sincronização de Tickets
-                        </p>
-                        {integration.last_sync ? (
-                          <p className="text-[10px] text-content-secondary mt-1">
-                            Última: {new Date(integration.last_sync).toLocaleDateString()}
-                          </p>
-                        ) : (
-                          <p className="text-[10px] text-yellow-600">Nunca sincronizado</p>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2 pt-3 border-t border-border-divider">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 text-[10px]"
-                          onClick={() => handleSync(integration.id)}
-                          disabled={syncing === integration.id}
-                        >
-                          {syncing === integration.id ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              Sincronizando...
-                            </>
-                          ) : (
-                            <>
-                              <Zap className="w-3 h-3 mr-1" />
-                              Sincronizar
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                          onClick={() => handleDelete(integration.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
+          <Loader2 className="w-8 h-8 animate-spin text-plannera-orange" />
         </div>
       ) : (
-        <div className="p-12 bg-surface-card border-2 border-dashed border-border-divider rounded-2xl text-center">
-          <div className="text-4xl mb-4">🎟️</div>
-          <p className="text-content-secondary mb-4">Nenhuma integração de suporte configurada</p>
-          <Button className="bg-plannera-orange hover:bg-plannera-orange/90">
-            Conectar Zendesk ou Jira
-          </Button>
-        </div>
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Seção IMAP e SMTP em grid de 2 colunas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* CARD 1: Configuração IMAP */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="p-6 bg-surface-card border border-border-divider rounded-2xl shadow-sm space-y-4">
+                <div className="flex items-center gap-3 border-b border-border-divider pb-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+                    <Server className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-content-primary">Recebimento de Chamados (IMAP)</h3>
+                    <p className="text-[10px] text-content-secondary">Lê mensagens recebidas e cria/atualiza tickets no dashboard</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-content-secondary">IMAP Host</label>
+                    <div className="relative">
+                      <Server className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                      <input
+                        type="text"
+                        value={imapHost}
+                        onChange={e => setImapHost(e.target.value)}
+                        placeholder="imap.outlook.com"
+                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-content-secondary">Porta</label>
+                    <input
+                      type="number"
+                      value={imapPort}
+                      onChange={e => setImapPort(e.target.value)}
+                      placeholder="993"
+                      className="w-full px-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary">Usuário IMAP (E-mail)</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                    <input
+                      type="email"
+                      value={imapUser}
+                      onChange={e => setImapUser(e.target.value)}
+                      placeholder="suporte@plannera.com.br"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary">Senha / App Password</label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                    <input
+                      type="password"
+                      value={imapPassword}
+                      onChange={e => setImapPassword(e.target.value)}
+                      placeholder="••••••••••••••••"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary">Pasta da Caixa Postal</label>
+                  <div className="relative">
+                    <Folder className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                    <input
+                      type="text"
+                      value={imapFolder}
+                      onChange={e => setImapFolder(e.target.value)}
+                      placeholder="Helpdesk"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* CARD 2: Configuração SMTP */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+            >
+              <Card className="p-6 bg-surface-card border border-border-divider rounded-2xl shadow-sm space-y-4">
+                <div className="flex items-center gap-3 border-b border-border-divider pb-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-600">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-content-primary">Envio de Notificações (SMTP)</h3>
+                    <p className="text-[10px] text-content-secondary">Envia links de CSAT e alertas aos destinatários</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-content-secondary">SMTP Host</label>
+                    <div className="relative">
+                      <Server className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                      <input
+                        type="text"
+                        value={smtpHost}
+                        onChange={e => setSmtpHost(e.target.value)}
+                        placeholder="smtp.office365.com"
+                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-content-secondary">Porta</label>
+                    <input
+                      type="number"
+                      value={smtpPort}
+                      onChange={e => setSmtpPort(e.target.value)}
+                      placeholder="587"
+                      className="w-full px-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary">Usuário SMTP</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                    <input
+                      type="email"
+                      value={smtpUser}
+                      onChange={e => setSmtpUser(e.target.value)}
+                      placeholder="suporte@plannera.com.br"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary">Senha SMTP</label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-2.5 w-3.5 h-3.5 text-content-secondary" />
+                    <input
+                      type="password"
+                      value={smtpPassword}
+                      onChange={e => setSmtpPassword(e.target.value)}
+                      placeholder="••••••••••••••••"
+                      className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* CARD 3: Parâmetros Globais */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Card className="p-6 bg-surface-card border border-border-divider rounded-2xl shadow-sm space-y-4">
+              <div className="flex items-center gap-3 border-b border-border-divider pb-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-content-primary">Parâmetros de Execução & Testes</h3>
+                  <p className="text-[10px] text-content-secondary">Controle a frequência da sincronização e overrides de segurança para testes em homologação</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    Override de E-mail de Teste (Segurança)
+                  </label>
+                  <input
+                    type="email"
+                    value={emailTestRecipient}
+                    onChange={e => setEmailTestRecipient(e.target.value)}
+                    placeholder="vinicius.caramori@plannera.com.br"
+                    className="w-full px-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none font-medium"
+                  />
+                  <p className="text-[9px] text-content-secondary">
+                    * Se preenchido, TODOS os e-mails de saída serão forçados para este endereço, impedindo disparos indesejados para clientes reais.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-content-secondary flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    Intervalo de Execução do Cron (Minutos)
+                  </label>
+                  <input
+                    type="number"
+                    value={syncIntervalMinutes}
+                    onChange={e => setSyncIntervalMinutes(e.target.value)}
+                    placeholder="1"
+                    min="1"
+                    className="w-full px-3 py-1.5 text-xs bg-surface-background border border-border-divider rounded-xl focus:border-primary focus:outline-none font-medium"
+                  />
+                  <p className="text-[9px] text-content-secondary">
+                    * Determina de quantos em quantos minutos o loop de e-mails deve buscar novas mensagens na pasta IMAP configurada.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Botão de Envio */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold rounded-xl px-6 py-2.5 text-xs flex items-center gap-2 shadow-md transition-all hover:scale-[1.02]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Salvar Configurações
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       )}
-    </>
+    </div>
   )
 }

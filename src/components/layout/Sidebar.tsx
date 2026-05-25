@@ -21,7 +21,6 @@ import {
   BarChart2,
   ShieldCheck,
   Settings,
-  Bell,
   Target,
   SmilePlus,
   Workflow,
@@ -35,6 +34,7 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 import { AlertCenter } from '@/components/alerts/AlertCenter'
 import { ThemeSelector } from './ThemeSelector'
 import { UserRole } from '@/lib/supabase/types'
+import { env } from '@/lib/env'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
@@ -44,7 +44,6 @@ const navItems = [
   { href: '/nps',               label: 'NPS',            icon: Star },
   { href: '/voc',               label: 'VoC',            icon: SmilePlus },
   { href: '/adoption',          label: 'Adoption',       icon: Target },
-  { href: '/alertas',           label: 'Smart Alerts',   icon: Bell },
   { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
   { href: '/playbooks', label: 'Playbooks',      icon: Workflow },
   { href: '/cs-ops/tasks', label: 'Minhas Tarefas', icon: CheckCircle2 },
@@ -53,7 +52,6 @@ const navItems = [
 const settingsItems = [
   { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/cs-ops',               label: 'Capacity Planning',  icon: Users, minRole: 'csm_senior' as const },
-  { href: '/cs-ops/playbooks',      label: 'Performance (SLA)', icon: BarChart2, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
@@ -325,6 +323,9 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
               </p>
               <p className="label-premium !text-[8px] opacity-60 mt-1.5">
                 Executive Representative
+              </p>
+              <p className="label-premium !text-[7px] opacity-40 mt-0.5 truncate">
+                {env.app.instanceName}
               </p>
             </motion.div>
           )}

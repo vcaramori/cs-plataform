@@ -18,13 +18,13 @@ export default async function PerguntarPage() {
     .order('name')
 
   return (
-    <PageContainer className="flex flex-col h-[calc(100vh-120px)]">
-      <ModuleHeader 
-        title="Plannera Assistant" 
+    <PageContainer noPadding className="flex flex-col h-full min-h-0 overflow-hidden px-4 pt-4 pb-3 md:px-8">
+      <ModuleHeader
+        title="Plannera Assistant"
         subtitle="Inteligência de Portfólio, Análise Preditiva e RAG em Tempo Real"
         iconName="Sparkles"
       />
-      <div className="flex-1 mt-6 overflow-hidden">
+      <div className="flex-1 mt-3 min-h-0 overflow-hidden">
         <PerguntarClient accounts={accounts ?? []} />
       </div>
     </PageContainer>

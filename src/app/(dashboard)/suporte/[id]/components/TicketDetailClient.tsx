@@ -59,16 +59,30 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  'Acesso / Login',
-  'Performance / Lentidão',
-  'Integração',
-  'Faturamento / Pagamento',
-  'Bug / Erro',
-  'Dúvida / Orientação',
-  'Configuração',
-  'Relatório / Dados',
-  'Outro',
+  { value: 'acesso', label: 'Acesso / Login' },
+  { value: 'performance', label: 'Performance / Lentidão' },
+  { value: 'integracao', label: 'Integração' },
+  { value: 'faturamento', label: 'Faturamento / Pagamento' },
+  { value: 'bug', label: 'Bug / Erro' },
+  { value: 'duvida', label: 'Dúvida / Orientação' },
+  { value: 'configuracao', label: 'Configuração' },
+  { value: 'relatorio', label: 'Relatório / Dados' },
+  { value: 'outro', label: 'Outro' },
 ]
+
+function normalizeCategory(cat: string | null | undefined): string {
+  if (!cat) return ''
+  const lower = cat.toLowerCase().trim()
+  if (lower.includes('acesso')) return 'acesso'
+  if (lower.includes('performance') || lower.includes('lent')) return 'performance'
+  if (lower.includes('integra')) return 'integracao'
+  if (lower.includes('faturamento') || lower.includes('pagamento') || lower.includes('financeiro') || lower.includes('billing') || lower.includes('account')) return 'faturamento'
+  if (lower.includes('bug') || lower.includes('erro')) return 'bug'
+  if (lower.includes('duvida') || lower.includes('dúvida') || lower.includes('orienta')) return 'duvida'
+  if (lower.includes('configura')) return 'configuracao'
+  if (lower.includes('relatorio') || lower.includes('relatório') || lower.includes('dados')) return 'relatorio'
+  return 'outro'
+}
 
 const STATUSES = [
   { value: 'open', label: 'Aberto' },
@@ -121,6 +135,7 @@ interface Ticket {
   parent_ticket_id?: string | null
   external_ticket_id?: string | null
   account_id: string
+  contract_id?: string | null
   accounts: { id: string; name: string }
   external_priority_label?: string | null
   merged_into?: string | null
@@ -256,7 +271,8 @@ const markdownComponents = {
 
 // ─── Thread components ────────────────────────────────────────────────────────
 
-function ClientMessage({ text, ts }: { text: string; ts: string }) {
+function ClientMessage({ text, ts, authorEmail }: { text: string; ts: string; authorEmail?: string }) {
+  const shortName = authorEmail ? authorEmail.split('@')[0] : 'Cliente'
   return (
     <div className="flex gap-3">
       <div className="w-8 h-8 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
@@ -264,7 +280,9 @@ function ClientMessage({ text, ts }: { text: string; ts: string }) {
       </div>
       <div className="flex-1 max-w-2xl">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-content-primary text-xs font-semibold">Cliente</span>
+          <span className="text-content-primary text-xs font-semibold">
+            {authorEmail ? `Cliente (${shortName})` : 'Cliente'}
+          </span>
           <span className="text-content-secondary text-[11px]">{fmtTs(ts)}</span>
         </div>
         <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4">
@@ -521,8 +539,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const [editStatus, setEditStatus] = useState(ticket.status)
   const [editPriority, setEditPriority] = useState(ticket.priority)
   const [editLevel, setEditLevel] = useState(ticket.internal_level ?? '')
-  const [editCategory, setEditCategory] = useState(ticket.category ?? '')
+  const [editCategory, setEditCategory] = useState(normalizeCategory(ticket.category))
   const [editProduct, setEditProduct] = useState(ticket.product ?? '')
+  const [editContractId, setEditContractId] = useState(ticket.contract_id ?? '')
+  const [contracts, setContracts] = useState<any[]>([])
   const [savingProps, setSavingProps] = useState(false)
 
   // Sync edit states if props update (e.g. after handleAssign)
@@ -530,10 +550,29 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     setEditStatus(ticket.status)
     setEditPriority(ticket.priority)
     setEditLevel(ticket.internal_level ?? '')
-    setEditCategory(ticket.category ?? '')
+    setEditCategory(normalizeCategory(ticket.category))
     setEditProduct(ticket.product ?? '')
     setSelectedAgent(ticket.assigned_to ?? '')
-  }, [ticket.status, ticket.priority, ticket.internal_level, ticket.category, ticket.product, ticket.assigned_to])
+    setEditContractId(ticket.contract_id ?? '')
+  }, [ticket.status, ticket.priority, ticket.internal_level, ticket.category, ticket.product, ticket.assigned_to, ticket.contract_id])
+
+  useEffect(() => {
+    if (ticket.account_id) {
+      fetch(`/api/accounts/${ticket.account_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.contracts) {
+            setContracts(data.contracts)
+            if (!ticket.contract_id && data.contracts.length === 1) {
+              const singleContractId = data.contracts[0].id
+              setEditContractId(singleContractId)
+              handleAutoSave('contract_id', singleContractId)
+            }
+          }
+        })
+        .catch(err => console.error('[TicketDetail] Error loading account contracts:', err))
+    }
+  }, [ticket.account_id, ticket.contract_id])
 
   // Assign
   const [selectedAgent, setSelectedAgent] = useState(ticket.assigned_to ?? '')
@@ -557,13 +596,13 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   }, [messages])
 
 
-  async function handleAutoSave(field: 'priority' | 'category' | 'product', value: string) {
+  async function handleAutoSave(field: 'priority' | 'category' | 'product' | 'contract_id', value: string) {
     setSavingProps(true)
     try {
       await fetch(`/api/support-tickets/${ticket.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value === 'none' ? null : value }),
+        body: JSON.stringify({ [field]: value === 'none' || value === '' ? null : value }),
       })
     } catch (err) {
       console.error('[TicketDetail] Save prop error:', err)
@@ -735,7 +774,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         })
       })
 
-      if (!res.ok) throw new Error('Falha ao obter URL de upload')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || `Falha ao obter URL de upload (${res.status})`)
+      }
       const { uploadUrl, publicUrl } = await res.json()
 
       // Upload direto para o S3/Supabase Storage via URL assinada ou Proxy
@@ -745,7 +787,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         headers: { 'Content-Type': file.type }
       })
 
-      if (!uploadRes.ok) throw new Error('Erro no upload do arquivo')
+      if (!uploadRes.ok) throw new Error(`Erro no upload do arquivo (${uploadRes.status})`)
 
       const isImage = file.type.startsWith('image/')
       const suffix = isLarge ? ' *(Expira em 7 dias)*' : ''
@@ -917,8 +959,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             {/* Original message */}
             <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
 
-            {/* Email thread if exists */}
-            {ticket.thread_content && (
+            {/* Email thread if exists (and is different from description) */}
+            {ticket.thread_content && ticket.thread_content.trim() !== ticket.description?.trim() && (
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                   <Mail className="w-3.5 h-3.5 text-content-secondary" />
@@ -927,7 +969,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="text-content-secondary text-xs font-semibold">Thread de E-mail</span>
                   </div>
-                  <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4 max-h-48 overflow-y-auto">
+                  <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4 max-h-80 overflow-y-auto">
                     <p className="text-content-secondary text-xs leading-relaxed whitespace-pre-wrap font-mono">{ticket.thread_content}</p>
                   </div>
                 </div>
@@ -944,17 +986,21 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                   transition={{ duration: 0.2 }}
                 >
                   {msg.type === 'reply' && (
-                    <AgentReply
-                      event={{
-                        id: msg.id,
-                        occurred_at: msg.created_at,
-                        event_type: 'agent_reply',
-                        metadata: { body: msg.body, author_email: msg.author_email },
-                        ticket_id: msg.ticket_id
-                      }}
-                      agents={agents}
-                      sentiment={msg.sentiment || null}
-                    />
+                    agents.some(a => a.email.toLowerCase() === msg.author_email?.toLowerCase()) ? (
+                      <AgentReply
+                        event={{
+                          id: msg.id,
+                          occurred_at: msg.created_at,
+                          event_type: 'agent_reply',
+                          metadata: { body: msg.body, author_email: msg.author_email },
+                          ticket_id: msg.ticket_id
+                        }}
+                        agents={agents}
+                        sentiment={msg.sentiment || null}
+                      />
+                    ) : (
+                      <ClientMessage text={msg.body} ts={msg.created_at} authorEmail={msg.author_email} />
+                    )
                   )}
                   {msg.type === 'note' && (
                     <InternalNote
@@ -1278,9 +1324,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               )}
             </div>
 
-            <Select value={editPriority} onValueChange={(v) => { setEditPriority(v); handleAutoSave('priority', v) }}>
+            <Select value={editPriority || undefined} onValueChange={(v) => { setEditPriority(v); handleAutoSave('priority', v) }}>
               <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                <SelectValue placeholder="Prioridade" />
+                <SelectValue placeholder="PRIORIDADE" />
               </SelectTrigger>
               <SelectContent className="bg-surface-card border-border-divider">
                 {PRIORITIES.map(p => (
@@ -1289,27 +1335,42 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               </SelectContent>
             </Select>
 
-            <Select value={editProduct} onValueChange={(v) => { setEditProduct(v); handleAutoSave('product', v) }}>
+            <Select value={editProduct || undefined} onValueChange={(v) => { setEditProduct(v); handleAutoSave('product', v) }}>
               <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                <SelectValue placeholder="Produto" />
+                <SelectValue placeholder="PRODUTO" />
               </SelectTrigger>
               <SelectContent className="bg-surface-card border-border-divider">
-                <SelectItem value="none" className="text-[10px] font-bold uppercase">— Produto —</SelectItem>
                 {['S&OP', 'S&OE', 'Abast', 'Middleware', 'HUB'].map(p => (
                   <SelectItem key={p} value={p} className="text-[10px] font-bold uppercase">{p}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={editCategory} onValueChange={(v) => { setEditCategory(v); handleAutoSave('category', v) }}>
+            <Select value={editCategory || undefined} onValueChange={(v) => { setEditCategory(v); handleAutoSave('category', v) }}>
               <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder="CATEGORIA" />
               </SelectTrigger>
               <SelectContent className="bg-surface-card border-border-divider">
-                <SelectItem value="none" className="text-[10px] font-bold uppercase">— Categoria —</SelectItem>
                 {CATEGORIES.map(c => (
-                  <SelectItem key={c} value={c} className="text-[10px] font-bold uppercase">{c}</SelectItem>
+                  <SelectItem key={c.value} value={c.value} className="text-[10px] font-bold uppercase">{c.label}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={editContractId || undefined} onValueChange={(v) => { setEditContractId(v); handleAutoSave('contract_id', v) }}>
+              <SelectTrigger className="w-full h-8 bg-surface-background border-border-divider text-content-primary text-[10px] font-bold uppercase tracking-widest">
+                <SelectValue placeholder="INSTÂNCIA" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface-card border-border-divider">
+                {contracts.length === 0 ? (
+                  <SelectItem value="none" disabled className="text-[10px] font-bold uppercase opacity-55">Nenhuma Instância Encontrada</SelectItem>
+                ) : (
+                  contracts.map(c => (
+                    <SelectItem key={c.id} value={c.id} className="text-[10px] font-bold uppercase">
+                      {c.instance_url ? c.instance_url.replace(/^https?:\/\//i, '') : `Contrato ${c.contract_code ?? c.id.slice(0, 8)}`}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </section>

@@ -24,7 +24,7 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
       onValueChange: (values: any) => {
         if (onValueChange) {
            // Retorna o valor "bruto" (clean) para o form lidar
-           onValueChange(values.value)
+           onValueChange(values.floatValue !== undefined ? values.floatValue : values.value)
         }
       },
       ...otherProps,

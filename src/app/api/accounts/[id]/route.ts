@@ -63,7 +63,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       *,
       contracts (*),
       contacts (*),
-      interactions (*, time_entries(*)),
+      interactions (*, time_entries!time_entries_interaction_id_fkey(*)),
       support_tickets (*),
       health_scores (*),
       commercial_governance (*)

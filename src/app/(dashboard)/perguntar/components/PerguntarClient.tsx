@@ -128,12 +128,12 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
       />
 
       {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-12 py-10 space-y-10 scroll-smooth">
+      <div className="flex-1 overflow-y-auto flex flex-col px-4 md:px-8 lg:px-12 py-4 scroll-smooth min-h-0">
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <EmptyState setInput={setInput} exampleQuestions={exampleQuestions} />
           ) : (
-            <div className="max-w-6xl mx-auto w-full space-y-12">
+            <div className="max-w-6xl mx-auto w-full space-y-6">
               {messages.map((msg, idx) => (
                 <MessageItem key={idx} msg={msg} idx={idx} />
               ))}

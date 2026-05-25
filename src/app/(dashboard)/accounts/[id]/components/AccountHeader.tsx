@@ -66,7 +66,9 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
       const res = await fetch(`/api/sla-policies?contract_id=${activeContract.id}`)
       if (!res.ok) { setSlaActive(false); return }
       const data = await res.json()
-      setSlaActive(!!data)
+      // If no custom policy exists, it inherits the active global standard SLA (true).
+      // Otherwise, check the is_active property of the custom policy.
+      setSlaActive(data === null ? true : data.is_active !== false)
     } catch { setSlaActive(false) }
   }
 

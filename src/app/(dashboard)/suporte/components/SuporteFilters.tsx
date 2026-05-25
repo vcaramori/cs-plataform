@@ -53,16 +53,17 @@ export function SuporteFilters({
   const hasActiveFilters = filterStatus !== 'all' || filterPriority !== 'all'
 
   return (
-    <div className="flex gap-4 items-center flex-wrap bg-surface-card border border-border-divider p-5 rounded-[1.5rem] shadow-xl">
-      <div className="flex items-center gap-3 pl-2 pr-4 border-r border-border-divider/50 shrink-0">
-        <Filter className="w-4 h-4 text-plannera-primary" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-content-primary">Filtros</span>
+    <div className="flex gap-3 items-center flex-wrap bg-surface-card border border-border-divider p-3.5 rounded-xl shadow-md">
+      <div className="flex items-center gap-2 pl-1 pr-3 border-r border-border-divider/50 shrink-0">
+        <Filter className="w-3.5 h-3.5 text-plannera-primary" />
+        <span className="text-[11px] font-bold uppercase tracking-wide text-content-primary">Filtros</span>
       </div>
 
       <SearchableSelect
         value={filterStatus}
         onValueChange={onStatusChange}
         className="w-44"
+        size="sm"
         options={[
           { label: 'Todos os Status', value: 'all' },
           ...Object.entries(statusConfig).map(([value, conf]) => ({ label: conf.label, value }))
@@ -73,27 +74,28 @@ export function SuporteFilters({
         value={filterPriority}
         onValueChange={onPriorityChange}
         className="w-48"
+        size="sm"
         options={[
           { label: 'Todas as Prioridades', value: 'all' },
           ...Object.entries(priorityConfig).map(([value, conf]) => ({ label: conf.label, value }))
         ]}
       />
 
-      <div className="relative flex-1 min-w-[240px]">
+      <div className="relative flex-1 min-w-[200px]">
         {isLoadingSearch ? (
-          <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-plannera-primary animate-spin" />
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-plannera-primary animate-spin" />
         ) : (
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary/60" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-content-secondary/60" />
         )}
         <Input
-          placeholder="PESQUISAR TICKETS..."
+          placeholder="Buscar tickets..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-11 h-11 rounded-2xl border-border/40 bg-surface-background0/5 dark:bg-slate-400/10 shadow-sm text-[10px] font-black uppercase tracking-widest placeholder:text-muted-foreground/50 transition-all focus-visible:ring-primary/30"
+          className="pl-9 h-9 rounded-lg border-border-divider bg-surface-background/50 shadow-sm text-xs font-normal placeholder:text-content-secondary/50 transition-all focus-visible:ring-primary/30"
         />
         {hasSemanticResults && (
           <Badge
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-plannera-primary/20 text-plannera-primary border border-plannera-primary/30 cursor-pointer hover:bg-plannera-primary/30 transition-all text-[8px] font-black uppercase"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-plannera-primary/20 text-plannera-primary border border-plannera-primary/30 cursor-pointer hover:bg-plannera-primary/30 transition-all text-[8px] font-black uppercase"
             onClick={onClearSearch}
           >
             <Sparkles className="w-2.5 h-2.5 mr-1" />
@@ -106,7 +108,7 @@ export function SuporteFilters({
         variant="ghost"
         size="sm"
         onClick={onFilterEditorOpen}
-        className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2"
+        className="text-[11px] font-bold uppercase tracking-wide text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2 h-9 px-3 rounded-lg"
       >
         <Sliders className="w-3.5 h-3.5" />
         Filtros Avançados
@@ -118,7 +120,7 @@ export function SuporteFilters({
             variant="ghost"
             size="sm"
             onClick={() => { onStatusChange('all'); onPriorityChange('all') }}
-            className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all"
+            className="text-[11px] font-bold uppercase tracking-wide text-plannera-primary hover:bg-plannera-primary/5 transition-all h-9 px-3 rounded-lg"
           >
             Limpar Busca
           </Button>
@@ -129,7 +131,7 @@ export function SuporteFilters({
             <Button
               variant="ghost"
               size="sm"
-              className="text-[10px] font-black uppercase tracking-widest text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2"
+              className="text-[11px] font-bold uppercase tracking-wide text-plannera-primary hover:bg-plannera-primary/5 transition-all flex items-center gap-2 h-9 px-3 rounded-lg"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Salvar como View

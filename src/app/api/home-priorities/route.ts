@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { AlertService } from '@/lib/alerts/alert-service'
 import { z } from 'zod'
 
 const PrioritySchema = z.object({
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     // Get user's CSM profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, role, csm_owner_id')
+      .select('id, role')
       .eq('id', user.id)
       .single()
 
@@ -40,74 +41,131 @@ export async function GET(request: Request) {
       .select(`
         id,
         name,
+        segment,
         health_score,
         contracts(renewal_date, arr)
       `)
       .eq('csm_owner_id', profile.id)
 
     if (!accounts || accounts.length === 0) {
-      return NextResponse.json({ priorities: [] })
+      return NextResponse.json([])
     }
 
+    const alertService = new AlertService(supabase)
     const today = new Date()
-    const priorities: Priority[] = []
+    const priorities: any[] = []
 
-    // Build priorities from accounts
     for (const account of accounts) {
-      const contract = Array.isArray(account.contracts) ? account.contracts[0] : account.contracts
+      // 1. Run dynamic proactive alerts via AlertService
+      const alerts = await alertService.evaluateAllAlerts(account.id, account.health_score || 50)
+      
+      let hasLowHealthAlert = false
+      let hasRenewalAlert = false
 
-      // Renewal priority (within 90 days)
-      if (contract?.renewal_date) {
-        const renewalDate = new Date(contract.renewal_date)
-        const daysToRenewal = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      if (alerts && alerts.length > 0) {
+        for (const alert of alerts) {
+          let category: 'focar_agora' | 'manter_momentum' | 'oportunidade' = 'manter_momentum'
+          let actionType = 'review'
 
-        if (daysToRenewal > 0 && daysToRenewal <= 90) {
-          const rank = daysToRenewal <= 30 ? '1' : daysToRenewal <= 60 ? '2' : '3'
+          if (['churn_risk', 'playbook_trigger', 'nps_detractor_unactioned'].includes(alert.type)) {
+            category = 'focar_agora'
+            actionType = alert.type === 'playbook_trigger' ? 'playbook_execution' : 'csm_intervention'
+            if (alert.type === 'churn_risk') hasLowHealthAlert = true
+          } else if (alert.type === 'expansion_signal') {
+            category = 'oportunidade'
+            actionType = 'expansion_pitch'
+          } else {
+            category = 'manter_momentum'
+            actionType = alert.type === 'renewal_upcoming' ? 'renewal_negotiation' : 'adoption_check'
+            if (alert.type === 'renewal_upcoming') hasRenewalAlert = true
+          }
+
           priorities.push({
-            rank,
-            type: 'renewal',
+            id: `${alert.type}-${account.id}`,
+            csm_id: profile.id,
             account_id: account.id,
-            account_name: account.name,
-            reason: `Contract renewal in ${daysToRenewal} days (ARR: $${contract.arr || 0})`,
-            due_date: renewalDate.toISOString().split('T')[0],
-            action_cta: 'Plan Renewal',
+            category,
+            reason: alert.message,
+            score: alert.severity === 'critical' ? 90 : alert.severity === 'warning' ? 60 : 30,
+            action_type: actionType,
+            created_at: new Date().toISOString(),
+            accounts: {
+              name: account.name,
+              segment: account.segment
+            }
           })
         }
       }
 
-      // Risk priority (low health)
-      if (account.health_score < 40) {
+      // 2. Fallbacks for standard criteria if no alerts are triggered
+      const contract = Array.isArray(account.contracts) ? account.contracts[0] : account.contracts
+
+      // Fallback Renewal priority (within 90 days)
+      if (contract?.renewal_date && !hasRenewalAlert) {
+        const renewalDate = new Date(contract.renewal_date)
+        const daysToRenewal = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+        if (daysToRenewal > 0 && daysToRenewal <= 90) {
+          priorities.push({
+            id: `renewal-${account.id}`,
+            csm_id: profile.id,
+            account_id: account.id,
+            category: daysToRenewal <= 30 ? 'focar_agora' : 'manter_momentum',
+            reason: `Renovação contratual em ${daysToRenewal} dias (ARR: R$ ${(contract.arr || 0).toLocaleString()})`,
+            score: daysToRenewal <= 30 ? 80 : 50,
+            action_type: 'renewal_review',
+            created_at: new Date().toISOString(),
+            accounts: {
+              name: account.name,
+              segment: account.segment
+            }
+          })
+        }
+      }
+
+      // Fallback Risk priority (low health score < 40)
+      if (account.health_score < 40 && !hasLowHealthAlert) {
         priorities.push({
-          rank: '1',
-          type: 'risk',
+          id: `health-low-${account.id}`,
+          csm_id: profile.id,
           account_id: account.id,
-          account_name: account.name,
-          reason: `Health score at ${account.health_score}% — critical intervention needed`,
-          due_date: today.toISOString().split('T')[0],
-          action_cta: 'Review Health',
+          category: 'focar_agora',
+          reason: `Health Score crítico de ${account.health_score}% — intervenção emergencial necessária`,
+          score: 85,
+          action_type: 'health_remediation',
+          created_at: new Date().toISOString(),
+          accounts: {
+            name: account.name,
+            segment: account.segment
+          }
         })
       }
 
-      // Adoption priority (moderate health warning)
-      if (account.health_score >= 40 && account.health_score < 60) {
+      // Fallback Adoption priority (moderate health score 40-60)
+      if (account.health_score >= 40 && account.health_score < 60 && (!alerts || alerts.length === 0)) {
         priorities.push({
-          rank: '2',
-          type: 'adoption',
+          id: `health-mid-${account.id}`,
+          csm_id: profile.id,
           account_id: account.id,
-          account_name: account.name,
-          reason: `Health score at ${account.health_score}% — monitor adoption closely`,
-          due_date: today.toISOString().split('T')[0],
-          action_cta: 'Check Adoption',
+          category: 'manter_momentum',
+          reason: `Health Score em ${account.health_score}% — monitorar engajamento e adoção`,
+          score: 45,
+          action_type: 'engagement_check',
+          created_at: new Date().toISOString(),
+          accounts: {
+            name: account.name,
+            segment: account.segment
+          }
         })
       }
     }
 
-    // Sort by rank and take top 3
+    // Sort by priority score and return
     const sortedPriorities = priorities
-      .sort((a, b) => parseInt(a.rank) - parseInt(b.rank))
-      .slice(0, 3)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10) // Limit to top 10 relevant priorities
 
-    return NextResponse.json({ priorities: sortedPriorities })
+    return NextResponse.json(sortedPriorities)
   } catch (error) {
     console.error('[home-priorities] Error:', error)
     return NextResponse.json(

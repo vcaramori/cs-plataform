@@ -8,7 +8,7 @@ const ContractSchema = z.object({
   mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().nonnegative('MRR deve ser positivo')),
   start_date: z.string().optional().or(z.literal('')).nullable().transform(v => (v === "" || !v ? null : v)),
   renewal_date: z.string().optional().or(z.literal('')).nullable().transform(v => (v === "" || !v ? null : v)),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
+  service_type: z.string().optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
   contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
   csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
@@ -21,6 +21,7 @@ const ContractSchema = z.object({
   discount_value_brl: z.number().min(0).optional().default(0),
   notes: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
+  instance_url: z.string().optional().nullable(),
 })
 
 export async function POST(request: Request) {

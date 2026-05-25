@@ -24,13 +24,12 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  // RLS check
-  const { data: account } = await supabase
-    .from('accounts')
-    .select('id')
-    .eq('id', id)
-    .eq('csm_owner_id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const isPrivileged = ['admin', 'super_admin', 'head_cs', 'csm_senior'].includes(profile?.role ?? '')
+
+  const accountQuery = supabase.from('accounts').select('id').eq('id', id)
+  if (!isPrivileged) accountQuery.eq('csm_owner_id', user.id)
+  const { data: account } = await accountQuery.single()
 
   if (!account) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -55,7 +54,7 @@ export async function POST(
       .select()
       .single()
 
-    plan = newPlan
+    plan = newPlan.data
   } else {
     plan = plan.data
   }

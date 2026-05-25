@@ -6,7 +6,7 @@ const UpdateSchema = z.object({
   mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
   start_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
   renewal_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
+  service_type: z.string().optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).optional(),
   contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
   csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
@@ -17,8 +17,8 @@ const UpdateSchema = z.object({
   discount_duration_months: z.number().int().min(0).optional(),
   discount_type: z.enum(['percentage', 'fixed']).optional(),
   discount_value_brl: z.number().min(0).optional(),
-  fine_amount: z.number().min(0).optional(),
-  fidelity_months: z.number().int().min(0).optional(),
+  fine_amount: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
+  fidelity_months: z.preprocess(v => (v === '' || v === null ? undefined : parseInt(String(v), 10)), z.number().int().min(0).optional()),
   progressive_discounts: z.array(z.object({
     label: z.string(),
     discount: z.number(),
@@ -26,6 +26,7 @@ const UpdateSchema = z.object({
   })).optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
+  instance_url: z.string().optional().nullable(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -10,7 +10,7 @@ const LevelSchema = z.object({
 })
 
 const SLASchema = z.object({
-  use_global_standard: z.boolean(),
+  use_global_standard: z.boolean().optional(),
   alert_threshold_pct: z.number().min(1).max(100).default(25),
   auto_close_hours: z.number().min(1).default(48),
   timezone: z.string().default('America/Sao_Paulo'),
@@ -32,7 +32,10 @@ export async function GET(
     .maybeSingle()
 
   if (!policy) return NextResponse.json(null)
-  return NextResponse.json(policy)
+  return NextResponse.json({
+    ...policy,
+    use_global_standard: false,
+  })
 }
 
 // Upsert completo: policy + levels + mappings
@@ -49,7 +52,7 @@ export async function PUT(
   const parsed = SLASchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 })
 
-  const { levels, ...policyData } = parsed.data
+  const { levels, use_global_standard, ...policyData } = parsed.data
 
   // Resolve account_id from contract
   const { data: contract } = await supabase

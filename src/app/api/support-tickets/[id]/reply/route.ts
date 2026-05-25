@@ -7,6 +7,7 @@ const Schema = z.object({
   body: z.string().min(1).max(10000),
   outcome: z.enum(['solution', 'pending_client', 'pending_product', 'none']).default('none'),
   close_after: z.boolean().optional().default(false),
+  status: z.string().optional(),
   // Campos de classificação para persistência tardia
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   category: z.string().optional(),

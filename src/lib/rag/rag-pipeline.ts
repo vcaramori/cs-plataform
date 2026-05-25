@@ -3,6 +3,7 @@ import { searchEmbeddingsWithVector } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getAccountPlanSummary, getPortfolioSummary, type PortfolioSummary } from '@/lib/adoption/risk-engine'
 import { getNPSSegment } from '@/lib/supabase/types'
+import { loadInstruction } from '@/lib/ai/load-instruction'
 
 export type RAGSource = {
   type: 'interaction' | 'support_ticket'
@@ -244,10 +245,14 @@ Risco de Downgrade: ${planSummary.risk_level === 'high' ? 'CRÍTICO' : planSumma
   // 3.3 Adiciona Contexto Global (se aplicável)
   let portfolioContext = ''
   if (portfolioSummary) {
+    const atRiskList = portfolioSummary.at_risk_accounts
+      .map(r => `- ${r.name} | Health: ${r.health_score}/100 | Motivo: ${r.risk_reason}`)
+      .join('\n')
+
     const riskList = portfolioSummary.top_downgrade_risks
       .map(r => `- ${r.name} (${r.plan}): Risco ${r.risk.toUpperCase()} | Críticos: ${r.features.join(', ') || 'nenhum'}`)
       .join('\n')
-    
+
     const blockerList = portfolioSummary.top_blockers
       .map(b => `- ${b.category}: ${b.count} ocorrências`)
       .join('\n')
@@ -257,7 +262,10 @@ Média de Health Score: ${portfolioSummary.avg_health}/100
 Distribuição de Saúde: ${portfolioSummary.health_dist.healthy} Saudáveis, ${portfolioSummary.health_dist.attention} Atenção, ${portfolioSummary.health_dist.risk} em Risco Crítico.
 Total de Contas: ${portfolioSummary.total_accounts}
 
-### Clientes com Maior Risco de Downgrade:
+### CLIENTES EM RISCO (lista completa — ${portfolioSummary.at_risk_accounts.length} clientes):
+${atRiskList || 'Nenhum cliente em risco identificado.'}
+
+### Clientes com Maior Risco de Downgrade (por plano/adoção):
 ${riskList || 'Nenhum risco imediato detectado.'}
 
 ### Principais Bloqueios no Portfólio:
@@ -354,8 +362,8 @@ Renovação: ${c.renewal_date ?? '—'} | Horas Contratadas/Mês: ${c.contracted
     stakeholderContext = `\n\n## STAKEHOLDERS (POWER MAP)\n${contactLines}`
   }
 
-  // 4. Gera resposta com Gemini Pro
-  const RAG_SYSTEM_INSTRUCTION = `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
+  // 4. Carrega system instruction do banco (admin pode editar via /admin/settings)
+  const HARDCODED_INSTRUCTION = `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
 Sua missão é realizar uma AUDITORIA EXAUSTIVA cruzando TODAS as fontes de dados disponíveis e extrair insights acionáveis.
 
 REGRAS CRÍTICAS DE IDIOMA E SEGURANÇA:
@@ -379,6 +387,8 @@ CLASSIFICAÇÃO DE SAÚDE (HEALTH SCORE):
 - 0-39: Vermelho (Risco Crítico)
 - 40-69: Amarelo (Atenção)
 - 70-100: Verde (Saudável)`
+
+  const RAG_SYSTEM_INSTRUCTION = await loadInstruction('rag_system_instruction', HARDCODED_INSTRUCTION)
 
   const scopeDescription = accountId
     ? 'sobre um LOGO específico'

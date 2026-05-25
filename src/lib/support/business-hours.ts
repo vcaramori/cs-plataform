@@ -1,6 +1,14 @@
 import { toZonedTime, fromZonedTime } from 'date-fns-tz'
 import { BusinessHours } from '../supabase/types'
 
+const defaultHoursFallback: BusinessHours[] = [
+  { id: '', scope: 'global', account_id: null, dow: 1, start_time: '09:00', end_time: '18:00', is_active: true, created_at: '', updated_at: '' },
+  { id: '', scope: 'global', account_id: null, dow: 2, start_time: '09:00', end_time: '18:00', is_active: true, created_at: '', updated_at: '' },
+  { id: '', scope: 'global', account_id: null, dow: 3, start_time: '09:00', end_time: '18:00', is_active: true, created_at: '', updated_at: '' },
+  { id: '', scope: 'global', account_id: null, dow: 4, start_time: '09:00', end_time: '18:00', is_active: true, created_at: '', updated_at: '' },
+  { id: '', scope: 'global', account_id: null, dow: 5, start_time: '09:00', end_time: '18:00', is_active: true, created_at: '', updated_at: '' },
+]
+
 const parseTime = (timeStr: string) => {
   const [h, m] = timeStr.split(':').map(Number)
   return h * 60 + m
@@ -22,6 +30,8 @@ export function getBusinessMinutesBetween(start: Date, end: Date, timezone: stri
   let safety = 0
   const maxIterations = 365 * 24 * 60 // 1 year of minutes
 
+  const activeHours = hours && hours.length > 0 ? hours : defaultHoursFallback
+
   // Simple minute-by-minute step is guaranteed accurate and extremely fast (<5ms for a month)
   // We can optimize by jumping if we are outside business hours.
   while (current.getTime() < end.getTime() && safety < maxIterations) {
@@ -29,7 +39,7 @@ export function getBusinessMinutesBetween(start: Date, end: Date, timezone: stri
     const dow = getDowFromZoned(zoned)
     const minutesFromMidnight = zoned.getHours() * 60 + zoned.getMinutes()
 
-    const todayHours = hours.find(h => h.dow === dow && h.is_active)
+    const todayHours = activeHours.find(h => h.dow === dow && h.is_active)
     
     if (!todayHours) {
       // Jump to midnight of next day to save loops
@@ -82,12 +92,14 @@ export function calculateDeadline(openedAt: Date, offsetMinutes: number, timezon
   let safety = 0
   const maxIterations = 365 * 24 * 60
 
+  const activeHours = hours && hours.length > 0 ? hours : defaultHoursFallback
+
   while (remaining > 0 && safety < maxIterations) {
     const zoned = toZonedTime(current, timezone)
     const dow = getDowFromZoned(zoned)
     const minutesFromMidnight = zoned.getHours() * 60 + zoned.getMinutes()
 
-    const todayHours = hours.find(h => h.dow === dow && h.is_active)
+    const todayHours = activeHours.find(h => h.dow === dow && h.is_active)
 
     if (!todayHours) {
       current = new Date(current.getTime() + (24 * 60 - minutesFromMidnight) * 60000)

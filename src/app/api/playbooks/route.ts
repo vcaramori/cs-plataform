@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
       const { error: tasksError } = await supabase
         .from('playbook_tasks')
-        .insert(tasksToInsert)
+        .insert(tasksToInsert as any)
 
       if (tasksError) {
         console.error('Error creating playbook tasks:', tasksError)

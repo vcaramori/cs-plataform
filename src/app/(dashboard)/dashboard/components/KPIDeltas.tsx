@@ -16,7 +16,7 @@ function DeltaBadge({ value, unit = '', invertPositive = false }: {
   unit?: string
   invertPositive?: boolean
 }) {
-  if (value === null) return null
+  if (value === null) return <span className="text-[9px] font-black text-content-secondary/40">—</span>
   const isPositive = invertPositive ? value < 0 : value > 0
   const isNeutral = value === 0
 

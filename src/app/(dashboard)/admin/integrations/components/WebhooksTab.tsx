@@ -18,18 +18,27 @@ interface WebhookItem {
   created_at: string
 }
 
-export function WebhooksTab() {
+interface WebhooksTabProps {
+  accountId?: string
+}
+
+export function WebhooksTab({ accountId }: WebhooksTabProps) {
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    loadWebhooks()
-  }, [])
+    if (accountId) {
+      loadWebhooks()
+    } else {
+      setWebhooks([])
+    }
+  }, [accountId])
 
   async function loadWebhooks() {
+    if (!accountId) return
     try {
       setLoading(true)
-      const response = await fetch('/api/webhooks')
+      const response = await fetch(`/api/webhooks?account_id=${accountId}`)
       if (!response.ok) throw new Error('Failed to fetch webhooks')
       const data = await response.json()
       setWebhooks(data.webhooks || [])

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 
 const schema = z.object({
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']),
+  service_type: z.string().min(1, 'Selecione um plano'),
   mrr: z.preprocess(v => parseFloat(String(v)), z.number().positive('MRR deve ser positivo')),
   start_date: z.string().min(1, 'Informe a data de início'),
   renewal_date: z.string().min(1, 'Informe a data de renovação'),
@@ -31,7 +31,17 @@ type FormData = z.infer<typeof schema>
 export function NewContractDialog({ accountId }: { accountId: string }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [plans, setPlans] = useState<any[]>([])
   const router = useRouter()
+
+  useEffect(() => {
+    if (open) {
+      fetch('/api/product/plans')
+        .then(r => r.json())
+        .then(setPlans)
+        .catch(console.error)
+    }
+  }, [open])
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
@@ -112,9 +122,7 @@ export function NewContractDialog({ accountId }: { accountId: string }) {
                 onValueChange={(v) => setValue('service_type', v as any)}
                 className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 options={[
-                  { label: 'Basic', value: 'Basic' },
-                  { label: 'Professional', value: 'Professional' },
-                  { label: 'Enterprise', value: 'Enterprise' },
+                  ...plans.map(p => ({ label: p.name, value: p.name })),
                   { label: 'Custom', value: 'Custom' }
                 ]}
               />

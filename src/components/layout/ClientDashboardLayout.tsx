@@ -58,7 +58,7 @@ export function ClientDashboardLayout({ user, profile, children }: Props) {
           </div>
 
           {/* Conteúdo da página */}
-          <div className="relative z-10 w-full h-full flex flex-col">
+          <div className="relative z-10 w-full min-h-full flex flex-col">
             {children}
           </div>
         </main>

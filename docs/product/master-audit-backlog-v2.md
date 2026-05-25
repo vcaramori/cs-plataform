@@ -4,6 +4,25 @@ Este arquivo centraliza as descobertas da segunda camada de auditoria (Avaliaç�
 
 ---
 
+## ✅ Estabilização Release — 2026-05-12
+
+Correções TypeScript aplicadas para features core do release. Todos os arquivos in-scope (Dashboard, Clientes, Playbook, Success Plan, RAG, Chamados, NPS, Perguntas, Suporte) sem erros de compilação.
+
+**Arquivos corrigidos:**
+- `dashboard/page.tsx` — null-guard NPS score
+- `accounts/[id]/components/AccountDetailPageClient.tsx` — AdoptionChart mapping
+- `playbooks/page.tsx` e `execution/[id]/page.tsx` — cast Server Actions e tasks
+- `suporte/[id]/page.tsx`, `SuporteClient.tsx`, `TicketListRow.tsx` — null-guards e casts de tipo
+- `api/accounts/[id]/meeting-prep/route.ts` — tabelas e campos corretos
+- `api/account-playbooks/[id]/tasks/[taskId]/route.ts` — spread Json e schema ticket_events
+- `api/playbooks/[id]/route.ts` — Next.js 15 async params
+- `api/rag/query/route.ts` — campos corretos de interactions e support_tickets
+- `api/playbooks/route.ts`, `save/route.ts`, `api/accounts/route.ts` — casts de insert
+
+**Erros fora do escopo (pós-release):** renewal cockpit, cs-ops, adoption APIs, alerts, webhooks.
+
+---
+
 ## 📊 Registros de Auditoria v2.0
 
 ### Dashboard (`/dashboard`)

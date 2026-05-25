@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 const config: Config = {
   darkMode: ["class"],
@@ -68,18 +69,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        plannera: {
-          primary: "hsl(var(--primary))",
-          secondary: "hsl(var(--secondary))",
-          orange: "hsl(var(--accent))",
-          sop: "hsl(var(--secondary))",
-          navy: "hsl(var(--primary))",
-          operations: "#f8b967", 
-          demand: "#d85d4b",
-          soee: "#ea724a",
-          ds: "#2ba09d",
-          grey: "#5c5b5b",
-        },
         'brand-primary': "hsl(var(--primary))",
         'brand-grey': "#5c5b5b",
       },
@@ -115,6 +104,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };
 export default config;

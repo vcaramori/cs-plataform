@@ -64,7 +64,7 @@ export default async function PlaybookExecutionPage({ params }: { params: Promis
 
       <div className="pt-4">
         <h2 className="h2-section mb-6">Timeline de Execução</h2>
-        <PlaybookTimeline tasks={tasks || []} playbookId={playbook.id} />
+        <PlaybookTimeline tasks={(tasks || []) as any} playbookId={playbook.id} />
       </div>
     </div>
   )

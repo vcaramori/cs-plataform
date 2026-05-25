@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from '@/lib/llm/gateway'
+import { loadInstruction } from '@/lib/ai/load-instruction'
 import { env } from '@/lib/env'
 import { z } from 'zod'
 
@@ -146,8 +147,10 @@ FORMATO DE SAÍDA OBRIGATÓRIO (JSON apenas, sem markdown):
 
 CRITICAL: Use a escala de 0 a 10. Se a mensagem for curta, genérica ("vou ver e te aviso") ou não profissional, atribua notas BAIXAS (2-4). O sistema é rigoroso.`
 
+    const systemInstruction = await loadInstruction('instruction_review_reply', SYSTEM_PROMPT)
+
     const result = await generateText(userPrompt, {
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction,
       temperature: 0.2,
       allowFallback: true,
       model: env.gemini.flashModel,

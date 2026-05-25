@@ -10,7 +10,8 @@ const PatchSchema = z.object({
   category: z.string().nullable().optional(),
   product: z.string().nullable().optional(),
   internal_level: z.string().nullable().optional(),
-  assigned_to: z.string().nullable().optional()
+  assigned_to: z.string().nullable().optional(),
+  contract_id: z.string().uuid().nullable().optional()
 })
 
 export async function GET(

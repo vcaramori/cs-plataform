@@ -9,7 +9,7 @@ const ContractItemSchema = z.object({
   start_date: z.string().optional().nullable(),
   renewal_date: z.string().optional().nullable(),
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).optional(),
-  service_type: z.enum(['Basic', 'Professional', 'Enterprise', 'Custom']).optional(),
+  service_type: z.string().optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).optional(),
   pricing_type: z.enum(['standard', 'custom']).optional(),
   pricing_explanation: z.string().optional().nullable(),
@@ -106,8 +106,18 @@ export async function GET(request: Request) {
   if (parsed.data.csm_id) {
     query = query.eq('csm_owner_id', parsed.data.csm_id)
   } else {
-    // If no CSM filter specified, default to current user's accounts
-    query = query.eq('csm_owner_id', user.id)
+    // If no CSM filter specified, default to current user's accounts (unless admin or super_admin)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
+
+    if (!isAdmin) {
+      query = query.eq('csm_owner_id', user.id)
+    }
   }
 
   // Apply health_status filter
@@ -251,7 +261,7 @@ export async function POST(request: Request) {
 
     const { error: contractErr } = await supabase
       .from('contracts')
-      .insert(contractsToInsert)
+      .insert(contractsToInsert as any)
     
     if (contractErr) console.error('Error creating contracts:', contractErr)
   }

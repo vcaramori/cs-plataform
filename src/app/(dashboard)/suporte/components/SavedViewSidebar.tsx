@@ -106,7 +106,7 @@ export function SavedViewSidebar({
 
   return (
     <div
-      className={`bg-surface-card border-r border-border-divider flex flex-col min-h-screen transition-all duration-300 ${
+      className={`bg-surface-card border-r border-border-divider flex flex-col sticky top-14 md:top-0 h-[calc(100vh-3.5rem)] md:h-screen transition-all duration-300 ${
         isCollapsed ? 'w-14' : 'w-56'
       }`}
     >

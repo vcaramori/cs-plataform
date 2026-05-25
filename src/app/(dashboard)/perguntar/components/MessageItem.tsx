@@ -30,34 +30,34 @@ interface MessageItemProps {
 export function MessageItem({ msg, idx }: MessageItemProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex gap-4 md:gap-8",
+        "flex gap-2",
         msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
       )}
     >
       {/* Avatar */}
       <div className={cn(
-        "w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg border mt-1",
-        msg.role === 'assistant' 
-          ? "bg-surface-card border-border-divider" 
+        "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border mt-0.5",
+        msg.role === 'assistant'
+          ? "bg-surface-card border-border-divider"
           : "bg-plannera-orange border-plannera-orange shadow-plannera-orange/20"
       )}>
         {msg.role === 'assistant' ? (
-          <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-plannera-orange" />
+          <Sparkles className="w-3.5 h-3.5 text-plannera-orange" />
         ) : (
-          <User className="w-5 h-5 md:w-6 md:h-6 text-white" />
+          <User className="w-3.5 h-3.5 text-white" />
         )}
       </div>
 
       {/* Content Container */}
       <div className={cn(
-        "flex flex-col gap-4 min-w-0 flex-1",
+        "flex flex-col gap-2 min-w-0 flex-1",
         msg.role === 'user' ? 'items-end' : 'items-start'
       )}>
         <div className={cn(
-          "rounded-2xl px-6 md:px-8 py-5 md:py-6 text-sm md:text-base leading-relaxed border transition-all shadow-xl",
+          "rounded-xl px-3 py-2.5 text-xs leading-normal border transition-all shadow-sm",
           msg.role === 'user'
             ? 'bg-plannera-primary text-white border-plannera-primary rounded-tr-sm font-medium'
             : msg.error
@@ -65,11 +65,11 @@ export function MessageItem({ msg, idx }: MessageItemProps) {
               : 'bg-surface-card border-border-divider text-content-primary rounded-tl-sm'
         )}>
           {msg.role === 'assistant' ? (
-            <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-headings:font-heading prose-headings:font-black prose-headings:text-plannera-orange prose-strong:text-plannera-orange prose-p:text-content-primary/90 prose-li:text-content-primary/80">
+            <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-heading prose-headings:font-bold prose-headings:text-content-primary prose-strong:text-content-primary prose-strong:font-semibold prose-p:text-content-primary/90 prose-p:my-1 prose-li:text-content-primary/80 prose-li:my-0 prose-ul:my-1 prose-ol:my-1 prose-headings:mb-1 prose-headings:mt-2">
               <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           ) : (
-            <span className="font-semibold tracking-tight">{msg.content}</span>
+            <span className="font-medium tracking-tight">{msg.content}</span>
           )}
         </div>
 

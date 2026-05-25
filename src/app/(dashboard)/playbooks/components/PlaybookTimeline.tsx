@@ -120,7 +120,7 @@ export function PlaybookTimeline({ tasks, playbookId }: { tasks: Task[], playboo
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 shrink-0 min-w-[120px]">
+                  <div className="flex flex-col gap-2 shrink-0 w-28">
                     {!isCompleted && !task.is_custom && (Array.isArray(task.playbook_tasks) ? task.playbook_tasks[0]?.is_note_required : task.playbook_tasks?.is_note_required) && (
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Nota Obrigatória</Label>

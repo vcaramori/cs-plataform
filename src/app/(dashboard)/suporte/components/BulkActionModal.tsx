@@ -155,6 +155,7 @@ export function BulkActionModal({
               onValueChange={setSelectedValue}
               options={csms.map((csm) => ({ label: csm.name, value: csm.id }))}
               placeholder="Selecionar CSM"
+              size="sm"
             />
           </div>
         )}

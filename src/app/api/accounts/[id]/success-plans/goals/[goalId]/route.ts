@@ -46,12 +46,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
   }
 
-  const { data: account } = await supabase
-    .from('accounts')
-    .select('id')
-    .eq('id', plan.account_id)
-    .eq('csm_owner_id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const isPrivileged = ['admin', 'super_admin', 'head_cs', 'csm_senior'].includes(profile?.role ?? '')
+
+  const accountQuery = supabase.from('accounts').select('id').eq('id', plan.account_id)
+  if (!isPrivileged) accountQuery.eq('csm_owner_id', user.id)
+  const { data: account } = await accountQuery.single()
 
   if (!account) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -110,12 +110,12 @@ export async function DELETE(
     return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
   }
 
-  const { data: account } = await supabase
-    .from('accounts')
-    .select('id')
-    .eq('id', plan.account_id)
-    .eq('csm_owner_id', user.id)
-    .single()
+  const { data: profileDel } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const isPrivilegedDel = ['admin', 'super_admin', 'head_cs', 'csm_senior'].includes(profileDel?.role ?? '')
+
+  const accountDelQuery = supabase.from('accounts').select('id').eq('id', plan.account_id)
+  if (!isPrivilegedDel) accountDelQuery.eq('csm_owner_id', user.id)
+  const { data: account } = await accountDelQuery.single()
 
   if (!account) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

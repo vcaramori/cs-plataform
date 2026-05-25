@@ -4,25 +4,9 @@
  */
 
 import nodemailer from 'nodemailer'
+import { getSupabaseAdminClient } from '../supabase/admin'
 
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@plannera.com'
-const SMTP_HOST = process.env.SMTP_HOST
-const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587
-const SMTP_USER = process.env.SMTP_USER
-const SMTP_PASS = process.env.SMTP_PASS
-
-// Create transporter (fallback to console logging if not configured)
-const transporter = SMTP_HOST && SMTP_USER && SMTP_PASS
-  ? nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    })
-  : null
 
 interface PublicTicketEmailParams {
   email: string
@@ -38,6 +22,45 @@ export async function sendPublicTicketConfirmationEmail({
   external_ticket_id
 }: PublicTicketEmailParams) {
   try {
+    const adminClient = getSupabaseAdminClient()
+    
+    // Load Dynamic SMTP & Override settings from DB
+    const { data: dbSettingsRow } = await (adminClient as any)
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'support_email_integration')
+      .single()
+
+    const emailSettings = dbSettingsRow?.value || {}
+    
+    const smtpHost = emailSettings.smtp_host || process.env.SMTP_HOST
+    const smtpPort = parseInt(emailSettings.smtp_port || process.env.SMTP_PORT || '587')
+    const smtpUser = emailSettings.smtp_user || process.env.SMTP_USER
+    const smtpPass = emailSettings.smtp_password || process.env.SMTP_PASS
+
+    // Create transporter dynamically
+    const transporter = smtpHost && smtpUser && smtpPass
+      ? nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass
+          }
+        })
+      : null
+
+    // Override de E-mail de Teste
+    const emailTestRecipient = emailSettings.email_test_recipient || process.env.EMAIL_TEST_RECIPIENT
+    let finalTo = email
+    let subjectPrefix = ''
+    
+    if (emailTestRecipient) {
+      finalTo = emailTestRecipient
+      subjectPrefix = `[TESTE - Destinatário Original: ${email}] `
+    }
+
     const ticketNumber = external_ticket_id || ticket_id.substring(0, 8).toUpperCase()
     const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://csplataform.plannera.com'}/tickets/${ticket_id}`
 
@@ -64,7 +87,7 @@ export async function sendPublicTicketConfirmationEmail({
     <div class="content">
       <p>Olá,</p>
       <p>Seu ticket de suporte foi criado com sucesso. Aqui estão os detalhes:</p>
-
+ 
       <div class="ticket-info">
         <strong>Número do Ticket:</strong> #${ticketNumber}<br>
         <strong>Assunto:</strong> ${escapeHtml(ticket_title)}<br>
@@ -77,20 +100,20 @@ export async function sendPublicTicketConfirmationEmail({
         })}<br>
         <strong>Status:</strong> Aberto
       </div>
-
+ 
       <p>Você receberá atualizações por email conforme seu ticket for processado.</p>
-
+ 
       <a href="${trackingUrl}" class="button">Ver Ticket</a>
-
+ 
       <div class="footer">
         <p>Este é um e-mail automático. Por favor, não responda. Se tiver dúvidas, responda diretamente no seu ticket.</p>
         <p>© ${new Date().getFullYear()} Plannera. Todos os direitos reservados.</p>
       </div>
     </div>
   </div>
-</body>
-</html>
-    `
+ </body>
+ </html>
+     `
 
     const plainTextContent = `
 Ticket de Suporte Criado
@@ -110,8 +133,8 @@ Você receberá atualizações por email conforme seu ticket for processado.
     if (!transporter) {
       console.log('[Email] SMTP not configured. Logging email instead:')
       console.log({
-        to: email,
-        subject: `Seu ticket de suporte #${ticketNumber} foi criado`,
+        to: finalTo,
+        subject: `${subjectPrefix}Seu ticket de suporte #${ticketNumber} foi criado`,
         text: plainTextContent
       })
       return
@@ -119,13 +142,13 @@ Você receberá atualizações por email conforme seu ticket for processado.
 
     const result = await transporter.sendMail({
       from: EMAIL_FROM,
-      to: email,
-      subject: `Seu ticket de suporte #${ticketNumber} foi criado`,
+      to: finalTo,
+      subject: `${subjectPrefix}Seu ticket de suporte #${ticketNumber} foi criado`,
       text: plainTextContent,
       html: htmlContent
     })
 
-    console.log(`[Email] Confirmation email sent to ${email}:`, result.messageId)
+    console.log(`[Email] Confirmation email sent to ${finalTo} for ticket ${ticket_id} (Original: ${email}):`, result.messageId)
     return result
   } catch (err) {
     console.error('[Email] Error sending confirmation email:', err)

@@ -220,6 +220,55 @@ export default function SuccessPlanPage() {
         </CardContent>
       </Card>
 
+      {/* Monthly Evolution */}
+      {goals.length > 0 && (() => {
+        const byMonth: Record<string, { created: number; completed: number }> = {}
+        goals.forEach(g => {
+          const month = new Date(g.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+          if (!byMonth[month]) byMonth[month] = { created: 0, completed: 0 }
+          byMonth[month].created++
+          if (g.completed_at) {
+            const cm = new Date(g.completed_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+            if (!byMonth[cm]) byMonth[cm] = { created: 0, completed: 0 }
+            byMonth[cm].completed++
+          }
+        })
+        const months = Object.entries(byMonth)
+        const maxVal = Math.max(...months.map(([, v]) => v.created))
+        return (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-content-primary">Evolução Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end gap-3 overflow-x-auto pb-2">
+                {months.map(([month, val]) => (
+                  <div key={month} className="flex flex-col items-center gap-1 min-w-[52px]">
+                    <div className="flex items-end gap-1 h-20">
+                      <div
+                        className="w-4 rounded-t bg-blue-400/50 transition-all"
+                        style={{ height: `${Math.round((val.created / (maxVal || 1)) * 72)}px` }}
+                        title={`${val.created} criadas`}
+                      />
+                      <div
+                        className="w-4 rounded-t bg-emerald-500/70 transition-all"
+                        style={{ height: `${Math.round((val.completed / (maxVal || 1)) * 72)}px` }}
+                        title={`${val.completed} concluídas`}
+                      />
+                    </div>
+                    <span className="text-[9px] text-content-secondary font-bold uppercase tracking-wider">{month}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border-divider">
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-400/50" /><span className="text-[9px] text-content-secondary font-bold uppercase tracking-wider">Criadas</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-emerald-500/70" /><span className="text-[9px] text-content-secondary font-bold uppercase tracking-wider">Concluídas</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
+
       {/* Goals List */}
       <div>
         <h2 className="text-lg font-semibold text-content-primary mb-4">Metas ({goals.length})</h2>

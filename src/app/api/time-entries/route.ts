@@ -57,15 +57,51 @@ export async function POST(request: Request) {
 
   if (!accountId && parsedEntry.account_name_hint) {
     const hint = parsedEntry.account_name_hint
-    const { data: accounts } = await supabase
+    const { data: allAccounts } = await supabase
       .from('accounts')
-      .select('id, name')
-      .or(`name.ilike.%${hint}%,company_name.ilike.%${hint}%`)
-      .eq('csm_owner_id', user.id)
-      .limit(1)
+      .select('id, name, company_name, csm_owner_id')
 
-    if (accounts && accounts.length > 0) {
-      accountId = accounts[0].id
+    if (allAccounts && allAccounts.length > 0) {
+      const normalize = (str: string) =>
+        str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+
+      const normalizedHint = normalize(hint)
+
+      const candidates = allAccounts
+        .map((acc) => {
+          const normName = normalize(acc.name)
+          const normCompany = acc.company_name ? normalize(acc.company_name) : ''
+
+          let matched = false
+          let score = 0
+
+          if (normName === normalizedHint || normCompany === normalizedHint) {
+            matched = true
+            score = 100
+          } else if (normalizedHint.includes(normName) || (normCompany && normalizedHint.includes(normCompany))) {
+            matched = true
+            score = 80
+          } else if (normName.includes(normalizedHint) || (normCompany && normCompany.includes(normalizedHint))) {
+            matched = true
+            score = 60
+          }
+
+          if (matched && acc.csm_owner_id === user.id) {
+            score += 10
+          }
+
+          return { account: acc, matched, score }
+        })
+        .filter((c) => c.matched)
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => b.score - a.score)
+        accountId = candidates[0].account.id
+      }
     }
   }
 

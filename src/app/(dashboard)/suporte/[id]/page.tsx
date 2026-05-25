@@ -55,7 +55,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       <TicketDetailClient
         ticket={ticket as any}
         events={events ?? []}
-        messages={messages ?? []}
+        messages={(messages ?? []) as any}
         csatResponse={csatResponse ?? null}
         agents={agents}
         currentUserId={user.id}
