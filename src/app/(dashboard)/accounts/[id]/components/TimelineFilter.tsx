@@ -3,6 +3,13 @@
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Text } from '@/components/ui/typography'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+
+const filterOptions = [
+  { label: 'Feed Geral', value: 'all' },
+  { label: 'Estratégia', value: 'strategic' },
+  { label: 'Atendimento & NPS', value: 'atendimento' },
+]
 
 interface TimelineFilterProps {
   filter: 'all' | 'strategic' | 'atendimento'
@@ -29,15 +36,14 @@ export function TimelineFilter({
       <div className="flex items-center justify-between px-2 gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           {/* Select Dropdown replacing the filter buttons */}
-          <select
+          <SearchableSelect
+            options={filterOptions}
             value={filter}
-            onChange={e => setFilter(e.target.value as any)}
-            className="bg-surface-background border border-border-divider rounded-xl h-9 px-3 text-[10px] font-black uppercase tracking-widest text-content-primary focus:outline-none focus:ring-1 focus:ring-plannera-sop cursor-pointer shadow-sm transition-all hover:bg-surface-card"
-          >
-            <option value="all">Feed Geral</option>
-            <option value="strategic">Estratégia</option>
-            <option value="atendimento">Atendimento & NPS</option>
-          </select>
+            onValueChange={(val) => setFilter(val as any)}
+            size="sm"
+            placeholder="Feed Geral"
+            className="w-48 !h-9 border-border-divider bg-surface-background dark:bg-[#101623] hover:bg-surface-card hover:border-border-divider/80 text-[10px] font-black uppercase tracking-widest rounded-xl"
+          />
 
           {/* Sort Toggle Button */}
           <button
