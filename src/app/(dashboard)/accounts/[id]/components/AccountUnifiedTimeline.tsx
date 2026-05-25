@@ -49,7 +49,7 @@ export function AccountUnifiedTimeline({
   const [selectedHealthEvent, setSelectedHealthEvent] = useState<any>(null)
   const router = useRouter()
 
-  const itemsPerPage = 15
+  const itemsPerPage = 5
 
   useEffect(() => {
     setPage(1)

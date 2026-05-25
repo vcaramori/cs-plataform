@@ -207,7 +207,7 @@ export function AccountDetailPageClient({
             </div>
             <span className="label-premium !text-[9px] opacity-60">Cognitive Stream</span>
           </div>
-          <div className="lg:max-h-[85vh] overflow-y-auto custom-scrollbar pr-3">
+          <div className="pr-3 overflow-x-hidden">
             <AccountUnifiedTimeline
               interactions={interactions}
               efforts={efforts}
