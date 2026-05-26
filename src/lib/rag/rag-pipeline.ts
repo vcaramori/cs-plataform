@@ -1,6 +1,7 @@
 import { generateText, generateEmbedding } from '@/lib/llm/gateway'
 import { searchEmbeddingsWithVector } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getLLMSettings } from '@/lib/llm/settings'
 import { getAccountPlanSummary, getPortfolioSummary, type PortfolioSummary } from '@/lib/adoption/risk-engine'
 import { getNPSSegment } from '@/lib/supabase/types'
 import { loadInstruction } from '@/lib/ai/load-instruction'
@@ -27,19 +28,25 @@ export async function runRAGPipeline(
 ): Promise<RAGResult> {
   const supabase = getSupabaseAdminClient()
 
+  // 0. Carrega settings do banco (cache 60s)
+  const settings = await getLLMSettings()
+  const topK = settings.ragTopK                           // configurável na UI (padrão: 5)
+  const threshold = settings.ragConfidenceThreshold       // configurável na UI (padrão: 0.7)
+  const fallbackThreshold = Math.max(threshold * 0.5, 0.2) // fallback = metade, mínimo 0.2
+
   // 1. Gera embedding da pergunta UMA ÚNICA VEZ (reutilizado se threshold for relaxado)
   const { result: queryEmbedding } = await generateEmbedding(question, { allowFallback: true })
 
   // 2. Busca vetorial nos embeddings (reutiliza o vetor)
   const chunks = await searchEmbeddingsWithVector(queryEmbedding, {
     accountId,
-    limit: 8,
-    threshold: 0.4,
+    limit: topK,
+    threshold,
   })
 
   // Fallback: se poucos resultados, relaxa threshold SEM regenerar embedding
   const finalChunks = chunks.length < 2
-    ? await searchEmbeddingsWithVector(queryEmbedding, { accountId, limit: 8, threshold: 0.2 })
+    ? await searchEmbeddingsWithVector(queryEmbedding, { accountId, limit: topK, threshold: fallbackThreshold })
     : chunks
 
   // 2. Enriquece chunks com metadados das fontes originais
@@ -93,7 +100,7 @@ export async function runRAGPipeline(
           .eq('dismissed', false)
           .not('score', 'is', null)
           .order('responded_at', { ascending: false })
-          .limit(10)
+          .limit(topK * 2)
       : Promise.resolve({ data: [] as any[] }),
     // [8] Journal de Esforço — transcrições de reuniões, relatos de atividades, notas de contato
     accountId
@@ -102,7 +109,7 @@ export async function runRAGPipeline(
           .select('date, activity_type, parsed_hours, parsed_description, natural_language_input')
           .eq('account_id', accountId)
           .order('date', { ascending: false })
-          .limit(20)
+          .limit(topK * 3)
       : Promise.resolve({ data: [] as any[] }),
     // [9] Health Score — comparação Manual vs Shadow (detecta discrepância > 20)
     accountId
