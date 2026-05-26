@@ -91,11 +91,27 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const activeContracts = contracts.filter((c: any) => c.status === 'active')
   const displayContracts = activeContracts.length > 0 ? activeContracts : (contracts.length > 0 ? [contracts[0]] : [])
 
+  const sortedHealthScores = [...healthScores].sort((a: any, b: any) => {
+    const evalDiff = new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime()
+    if (evalDiff !== 0) return evalDiff
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
+
+  const mergedHealthScore = sortedHealthScores.length > 0 ? sortedHealthScores.reduce((acc: any, curr: any) => {
+    const merged = { ...acc }
+    for (const key in curr) {
+      if (merged[key] == null && curr[key] != null) {
+        merged[key] = curr[key]
+      }
+    }
+    return merged
+  }, { ...sortedHealthScores[0] }) : null
+
   return (
     <PageContainer noPadding className="p-6 space-y-6">
       <AccountHeader
         account={account as any}
-        latestHealthScore={healthScores.sort((a: any, b: any) => new Date(b.evaluated_at).getTime() - new Date(a.evaluated_at).getTime())[0] ?? null}
+        latestHealthScore={mergedHealthScore}
         currentAdoptionScore={currentAdoptionScore}
       />
 
