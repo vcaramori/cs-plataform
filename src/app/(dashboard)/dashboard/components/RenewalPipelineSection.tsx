@@ -63,50 +63,54 @@ function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
   const readiness = READINESS[card.readiness_color]
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.04 }}
+      transition={{ delay: idx * 0.03 }}
     >
       <Link
         href={`/accounts/${card.account_id}/renewal`}
-        className="block p-4 bg-surface-background hover:bg-surface-card border border-border-divider rounded-xl transition-all hover:shadow-md hover:border-border-divider/60 group"
+        className="block p-2.5 pb-2 bg-surface-background hover:bg-surface-card border border-border-divider rounded-lg transition-all hover:shadow-md hover:border-border-divider/60 group"
       >
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <p className="font-bold text-sm text-content-primary leading-tight group-hover:text-plannera-orange transition-colors line-clamp-1">
+        {/* Line 1: Client Name & Readiness Badge */}
+        <div className="flex items-center justify-between gap-1.5 mb-1.5">
+          <p className="font-bold text-[11px] text-content-primary leading-tight group-hover:text-plannera-orange transition-colors line-clamp-1 max-w-[120px]">
             {card.account_name}
           </p>
-          <Badge className={`text-[9px] shrink-0 ${readiness.cls}`}>
+          <Badge className={`text-[8px] font-bold uppercase tracking-wider shrink-0 h-4 px-1.5 flex items-center justify-center rounded-md border-none ${readiness.cls}`}>
             {readiness.label}
           </Badge>
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
-            <Calendar className="w-3 h-3" />
-            <span>
+        {/* Line 2: Renewal Days & ARR (Compact Grid/Flex) */}
+        <div className="flex items-center justify-between text-[9px] text-content-secondary gap-1.5 mb-1">
+          <div className="flex items-center gap-1 min-w-[70px]">
+            <Calendar className="w-2.5 h-2.5 shrink-0" />
+            <span className="truncate">
               {card.days_to_renewal < 0 
-                ? `Vencido há ${Math.abs(card.days_to_renewal)}d` 
-                : `${card.days_to_renewal}d para renovação`}
+                ? `Vencido ${Math.abs(card.days_to_renewal)}d` 
+                : `${card.days_to_renewal}d`}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
-            <DollarSign className="w-3 h-3" />
-            <span>ARR: R$ {card.arr.toLocaleString('pt-BR')}</span>
+          <div className="flex items-center gap-1">
+            <DollarSign className="w-2.5 h-2.5 shrink-0 text-content-secondary/70" />
+            <span className="font-medium">ARR: R$ {card.arr.toLocaleString('pt-BR')}</span>
           </div>
-          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border-divider">
-            <div className="flex items-center gap-1 text-[10px]">
-              <TrendingUp className="w-3 h-3 text-content-secondary" />
-              <span className={card.health_score >= 70 ? 'text-emerald-600 font-bold' : card.health_score >= 50 ? 'text-amber-600 font-bold' : 'text-red-600 font-bold'}>
-                {card.health_score}%
-              </span>
-              <span className="text-content-secondary">health</span>
+        </div>
+
+        {/* Line 3: Health Score & NPS (No border, inline compact) */}
+        <div className="flex items-center gap-2.5 text-[9px]">
+          <div className="flex items-center gap-0.5">
+            <TrendingUp className="w-2.5 h-2.5 text-content-secondary shrink-0" />
+            <span className={card.health_score >= 70 ? 'text-emerald-600 font-extrabold' : card.health_score >= 50 ? 'text-amber-600 font-extrabold' : 'text-red-600 font-extrabold'}>
+              {card.health_score}%
+            </span>
+            <span className="text-content-secondary/70">health</span>
+          </div>
+          {card.nps !== null && (
+            <div className="text-content-secondary/70">
+              NPS <span className="font-extrabold text-content-primary">{card.nps}</span>
             </div>
-            {card.nps !== null && (
-              <div className="text-[10px] text-content-secondary">
-                NPS <span className="font-bold text-content-primary">{card.nps}</span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </Link>
     </motion.div>
