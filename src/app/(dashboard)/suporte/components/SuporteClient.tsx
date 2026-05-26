@@ -372,7 +372,7 @@ export function SuporteClient({
                   onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, urgency: !!checked }))}
                   className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
                 >
-                  Urgência
+                  Criticidade
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={visibleColumns.priority}

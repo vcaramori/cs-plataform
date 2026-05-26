@@ -35,7 +35,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin()
-    const { name, description } = await request.json()
+    const { name, description, permissions } = await request.json()
 
     if (!name) {
       return NextResponse.json({ error: 'O nome do perfil é obrigatório' }, { status: 400 })
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('custom_roles')
-      .insert([{ name, description }])
+      .insert([{ name, description, permissions: permissions || [] }])
       .select()
       .single()
 
@@ -60,15 +60,20 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const supabaseAdmin = getSupabaseAdmin()
-    const { id, name, description } = await request.json()
+    const { id, name, description, permissions } = await request.json()
 
     if (!id || !name) {
       return NextResponse.json({ error: 'ID e nome são obrigatórios' }, { status: 400 })
     }
 
+    const updates: any = { name, description, updated_at: new Date().toISOString() }
+    if (permissions !== undefined) {
+      updates.permissions = permissions
+    }
+
     const { data, error } = await supabaseAdmin
       .from('custom_roles')
-      .update({ name, description, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', id)
       .select()
       .single()

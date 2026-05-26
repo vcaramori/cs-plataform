@@ -274,19 +274,19 @@ const markdownComponents = {
 function ClientMessage({ text, ts, authorEmail }: { text: string; ts: string; authorEmail?: string }) {
   const shortName = authorEmail ? authorEmail.split('@')[0] : 'Cliente'
   return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-        <User className="w-4 h-4 text-content-secondary" />
+    <div className="flex gap-2">
+      <div className="w-7 h-7 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+        <User className="w-3.5 h-3.5 text-content-secondary" />
       </div>
       <div className="flex-1 max-w-2xl">
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-content-primary text-xs font-semibold">
             {authorEmail ? `Cliente (${shortName})` : 'Cliente'}
           </span>
-          <span className="text-content-secondary text-[11px]">{fmtTs(ts)}</span>
+          <span className="text-content-secondary text-[10px]">{fmtTs(ts)}</span>
         </div>
-        <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4">
-          <div className="text-content-primary text-sm">
+        <div className="bg-surface-background border border-border-divider rounded-xl rounded-tl-sm p-3">
+          <div className="text-content-primary text-xs font-normal">
             <ReactMarkdown components={markdownComponents}>{text}</ReactMarkdown>
           </div>
         </div>
@@ -299,13 +299,13 @@ function AgentReply({ event, agents, sentiment }: { event: SLAEvent; agents: Age
   const authorEmail = event.metadata?.author_email ?? 'Agente'
   const shortName = authorEmail.split('@')[0]
   return (
-    <div className="flex gap-3 flex-row-reverse">
-      <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0 mt-0.5">
-        <Mail className="w-4 h-4 text-indigo-600" />
+    <div className="flex gap-2 flex-row-reverse">
+      <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0 mt-0.5">
+        <Mail className="w-3.5 h-3.5 text-indigo-600" />
       </div>
       <div className="flex-1 max-w-2xl flex flex-col items-end">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-content-secondary text-[11px]">{fmtTs(event.occurred_at)}</span>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-content-secondary text-[10px]">{fmtTs(event.occurred_at)}</span>
           {sentiment && (
             <SentimentBadge
               sentiment={sentiment.sentiment}
@@ -316,8 +316,8 @@ function AgentReply({ event, agents, sentiment }: { event: SLAEvent; agents: Age
           )}
           <span className="text-xs font-bold uppercase tracking-tight text-indigo-500 dark:text-indigo-400">{shortName}</span>
         </div>
-        <div className="bg-indigo-600 border border-indigo-500 rounded-2xl rounded-tr-sm p-4 w-full shadow-premium">
-          <div className="text-white text-sm prose-invert">
+        <div className="bg-indigo-600 border border-indigo-500 rounded-xl rounded-tr-sm p-3 w-full shadow-premium">
+          <div className="text-white text-xs font-normal prose-invert">
             <ReactMarkdown components={markdownComponents}>{event.metadata?.body}</ReactMarkdown>
           </div>
         </div>
@@ -330,20 +330,20 @@ function InternalNote({ event }: { event: SLAEvent }) {
   const authorEmail = event.metadata?.author_email ?? 'Agente'
   const shortName = authorEmail.split('@')[0]
   return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-amber-100 border border-warning-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-        <Lock className="w-3.5 h-3.5 text-amber-600" />
+    <div className="flex gap-2">
+      <div className="w-7 h-7 rounded-full bg-amber-100 border border-warning-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+        <Lock className="w-3 h-3 text-amber-600" />
       </div>
       <div className="flex-1 max-w-2xl">
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-amber-700 text-xs font-semibold">{shortName}</span>
           <span className="bg-amber-100 border border-warning-200 text-amber-700 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1">
-            <Lock className="w-2.5 h-2.5" /> Nota Interna
+            <Lock className="w-2 h-2" /> Nota Interna
           </span>
-          <Text variant="secondary" className="text-[11px] ml-auto">{fmtTs(event.occurred_at)}</Text>
+          <Text variant="secondary" className="text-[10px] ml-auto">{fmtTs(event.occurred_at)}</Text>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-warning-100 dark:border-warning-900/50 rounded-2xl rounded-tl-sm p-4">
-          <div className="text-amber-950 dark:text-amber-200 text-sm">
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-warning-100 dark:border-warning-900/50 rounded-xl rounded-tl-sm p-3">
+          <div className="text-amber-950 dark:text-amber-200 text-xs font-normal">
             <ReactMarkdown components={markdownComponents}>{event.metadata?.body}</ReactMarkdown>
           </div>
         </div>
@@ -356,10 +356,10 @@ function LifecycleDivider({ event }: { event: SLAEvent }) {
   const meta = eventMeta[event.event_type] ?? { icon: CheckCircle2, label: event.event_type, color: 'text-content-secondary' }
   const Icon = meta.icon
   return (
-    <div className="flex items-center gap-3 py-1">
+    <div className="flex items-center gap-2 py-0.5">
       <div className="h-px flex-1 bg-border-divider" />
-      <div className={cn('flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest shrink-0', meta.color)}>
-        <Icon className="w-3 h-3" />
+      <div className={cn('flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest shrink-0', meta.color)}>
+        <Icon className="w-2.5 h-2.5" />
         {meta.label}
         <span className="text-content-secondary font-normal normal-case">· {fmtTs(event.occurred_at)}</span>
       </div>
@@ -612,14 +612,15 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     }
   }
 
-  async function handleAssign() {
-    if (!selectedAgent || selectedAgent === ticket.assigned_to) return
+  async function handleAssign(agentId?: string) {
+    const targetAgent = agentId || selectedAgent
+    if (!targetAgent || targetAgent === ticket.assigned_to) return
     setAssignLoading(true)
     try {
       const res = await fetch(`/api/support-tickets/${ticket.id}/assign`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: selectedAgent }),
+        body: JSON.stringify({ user_id: targetAgent === 'none' ? null : targetAgent }),
       })
       if (!res.ok) throw new Error()
       toast.success('Chamado reatribuído')
@@ -821,9 +822,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
     <PageContainer noPadding className="flex flex-col h-full min-h-0">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 border-b border-border-divider bg-surface-card px-6 py-4">
+      <div className="sticky top-0 z-20 border-b border-border-divider bg-surface-card px-6 py-2 shadow-sm">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-content-secondary text-[11px] font-semibold uppercase tracking-widest mb-3">
+        <div className="flex items-center gap-1.5 text-content-secondary text-[11px] font-semibold uppercase tracking-widest mb-1">
           <Link href="/suporte" className="hover:text-content-primary transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3 h-3" /> Suporte
           </Link>
@@ -837,15 +838,9 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           <span className="text-content-primary truncate max-w-md">{ticket.title}</span>
         </div>
 
-        {/* Sentiment Sparkline */}
-        <div className="mb-3 flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">Sentimento:</span>
-          <SentimentTrendSparkline ticketId={ticket.id} compact />
-        </div>
-
         {/* Title row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="space-y-1 flex-1 min-w-0">
             {/* Badges */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide', sConf.color)}>
@@ -875,11 +870,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               )}
             </div>
 
-            <Text as="h1" variant="primary" className="text-xl font-black uppercase tracking-tight break-words leading-tight">{ticket.title}</Text>
+            <Text as="h1" variant="primary" className="text-lg font-black uppercase tracking-tight break-words leading-tight">{ticket.title}</Text>
 
             <div className="flex items-center gap-3">
-              <Link href={`/accounts/${account.id}`} className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-400 transition-colors font-bold uppercase tracking-tight text-xs">
-                <Building2 className="w-3.5 h-3.5" />{account.name}<ExternalLink className="w-2.5 h-2.5" />
+              <Link href={`/accounts/${account.id}`} className="flex items-center gap-1.5 text-indigo-500 hover:text-indigo-400 transition-colors font-bold uppercase tracking-tight text-[11px]">
+                <Building2 className="w-3 h-3" />{account.name}<ExternalLink className="w-2 h-2" />
               </Link>
               <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">·</Text>
               <Text variant="secondary" className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
@@ -1067,7 +1062,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     : 'Adicione uma nota interna para a equipe...'
                 }
                 className={cn(
-                  'min-h-[140px] bg-surface-card text-content-primary placeholder:text-content-secondary text-sm rounded-t-xl rounded-b-none resize-none border-x border-t border-b-0 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
+                  'min-h-[80px] bg-surface-card text-content-primary placeholder:text-content-secondary text-xs rounded-t-xl rounded-b-none resize-none border-x border-t border-b-0 transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500/30',
                   tab === 'reply' ? 'border-indigo-200' : 'border-warning-200'
                 )}
                 disabled={sending || uploading}
@@ -1283,12 +1278,11 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             </div>
 
             {!hasSLA ? null : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[10px] text-content-secondary font-bold uppercase tracking-widest mb-1">1ª Resposta</p>
                   <div className="flex items-center gap-2">
                     <SLABadge status={ticket.sla_status_first_response as any} />
-                    <SLATimer deadline={ticket.first_response_deadline ?? null} resolvedAt={ticket.first_response_at} />
                   </div>
                   {ticket.first_response_deadline && (
                     <p className="text-[10px] text-content-secondary font-mono mt-1">
@@ -1296,12 +1290,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     </p>
                   )}
                 </div>
-                <div className="h-px bg-border-divider" />
                 <div>
                   <p className="text-[10px] text-content-secondary font-bold uppercase tracking-widest mb-1">Resolução</p>
                   <div className="flex items-center gap-2">
                     <SLABadge status={ticket.sla_status_resolution as any} />
-                    <SLATimer deadline={ticket.resolution_deadline ?? null} resolvedAt={ticket.resolved_at} />
                   </div>
                   {ticket.resolution_deadline && (
                     <p className="text-[10px] text-content-secondary font-mono mt-1">
@@ -1379,24 +1371,26 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           <section className="border-b border-border-divider p-4 space-y-3">
             <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Responsável</Text>
 
-            <div className="flex items-center gap-2.5 p-2.5 bg-surface-background rounded-lg border border-border-divider">
-              <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0">
-                <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-content-primary text-xs font-semibold">{currentAgentEmail?.split('@')[0] ?? 'Não atribuído'}</p>
-                <p className="text-content-secondary text-[10px]">{currentAgentEmail ?? '—'}</p>
-              </div>
-            </div>
-
             {agents.length > 0 && (
-              <div className="space-y-2">
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <div className="space-y-3">
+                <Select
+                  value={selectedAgent || 'none'}
+                  onValueChange={(val) => {
+                    const agentObj = agents.find(a => a.id === val)
+                    const agentLabel = agentObj ? agentObj.email : 'Nenhum'
+                    const confirmed = window.confirm(`Deseja alterar o responsável deste chamado para ${agentLabel}?`)
+                    if (confirmed) {
+                      setSelectedAgent(val)
+                      handleAssign(val)
+                    }
+                  }}
+                  disabled={assignLoading}
+                >
                   <SelectTrigger className="w-full bg-surface-card border-border-divider text-content-primary text-xs h-9 shadow-sm">
                     <SelectValue placeholder="Selecionar agente..." />
                   </SelectTrigger>
                   <SelectContent className="bg-surface-card border-border-divider text-content-primary">
-                    <SelectItem value="none" className="text-xs opacity-50">Selecionar agente...</SelectItem>
+                    <SelectItem value="none" className="text-xs opacity-50">Não atribuído (Nenhum)</SelectItem>
                     {agents.map(a => (
                       <SelectItem key={a.id} value={a.id} className="text-xs">
                         {a.email}
@@ -1404,45 +1398,62 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  onClick={handleAssign}
-                  disabled={assignLoading || !selectedAgent || selectedAgent === ticket.assigned_to}
-                  size="sm"
-                  className="w-full bg-surface-background hover:bg-surface-card text-content-primary border border-border-divider font-bold uppercase tracking-widest text-[10px] gap-1.5"
-                >
-                  {assignLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
-                  Reatribuir
-                </Button>
 
-                <Button
-                  variant="outline"
-                  onClick={() => setIndicatorsOpen(true)}
-                  className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
-                >
-                  <Zap className="w-3.5 h-3.5 text-warning" />
-                  Ver Indicadores 360°
-                </Button>
+                {/* Ações Rápidas Operacionais Lado a Lado */}
+                <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIndicatorsOpen(true)}
+                          size="icon"
+                          className="flex-1 h-9 text-content-primary border-border-divider hover:bg-surface-background gap-1"
+                        >
+                          <Zap className="w-4 h-4 text-warning" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Ver Indicadores 360°
+                      </TooltipContent>
+                    </Tooltip>
 
-                {ticket.status === 'closed' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsReopenModalOpen(true)}
-                    className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-accent" />
-                    Reabrir com Justificativa
-                  </Button>
-                )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsMergeModalOpen(true)}
+                          disabled={ticket.status === 'closed'}
+                          size="icon"
+                          className="flex-1 h-9 text-content-primary border-border-divider hover:bg-surface-background gap-1"
+                        >
+                          <Merge className="w-4 h-4 text-primary" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Mesclar Ticket
+                      </TooltipContent>
+                    </Tooltip>
 
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMergeModalOpen(true)}
-                  disabled={ticket.status === 'closed'}
-                  className="w-full justify-start gap-2 text-content-primary border-border-divider hover:bg-surface-background font-bold uppercase tracking-widest text-[10px]"
-                >
-                  <Merge className="w-3.5 h-3.5 text-primary" />
-                  Mesclar Ticket
-                </Button>
+                    {ticket.status === 'closed' && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsReopenModalOpen(true)}
+                            size="icon"
+                            className="flex-1 h-9 text-content-primary border-border-divider hover:bg-surface-background gap-1"
+                          >
+                            <RefreshCw className="w-4 h-4 text-accent" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          Reabrir com Justificativa
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TooltipProvider>
+                </div>
               </div>
             )}
           </section>

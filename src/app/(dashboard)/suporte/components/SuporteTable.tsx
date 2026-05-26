@@ -56,7 +56,7 @@ export function SuporteTable({
                 <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Status</TableHead>
               )}
               {visibleColumns.urgency && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Urgência</TableHead>
+                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Criticidade</TableHead>
               )}
               {visibleColumns.priority && (
                 <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Prioridade</TableHead>

@@ -83,7 +83,9 @@ export const TicketListRow: React.FC<TicketListRowProps> = ({
       )}
       {visibleColumns.urgency && (
         <TableCell className="py-2 text-center">
-          <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} className="text-[9px] font-bold px-2 py-0.5 rounded-md" />
+          <Badge variant="outline" className={cn(priorityConfig[ticket.priority]?.bg, priorityConfig[ticket.priority]?.color, "border-none shadow-none text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md")}>
+            {priorityConfig[ticket.priority]?.label}
+          </Badge>
         </TableCell>
       )}
       {visibleColumns.priority && (
