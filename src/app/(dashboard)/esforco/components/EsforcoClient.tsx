@@ -33,6 +33,7 @@ export type Entry = {
   date: string
   logged_at: string
   accounts: { name: string } | null
+  file_urls?: string[] | null
 }
 
 export function EsforcoClient({

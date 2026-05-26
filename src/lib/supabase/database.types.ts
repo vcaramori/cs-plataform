@@ -1333,6 +1333,7 @@ export type Database = {
           time_entry_id: string | null
           title: string
           type: string
+          file_urls: string[] | null
         }
         Insert: {
           account_id: string
@@ -1350,6 +1351,7 @@ export type Database = {
           time_entry_id?: string | null
           title: string
           type: string
+          file_urls?: string[] | null
         }
         Update: {
           account_id?: string
@@ -1367,6 +1369,7 @@ export type Database = {
           time_entry_id?: string | null
           title?: string
           type?: string
+          file_urls?: string[] | null
         }
         Relationships: [
           {
@@ -3284,6 +3287,7 @@ export type Database = {
           parsed_description: string
           parsed_hours: number
           status: string | null
+          file_urls: string[] | null
         }
         Insert: {
           account_id: string
@@ -3297,6 +3301,7 @@ export type Database = {
           parsed_description: string
           parsed_hours: number
           status?: string | null
+          file_urls?: string[] | null
         }
         Update: {
           account_id?: string
@@ -3310,6 +3315,7 @@ export type Database = {
           parsed_description?: string
           parsed_hours?: number
           status?: string | null
+          file_urls?: string[] | null
         }
         Relationships: [
           {
