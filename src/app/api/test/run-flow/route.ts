@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { enrichTicketWithSLA, recordFirstResponse, resolveTicket, closeTicket } from '@/lib/support/lifecycle'
 import { classifyTicketIntent } from '@/lib/support/intent-classifier'
 
 export async function GET() {
+  const auth = await requireApiAuth('manage:admin')
+  if (isAuthError(auth)) return auth
+
   const supabase = getSupabaseAdminClient()
   const logs: string[] = []
   const start = Date.now()

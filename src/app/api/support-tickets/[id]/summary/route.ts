@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { getOrGenerateTicketSummary, regenerateTicketSummary } from '@/lib/support/ticket-summary'
 
 /**
@@ -9,54 +10,46 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   try {
     const { id: ticketId } = await params
-
     const result = await getOrGenerateTicketSummary(ticketId)
 
     return NextResponse.json({
       summary: result.summary,
       generatedAt: result.generatedAt,
-      isStale: result.isStale
+      isStale: result.isStale,
     })
   } catch (error) {
     console.error('[Ticket Summary GET] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
  * POST /api/support-tickets/[id]/summary
- * Force regenerate summary (admin only)
+ * Force regenerate summary
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   try {
     const { id: ticketId } = await params
-
-    // Optional: Check if user is admin (for full implementation)
-    // For now, allow all authenticated users
-    const { data: { user } } = await request.json().then(() => ({
-      data: { user: { id: 'system' } }
-    })).catch(() => ({ data: { user: null } }))
-
-    const result = await regenerateTicketSummary(ticketId, user?.id)
+    const result = await regenerateTicketSummary(ticketId, auth.user.id)
 
     return NextResponse.json({
       summary: result.summary,
       generatedAt: result.generatedAt,
-      isStale: result.isStale
+      isStale: result.isStale,
     })
   } catch (error) {
     console.error('[Ticket Summary POST] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export interface SentimentTrendData {
   timestamp: string;
@@ -25,9 +21,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireApiAuth();
+    if (isAuthError(auth)) return auth;
+
+    const supabase = getSupabaseAdminClient();
     const { id: ticketId } = await params;
 
-    // Verify user has access to this ticket
     const { data: ticket, error: ticketError } = await supabase
       .from('support_tickets')
       .select('id, sentiment_trend_cache, sentiment_trend_cache_generated_at')

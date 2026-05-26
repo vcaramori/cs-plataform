@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
   const { id } = await params
 

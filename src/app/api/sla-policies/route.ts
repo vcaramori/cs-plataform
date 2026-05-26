@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { z } from 'zod'
 
 const getQuerySchema = z.object({
@@ -7,6 +8,9 @@ const getQuerySchema = z.object({
 })
 
 export async function GET(request: Request) {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
   const { searchParams } = new URL(request.url)
   
@@ -34,6 +38,9 @@ const postSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const auth = await requireApiAuth('manage:settings')
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
   const body = await request.json()
 

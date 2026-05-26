@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { z } from 'zod'
 
 export async function GET(request: Request) {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
   const { searchParams } = new URL(request.url)
   const accountId = searchParams.get('account_id')
@@ -34,6 +38,9 @@ const itemSchema = z.object({
 const bulkPostSchema = z.array(itemSchema)
 
 export async function PUT(request: Request) {
+  const auth = await requireApiAuth('manage:settings')
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
   const body = await request.json()
 

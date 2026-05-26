@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { processAutoCategorizationForTicket } from '@/lib/support/categorization'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireApiAuth()
+    if (isAuthError(auth)) return auth
+
+    const supabase = getSupabaseAdminClient()
     const { id: ticketId } = await params
 
-    // Fetch ticket
     const { data: ticket, error: fetchError } = await supabase
       .from('support_tickets')
       .select('id, title, description, category')

@@ -1,10 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 /**
  * POST /api/support-tickets/[id]/auto-assign-test
@@ -27,11 +23,14 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireApiAuth('manage:admin');
+    if (isAuthError(auth)) return auth;
+
+    const supabase = getSupabaseAdminClient();
     const params = await context.params;
     const ticketId = params.id;
     const { csm_id: forcedCsmId } = await request.json().catch(() => ({}));
 
-    // Get ticket details
     const { data: ticket, error: ticketError } = await supabase
       .from("support_tickets")
       .select("id, assigned_to, title")

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth';
 
 interface SlackMessage {
   text: string;
@@ -22,6 +23,9 @@ interface SlackMessage {
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiAuth('manage:admin');
+    if (isAuthError(auth)) return auth;
+
     const { channel = "#sla-alerts" } = await request.json().catch(() => ({}));
 
     const webhook = process.env.SLACK_WEBHOOK_SLA_ALERTS;

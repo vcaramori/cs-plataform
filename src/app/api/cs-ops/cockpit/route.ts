@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 
 export async function GET() {
+  const auth = await requireApiAuth()
+  if (isAuthError(auth)) return auth
+
   const supabase = await getSupabaseServerClient()
 
   // 1. Contas com Health Score Crítico (<40)

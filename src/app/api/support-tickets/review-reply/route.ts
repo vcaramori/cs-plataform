@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { generateText } from '@/lib/llm/gateway'
 import { loadInstruction } from '@/lib/ai/load-instruction'
 import { env } from '@/lib/env'
@@ -86,6 +87,9 @@ Retorne APENAS JSON válido, sem texto adicional, sem markdown.`
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireApiAuth()
+    if (isAuthError(auth)) return auth
+
     const json = await req.json()
     const {
       body: replyBody,
