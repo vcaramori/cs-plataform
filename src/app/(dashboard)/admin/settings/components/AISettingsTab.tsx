@@ -36,7 +36,7 @@ const PROVIDERS: ProviderDef[] = [
       { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Legado)' },
     ],
     embeddingModels: [
-      { id: 'text-embedding-005', label: 'text-embedding-005 (1536d)', dimensions: 1536 },
+      { id: 'gemini-embedding-001', label: 'gemini-embedding-001 (1536d)', dimensions: 1536 },
     ],
   },
   {
@@ -211,7 +211,7 @@ const DEFAULT_AI: AIValues = {
   text_provider: 'gemini',
   text_model: 'gemini-2.5-flash',
   embedding_provider: 'gemini',
-  embedding_model: 'text-embedding-005',
+  embedding_model: 'gemini-embedding-001',
   embedding_dimensions: 1536,
   rag_top_k: 5,
   rag_confidence_threshold: 0.7,
