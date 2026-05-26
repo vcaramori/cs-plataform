@@ -327,7 +327,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
                 </div>
 
                 {/* Footer with dynamic padding for safety space in the bottom of screen */}
-                <div className="p-4 pb-6 bg-surface-card border-t border-border-divider/50 flex justify-end flex-shrink-0 shadow-lg z-10">
+                <div className="p-4 pb-6 bg-surface-card border-t border-border-divider/50 flex justify-start flex-shrink-0 shadow-lg z-10">
                   <Link href={`/suporte/${ticket.id}`} passHref>
                     <Button variant="default" className="rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-bold uppercase tracking-widest text-[10px] h-10 px-5 gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all">
                       Abrir Detalhes e Responder
