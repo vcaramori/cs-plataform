@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Textarea } from '@/components/ui/textarea'
-import { Target, Zap, ChevronRight, Loader2, Sparkles } from 'lucide-react'
+import { Zap, ChevronRight, Loader2, Sparkles } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { AttachmentsUploader } from '@/components/shared/AttachmentsUploader'
 
@@ -46,10 +46,6 @@ export function EsforcoKPIs({
 
       <CardContent className="space-y-6 px-6 pb-6 relative z-10">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 mb-1 ml-1">
-            <Target className="w-4 h-4 text-plannera-primary" />
-            <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Contexto do Cliente</Label>
-          </div>
           <SearchableSelect
             value={selectedAccountId}
             onValueChange={onAccountChange}
