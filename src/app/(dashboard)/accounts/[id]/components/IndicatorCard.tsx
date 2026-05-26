@@ -30,16 +30,22 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
     ? [{ date: 'Start', score: history[0].value }, { date: 'End', score: history[0].value }]
     : history.map(h => ({ date: h.date, score: h.value }))
 
-  const value = indicator.current_value
+  const value = indicator.current_value || 0
+  const target = indicator.target_value || 0
+  
   const displayValue = indicator.unit === '%' 
     ? `${value}%` 
     : indicator.unit === 'R$' 
       ? `R$ ${value}` 
       : `${value} ${indicator.unit}`
+      
+  const targetDisplayValue = indicator.unit === '%' 
+    ? `${target}%` 
+    : indicator.unit === 'R$' 
+      ? `R$ ${target}` 
+      : `${target} ${indicator.unit}`
 
   // Calculate percentage relative to target for the bottom bar if applicable
-  // If target is 0, we can't divide, just use 100% or 0%
-  const target = indicator.target_value
   const pctOfTarget = target > 0 ? Math.min(100, Math.max(0, (value / target) * 100)) : 0
 
   return (
@@ -51,16 +57,16 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
       className="flex flex-col items-center justify-center gap-3 relative overflow-hidden rounded-2xl border border-border-divider bg-surface-background h-[120px] shadow-sm group hover:border-primary/30 transition-all cursor-pointer"
     >
       {/* Background Area Chart */}
-      <div className="absolute inset-x-0 bottom-0 h-[60%] opacity-30 pointer-events-none z-0">
+      <div className="absolute inset-0 opacity-20 pointer-events-none z-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={`colorIndicator${indicator.id}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.8} />
-                <stop offset="95%" stopColor={color} stopOpacity={0} />
+                <stop offset="95%" stopColor={color} stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
+            <YAxis hide domain={[0, target > 0 ? Math.max(target, value) : 100]} />
             <Area
               type="monotone"
               dataKey="score"
@@ -85,8 +91,9 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
 
       <div className="text-center relative z-10 w-full px-1">
         <p className="label-premium !text-[9px] opacity-70 mb-1 truncate">{indicator.name}</p>
-        <p className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums">
+        <p className="text-sm font-black text-foreground leading-none tracking-tighter tabular-nums flex items-baseline justify-center gap-1">
           {displayValue}
+          <span className="text-[10px] text-content-secondary opacity-60">/ {targetDisplayValue}</span>
         </p>
       </div>
     </motion.div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(
   _request: Request,
@@ -15,11 +16,12 @@ export async function GET(
     .from('accounts')
     .select('id')
     .eq('id', account_id)
-    .eq('csm_owner_id', user.id)
     .single()
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
 
-  const { data: scores, error } = await supabase
+  const admin = getSupabaseAdminClient()
+
+  const { data: scores, error } = await admin
     .from('health_scores')
     .select('*')
     .eq('account_id', account_id)
