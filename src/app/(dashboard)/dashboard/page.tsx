@@ -50,16 +50,15 @@ export default async function DashboardPage() {
     : 0
 
   const today = new Date()
-  const in30d = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const in90d = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)
   const renewalsSoon = safeAccounts.filter(a => {
     const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
     const activeContracts = contracts.filter((c: ContractRow) => c.status === "active")
     
     return activeContracts.some((c: ContractRow) => {
-
       if (!c.renewal_date) return false
       const d = new Date(c.renewal_date)
-      return d >= today && d <= in30d
+      return d <= in90d
     })
   }).length
 

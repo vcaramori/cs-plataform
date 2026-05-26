@@ -23,6 +23,7 @@ export default async function PerguntarPage() {
         title="Plannera Assistant"
         subtitle="Inteligência de Portfólio, Análise Preditiva e RAG em Tempo Real"
         iconName="Sparkles"
+        className="mb-4"
       />
       <div className="flex-1 mt-3 min-h-0 overflow-hidden">
         <PerguntarClient accounts={accounts ?? []} />

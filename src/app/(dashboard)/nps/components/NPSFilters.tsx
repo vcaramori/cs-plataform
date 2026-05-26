@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Bookmark, Building2, RefreshCw, Target, Loader2, Globe } from 'lucide-react'
+import { Bookmark, Building2, RefreshCw, Target, Loader2, Download } from 'lucide-react'
 import Link from 'next/link'
 
 interface NPSFiltersProps {
@@ -44,27 +44,27 @@ export function NPSFilters({
     <div className="flex flex-wrap items-center gap-2 bg-surface-card border border-border-divider px-3 py-2 rounded-2xl shadow-sm relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-plannera-orange/60" />
 
-      <Select value={programFilter} onValueChange={onProgramChange}>
-        <SelectTrigger className="w-44 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
+      <Select value={programFilter} onProgramChange={onProgramChange}>
+        <SelectTrigger className="w-60 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-wide">
           <Bookmark className="w-3.5 h-3.5 text-plannera-primary/40 mr-1.5" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-          <SelectItem value="default" className="text-[10px] font-black uppercase tracking-widest">GLOBAL PORTFOLIO</SelectItem>
+          <SelectItem value="default" className="text-[10px] font-black uppercase tracking-wide">GLOBAL PORTFOLIO</SelectItem>
           {programs.filter(p => p.is_active).map(p => (
-            <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-widest">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
+            <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-wide">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select value={accountFilter} onValueChange={onAccountChange}>
-        <SelectTrigger className="w-36 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-widest">
+        <SelectTrigger className="w-52 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-wide">
           <Building2 className="w-3.5 h-3.5 text-content-secondary/40 mr-1.5" />
           <SelectValue placeholder="CONTAS" />
         </SelectTrigger>
         <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-          <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest">TODAS AS CONTAS</SelectItem>
-          {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase tracking-widest">{a.name}</SelectItem>)}
+          <SelectItem value="all" className="text-[10px] font-black uppercase tracking-wide">TODAS AS CONTAS</SelectItem>
+          {accounts.map(a => <SelectItem key={a.id} value={a.id} className="text-[10px] font-black uppercase tracking-wide">{a.name}</SelectItem>)}
         </SelectContent>
       </Select>
 
@@ -115,8 +115,8 @@ export function NPSFilters({
 
       <div className="flex-1" />
 
-      <Button variant="outline" size="sm" onClick={onExport} className="h-8 border-border-divider text-success hover:bg-success hover:text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl px-4 shadow-sm transition-all active:scale-95 gap-1.5">
-        <Globe className="w-3.5 h-3.5" /> Exportar
+      <Button onClick={onExport} className="h-8 bg-success hover:bg-emerald-600 text-white border-none shadow-sm text-[10px] font-black uppercase tracking-wide rounded-xl px-4 transition-all active:scale-95 gap-1.5 flex items-center">
+        <Download className="w-3.5 h-3.5" /> Relatório XLSX
       </Button>
 
       <Link href="/nps/programs">

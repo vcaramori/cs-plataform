@@ -21,6 +21,7 @@ interface StatCardPremiumProps {
   iconName?: keyof typeof Icons
   status?: string
   colorVariant?: 'default' | 'demand' | 'ds' | 'sop' | 'orange' | 'emerald' | 'destructive'
+  size?: 'sm' | 'default'
   className?: string
   onClick?: () => void
 }
@@ -36,6 +37,7 @@ export function StatCardPremium({
   iconName,
   status,
   colorVariant = 'default',
+  size = 'default',
   className,
   onClick
 }: StatCardPremiumProps) {
@@ -101,7 +103,8 @@ export function StatCardPremium({
       onClick={onClick}
     >
       <Card variant="glass" className={cn(
-        "p-6 rounded-2xl bg-surface-card/60 dark:bg-slate-800/40 border border-border-divider/50 dark:border-slate-800/40 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] backdrop-blur-md group transition-all h-full flex flex-col justify-between relative overflow-hidden",
+        size === 'sm' ? "p-4" : "p-6",
+        "rounded-2xl bg-surface-card/60 dark:bg-slate-800/40 border border-border-divider/50 dark:border-slate-800/40 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] backdrop-blur-md group transition-all h-full flex flex-col justify-between relative overflow-hidden",
         colorClasses[colorVariant].border,
         className
       )}>
@@ -112,20 +115,21 @@ export function StatCardPremium({
         )} />
 
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className={cn("flex items-center justify-between", size === 'sm' ? "mb-2" : "mb-4")}>
             <p className="label-premium uppercase tracking-widest text-[10px] opacity-70 group-hover:opacity-100 transition-opacity">
               {title}
             </p>
             {Icon && (
               <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 flex-shrink-0 aspect-square",
+                size === 'sm' ? "w-8 h-8" : "w-12 h-12",
+                "rounded-full flex items-center justify-center transition-all duration-500 flex-shrink-0 aspect-square",
                 "bg-gradient-to-br from-white/10 to-transparent border border-white/5",
                 "shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-sm",
                 "group-hover:scale-110 group-hover:rotate-6",
                 "group-hover:border-white/20"
               )}>
                 <Icon 
-                  className={cn("w-6 h-6 transition-all duration-500", colorClasses[colorVariant].text)}
+                  className={cn(size === 'sm' ? "w-4 h-4" : "w-6 h-6", "transition-all duration-500", colorClasses[colorVariant].text)}
                   style={{ filter: `drop-shadow(0 0 15px ${colorClasses[colorVariant].glow})` }}
                 />
               </div>
@@ -133,7 +137,10 @@ export function StatCardPremium({
           </div>
           
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-extrabold text-content-primary tracking-tighter leading-none group-hover:text-white transition-colors">
+            <h3 className={cn(
+              size === 'sm' ? "text-xl md:text-2xl" : "text-3xl",
+              "font-extrabold text-content-primary tracking-tighter leading-none group-hover:text-white transition-colors"
+            )}>
               {prefix}{formattedValue}{suffix}
             </h3>
             {trend && (
@@ -148,7 +155,7 @@ export function StatCardPremium({
         </div>
 
         {status && (
-          <div className="mt-4 flex items-center gap-2">
+          <div className={cn(size === 'sm' ? "mt-2" : "mt-4", "flex items-center gap-2")}>
             <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", colorClasses[colorVariant].bg)} />
             <p className="text-[10px] font-bold text-content-secondary uppercase tracking-tight opacity-60 group-hover:opacity-100 transition-opacity">
               {status}

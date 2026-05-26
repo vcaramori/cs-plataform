@@ -21,7 +21,7 @@ const TicketSchema = z.object({
   opened_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   resolved_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   external_ticket_id: z.string().optional().nullable(),
-  client_email: z.string().email().optional().nullable(),
+  client_email: z.string().optional().nullable(),
 })
 
 export async function GET(request: Request) {

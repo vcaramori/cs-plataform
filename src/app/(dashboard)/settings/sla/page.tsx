@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 
 const INTERNAL_LEVEL_LABELS = {
   critical: 'Crítico',
@@ -105,19 +106,11 @@ export default function SLASettingsPage() {
   return (
     <PageContainer className="max-w-[960px] space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
-            <ShieldCheck className="w-5 h-5 text-content-primary" />
-          </div>
-          <h1 className="h1-page">Política de SLA Padrão</h1>
-        </div>
-        <p className="label-premium flex items-center gap-2">
-          Níveis e Prazos Globais para Atendimento de Suporte
-          <Sparkles className="w-3.5 h-3.5 text-content-secondary/40" />
-        </p>
-      </div>
+      <ModuleHeader
+        title="Política de SLA Padrão"
+        subtitle="Níveis e Prazos Globais para Atendimento de Suporte"
+        iconName="ShieldCheck"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Settings */}

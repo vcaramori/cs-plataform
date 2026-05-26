@@ -66,7 +66,7 @@ export function SuporteClient({
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'list' | 'import'>('list')
   const [tickets, setTickets] = useState<(SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null })[]>(initialTickets)
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterStatus, setFilterStatus] = useState('active')
   const [filterPriority, setFilterPriority] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateViewPopover, setShowCreateViewPopover] = useState(false)
@@ -157,7 +157,11 @@ export function SuporteClient({
 
   // Apply manual filters on top
   const baseFilteredTickets = viewFilteredTickets.filter((t) => {
-    if (filterStatus !== 'all' && t.status !== filterStatus) return false
+    if (filterStatus === 'active') {
+      if (t.status === 'resolved' || t.status === 'closed') return false
+    } else if (filterStatus !== 'all' && t.status !== filterStatus) {
+      return false
+    }
     if (filterPriority !== 'all' && t.priority !== filterPriority) return false
     return true
   })

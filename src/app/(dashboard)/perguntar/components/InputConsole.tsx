@@ -32,10 +32,10 @@ export function InputConsole({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Solicite uma análise estratégica ou pergunte sobre o portfólio..."
-                rows={1}
+                rows={3}
                 disabled={isLoading}
-                className="w-full bg-transparent border-none text-content-primary placeholder:text-content-secondary/30 resize-none px-3 py-1.5 min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0 font-bold tracking-tight text-sm"
-                style={{ height: 'auto', minHeight: '38px' }}
+                className="w-full bg-transparent border-none text-content-primary placeholder:text-content-secondary/30 resize-none px-3 py-1 min-h-[64px] focus-visible:ring-0 focus-visible:ring-offset-0 font-normal tracking-tight text-sm"
+                style={{ height: 'auto', minHeight: '64px' }}
               />
             </div>
             <Button

@@ -50,7 +50,7 @@ export function SuporteFilters({
   showCreateViewPopover,
   onCreateViewOpen,
 }: SuporteFiltersProps) {
-  const hasActiveFilters = filterStatus !== 'all' || filterPriority !== 'all'
+  const hasActiveFilters = filterStatus !== 'active' || filterPriority !== 'all'
 
   return (
     <div className="flex gap-3 items-center flex-wrap bg-surface-card border border-border-divider p-3.5 rounded-xl shadow-md">
@@ -65,6 +65,7 @@ export function SuporteFilters({
         className="w-44"
         size="sm"
         options={[
+          { label: 'Chamados Ativos', value: 'active' },
           { label: 'Todos os Status', value: 'all' },
           ...Object.entries(statusConfig).map(([value, conf]) => ({ label: conf.label, value }))
         ]}
@@ -119,7 +120,7 @@ export function SuporteFilters({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => { onStatusChange('all'); onPriorityChange('all') }}
+            onClick={() => { onStatusChange('active'); onPriorityChange('all') }}
             className="text-[11px] font-bold uppercase tracking-wide text-plannera-primary hover:bg-plannera-primary/5 transition-all h-9 px-3 rounded-lg"
           >
             Limpar Busca

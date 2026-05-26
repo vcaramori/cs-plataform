@@ -50,9 +50,8 @@ export function CreateTicketModal({
   onSuccess,
 }: CreateTicketModalProps) {
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
-  const [recipientType, setRecipientType] = useState<string>("")
-  const [clientEmail, setClientEmail] = useState<string>("")
-  const [isManualEmail, setIsManualEmail] = useState<boolean>(false)
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([])
+  const [manualEmails, setManualEmails] = useState<string>("")
   const [title, setTitle] = useState<string>("")
   const [description, setDescription] = useState<string>("")
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium")
@@ -69,9 +68,8 @@ export function CreateTicketModal({
   useEffect(() => {
     if (open) {
       setSelectedAccountId("")
-      setRecipientType("")
-      setClientEmail("")
-      setIsManualEmail(false)
+      setSelectedEmails([])
+      setManualEmails("")
       setTitle("")
       setDescription("")
       setPriority("medium")
@@ -86,9 +84,8 @@ export function CreateTicketModal({
     if (!selectedAccountId) {
       setBillingEmail("")
       setContacts([])
-      setRecipientType("")
-      setClientEmail("")
-      setIsManualEmail(false)
+      setSelectedEmails([])
+      setManualEmails("")
       return
     }
 
@@ -101,21 +98,14 @@ export function CreateTicketModal({
           setBillingEmail(data.billing_contact_email || "")
           setContacts(data.contacts || [])
           
-          // Determine initial recipient choice
+          // Auto select default recipient
+          const defaultEmails: string[] = []
           if (data.billing_contact_email) {
-            setRecipientType(`billing:${data.billing_contact_email}`)
-            setClientEmail(data.billing_contact_email)
-            setIsManualEmail(false)
+            defaultEmails.push(data.billing_contact_email)
           } else if (data.contacts && data.contacts.length > 0 && data.contacts[0].email) {
-            const firstEmail = data.contacts[0].email
-            setRecipientType(`contact:${firstEmail}`)
-            setClientEmail(firstEmail)
-            setIsManualEmail(false)
-          } else {
-            setRecipientType("custom")
-            setClientEmail("")
-            setIsManualEmail(true)
+            defaultEmails.push(data.contacts[0].email)
           }
+          setSelectedEmails(defaultEmails)
         } else {
           toast.error("Erro ao carregar contatos da conta.")
         }
@@ -129,19 +119,6 @@ export function CreateTicketModal({
 
     loadAccountDetails()
   }, [selectedAccountId])
-
-  // Handle recipient selection changes
-  const handleRecipientTypeChange = (val: string) => {
-    setRecipientType(val)
-    if (val === "custom") {
-      setClientEmail("")
-      setIsManualEmail(true)
-    } else {
-      const email = val.split(":")[1] || ""
-      setClientEmail(email)
-      setIsManualEmail(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -158,10 +135,16 @@ export function CreateTicketModal({
       toast.error("A descrição deve ter no mínimo 5 caracteres.")
       return
     }
-    if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
-      toast.error("Por favor, insira um e-mail válido para o cliente.")
+
+    const manualList = manualEmails.split(/[\s,;]+/).filter(Boolean)
+    const invalidEmails = manualList.filter(email => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    if (invalidEmails.length > 0) {
+      toast.error(`E-mail(s) manual(is) inválido(s): ${invalidEmails.join(', ')}`)
       return
     }
+
+    const allEmails = Array.from(new Set([...selectedEmails, ...manualList])).filter(Boolean)
+    const clientEmailStr = allEmails.join(', ')
 
     setIsSubmitting(true)
     
@@ -172,7 +155,7 @@ export function CreateTicketModal({
         description,
         priority,
         category,
-        client_email: clientEmail || null,
+        client_email: clientEmailStr || null,
         status: "open",
       }
 
@@ -192,8 +175,8 @@ export function CreateTicketModal({
         `Ticket #${newTicket.external_ticket_id || newTicket.id.split("-")[0].toUpperCase()} criado com sucesso!`
       )
       
-      if (clientEmail) {
-        toast.success(`E-mail de confirmação enviado para ${clientEmail}`)
+      if (clientEmailStr) {
+        toast.success(`E-mail de confirmação enviado para ${clientEmailStr}`)
       }
 
       onSuccess(newTicket)
@@ -207,7 +190,7 @@ export function CreateTicketModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-white dark:bg-[#0b0f19] border-border-divider/50 shadow-2xl p-6 sm:rounded-2xl overflow-hidden focus:outline-none z-50">
+      <DialogContent className="max-w-3xl bg-white dark:bg-[#0b0f19] border-border-divider/50 shadow-2xl p-6 sm:rounded-2xl overflow-hidden focus:outline-none z-50">
         <DialogHeader className="border-b border-border-divider/30 pb-4">
           <DialogTitle className="text-sm font-black uppercase tracking-widest text-[#1e293b] dark:text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-plannera-orange" />
@@ -216,195 +199,211 @@ export function CreateTicketModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-5 py-4">
+          <div className="max-h-[75vh] overflow-y-auto pr-2 space-y-5 py-4">
             {/* Cliente/Account Selection */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-              Cliente (Conta) <span className="text-red-500">*</span>
-            </Label>
-            <SearchableSelect
-              options={accounts.map((acc) => ({ label: acc.name, value: acc.id }))}
-              value={selectedAccountId}
-              onValueChange={setSelectedAccountId}
-              placeholder="Selecione o Cliente..."
-              emptyMessage="Nenhum cliente cadastrado."
-              size="sm"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                Cliente (Conta) <span className="text-red-500">*</span>
+              </Label>
+              <SearchableSelect
+                options={accounts.map((acc) => ({ label: acc.name, value: acc.id }))}
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+                placeholder="Selecione o Cliente..."
+                emptyMessage="Nenhum cliente cadastrado."
+                size="sm"
+              />
+            </div>
 
-          {/* Conditional Recipient Select and Client Email prefill */}
-          {selectedAccountId && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-                  Notificar por E-mail (Destinatário)
-                </Label>
-                {isLoadingDetails ? (
-                  <div className="h-9 flex items-center px-3 border border-border-divider/50 rounded-lg bg-surface-card/30 text-xs text-slate-400">
-                    <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-plannera-orange" />
-                    Carregando contatos e stakeholders...
-                  </div>
-                ) : (
-                  <Select value={recipientType} onValueChange={handleRecipientTypeChange}>
-                    <SelectTrigger className="h-9 border-border-divider/60 rounded-lg text-xs font-normal normal-case focus:ring-1 focus:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white">
-                      <SelectValue placeholder="Selecione o destinatário..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-[#0c101b] border border-border-divider/60 rounded-lg z-[60]">
+            {/* Recipient Checkbox Grid and Custom Emails List */}
+            {selectedAccountId && (
+              <div className="space-y-4 border border-border-divider/40 p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/10 animate-in fade-in duration-300">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                    Notificar Contatos da Conta (Destinatários por E-mail)
+                  </Label>
+                  {isLoadingDetails ? (
+                    <div className="h-9 flex items-center px-3 border border-border-divider/50 rounded-lg bg-surface-card/30 text-xs text-slate-400">
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-plannera-orange" />
+                      Carregando contatos e stakeholders...
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-40 overflow-y-auto pr-1">
                       {billingEmail && (
-                        <SelectItem value={`billing:${billingEmail}`} className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">
-                          <span className="flex items-center gap-1">
-                            <CreditCard className="w-3.5 h-3.5 text-blue-500" />
-                            Faturamento ({billingEmail})
-                          </span>
-                        </SelectItem>
+                        <div className="flex items-center space-x-2 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-border-divider/60 shadow-sm">
+                          <input
+                            type="checkbox"
+                            id="billing-email-checkbox"
+                            checked={selectedEmails.includes(billingEmail)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedEmails([...selectedEmails, billingEmail])
+                              } else {
+                                setSelectedEmails(selectedEmails.filter(x => x !== billingEmail))
+                              }
+                            }}
+                            className="w-4 h-4 rounded text-plannera-orange focus:ring-plannera-orange/40 cursor-pointer"
+                          />
+                          <Label htmlFor="billing-email-checkbox" className="text-xs font-medium cursor-pointer flex flex-col gap-0.5">
+                            <span className="flex items-center gap-1 font-bold text-[#1e293b] dark:text-white">
+                              <CreditCard className="w-3.5 h-3.5 text-blue-500" />
+                              Faturamento
+                            </span>
+                            <span className="text-[10px] text-slate-400">{billingEmail}</span>
+                          </Label>
+                        </div>
                       )}
                       
-                      {contacts
-                        .filter((c) => c.email)
-                        .map((c) => (
-                          <SelectItem
-                            key={c.id}
-                            value={`contact:${c.email}`}
-                            className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800"
-                          >
-                            <span className="flex items-center gap-1">
+                      {contacts.filter(c => c.email).map((c) => (
+                        <div key={c.id} className="flex items-center space-x-2 bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-border-divider/60 shadow-sm">
+                          <input
+                            type="checkbox"
+                            id={`contact-checkbox-${c.id}`}
+                            checked={selectedEmails.includes(c.email!)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedEmails([...selectedEmails, c.email!])
+                              } else {
+                                setSelectedEmails(selectedEmails.filter(x => x !== c.email))
+                              }
+                            }}
+                            className="w-4 h-4 rounded text-plannera-orange focus:ring-plannera-orange/40 cursor-pointer"
+                          />
+                          <Label htmlFor={`contact-checkbox-${c.id}`} className="text-xs font-medium cursor-pointer flex flex-col gap-0.5">
+                            <span className="flex items-center gap-1 font-bold text-[#1e293b] dark:text-white">
                               <Users className="w-3.5 h-3.5 text-indigo-500" />
-                              {c.name} {c.role ? `(${c.role})` : ""} - {c.email}
+                              {c.name} {c.role ? `(${c.role})` : ""}
                             </span>
-                          </SelectItem>
-                        ))}
-                      
-                      <SelectItem value="custom" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">
-                        <span className="flex items-center gap-1">
-                          <Edit3 className="w-3.5 h-3.5 text-plannera-orange" />
-                          Outro E-mail (Digitar Manualmente)
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
+                            <span className="text-[10px] text-slate-400">{c.email}</span>
+                          </Label>
+                        </div>
+                      ))}
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-                  E-mail do Cliente (Destinatário)
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    type="email"
-                    placeholder="exemplo@cliente.com"
-                    value={clientEmail}
-                    onChange={(e) => setClientEmail(e.target.value)}
-                    disabled={!isManualEmail && recipientType !== "custom"}
-                    className={cn(
-                      "pl-9 h-9 text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white",
-                      !isManualEmail && recipientType !== "custom" && "opacity-80 cursor-not-allowed"
-                    )}
-                  />
+                      {(!billingEmail && contacts.filter(c => c.email).length === 0) && (
+                        <div className="col-span-2 text-xs text-slate-400 p-2 italic bg-white dark:bg-slate-900/40 rounded-lg border text-center">
+                          Nenhum contato com e-mail cadastrado nesta conta.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                    E-mails Adicionais (Separados por vírgula ou ponto e vírgula)
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="exemplo1@cliente.com, exemplo2@cliente.com"
+                      value={manualEmails}
+                      onChange={(e) => setManualEmails(e.target.value)}
+                      className="pl-9 h-9 text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Title input */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-              Assunto / Título do Chamado <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="text"
-              placeholder="Descreva brevemente o problema..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="h-9 text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white"
-            />
-          </div>
-
-          {/* Description input */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-              Descrição Detalhada <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              placeholder="Explique os detalhes do chamado para análise da equipe..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              rows={4}
-              className="text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white resize-none"
-            />
-          </div>
-
-          {/* Priority & Category selection grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Priority styled pills selection */}
+            {/* Title input */}
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-                Prioridade
+                Assunto / Título do Chamado <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-4 gap-1.5 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-border-divider/40">
-                {(["low", "medium", "high", "critical"] as const).map((p) => {
-                  const isActive = priority === p
-                  const colorClasses = {
-                    low: isActive
-                      ? "bg-emerald-500 text-white shadow-sm"
-                      : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20",
-                    medium: isActive
-                      ? "bg-blue-500 text-white shadow-sm"
-                      : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20",
-                    high: isActive
-                      ? "bg-amber-500 text-white shadow-sm"
-                      : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20",
-                    critical: isActive
-                      ? "bg-rose-500 text-white shadow-sm"
-                      : "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20",
-                  }
-                  
-                  const labelMap = {
-                    low: "Baixa",
-                    medium: "Média",
-                    high: "Alta",
-                    critical: "Crítica",
-                  }
+              <Input
+                type="text"
+                placeholder="Descreva brevemente o problema..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="h-9 text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white"
+              />
+            </div>
 
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setPriority(p)}
-                      className={cn(
-                        "py-1.5 text-[10px] font-bold rounded-md uppercase tracking-wider transition-all",
-                        colorClasses[p]
-                      )}
-                    >
-                      {labelMap[p]}
-                    </button>
-                  )
-                })}
+            {/* Description input */}
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                Descrição Detalhada <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                placeholder="Explique os detalhes do chamado para análise da equipe..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                rows={4}
+                className="text-xs border-border-divider/60 rounded-lg focus-visible:ring-1 focus-visible:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white resize-none"
+              />
+            </div>
+
+            {/* Priority & Category selection grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Priority styled pills selection */}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                  Prioridade
+                </Label>
+                <div className="grid grid-cols-4 gap-1.5 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-lg border border-border-divider/40">
+                  {(["low", "medium", "high", "critical"] as const).map((p) => {
+                    const isActive = priority === p
+                    const colorClasses = {
+                      low: isActive
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20",
+                      medium: isActive
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20",
+                      high: isActive
+                        ? "bg-amber-500 text-white shadow-sm"
+                        : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20",
+                      critical: isActive
+                        ? "bg-rose-500 text-white shadow-sm"
+                        : "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20",
+                    }
+                    
+                    const labelMap = {
+                      low: "Baixa",
+                      medium: "Média",
+                      high: "Alta",
+                      critical: "Crítica",
+                    }
+
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPriority(p)}
+                        className={cn(
+                          "py-1.5 text-[10px] font-bold rounded-md uppercase tracking-wider transition-all",
+                          colorClasses[p]
+                        )}
+                      >
+                        {labelMap[p]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Category selection */}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
+                  Categoria
+                </Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="h-9 border-border-divider/60 rounded-lg text-xs font-normal normal-case focus:ring-1 focus:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white">
+                    <SelectValue placeholder="Selecione a categoria..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-[#0c101b] border border-border-divider/60 rounded-lg z-[60]">
+                    <SelectItem value="acesso" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Acesso / Permissões</SelectItem>
+                    <SelectItem value="bug" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Bug / Incidente Técnico</SelectItem>
+                    <SelectItem value="financeiro" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Financeiro / Faturamento</SelectItem>
+                    <SelectItem value="duvida" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Dúvida Geral</SelectItem>
+                    <SelectItem value="outro" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
-            {/* Category selection */}
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-[#475569] dark:text-slate-400">
-                Categoria
-              </Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-9 border-border-divider/60 rounded-lg text-xs font-normal normal-case focus:ring-1 focus:ring-plannera-orange/40 bg-surface-card/40 dark:bg-slate-900/60 dark:text-white">
-                  <SelectValue placeholder="Selecione a categoria..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-[#0c101b] border border-border-divider/60 rounded-lg z-[60]">
-                  <SelectItem value="acesso" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Acesso / Permissões</SelectItem>
-                  <SelectItem value="bug" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Bug / Incidente Técnico</SelectItem>
-                  <SelectItem value="financeiro" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Financeiro / Faturamento</SelectItem>
-                  <SelectItem value="duvida" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Dúvida Geral</SelectItem>
-                  <SelectItem value="outro" className="text-xs focus:bg-slate-100 dark:focus:bg-slate-800">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
           </div>
 
           {/* Action buttons footer */}

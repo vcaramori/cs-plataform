@@ -50,7 +50,7 @@ const navItems = [
 ]
 
 const settingsItems = [
-  { href: '/users',                 label: 'Equipe (CSMs)',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/cs-ops',               label: 'Capacity Planning',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },

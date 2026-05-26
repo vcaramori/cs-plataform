@@ -114,13 +114,18 @@ export default function SupportDashboardPage() {
         title="Painel Tático de Suporte"
         subtitle="Métricas de Atendimento, Compliance de SLA e Satisfação do Cliente"
         iconName="TicketCheck"
-      >
+      />
+
+      {/* Linha dedicada de Filtros e Ações (Padrão NPS) */}
+      <div className="flex flex-wrap items-center gap-4 bg-surface-card border border-border-divider p-3.5 rounded-2xl shadow-sm mb-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-plannera-orange/60" />
         <DateRangePicker />
-        <Button size="sm" onClick={handleExport} className="ml-4 h-12 bg-success hover:bg-emerald-600 text-white rounded-2xl px-6 shadow-xl active:scale-95 transition-all gap-2">
+        <div className="flex-1" />
+        <Button size="sm" onClick={handleExport} className="h-10 bg-success hover:bg-emerald-600 text-white rounded-xl px-5 shadow-md active:scale-95 transition-all gap-2 text-[10px] font-black uppercase tracking-widest border-none">
           <Download className="w-4 h-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Relatório XLSX</span>
+          Relatório XLSX
         </Button>
-      </ModuleHeader>
+      </div>
 
       {/* Camada 1 — KPIs Operacionais — Premium StatCards */}
       <section className="relative">
@@ -129,7 +134,7 @@ export default function SupportDashboardPage() {
           <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Real-Time Operations</h2>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCardPremium 
             title="Chamados Abertos"
             value={operational?.open_now ?? 0}
@@ -157,6 +162,13 @@ export default function SupportDashboardPage() {
             iconName="CheckCircle2"
             colorVariant="emerald"
             status="Validação pendente"
+          />
+          <StatCardPremium 
+            title="CSAT Médio"
+            value={periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—'}
+            iconName="Star"
+            colorVariant="orange"
+            status="Satisfação do Período"
           />
         </div>
       </section>

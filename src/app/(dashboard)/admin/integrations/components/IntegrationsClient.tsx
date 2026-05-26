@@ -8,6 +8,8 @@ import { WebhooksTab } from './WebhooksTab'
 import { CRMTab } from './CRMTab'
 import { SupportTab } from './SupportTab'
 import { BITab } from './BITab'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 
 export function IntegrationsClient() {
   const [activeTab, setActiveTab] = useState('webhooks')
@@ -39,16 +41,11 @@ export function IntegrationsClient() {
   return (
     <PageContainer className="max-w-[1400px] space-y-10">
       {/* Header */}
-      <div className="flex flex-col gap-2 relative">
-        <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
-            <Zap className="w-5 h-5 text-content-primary" />
-          </div>
-          <h1 className="h1-page">Integrações</h1>
-        </div>
-        <p className="label-premium">Gerenciar conectores externos: CRM, Support, BI, Webhooks</p>
-      </div>
+      <ModuleHeader
+        title="Integrações"
+        subtitle="Gerenciar conectores externos: CRM, Support, BI, Webhooks"
+        iconName="Zap"
+      />
 
       {/* Account Selector (only visible for CRM, BI, Webhooks tabs) */}
       {['webhooks', 'crm', 'bi'].includes(activeTab) && (
@@ -69,17 +66,13 @@ export function IntegrationsClient() {
                 Nenhum cliente cadastrado no sistema
               </div>
             ) : (
-              <select
+              <SearchableSelect
                 value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full px-4 py-2.5 bg-surface-background border border-border-divider text-content-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-plannera-orange transition-all text-sm font-medium shadow-sm hover:border-plannera-orange/50 cursor-pointer"
-              >
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setSelectedAccountId}
+                options={accounts.map((acc) => ({ label: acc.name, value: acc.id }))}
+                placeholder="Selecione o Cliente..."
+                size="sm"
+              />
             )}
           </div>
         </div>

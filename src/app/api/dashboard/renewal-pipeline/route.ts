@@ -87,8 +87,8 @@ export async function GET(request: Request) {
         (renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       )
 
-      // Only include renewals within next 90 days
-      if (daysToRenewal < 0 || daysToRenewal > 90) continue
+      // Only include renewals within next 90 days or overdue
+      if (daysToRenewal > 90) continue
 
       // Get latest NPS
       const npsScores = Array.isArray(account.nps_responses)

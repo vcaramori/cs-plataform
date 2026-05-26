@@ -68,7 +68,7 @@ export function PortfolioHealthCard({
         onClick={() => router.push('/dashboard?filter=at-risk')}
       />
       <StatCardPremium
-        title={"RENOVAÇÕES (30D)"}
+        title={"RENOVAÇÕES (90D + VENC.)"}
         value={renewalsSoon}
         status="Cycle Monitor"
         iconName="CalendarClock"

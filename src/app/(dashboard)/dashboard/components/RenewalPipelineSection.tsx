@@ -83,7 +83,11 @@ function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
             <Calendar className="w-3 h-3" />
-            <span>{card.days_to_renewal}d para renovação</span>
+            <span>
+              {card.days_to_renewal < 0 
+                ? `Vencido há ${Math.abs(card.days_to_renewal)}d` 
+                : `${card.days_to_renewal}d para renovação`}
+            </span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] text-content-secondary">
             <DollarSign className="w-3 h-3" />
