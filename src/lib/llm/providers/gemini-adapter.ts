@@ -2,11 +2,20 @@ import { GoogleGenAI } from '@google/genai'
 import type { LLMProviderAdapter, TextGenerationConfig, EmbeddingConfig, ModelOption } from './types'
 
 let cachedClient: { key: string; client: GoogleGenAI } | null = null
+let cachedEmbedClient: { key: string; client: GoogleGenAI } | null = null
 
 function getClient(apiKey: string): GoogleGenAI {
   if (cachedClient && cachedClient.key === apiKey) return cachedClient.client
   const client = new GoogleGenAI({ apiKey })
   cachedClient = { key: apiKey, client }
+  return client
+}
+
+// text-embedding-005 requires API v1 (not v1beta)
+function getEmbedClient(apiKey: string): GoogleGenAI {
+  if (cachedEmbedClient && cachedEmbedClient.key === apiKey) return cachedEmbedClient.client
+  const client = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1' } })
+  cachedEmbedClient = { key: apiKey, client }
   return client
 }
 
@@ -43,7 +52,7 @@ export const geminiAdapter: LLMProviderAdapter = {
   },
 
   async generateEmbedding(text: string, apiKey: string, model: string, config: EmbeddingConfig): Promise<number[]> {
-    const ai = getClient(apiKey)
+    const ai = getEmbedClient(apiKey)
     const response = await ai.models.embedContent({
       model,
       contents: text,
