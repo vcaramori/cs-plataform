@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getHealthClassification, calculateTrend } from '@/lib/health/utils'
 
 const ManualScoreSchema = z.object({
@@ -46,8 +47,10 @@ export async function POST(request: Request) {
   const shadowScore = latestShadow?.shadow_score != null ? Number(latestShadow.shadow_score) : null
   const discrepancyAlert = shadowScore !== null ? Math.abs(score - shadowScore) > 20 : false
 
+  const admin = getSupabaseAdminClient()
+
   // Inserção da nova entrada histórica
-  const { data: newEntry, error: insertError } = await supabase
+  const { data: newEntry, error: insertError } = await admin
     .from('health_scores')
     .insert({
       account_id,
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
     const previous = history.length > 1 ? history[1].manual_score : vigente
     const trend = calculateTrend(Number(vigente), Number(previous))
 
-    await supabase
+    await admin
       .from('accounts')
       .update({ 
         health_score: vigente, 
