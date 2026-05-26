@@ -56,12 +56,11 @@ Conversão de tempo (parsed_hours deve ser número decimal):
 - Sem menção de tempo explícita na transcrição, assuma 1.0
 
 Instruções CRÍTICAS e OBRIGATÓRIAS para o \`parsed_description\`:
-1. NÃO SEJA BREVE. Escreva um relato extremamente rico, detalhado, denso e completo de NO MÍNIMO 300 PALAVRAS. Extraia absolutamente todo o valor da transcrição/texto fornecido.
-2. O relato deve ser OBRIGATORIAMENTE estruturado em 4 seções/capítulos numerados bem definidos:
-   "1. CONTEXTO E OBJETIVOS DA ATIVIDADE\\n<Texto explicando detalhadamente o cenário, objetivos e a razão do esforço/reunião>\\n\\n2. PRINCIPAIS TÓPICOS DISCUTIDOS E DELIBERAÇÕES\\n<Texto listando os pontos centrais que foram debatidos, decisões tomadas e alinhamentos de processo de forma aprofundada>\\n\\n3. ALINHAMENTO DE EXPECTATIVAS, OBJEÇÕES E PONTOS DE ATENÇÃO\\n<Texto detalhando críticas, resistências, riscos operacionais, dúvidas levantadas ou feedbacks qualitativos dados>\\n\\n4. PRÓXIMOS PASSOS E AÇÕES CORRETIVAS PACTUADAS\\n<Texto mapeando os compromissos, datas, responsabilidades e as ações práticas definidas a seguir>"
-3. ATENÇÃO MÁXIMA: Escreva todo o JSON sem quebras de linha reais físicas (Enter/fim de linha no arquivo). Use a sequência de escape literal "\\n" (barra invertida e n) para quebra de linha. NUNCA insira quebras de linha físicas dentro de strings no JSON para evitar crash na deserialização do JSON.
-4. Mantenha um tom altamente profissional, técnico e executivo.
-5. Não mencione em primeira pessoa "eu fiz", "eu passei X horas" ou similares; foque nos fatos do projeto e no valor gerado para a conta cliente.
+1. Escreva um resumo FIEL e CONCISO do que foi INFORMADO na entrada. NÃO invente, NÃO expanda, NÃO adicione contexto que não foi fornecido.
+2. Capture com precisão TODOS os dados importantes que estão na entrada: objetivos, tópicos discutidos, decisões, riscos, próximos passos, datas, nomes, números. Se a entrada for curta, o resumo também será curto — isso é correto.
+3. Se a entrada for uma transcrição longa ou texto detalhado, preserve todos os pontos relevantes sem perder informação. Se for uma frase curta, resuma somente o que foi dito.
+4. Tom profissional e executivo. Terceira pessoa. Sem "eu fiz" ou similares.
+5. ATENÇÃO MÁXIMA: Escreva todo o JSON sem quebras de linha reais físicas (Enter/fim de linha no arquivo). Use a sequência de escape literal "\\n" (barra invertida e n) para quebra de linha. NUNCA insira quebras de linha físicas dentro de strings no JSON para evitar crash na deserialização do JSON.
 
 Instruções para os outros campos:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
@@ -70,7 +69,7 @@ Instruções para os outros campos:
   const { result: raw } = await generateText(prompt, { 
     allowFallback: true,
     disableThinking: true,
-    maxOutputTokens: 4096,
+    maxOutputTokens: 1024,
     responseMimeType: 'application/json'
   })
   
