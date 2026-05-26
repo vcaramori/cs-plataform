@@ -36,7 +36,6 @@ const PROVIDERS: ProviderDef[] = [
     ],
     embeddingModels: [
       { id: 'text-embedding-005', label: 'text-embedding-005 (1536d)', dimensions: 1536 },
-      { id: 'text-embedding-004', label: 'text-embedding-004 (768d)', dimensions: 768 },
     ],
   },
   {

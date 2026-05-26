@@ -24,7 +24,6 @@ export const geminiAdapter: LLMProviderAdapter = {
 
   availableEmbeddingModels: [
     { id: 'text-embedding-005', label: 'text-embedding-005 (1536d)' },
-    { id: 'text-embedding-004', label: 'text-embedding-004 (768d)' },
   ],
 
   async generateText(prompt: string, apiKey: string, model: string, config: TextGenerationConfig): Promise<string> {
