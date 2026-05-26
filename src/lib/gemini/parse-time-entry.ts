@@ -57,10 +57,11 @@ Conversão de tempo (parsed_hours deve ser número decimal):
 
 Instruções MUITO IMPORTANTES para o \`parsed_description\`:
 1. NÃO seja breve. Extraia o máximo de valor da transcrição.
-2. Escreva um relato rico, estruturado em 2 a 3 parágrafos curtos.
-3. Foque no valor entregue, nas objeções levantadas pelo cliente e nos próximos passos definidos.
-4. Mantenha um tom profissional e executivo.
-5. Não mencione "eu passei X horas" no texto, foque no conteúdo do trabalho.
+2. Escreva um relato rico, detalhado e denso (equivalente a 2 a 3 parágrafos curtos).
+3. ATENÇÃO: Escreva todo o texto em uma única linha contínua ou se usar parágrafos use a sequência de escape literal "\\n" (barra invertida e n) para quebra de linha. NUNCA insira quebras de linha reais (Enter/fim de linha físico) dentro do JSON.
+4. Foque no valor entregue, nas objeções levantadas pelo cliente e nos próximos passos definidos.
+5. Mantenha um tom profissional e executivo.
+6. Não mencione "eu passei X horas" no texto, foque no conteúdo do trabalho.
 
 Instruções para os outros campos:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
@@ -69,7 +70,8 @@ Instruções para os outros campos:
   const { result: raw } = await generateText(prompt, { 
     allowFallback: true,
     disableThinking: true,
-    maxOutputTokens: 4096
+    maxOutputTokens: 4096,
+    responseMimeType: 'application/json'
   })
   
   // Extração robusta de JSON (procura o primeiro { e o último })

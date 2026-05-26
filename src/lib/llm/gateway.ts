@@ -16,6 +16,8 @@ export interface GenerateOptions {
   maxOutputTokens?: number
   /** Desativa o thinking do Gemini 2.5 (thinkingBudget: 0). Recomendado para respostas JSON estruturadas. */
   disableThinking?: boolean
+  /** Formato de resposta desejado (ex: 'application/json'). */
+  responseMimeType?: string
 }
 
 export interface EmbedOptions {
@@ -51,6 +53,7 @@ export async function generateText(
         systemInstruction: options.systemInstruction,
         temperature: options.temperature ?? 0,
         maxOutputTokens: options.maxOutputTokens ?? 2048,
+        responseMimeType: options.responseMimeType,
         ...(options.disableThinking && {
           thinkingConfig: { thinkingBudget: 0 },
         }),
