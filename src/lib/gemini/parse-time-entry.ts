@@ -69,7 +69,6 @@ Instruções para os outros campos:
   const { result: raw } = await generateText(prompt, { 
     allowFallback: true,
     disableThinking: true,
-    maxOutputTokens: 4096,
     responseMimeType: 'application/json'
   })
   
