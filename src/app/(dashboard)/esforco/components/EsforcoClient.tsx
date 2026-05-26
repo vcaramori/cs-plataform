@@ -57,6 +57,7 @@ export function EsforcoClient({
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [entries, setEntries] = useState<Entry[]>(initialEntries)
+  const [fileUrls, setFileUrls] = useState<string[]>([])
 
   async function handleSubmit() {
     if (!text.trim()) {
@@ -73,6 +74,7 @@ export function EsforcoClient({
         body: JSON.stringify({
           raw_text: text,
           account_id: selectedAccountId !== 'all' ? selectedAccountId : undefined,
+          file_urls: fileUrls,
         }),
       })
 
@@ -91,6 +93,7 @@ export function EsforcoClient({
         `${data.parsed_hours}h registrada — ${activityLabels[data.activity_type] ?? data.activity_type}`
       )
       setText('')
+      setFileUrls([])
       setSelectedAccountId('all')
       router.refresh()
 
@@ -152,6 +155,8 @@ export function EsforcoClient({
           accounts={accounts}
           text={text}
           onTextChange={setText}
+          fileUrls={fileUrls}
+          onFileUrlsChange={setFileUrls}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           examples={examples}

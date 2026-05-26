@@ -14,8 +14,8 @@ export async function parseTimeEntry(
   rawText: string,
   today: string
 ): Promise<ParsedTimeEntry> {
-  const prompt = `Você é um assistente de Customer Success. Extraia informações de uma entrada de tempo escrita em linguagem natural por um CSM.
-
+  const prompt = `Você é um assistente de Customer Success de alto nível. Extraia informações de uma entrada de tempo escrita em linguagem natural por um CSM ou de uma transcrição inteira de reunião.
+  
 Entrada: "${rawText}"
 Data de hoje: ${today}
 
@@ -23,7 +23,7 @@ Retorne APENAS um JSON válido com esta estrutura:
 {
   "activity_type": "<tipo>",
   "parsed_hours": <número>,
-  "parsed_description": "<descrição>",
+  "parsed_description": "<descrição detalhada em texto>",
   "account_name_hint": "<nome da conta ou null>",
   "date": "<YYYY-MM-DD>",
   "confidence_score": <número entre 0.0 e 1.0>
@@ -53,10 +53,16 @@ Conversão de tempo (parsed_hours deve ser número decimal):
 - "1h30" ou "1h30min" ou "1h e 30min" → 1.5
 - "45min" → 0.75
 - "2h15" → 2.25
-- Sem menção de tempo → 1.0
+- Sem menção de tempo explícita na transcrição, assuma 1.0
 
-Instruções:
-- parsed_description: frase limpa descrevendo o que foi feito (sem o tempo, sem "eu passei X horas")
+Instruções MUITO IMPORTANTES para o \`parsed_description\`:
+1. NÃO seja breve. Extraia o máximo de valor da transcrição.
+2. Escreva um relato rico, estruturado em 2 a 3 parágrafos curtos.
+3. Foque no valor entregue, nas objeções levantadas pelo cliente e nos próximos passos definidos.
+4. Mantenha um tom profissional e executivo.
+5. Não mencione "eu passei X horas" no texto, foque no conteúdo do trabalho.
+
+Instruções para os outros campos:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
 - date: use ${today} se nenhuma data for mencionada; interprete "ontem", "segunda", etc. relativos à data de hoje`
 

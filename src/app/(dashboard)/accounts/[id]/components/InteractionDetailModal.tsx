@@ -34,6 +34,10 @@ const interactionTypes: Record<string, string> = {
   'churn-risk': 'Risco de Churn'
 }
 
+import { RawTextViewer } from '@/components/shared/RawTextViewer'
+import { AttachmentsGallery } from '@/components/shared/AttachmentsGallery'
+import { AttachmentsUploader } from '@/components/shared/AttachmentsUploader'
+
 interface Interaction {
   id: string
   account_id: string
@@ -46,6 +50,7 @@ interface Interaction {
     operation_context?: string
     original_insight?: string
   }
+  file_urls?: string[] | null
 }
 
 interface Props {
@@ -67,6 +72,7 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
         title: interaction.title,
         date: interaction.date,
         raw_transcript: interaction.raw_transcript,
+        file_urls: interaction.file_urls ?? []
       })
       setIsEditing(false)
     }
@@ -265,8 +271,39 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
                   )}
                 </div>
 
+                {isEditing ? (
+                  <div className="space-y-4 pt-4 border-t border-border-divider dark:border-slate-800/50">
+                    <div className="space-y-2">
+                      <p className="text-[11px] uppercase font-black tracking-[0.2em] text-foreground dark:text-white ml-1">Mídias Anexadas</p>
+                      {editForm.file_urls && editForm.file_urls.length > 0 && (
+                        <AttachmentsGallery urls={editForm.file_urls} />
+                      )}
+                      <AttachmentsUploader 
+                        onUploadComplete={(urls) => setEditForm(prev => ({ ...prev, file_urls: [...(prev.file_urls || []), ...urls] }))} 
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {interaction.file_urls && interaction.file_urls.length > 0 && (
+                      <div className="pt-4 border-t border-border-divider dark:border-slate-800/50">
+                        <AttachmentsGallery urls={interaction.file_urls} />
+                      </div>
+                    )}
+                    {interaction.raw_transcript && (
+                      <div className="pt-4 border-t border-border-divider dark:border-slate-800/50">
+                        <RawTextViewer 
+                          text={interaction.raw_transcript} 
+                          title="Transcrição Bruta / Texto Original" 
+                          filename={`transcricao-interacao-${interaction.id}.txt`} 
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {/* AI Insights Area */}
-                {interaction.metadata && (isEditing || interaction.metadata.operation_context || interaction.metadata.original_insight) && (
+                {interaction.metadata && (isEditing || interaction.metadata.operation_context) && (
                   <div className="space-y-10 pt-10 border-t border-slate-100 dark:border-slate-800/50">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 ml-1">
@@ -276,19 +313,7 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
                          <p className="text-[11px] text-foreground dark:text-white uppercase font-black tracking-[0.2em]">Contexto Operacional</p>
                       </div>
                       <div className="bg-surface-background dark:bg-slate-800 p-8 rounded-2xl border border-border-divider dark:border-slate-800 text-content-secondary dark:text-content-secondary text-sm font-medium leading-relaxed shadow-sm">
-
                         {interaction.metadata.operation_context || "Sem contexto adicional mapeado pela I.A."}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 ml-1 text-content-secondary">
-                         <History className="w-4 h-4" />
-                         <p className="text-[10px] uppercase font-black tracking-[0.2em]">Insight Original</p>
-                      </div>
-                      <div className="bg-surface-background dark:bg-slate-800 p-6 rounded-xl border border-border-divider dark:border-slate-800 text-content-secondary dark:text-content-secondary text-[11px] italic leading-relaxed">
-
-                        "{interaction.metadata.original_insight || "Transcrição bruta não disponível."}"
                       </div>
                     </div>
                   </div>

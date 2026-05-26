@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Eye, Heart, DollarSign, TicketIcon, Star, Sparkles, Users, Mail, Terminal, FileText, Clock } from 'lucide-react'
+import { Eye, Heart, DollarSign, TicketIcon, Star, Sparkles, Users, Mail, Terminal, FileText, Clock, Paperclip } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
@@ -121,12 +121,20 @@ export function TimelineEvent({ item, idx, onItemClick }: TimelineEventProps) {
             <div className="flex items-center gap-2">
               {item.itemType === 'ticket' ? (
                 <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest bg-muted/30 border-none">
-                  Status: {item.status}
+                   Status: {item.status}
                 </Badge>
               ) : (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surface-background border border-border-divider text-[9px] text-content-secondary font-bold uppercase tracking-tight">
-                  <Clock className="w-2.5 h-2.5 text-plannera-sop" />
-                  {item.direct_hours || item.parsed_hours || 0}h
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-surface-background border border-border-divider text-[9px] text-content-secondary font-bold uppercase tracking-tight">
+                    <Clock className="w-2.5 h-2.5 text-plannera-sop" />
+                    {item.direct_hours || item.parsed_hours || 0}h
+                  </div>
+                  {item.file_urls && item.file_urls.length > 0 && (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-plannera-orange/10 border border-plannera-orange/20 text-[9px] text-plannera-orange font-black uppercase tracking-widest">
+                      <Paperclip className="w-2.5 h-2.5" />
+                      Anexos ({item.file_urls.length})
+                    </div>
+                  )}
                 </div>
               )}
             </div>

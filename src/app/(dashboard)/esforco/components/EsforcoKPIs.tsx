@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Target, Zap, ListFilter, ChevronRight, Loader2, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Label } from '@/components/ui/label'
+import { AttachmentsUploader } from '@/components/shared/AttachmentsUploader'
 
 interface EsforcoKPIsProps {
   selectedAccountId: string
@@ -15,6 +16,8 @@ interface EsforcoKPIsProps {
   accounts: any[]
   text: string
   onTextChange: (text: string) => void
+  fileUrls: string[]
+  onFileUrlsChange: (urls: string[]) => void
   onSubmit: () => void
   isSubmitting: boolean
   examples: string[]
@@ -38,6 +41,8 @@ export function EsforcoKPIs({
   accounts,
   text,
   onTextChange,
+  fileUrls,
+  onFileUrlsChange,
   onSubmit,
   isSubmitting,
   examples
@@ -80,7 +85,7 @@ export function EsforcoKPIs({
           <div className="flex items-center justify-between mb-1 ml-1 group/label">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-plannera-orange" />
-              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Relato de Atividade</Label>
+              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Relato de Atividade e Anexos</Label>
             </div>
             <button
               type="button"
@@ -99,6 +104,12 @@ export function EsforcoKPIs({
               placeholder="Descreva o que foi feito ou cole a transcrição da reunião..."
               rows={4}
               className="relative bg-surface-background/50 border-border-divider text-content-primary placeholder:text-content-secondary/40 font-bold tracking-tight text-sm p-4 rounded-xl focus-visible:ring-plannera-primary/20 resize-none transition-all shadow-inner border"
+            />
+          </div>
+          
+          <div className="pt-2">
+            <AttachmentsUploader 
+              onUploadComplete={(urls) => onFileUrlsChange([...fileUrls, ...urls])} 
             />
           </div>
         </div>

@@ -133,6 +133,7 @@ export type Interaction = {
   sentiment_score: number | null
   alert_triggered: boolean
   source: InteractionSource
+  file_urls?: string[] | null
   created_at: string
 }
 
@@ -147,6 +148,7 @@ export type TimeEntry = {
   parsed_description: string
   date: string
   logged_at: string
+  file_urls?: string[] | null
 }
 
 export type SupportTicket = {

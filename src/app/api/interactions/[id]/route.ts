@@ -17,6 +17,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         type: body.type,
         date: body.date,
         raw_transcript: body.raw_transcript,
+        file_urls: body.file_urls,
       })
       .eq('id', params.id)
       .eq('csm_id', user.id) // Ensure only owner can update or via RLS

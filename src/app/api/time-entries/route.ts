@@ -9,6 +9,7 @@ import { getHealthClassification } from '@/lib/health/utils'
 const BodySchema = z.object({
   raw_text: z.string().min(5),
   account_id: z.string().uuid().optional(),
+  file_urls: z.array(z.string()).optional(),
 })
 
 export async function GET(request: Request) {
@@ -117,6 +118,7 @@ export async function POST(request: Request) {
   }
 
   const needsReview = parsedEntry.confidence_score < 0.8
+  const fileUrls = parsed.data.file_urls ?? []
 
   const { data, error } = await supabase
     .from('time_entries')
@@ -128,6 +130,7 @@ export async function POST(request: Request) {
       parsed_hours: parsedEntry.parsed_hours,
       parsed_description: parsedEntry.parsed_description,
       date: parsedEntry.date,
+      file_urls: fileUrls,
       ...(needsReview && { status: 'pending_review' }),
     })
     .select('*, accounts(name)')
@@ -168,7 +171,8 @@ export async function POST(request: Request) {
       time_entry_id: result.id,
       raw_transcript: parsed.data.raw_text,
       sentiment_score: sentimentScore,
-      alert_triggered: alertTriggered
+      alert_triggered: alertTriggered,
+      file_urls: fileUrls
     })
 
     if (intError) {

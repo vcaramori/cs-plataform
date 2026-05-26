@@ -28,6 +28,10 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { RawTextViewer } from './RawTextViewer'
+import { AttachmentsGallery } from './AttachmentsGallery'
+import { AttachmentsUploader } from './AttachmentsUploader'
+
 const activityLabels: Record<string, string> = {
   'preparation': 'Preparação',
   'environment-analysis': 'Análise de Ambiente',
@@ -54,6 +58,7 @@ interface Entry {
     operation_context?: string
     original_insight?: string
   }
+  file_urls?: string[] | null
 }
 
 interface Props {
@@ -75,7 +80,8 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
         description: entry.description ?? entry.parsed_description ?? null,
         date: entry.date,
         direct_hours: entry.direct_hours ?? entry.parsed_hours ?? 0,
-        account_id: entry.account_id
+        account_id: entry.account_id,
+        file_urls: entry.file_urls ?? []
       })
       setIsEditing(false)
     }
@@ -85,7 +91,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
     if (!entry || isSaving) return
     setIsSaving(true)
     try {
-      const resp = await fetch(`/api/efforts/${entry.id}`, {
+      const resp = await fetch(`/api/time-entries/${entry.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -107,7 +113,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
     if (!entry || !confirm(`Deseja realmente excluir este registro de esforço? Esta ação não pode ser desfeita.`)) return
     setIsSaving(true)
     try {
-      const resp = await fetch(`/api/efforts/${entry.id}`, { method: 'DELETE' })
+      const resp = await fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
       if (!resp.ok) throw new Error()
       toast.success('Registro removido')
       onClose()
@@ -278,7 +284,38 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                   )}
                 </div>
 
-                {entry.metadata && (isEditing || entry.metadata.operation_context || entry.metadata.original_insight) && (
+                {isEditing ? (
+                  <div className="space-y-4 pt-4 border-t border-border-divider dark:border-slate-800/50">
+                    <div className="space-y-2">
+                      <p className="text-[11px] uppercase font-black tracking-[0.2em] text-[#2d3558] dark:text-white ml-1">Mídias Anexadas</p>
+                      {editForm.file_urls && editForm.file_urls.length > 0 && (
+                        <AttachmentsGallery urls={editForm.file_urls} />
+                      )}
+                      <AttachmentsUploader 
+                        onUploadComplete={(urls) => setEditForm(prev => ({ ...prev, file_urls: [...(prev.file_urls || []), ...urls] }))} 
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {entry.file_urls && entry.file_urls.length > 0 && (
+                      <div className="pt-4 border-t border-border-divider dark:border-slate-800/50">
+                        <AttachmentsGallery urls={entry.file_urls} />
+                      </div>
+                    )}
+                    {(entry.natural_language_input || entry.metadata?.original_insight) && (
+                      <div className="pt-4 border-t border-border-divider dark:border-slate-800/50">
+                        <RawTextViewer 
+                          text={entry.natural_language_input || entry.metadata?.original_insight || ''} 
+                          title="Transcrição Bruta / Texto Original" 
+                          filename={`transcricao-esforco-${entry.id}.txt`} 
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {entry.metadata && (isEditing || entry.metadata.operation_context) && (
                   <div className="space-y-10 pt-10 border-t border-slate-100 dark:border-slate-800/50">
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 ml-1">
@@ -287,16 +324,6 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
                       </div>
                       <div className="bg-indigo-50/30 dark:bg-indigo-500/[0.02] p-8 rounded-2xl border border-indigo-100 dark:border-indigo-500/10 text-slate-600 dark:text-slate-300 text-sm font-medium leading-relaxed shadow-sm">
                         {entry.metadata.operation_context || "Sem contexto adicional mapeado pela I.A."}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 ml-1 text-content-secondary">
-                        <History className="w-4 h-4" />
-                        <p className="text-[10px] uppercase font-black tracking-[0.2em]">Insight Original</p>
-                      </div>
-                      <div className="bg-surface-background dark:bg-slate-800/20 p-6 rounded-xl border border-border-divider dark:border-slate-800 text-content-secondary dark:text-content-secondary text-[11px] italic leading-relaxed">
-                        "{entry.metadata.original_insight || "Transcrição bruta não disponível."}"
                       </div>
                     </div>
                   </div>

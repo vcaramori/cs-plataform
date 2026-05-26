@@ -8,6 +8,7 @@ const UpdateSchema = z.object({
   parsed_hours: z.number().positive().optional(),
   date: z.string().optional(),
   parsed_description: z.string().optional(),
+  file_urls: z.array(z.string()).optional(),
 })
 
 // Tipos que devem gerar interação automática
@@ -59,6 +60,7 @@ export async function PATCH(
           date: updatedEntry.date,
           direct_hours: updatedEntry.parsed_hours,
           raw_transcript: updatedEntry.parsed_description,
+          file_urls: updatedEntry.file_urls,
         })
         .eq('id', existingInteraction.id)
     } else {
@@ -81,7 +83,8 @@ export async function PATCH(
         direct_hours: updatedEntry.parsed_hours,
         raw_transcript: updatedEntry.parsed_description,
         source: 'effort_sync',
-        time_entry_id: updatedEntry.id
+        time_entry_id: updatedEntry.id,
+        file_urls: updatedEntry.file_urls,
       })
   }
 
