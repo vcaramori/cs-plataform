@@ -4,10 +4,18 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Account, SupportTicket } from '@/lib/supabase/types'
 import { Button } from '@/components/ui/button'
-import { Loader2, Mail, LayoutDashboard } from 'lucide-react'
+import { Loader2, Mail, LayoutDashboard, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { BulkActionBar } from './BulkActionBar'
 import { BulkActionModal } from './BulkActionModal'
@@ -82,6 +90,15 @@ export function SuporteClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { previewId, openPreview, closePreview } = usePreviewPanel()
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    client: true,
+    title: true,
+    status: true,
+    urgency: false,
+    priority: true,
+    sla: true,
+    opened_at: true,
+  })
 
   // Sincronizar prop de tickets quando alterado no servidor
   useEffect(() => {
@@ -287,20 +304,10 @@ export function SuporteClient({
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-4 animate-in fade-in duration-700">
       <SuporteKPIs tickets={tickets} />
 
-      <div className="flex justify-end pr-2">
-        <Link
-          href="/suporte/dashboard"
-          className="text-[10px] font-black uppercase tracking-[0.2em] text-plannera-primary hover:text-plannera-orange transition-all flex items-center gap-2 group"
-        >
-          <LayoutDashboard className="w-4 h-4 transition-transform group-hover:scale-110" />
-          Analytics & Control Tower
-        </Link>
-      </div>
-
-      <div className="flex justify-between items-center border-b border-border-divider/50 pb-4">
+      <div className="flex justify-between items-center border-b border-border-divider/50 pb-2">
         <div className="flex bg-surface-card border border-border-divider p-1 rounded-xl shadow-inner gap-1">
           {(['list', 'import'] as const).map((tab) => (
             <button
@@ -325,6 +332,72 @@ export function SuporteClient({
 
         {activeTab === 'list' && (
           <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border border-border-divider hover:bg-surface-background/50 text-content-secondary hover:text-content-primary rounded-lg h-9 px-3 text-[11px] font-bold uppercase tracking-wide gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Colunas
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 bg-white dark:bg-slate-900 border border-border-divider/50 rounded-xl shadow-xl p-1 z-50">
+                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest text-content-secondary px-3 py-2">Exibir Colunas</DropdownMenuLabel>
+                <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-border-divider" />
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.client}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, client: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Cliente
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.title}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, title: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Título
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.status}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, status: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Status
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.urgency}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, urgency: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Urgência
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.priority}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, priority: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Prioridade
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.sla}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, sla: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  SLA Resolução
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.opened_at}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, opened_at: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Data Abertura
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="outline"
               size="sm"
@@ -352,7 +425,7 @@ export function SuporteClient({
       </div>
 
       {activeTab === 'list' && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           <SuporteFilters
             filterStatus={filterStatus}
             onStatusChange={setFilterStatus}
@@ -372,6 +445,7 @@ export function SuporteClient({
             tickets={filteredTickets}
             selectedIds={selectedIds}
             previewId={previewId}
+            visibleColumns={visibleColumns}
             onSelectAll={toggleSelectAll}
             onSelectTicket={toggleSelection}
             onPreview={openPreview}

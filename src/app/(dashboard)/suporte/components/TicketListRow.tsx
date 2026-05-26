@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 interface TicketListRowProps {
   ticket: SupportTicket & { accounts?: Pick<Account, 'id' | 'name'> | null }
   isSelected: boolean
+  visibleColumns: Record<string, boolean>
   onSelect: (id: string, checked: boolean) => void
   onPreview: (id: string) => void
   isHighlighted?: boolean
@@ -38,6 +39,7 @@ const priorityConfig: Record<string, { label: string, color: string, bg: string 
 export const TicketListRow: React.FC<TicketListRowProps> = ({
   ticket,
   isSelected,
+  visibleColumns,
   onSelect,
   onPreview,
   isHighlighted = false
@@ -57,39 +59,53 @@ export const TicketListRow: React.FC<TicketListRowProps> = ({
           onCheckedChange={(checked) => onSelect(ticket.id, !!checked)} 
         />
       </TableCell>
-      <TableCell className="text-xs font-semibold whitespace-nowrap">
-        {ticket.accounts?.name || 'N/A'}
-      </TableCell>
-      <TableCell className="max-w-[300px] py-2">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold text-content-primary line-clamp-1">{ticket.title}</span>
-          <span className="text-[11px] text-muted-foreground line-clamp-1">{ticket.description}</span>
-        </div>
-      </TableCell>
-      <TableCell className="py-2">
-        <StatusBadgeGuard 
-          type={ticket.status as any}
-          label={statusConfig[ticket.status]?.label || ticket.status} 
-          size="sm"
-        />
-      </TableCell>
-      <TableCell className="py-2 text-center">
-        <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} className="text-[9px] font-bold px-2 py-0.5 rounded-md" />
-      </TableCell>
-      <TableCell className="py-2 text-center">
-        <Badge variant="outline" className={cn(priorityConfig[ticket.priority]?.bg, priorityConfig[ticket.priority]?.color, "border-none shadow-none text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md")}>
-          {priorityConfig[ticket.priority]?.label}
-        </Badge>
-      </TableCell>
-      <TableCell className="py-2">
-        <div className="flex flex-col gap-1 items-center">
-          <SLABadge status={ticket.sla_status_first_response} label="Resposta" />
-          <SLABadge status={ticket.sla_status_resolution} label="Resolução" />
-        </div>
-      </TableCell>
-      <TableCell className="text-muted-foreground whitespace-nowrap text-[11px] text-right">
-        {formatDate(new Date(ticket.opened_at), 'dd/MM/yyyy', { locale: ptBR })}
-      </TableCell>
+      {visibleColumns.client && (
+        <TableCell className="text-xs font-semibold whitespace-nowrap pl-10">
+          {ticket.accounts?.name || 'N/A'}
+        </TableCell>
+      )}
+      {visibleColumns.title && (
+        <TableCell className="max-w-[300px] py-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-bold text-content-primary line-clamp-1">{ticket.title}</span>
+            <span className="text-[11px] text-muted-foreground line-clamp-1">{ticket.description}</span>
+          </div>
+        </TableCell>
+      )}
+      {visibleColumns.status && (
+        <TableCell className="py-2">
+          <StatusBadgeGuard 
+            type={ticket.status as any}
+            label={statusConfig[ticket.status]?.label || ticket.status} 
+            size="sm"
+          />
+        </TableCell>
+      )}
+      {visibleColumns.urgency && (
+        <TableCell className="py-2 text-center">
+          <UrgencyBadge score={ticket.urgency_score} reasoning={ticket.urgency_reasoning} className="text-[9px] font-bold px-2 py-0.5 rounded-md" />
+        </TableCell>
+      )}
+      {visibleColumns.priority && (
+        <TableCell className="py-2 text-center">
+          <Badge variant="outline" className={cn(priorityConfig[ticket.priority]?.bg, priorityConfig[ticket.priority]?.color, "border-none shadow-none text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md")}>
+            {priorityConfig[ticket.priority]?.label}
+          </Badge>
+        </TableCell>
+      )}
+      {visibleColumns.sla && (
+        <TableCell className="py-2">
+          <div className="flex flex-col gap-1 items-center">
+            <SLABadge status={ticket.sla_status_first_response} label="Resposta" />
+            <SLABadge status={ticket.sla_status_resolution} label="Resolução" />
+          </div>
+        </TableCell>
+      )}
+      {visibleColumns.opened_at && (
+        <TableCell className="text-muted-foreground whitespace-nowrap text-[11px] text-right pr-10">
+          {formatDate(new Date(ticket.opened_at), 'dd/MM/yyyy', { locale: ptBR })}
+        </TableCell>
+      )}
     </TableRow>
   )
 }

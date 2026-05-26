@@ -54,7 +54,7 @@ export function SavedViewSidebar({
 }: SavedViewSidebarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [showAllViews, setShowAllViews] = useState(false)

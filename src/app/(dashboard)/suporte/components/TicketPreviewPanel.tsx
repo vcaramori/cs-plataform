@@ -160,7 +160,7 @@ export const TicketPreviewPanel: React.FC<TicketPreviewPanelProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-2xl bg-surface-background border-l border-surface-border shadow-2xl z-[50] flex flex-col overflow-hidden"
+            className="fixed right-0 top-0 h-screen max-h-screen w-full max-w-2xl bg-surface-background border-l border-surface-border shadow-2xl z-[50] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 bg-surface-background border-b border-surface-border">
