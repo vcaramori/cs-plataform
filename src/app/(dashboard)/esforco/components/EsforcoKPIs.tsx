@@ -2,11 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Textarea } from '@/components/ui/textarea'
-import { Target, Zap, ListFilter, ChevronRight, Loader2, Sparkles } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Target, Zap, ChevronRight, Loader2, Sparkles } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { AttachmentsUploader } from '@/components/shared/AttachmentsUploader'
 
@@ -20,19 +18,6 @@ interface EsforcoKPIsProps {
   onFileUrlsChange: (urls: string[]) => void
   onSubmit: () => void
   isSubmitting: boolean
-  examples: string[]
-}
-
-const activityLabels: Record<string, string> = {
-  preparation: 'Preparação de material',
-  'environment-analysis': 'Análise de ambiente',
-  strategy: 'Estratégia',
-  reporting: 'Relatório',
-  'internal-meeting': 'Reunião interna',
-  meeting: 'Reunião com cliente',
-  onboarding: 'Implantação / Onboarding',
-  qbr: 'QBR / Sucesso',
-  other: 'Outro',
 }
 
 export function EsforcoKPIs({
@@ -44,8 +29,7 @@ export function EsforcoKPIs({
   fileUrls,
   onFileUrlsChange,
   onSubmit,
-  isSubmitting,
-  examples
+  isSubmitting
 }: EsforcoKPIsProps) {
   return (
     <Card variant="glass" className="border-border-divider shadow-2xl relative overflow-hidden group rounded-2xl bg-surface-card/80 backdrop-blur-xl">
@@ -87,13 +71,6 @@ export function EsforcoKPIs({
               <Zap className="w-4 h-4 text-plannera-orange" />
               <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary">Relato de Atividade e Anexos</Label>
             </div>
-            <button
-              type="button"
-              onClick={() => onTextChange(examples[Math.floor(Math.random() * examples.length)])}
-              className="text-[9px] font-black text-plannera-primary hover:text-plannera-orange uppercase tracking-[0.2em] opacity-0 group-hover/label:opacity-100 transition-all"
-            >
-              Sugestão Aleatória
-            </button>
           </div>
 
           <div className="relative group/input">
@@ -102,7 +79,7 @@ export function EsforcoKPIs({
               value={text}
               onChange={(e) => onTextChange(e.target.value)}
               placeholder="Descreva o que foi feito ou cole a transcrição da reunião..."
-              rows={4}
+              rows={8}
               className="relative bg-surface-background/50 border-border-divider text-content-primary placeholder:text-content-secondary/40 font-bold tracking-tight text-sm p-4 rounded-xl focus-visible:ring-plannera-primary/20 resize-none transition-all shadow-inner border"
             />
           </div>
@@ -111,29 +88,6 @@ export function EsforcoKPIs({
             <AttachmentsUploader 
               onUploadComplete={(urls) => onFileUrlsChange([...fileUrls, ...urls])} 
             />
-          </div>
-        </div>
-
-        {/* Smart Suggestions */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 ml-1">
-            <ListFilter className="w-4 h-4 text-content-secondary/30" />
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-content-secondary opacity-50">Explorações sugeridas:</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {examples.map((ex, idx) => (
-              <motion.button
-                key={ex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                type="button"
-                onClick={() => onTextChange(ex)}
-                className="text-[9px] font-black text-content-secondary hover:text-plannera-primary bg-surface-background/30 hover:bg-white/5 px-3 py-1.5 rounded-lg border border-border-divider/50 transition-all text-left uppercase tracking-tight shadow-sm hover:scale-105 active:scale-95"
-              >
-                {ex.split(' ').slice(0, 4).join(' ')}...
-              </motion.button>
-            ))}
           </div>
         </div>
 

@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { useDateRange } from '@/hooks/useDateRange'
 import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { EsforcoKPIs } from './EsforcoKPIs'
-import { EsforcoChart } from './EsforcoChart'
 import { EsforcoTable } from './EsforcoTable'
 
 const activityLabels: Record<string, string> = {
@@ -35,13 +34,6 @@ export type Entry = {
   logged_at: string
   accounts: { name: string } | null
 }
-
-const examples = [
-  'Passei 2h preparando o deck de QBR para a Empresa X',
-  'Analisei os logs de erro por 45min para entender o problema da Empresa Y',
-  'Reunião interna de 30min para alinhar estratégia de renovação',
-  '1h30 gerando relatório de esforço mensal',
-]
 
 export function EsforcoClient({
   accounts,
@@ -117,38 +109,12 @@ export function EsforcoClient({
     return d >= new Date(dateFrom) && d <= new Date(dateTo)
   })
 
-  // Agrupa horas por conta
-  const totalsByAccount = filteredEntries.reduce<Record<string, { name: string; hours: number }>>(
-    (acc, e) => {
-      const name = e.accounts?.name ?? 'LOGO removido'
-      if (!acc[e.account_id]) acc[e.account_id] = { name, hours: 0 }
-      acc[e.account_id].hours += Number(e.parsed_hours)
-      return acc
-    },
-    {}
-  )
-
-  const sortedAccounts = Object.values(totalsByAccount).sort((a, b) => b.hours - a.hours)
-  const totalHours = sortedAccounts.reduce((acc, curr) => acc + curr.hours, 0)
-
-  // Pareto Data
-  let cumulativeHours = 0
-  const paretoData = sortedAccounts.map(acc => {
-    cumulativeHours += acc.hours
-    return {
-      ...acc,
-      percentage: (acc.hours / totalHours) * 100,
-      cumulativePercentage: (cumulativeHours / totalHours) * 100
-    }
-  })
-
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <DateRangePicker />
 
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      {/* Logger Column */}
-      <div className="lg:col-span-3 space-y-8">
+      <div className="space-y-8">
+        {/* Logger Component */}
         <EsforcoKPIs
           selectedAccountId={selectedAccountId}
           onAccountChange={setSelectedAccountId}
@@ -159,17 +125,9 @@ export function EsforcoClient({
           onFileUrlsChange={setFileUrls}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
-          examples={examples}
         />
-      </div>
 
-      {/* Telemetry Column */}
-      <div className="lg:col-span-1 h-full">
-        <EsforcoChart paretoData={paretoData} />
-      </div>
-
-      {/* History Area */}
-      <div className="lg:col-span-4 mt-8">
+        {/* History Area */}
         <EsforcoTable
           entries={filteredEntries}
           totalHours={filteredEntries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
@@ -186,7 +144,6 @@ export function EsforcoClient({
           onUpdate={(updated) => handleUpdate(updated as unknown as Entry)}
         />
       )}
-    </div>
     </div>
   )
 }

@@ -71,7 +71,7 @@ export function AttachmentsUploader({ onUploadComplete, onUploadingChange, maxSi
   return (
     <div className="space-y-4">
       <div 
-        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+        className={`border-2 border-dashed rounded-xl p-3 text-center transition-all ${
           dragActive 
             ? 'border-plannera-orange bg-plannera-orange/5 scale-[1.02]' 
             : 'border-border-divider/50 hover:border-plannera-orange/50 hover:bg-white/5'
@@ -95,17 +95,17 @@ export function AttachmentsUploader({ onUploadComplete, onUploadingChange, maxSi
           onChange={(e) => e.target.files && handleUpload(e.target.files)}
         />
         
-        <div className="flex flex-col items-center justify-center gap-3 cursor-pointer">
+        <div className="flex items-center justify-center gap-3 cursor-pointer py-1">
           {isUploading ? (
-            <Loader2 className="w-8 h-8 text-plannera-orange animate-spin" />
+            <Loader2 className="w-5 h-5 text-plannera-orange animate-spin" />
           ) : (
-            <UploadCloud className="w-8 h-8 text-content-secondary/50" />
+            <UploadCloud className="w-5 h-5 text-content-secondary/50" />
           )}
-          <div>
-            <p className="text-sm font-bold text-content-primary">
+          <div className="text-left">
+            <p className="text-xs font-bold text-content-primary">
               {isUploading ? 'Enviando arquivos...' : 'Clique ou arraste mídias aqui'}
             </p>
-            <p className="text-[10px] font-medium text-content-secondary uppercase tracking-widest mt-1">
+            <p className="text-[9px] font-medium text-content-secondary uppercase tracking-widest mt-0.5">
               Imagens, Áudios ou Vídeos (Max {maxSizeMB}MB)
             </p>
           </div>
