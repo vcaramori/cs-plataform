@@ -43,7 +43,7 @@ Branch estável criada para consolidação de features de alta densidade e de in
 - ✅ **Proactive Smart Alerts:** Monitoramento diário de 6 indicadores de saúde (tabela `proactive_alerts`) integrado diretamente no **AlertCenter Drawer** flutuante na Sidebar.
 - ✅ **Success Plan:** Planejamento estratégico compartilhado com links públicos, contadores e progresso dinâmico em `/accounts/[id]/success-plan`.
 - ✅ **Playbooks Engine:** Gerenciamento, execução guiada e Playbook Builder interativo baseado em `ReactFlow` no `/playbooks/builder`.
-- ✅ **RAG & Inteligência (Perguntar):** Chat 360° qualificado cruzando notas qualitativas, financeiro e suporte de forma exaustiva com Gemini 2.5 Pro no `/perguntar`.
+- ✅ **RAG & Inteligência (Perguntar):** Chat 360° qualificado cruzando notas qualitativas, financeiro e suporte de forma exaustiva via LLM Gateway (provider configurável) no `/perguntar`.
 - ✅ **Chamados & Suporte:** Sync automático por e-mail, auto-reabertura, colisão de atendentes e categorização por IA.
 - ✅ **Esforço & Horas:** Auto check-in gerado por IA para silêncios contratuais e journal qualitativo de horas.
 - ✅ **Integrações de TI (Admin Hub):** Webhooks seguros (HMAC), Salesforce/HubSpot, Zendesk/Jira e exportações scheduled (BigQuery/Snowflake) ativas em `/admin/integrations`.
@@ -71,14 +71,14 @@ Branch estável criada para consolidação de features de alta densidade e de in
 |-------|--------|----|---------|----|---------|
 | **23.1** | Playbook Governance — Campos de auditoria e comentários em tasks | 3 | ✅ | ✅ | migrations, PlaybookWidget, PlaybookHistoryModal, types |
 | **14.2** | Playbook Trigger Alert — Health < 50 → alerta acionável | 3 | ✅ | ✅ | AlertService.checkPlaybookTrigger, AlertCenter "Iniciar Playbook", migration |
-| **15.1** | Auto Check-in por Silêncio — Geração Gemini + Fila de Aprovação | 8 | ✅ | ✅ | 2 crons (generate/send), auto_checkin_queue table, AutoCheckInQueue UI, /esforço |
+| **15.1** | Auto Check-in por Silêncio — Geração IA + Fila de Aprovação | 8 | ✅ | ✅ | 2 crons (generate/send), auto_checkin_queue table, AutoCheckInQueue UI, /esforço |
 | **Playbook Builder** | Drag-drop canvas ReactFlow | 5 | ✅ API salva JSON | ✅ | `/playbooks/builder` com ReactFlow funcional — drag, connect, salvar |
 | | **TOTAL** | **19 SP** | **✅** | **✅ 100%** | |
 
 **📝 Detalhes de Implementação:**
 - **Story 23.1:** 5 migrations, 2 componentes UI atualizados, 9 novos campos de governança + comentários JSONB thread
 - **Story 14.2:** Novo método `checkPlaybookTrigger` em AlertService com idempotência, UI com botão "Iniciar Playbook" que cria playbook e resolve alerta
-- **Story 15.1:** `auto_checkin_queue` table com workflow de aprovação (4h), cron diário que gera emails via Gemini por tier de silêncio, cron de envio via SMTP/nodemailer, UI modal com aprovação/edição/cancelamento, logging em time_entries
+- **Story 15.1:** `auto_checkin_queue` table com workflow de aprovação (4h), cron diário que gera emails via IA por tier de silêncio, cron de envio via SMTP/nodemailer, UI modal com aprovação/edição/cancelamento, logging em time_entries
 
 ### Wave 5 — Fundação Inteligência + Automação (90 SP) ✅ COMPLETO
 
@@ -135,7 +135,7 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 - **Admin**: Atualizado border-radius para `rounded-2xl` e removidos blurs excessivos.
 
 **Resultado:** Código mais limpo, tipado e alinhado com o design system "Guardians", mantendo a promessa de entrega premium.
-- ✅ Security: no hardcoded secrets, proper auth
+- ✅ Security: API keys criptografadas no banco (AES-256-GCM), auth JWT em todos os endpoints
 
 ### Next Phase: QA & Staging
 - **Week 6 (Jun 16-20):** Full E2E test execution
@@ -285,7 +285,7 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 * `/nps` e `/nps/programs` — Medidor de Lealdade e Gestão de Campanhas
 * `/voc` — Voz do Cliente (Análise de Sentimentos e Temas)
 * `/esforco` — Registro e Auto Check-in de CSM
-* `/perguntar` — Assistente RAG Gemini 360°
+* `/perguntar` — Assistente RAG 360° (Multi-Provider)
 * `/playbooks` e `/playbooks/builder` — Builder de Automações ReactFlow
 * `/users` — Gestão de Equipe (IAM) e Atribuição de Roles
 * `/admin`, `/admin/integrations`, `/admin/settings` — Hub Administrativo e Integrações (Webhooks, CRM, Support, BI, Health, SLA)
@@ -304,7 +304,8 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 - ✅ Wave 5 — 100% completo (May 11)
 - ✅ Wave 6 — Backend + UI ~90% (May 11) — Feature DAG + Stakeholder Map pendentes
 - ✅ Wave 7 — Backend + Admin UI 100% (May 11)
-- ✅ Remoção do Ollama (Local) — Foco exclusivo em Gemini — May 11
+- ✅ Remoção do Ollama (Local) — May 11
+- ✅ LLM Multi-Provider (Gemini, Claude, OpenAI, Groq) — May 25
 - ✅ TypeScript compilation (0 errors in-scope) — May 12 + estabilização May 12
 - ⏳ E2E testing phase (Playwright) — May 12-14
 - ⏳ RLS audit (3 roles) — May 14
@@ -391,8 +392,8 @@ A Plannera presta serviços de SaaS e CS para outras empresas. O CS-Continuum é
 | Vetores | pgvector no Supabase (extensão nativa) | — |
 | Alvo Futuro | Azure SQL (SQL Server + VECTOR nativo) | — |
 | Auth | Supabase Auth (JWT + roles `csm` / `client`) | — |
-| LLM principal | Google Gemini (Exclusive) | — |
-| SDK de IA | @google/genai (Oficial — migrado de @google/generative-ai) | 1.0.0+ |
+| LLM Gateway | Multi-Provider (Gemini, Claude, OpenAI, Groq) | — |
+| SDKs de IA | @google/genai, @anthropic-ai/sdk, openai, groq-sdk | — |
 | State | TanStack React Query | 5.95.2 |
 | Validação | Zod | 4.3.6 |
 | Animações | Framer Motion | 12.38.0 |
@@ -472,7 +473,7 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
 | SLA polling | `POST /api/cron/sla-polling` | `*/5 * * * *` (5 min) | Calcula status SLA para todos os tickets |
 | Auto-close tickets | `POST /api/cron/ticket-auto-close` | `*/30 * * * *` (30 min) | Fecha tickets resolvidos após inatividade + dispara CSAT |
 | CSAT timeout | `POST /api/cron/csat-timeout` | `0 * * * *` (hourly) | Reseta tokens CSAT expirados |
-| Sentiment analysis | `POST /api/cron/analyze-ticket-sentiments` | `0 3 * * *` (daily 03:00 UTC) | Analisa replies sem sentimento via Gemini, regenera caches de tendência (F1-20) |
+| Sentiment analysis | `POST /api/cron/analyze-ticket-sentiments` | `0 3 * * *` (daily 03:00 UTC) | Analisa replies sem sentimento via IA, regenera caches de tendência (F1-20) |
 | **Health Score Daily** | `POST /api/cron/health-score-daily` | `0 2 * * *` (daily 02:00 UTC) | **Recalcula health_score_v2 para todas as contas ativas via fórmula ponderada (F2-02)** |
 
 **Configuração em Produção:**
@@ -529,9 +530,9 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
            │                                  │
 ┌──────────▼──────┐                 ┌─────────▼───────────────┐
 │  Supabase       │                 │  LLM Providers          │
-│  (PostgreSQL +  │                 │  Gemini 2.5 (Exclusive) │
-│   pgvector)     │                 │                         │
-│  Supabase Auth  │                 │                         │
+│  (PostgreSQL +  │                 │  Gemini · Claude        │
+│   pgvector)     │                 │OpenAI · Groq          │
+│  Supabase Auth  │                 │(config via Admin UI)  │
 └─────────────────┘                 └─────────────────────────┘
 ```
 
@@ -637,11 +638,11 @@ Clique em qualquer evento de contrato abre modal read-only com:
 
 Interface de chat com o motor RAG. O CSM digita uma pergunta em português e o sistema:
 
-1. Gera embedding da pergunta (Gemini `text-embedding-004`)
+1. Gera embedding da pergunta via LLM Gateway (provider de embedding configurável)
 2. Busca os chunks mais relevantes no pgvector (limiar 0.4, relaxado para 0.2 se necessário), incluindo transcrições de reuniões indexadas
 3. Enriquece com metadados estruturados: data da reunião, prioridade do ticket, adoção, NPS, stakeholders
 4. Detecta automaticamente o cliente mencionado na pergunta (entity detection)
-5. Monta o prompt com contexto 360° (ver abaixo) e chama Gemini 2.5 Flash
+5. Monta o prompt com contexto 360° (ver abaixo) e chama o provider de texto configurado
 6. Retorna resposta em PT-BR com citação das fontes
 
 **Visão 360° — Auditoria Exaustiva (4 dimensões cruzadas):**
@@ -674,7 +675,7 @@ Painel executivo de inteligência de lealdade com design "High-Density":
 
 ### Esforço (`/esforco`)
 
-Rastreamento de horas do CSM por tipo de atividade. O input é em linguagem natural (ex: "Passei 2h preparando o QBR do cliente X") e o Gemini 2.5 Flash extrai horas e descrição automaticamente.
+Rastreamento de horas do CSM por tipo de atividade. O input é em linguagem natural (ex: "Passei 2h preparando o QBR do cliente X") e a IA extrai horas e descrição automaticamente via LLM Gateway.
 
 **Qualidade de Relato — `confidence_score`:** Cada entrada parseada recebe um score de confiança (0.0–1.0). Se `confidence_score < 0.8`, a entrada é salva com `status: 'pending_review'` para revisão humana antes de ser contabilizada.
 
@@ -684,7 +685,7 @@ Rastreamento de horas do CSM por tipo de atividade. O input é em linguagem natu
 
 Módulo completo de suporte com SLA, ciclo de vida de ticket e CSAT.
 
-**Revisão de resposta (Padrão Plannera):** Botão "Avaliar e Enviar" na área de composição do ticket. Submete o rascunho ao Gemini que avalia sentimento, reescreve a mensagem no Padrão Plannera e calcula a nota final.
+**Revisão de resposta (Padrão Plannera):** Botão "Avaliar e Enviar" na área de composição do ticket. Submete o rascunho à IA que avalia sentimento, reescreve a mensagem no Padrão Plannera e calcula a nota final.
 
 **Avaliação Context-Aware:** A IA usa TODO o histórico do chamado para avaliar o rascunho. Os 5 critérios (Tom, Estrutura, Empatia, Clareza, Alinhamento) são julgados no contexto do problema original e do sentimento acumulado do cliente.
 
@@ -717,7 +718,7 @@ Todas as ações são snapshot-backed: ao executar, o sistema captura o estado a
 - **Busca Semântica (F1-04):** Substitui a busca textual simples por busca vetorial usando pgvector + embeddings Gemini. Ao digitar 3+ caracteres, a plataforma gera embedding da query e busca por similaridade semântica na tabela `embeddings`. Resultados ordenados por score de relevância com badge "Busca semântica" ativa. Fallback automático para busca in-memory se a API falhar. Novos tickets têm seus embeddings gerados automaticamente no background. Endpoint de backfill (`/api/support-tickets/backfill-embeddings`) indexa tickets existentes.
 - **Preview Inline (F1-05):** Painel lateral deslizante que permite a triagem e gestão rápida de tickets sem sair da lista principal. Ao clicar em uma linha da tabela, o painel exibe o contexto completo (descrição, metadados de conta, SLA) e o histórico de mensagens. Inclui uma barra de ações rápidas para resolver/reabrir chamados, atribuir a si mesmo ou navegar para a visão completa. O estado do painel é persistido na URL (`?preview=id`), permitindo compartilhamento de links diretos para triagem.
 - **Detecção de Colisão (F1-06):** Sistema de presença em tempo real via Supabase Presence. Notifica visualmente se outro CSM está visualizando o mesmo ticket no `TicketPreviewPanel`, prevenindo respostas duplicadas e conflitos de edição.
-- **Urgency Scoring com IA (F1-07):** Classificação automática de urgência (Baixa, Média, Alta) processada pelo Gemini AI. A IA analisa o conteúdo e histórico do ticket para atribuir um score e um raciocínio lógico ("Insights do Guardião IA"), exibidos via `UrgencyBadge` na lista e no painel de preview. O scoring é disparado automaticamente na criação e reabertura de tickets.
+- **Urgency Scoring com IA (F1-07):** Classificação automática de urgência (Baixa, Média, Alta) processada pela IA. A IA analisa o conteúdo e histórico do ticket para atribuir um score e um raciocínio lógico ("Insights do Guardião IA"), exibidos via `UrgencyBadge` na lista e no painel de preview. O scoring é disparado automaticamente na criação e reabertura de tickets.
 - **Reabertura Automática (F1-08):** Automação de ciclo de vida via trigger no Postgres. Tickets com status `closed` são movidos automaticamente para `open` se o cliente enviar uma nova mensagem (reply), garantindo que nenhum acompanhamento seja ignorado. Cada transição automática é registrada no histórico de auditoria.
 - **Fechamento Automático e CSAT (F1-09):** Sistema de lifecycle paramétrico que fecha automaticamente tickets `resolved` após um período de inatividade definido em `sla_policies.auto_close_hours` (default 48h). No fechamento, o status muda para `closed` e um gatilho dispara automaticamente uma pesquisa de CSAT via e-mail para o autor do ticket.
 - **Mesclagem de Tickets (F1-10):** Infraestrutura de consolidação que permite mesclar tickets duplicados da mesma conta. O ticket secundário é fechado e vinculado ao principal (`merged_into`), com histórico de auditoria (`ticket_merge_history`) e banner informativo na UI. Inclui incremento atômico de `merge_count` e logs de evento `ticket_merged_in`.
@@ -727,9 +728,9 @@ Todas as ações são snapshot-backed: ao executar, o sistema captura o estado a
 - **Fila com Capacidade (F1-14):** Dashboard de capacidade dos CSMs mostrando `assigned_count / max_capacity` por agente. View SQL `csm_queue_stats` calcula em tempo real para cada CSM: tickets atribuídos, capacidade máxima (padrão 20, editável em `csm_settings.max_tickets_capacity`), slots disponíveis e percentage de carga. Componente `<QueueStatsPanel>` renderiza barra visual com cores progressivas (verde <50%, amarelo 50-80%, vermelho >=80%), tooltips informativos e summary stats. Endpoint `GET /api/csm-queue-stats` (cache 30s) retorna todas as estatísticas. Integração com sidebar para visibilidade contínua da fila.
 - **Atribuição Automática (F1-15):** Cron job rodando a cada 5 minutos (`*/5 * * * *`) que busca tickets `assigned_to IS NULL` e `status='open'`, encontra o CSM com menor queue (respeitando `csm_settings.max_tickets_capacity` e `csm_settings.auto_assign_enabled`), e atribui. Evento `auto_assigned` registrado em `ticket_events` com CSM responsável. Tabela `auto_assign_stats` coleta telemetria (capacity_before/after, cron timestamp) para análise de padrões. Endpoint POST `/api/support-tickets/[id]/auto-assign-test` (admin) força atribuição para teste (ignora capacidade). View `auto_assign_metrics` permite dashboard de assignments por hora.
 - **Escalonamento SLA (F1-16):** Cron job horário (`0 * * * *`) que busca tickets com SLA crítico (`sla_status='atencao'` ou `sla_status='vencido'`). Para cada ticket crítico não escalado nos últimos 2h, envia mensagem Slack formatada via webhook `SLACK_WEBHOOK_SLA_ALERTS` (circuit breaker: se webhook falha, log registra mas não falha cron). Tabela `sla_escalations` rastreia escalações com de-duplication window. Evento `sla_escalation` registrado em `ticket_events` com horas_elapsed e sla_status. Endpoint POST `/api/admin/test-sla-escalation` testa integração Slack. View `sla_escalation_summary` fornece telemetry de escalações por dia para alerting trends.
-- **Categorização Automática (F1-18):** Gemini analisa título + descrição do ticket e sugere categoria entre 5 predefinidas (Bug, Feature Request, Account/Billing, Performance, Other). Se confiança >= 0.75, auto-aplica; senão mostra sugestão para CSM revisar. Component `<CategorySuggestionBadge>` renderiza sugestão com confidence badge e botões Aceitar/Rejeitar. Colunas `suggested_category`, `suggestion_confidence`, `suggestion_reasoning` armazenam resultado. Tabela `categorization_suggestions` registra histórico com status (pending/accepted/rejected). Eventos `auto_categorized`, `categorization_accepted`, `categorization_rejected` para auditoria. Auto-gatilhado ao criar novo ticket.
-- **RAG — Sugerir Resposta (F1-17):** Botão "💡 Sugerir Resposta" no compose que dispara RAG pipeline: (1) busca 5 tickets similares via pgvector + cosine similarity (threshold 0.75), (2) recupera últimas respostas como contexto, (3) monta prompt com ticket atual + categoria + SLA, (4) gera sugestão via Gemini 2.5 Flash (500 tokens). Sugestão é read-only com disclaimer "🤖 AI-Suggested". Component `<ReplySuggestionPanel>` exibe loading, conteúdo e actions (Usar/Descartar). Cache por 5min; invalidado se nova resposta chegar. Tabela `reply_suggestions` com status (pending/accepted/rejected). Telemetria em `reply_suggestion_telemetry` registra accept/reject/edit com edit_distance para RL futura. Eventos `reply_suggestion_accepted`, `reply_suggestion_rejected` em `ticket_events`.
-- **Resumo do Ticket (F1-19):** Gera resumo 1-2 linhas (máx 150 chars) acima da timeline. Gemini analisa título, descrição, últimas 3 respostas, categoria, prioridade e status. Component `<TicketSummarySection>` renderiza resumo com ícone 📝, timestamp, botão de regeneração. Cache 24h em BD; invalidado se nova resposta chegar (via `mark_summary_as_stale()`). Endpoint GET `/api/support-tickets/[id]/summary` retorna cached ou gera novo. Endpoint POST força regeneração (admin). Tabela `ticket_summary_cache` com flags de staleness. Histório em `ticket_summary_history` com audit trail (IA vs manual). View `stale_ticket_summaries` para background regeneration jobs.
+- **Categorização Automática (F1-18):** IA analisa título + descrição do ticket e sugere categoria entre 5 predefinidas (Bug, Feature Request, Account/Billing, Performance, Other). Se confiança >= 0.75, auto-aplica; senão mostra sugestão para CSM revisar. Component `<CategorySuggestionBadge>` renderiza sugestão com confidence badge e botões Aceitar/Rejeitar. Colunas `suggested_category`, `suggestion_confidence`, `suggestion_reasoning` armazenam resultado. Tabela `categorization_suggestions` registra histórico com status (pending/accepted/rejected). Eventos `auto_categorized`, `categorization_accepted`, `categorization_rejected` para auditoria. Auto-gatilhado ao criar novo ticket.
+- **RAG — Sugerir Resposta (F1-17):** Botão "💡 Sugerir Resposta" no compose que dispara RAG pipeline: (1) busca 5 tickets similares via pgvector + cosine similarity (threshold 0.75), (2) recupera últimas respostas como contexto, (3) monta prompt com ticket atual + categoria + SLA, (4) gera sugestão via LLM Gateway (500 tokens). Sugestão é read-only com disclaimer "🤖 AI-Suggested". Component `<ReplySuggestionPanel>` exibe loading, conteúdo e actions (Usar/Descartar). Cache por 5min; invalidado se nova resposta chegar. Tabela `reply_suggestions` com status (pending/accepted/rejected). Telemetria em `reply_suggestion_telemetry` registra accept/reject/edit com edit_distance para RL futura. Eventos `reply_suggestion_accepted`, `reply_suggestion_rejected` em `ticket_events`.
+- **Resumo do Ticket (F1-19):** Gera resumo 1-2 linhas (máx 150 chars) acima da timeline. IA analisa título, descrição, últimas 3 respostas, categoria, prioridade e status. Component `<TicketSummarySection>` renderiza resumo com ícone 📝, timestamp, botão de regeneração. Cache 24h em BD; invalidado se nova resposta chegar (via `mark_summary_as_stale()`). Endpoint GET `/api/support-tickets/[id]/summary` retorna cached ou gera novo. Endpoint POST força regeneração (admin). Tabela `ticket_summary_cache` com flags de staleness. Histório em `ticket_summary_history` com audit trail (IA vs manual). View `stale_ticket_summaries` para background regeneration jobs.
 
 ---
 
@@ -983,38 +984,43 @@ Sistema MVP para CSMs criarem e compartilharem planos de sucesso com clientes vi
 
 ---
 
-## LLM Gateway e Modo Exclusivo (Gemini First)
+## LLM Gateway Multi-Provider
 
-O gateway (`src/lib/llm/gateway.ts`) foi migrado para o SDK oficial `@google/genai`, priorizando a família Gemini 2.5 para máxima performance e estabilidade. O sistema agora opera em **Modo Exclusivo** (Gemini), com fallbacks desativados para validação da camada de inteligência.
+O gateway (`src/lib/llm/gateway.ts`) opera com uma **arquitetura de adapters** que suporta 4 providers de IA, todos configuráveis via Admin UI (`/admin/settings`, aba IA) sem necessidade de redeploy.
 
 ```
 Requisição de texto/embedding
        │
        ▼
-  LLM_PROVIDER=gemini
+  getLLMSettings() ← app_settings (cache 60s)
        │
-    ┌──┴────────────────────────┐
-    │ Gemini 2.5 Flash (Texto)  │
-    │ Gemini Embedding 004      │
-    └───────────────────────────┘
+    ┌──┴──────────────────────────────────────────┐
+    │  Provider Adapters (src/lib/llm/providers/)  │
+    ├──────────────┬──────────┬──────────┬─────────┤
+    │ Gemini       │ Claude   │ OpenAI   │ Groq    │
+    │ Texto ✅     │ Texto ✅ │ Texto ✅ │ Texto ✅│
+    │ Embedding ✅ │          │ Embed ✅ │         │
+    └──────────────┴──────────┴──────────┴─────────┘
 ```
 
-**Configuração Atualizada (.env):**
+**Configuração:** Feita via Admin UI ou variáveis de ambiente (fallback). API keys são armazenadas criptografadas (AES-256-GCM) na tabela `app_settings`.
 
-```bash
-LLM_PROVIDER=gemini
-GEMINI_FLASH_MODEL=gemini-2.5-flash
-GEMINI_PRO_MODEL=gemini-pro-latest
-LLM_ALLOW_FALLBACK=false      # Modo estrito para estabilidade
-```
+**Providers Suportados:**
 
-**Modelos em Uso:**
+| Provedor | Modelos de Texto | Modelos de Embedding | SDK |
+|----------|-----------------|---------------------|-----|
+| **Gemini** | gemini-2.5-flash, gemini-2.5-pro | text-embedding-004 (768d) | @google/genai |
+| **Claude** | claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-7 | — | @anthropic-ai/sdk |
+| **OpenAI** | gpt-4o, gpt-4o-mini, o3-mini | text-embedding-3-small (1536d), text-embedding-3-large (3072d) | openai |
+| **Groq** | llama-3.3-70b, llama-3.1-8b, mixtral-8x7b | — | groq-sdk |
 
-| Provedor | Modelo | Versão | Finalidade |
-|----------|--------|---------|------------|
-| Gemini | `gemini-2.5-flash` | Latest | NLP Effort, Sentiment, Support Review |
-| Gemini | `gemini-pro-latest` | Latest | RAG Complexo (Cérebro do CS) |
-| Gemini | `text-embedding-004`| Latest | Vetorização pgvector (768 dims) |
+**Arquitetura de Arquivos:**
+- `src/lib/llm/gateway.ts` — Funções `generateText()` e `generateEmbedding()` (interface única para todos os callers)
+- `src/lib/llm/settings.ts` — Loader de config do banco com cache em memória (60s TTL)
+- `src/lib/llm/providers/*.ts` — 4 adapters + interface + registry
+- `src/lib/crypto/encryption.ts` — Criptografia AES-256-GCM para API keys
+- `src/app/api/admin/settings/test-provider/route.ts` — Teste de conexão por provider
+- `src/app/api/admin/settings/reindex-embeddings/route.ts` — Re-indexação de vetores ao trocar embedding provider
 
 ---
 
@@ -1026,7 +1032,7 @@ O CSM insere uma nota de 0–100. O sistema compara com o `shadow_score` vigente
 
 ### Shadow Score (IA)
 
-Gerado automaticamente analisando as últimas 10 interações e 10 tickets via Gemini.
+Gerado automaticamente analisando as últimas 10 interações e 10 tickets via LLM Gateway (provider configurável).
 
 ---
 
@@ -1066,10 +1072,13 @@ GEMINI_FLASH_MODEL=gemini-2.5-flash
 GEMINI_PRO_MODEL=gemini-pro-latest
 
 # ── LLM Gateway ───────────────────────────────────────────────
-LLM_PROVIDER=gemini                 # gemini (exclusivo para estabilização)
-LLM_FALLBACK_PROVIDER=none          # Fallback desativado
+LLM_PROVIDER=gemini                 # Provider padrão (gemini | claude | openai | groq)
+LLM_FALLBACK_PROVIDER=none          # Fallback provider (opcional)
 LLM_TIMEOUT_MS=120000
 LLM_ALLOW_FALLBACK=false
+
+# ── Criptografia (API Keys no banco) ─────────────────────────
+ENCRYPTION_KEY=your-64-char-hex-key  # 32 bytes hex para AES-256-GCM
 
 # ── Integração Slack (F1-16: Escalonamento SLA) ───────────────
 SLACK_WEBHOOK_SLA_ALERTS=https://hooks.slack.com/services/T.../B.../XXXX
@@ -1271,8 +1280,8 @@ API_SECRET=your-secure-random-secret-for-cron-jobs
 
 ## Observações importantes
 
-- **Embeddings com 768 dims**: o pgvector e o Gemini (`text-embedding-004`) usam 768 dimensões de forma nativa.
-- **Estabilização Gemini**: Atualmente operamos em modo Gemini Exclusive para garantir a confiabilidade da camada de RAG e NLP.
+- **Embeddings**: dimensão varia conforme provider — Gemini `text-embedding-004` usa 768d, OpenAI `text-embedding-3-small` usa 1536d. Trocar provider dispara re-index automático via Admin UI.
+- **LLM Multi-Provider**: O gateway suporta Gemini, Claude, OpenAI e Groq. Todas as chamadas de IA passam pelo gateway unificado (`src/lib/llm/gateway.ts`). Provider e modelo são configuráveis via Admin UI (`/admin/settings`, aba IA) sem redeploy.
 - **RLS estrita**: cada CSM só acessa dados das contas onde é proprietário.
 - **NPS é público**: os endpoints `/api/nps/check` e `/api/nps/response` têm CORS `*`.
 - **Wave 7 Production-Ready**: Todos os endpoints incluem validação Zod, error handling, rate limiting, RLS enforcement, e logging estruturado.

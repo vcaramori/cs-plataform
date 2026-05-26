@@ -1,9 +1,5 @@
-import { GoogleGenAI } from '@google/genai';
+import { generateText } from '@/lib/llm/gateway';
 import { createClient } from '@supabase/supabase-js';
-
-const gemini = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,13 +42,11 @@ Texto para analisar:
 ${text}`;
 
     const response = await Promise.race([
-      gemini.models.generateContent({
-        model: process.env.GEMINI_FLASH_MODEL || 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.3,
-          maxOutputTokens: 200,
-        },
+      generateText(prompt, {
+        temperature: 0.3,
+        maxOutputTokens: 200,
+        responseMimeType: 'application/json',
+        disableThinking: true,
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Sentiment analysis timeout')), timeout)
@@ -61,11 +55,11 @@ ${text}`;
 
     clearTimeout(timeoutId);
 
-    if (!response || !response.text) {
+    if (!response || !response.result) {
       return getFallbackSentiment();
     }
 
-    const content = response.text;
+    const content = response.result;
     const parsed = JSON.parse(content.trim());
 
     return {

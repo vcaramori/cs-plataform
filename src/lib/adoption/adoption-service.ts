@@ -1,4 +1,4 @@
-import { Anthropic } from '@anthropic-ai/sdk'
+import { generateText } from '@/lib/llm/gateway'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface AdoptionTrendData {
@@ -31,16 +31,9 @@ interface FeatureBlocker {
 
 export class AdoptionService {
   private supabase: SupabaseClient
-  private anthropic: Anthropic
 
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      defaultHeaders: {
-        'anthropic-beta': 'interleaved-thinking-2025-05-14',
-      },
-    })
   }
 
   /**
@@ -158,40 +151,23 @@ export class AdoptionService {
     const baselineAdoptionPct = adoptionHistory[0].overall_adoption_pct
     const historicalTrend = adoptionHistory.map((h: any) => h.overall_adoption_pct).slice(0, 10)
 
-    // Use Claude to forecast
     try {
-      const message = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 500,
-        thinking: {
-          type: 'enabled',
-          budget_tokens: 2000,
-        },
-        messages: [
-          {
-            role: 'user',
-            content: `
-            Based on the historical adoption trend (${historicalTrend.join(
-              ', '
-            )}%), forecast the adoption percentage for the next ${forecastDays} days.
+      const prompt = `Based on the historical adoption trend (${historicalTrend.join(', ')}%), forecast the adoption percentage for the next ${forecastDays} days.
 
-            Also estimate:
-            1. Confidence level (0-1)
-            2. Trend (accelerating, stable, declining)
-            3. Top 3 recommendations to improve adoption
+Also estimate:
+1. Confidence level (0-1)
+2. Trend (accelerating, stable, declining)
+3. Top 3 recommendations to improve adoption
 
-            Provide JSON response: {forecastedAdoptionPct, confidence, trend, recommendations}
-            `,
-          },
-        ],
+Provide JSON response: {forecastedAdoptionPct, confidence, trend, recommendations}`
+
+      const response = await generateText(prompt, {
+        maxOutputTokens: 500,
+        responseMimeType: 'application/json',
+        disableThinking: true,
       })
 
-      const responseText = message.content
-        .filter((block) => block.type === 'text')
-        .map((block) => (block.type === 'text' ? block.text : ''))
-        .join('')
-
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      const jsonMatch = response.result.match(/\{[\s\S]*\}/)
       const forecast = jsonMatch ? JSON.parse(jsonMatch[0]) : null
 
       return {
@@ -287,26 +263,19 @@ export class AdoptionService {
 
     for (const adoption of lowAdoption || []) {
       try {
-        const message = await this.anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 300,
-          messages: [
-            {
-              role: 'user',
-              content: `
-              Feature "${(adoption.features as any)?.name}" has only ${adoption.adoption_pct}% adoption.
-              Recent support tickets: ${tickets?.map((t) => t.title).join(', ') || 'None'}
+        const blockerPrompt = `Feature "${(adoption.features as any)?.name}" has only ${adoption.adoption_pct}% adoption.
+Recent support tickets: ${tickets?.map((t) => t.title).join(', ') || 'None'}
 
-              Analyze what might be blocking adoption. Provide JSON:
-              {type: 'technical'|'training'|'organizational'|'business', factors: [], recommendations: []}
-              `,
-            },
-          ],
+Analyze what might be blocking adoption. Provide JSON:
+{type: 'technical'|'training'|'organizational'|'business', factors: [], recommendations: []}`
+
+        const blockerResponse = await generateText(blockerPrompt, {
+          maxOutputTokens: 300,
+          responseMimeType: 'application/json',
+          disableThinking: true,
         })
 
-        const textContent = message.content.find((b) => b.type === 'text')
-        const text = textContent && textContent.type === 'text' ? textContent.text : ''
-        const jsonMatch = text.match(/\{[\s\S]*\}/)
+        const jsonMatch = blockerResponse.result.match(/\{[\s\S]*\}/)
         const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
 
         blockers.push({

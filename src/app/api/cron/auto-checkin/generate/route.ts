@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateText } from '@/lib/llm/gateway'
 import { loadInstruction } from '@/lib/ai/load-instruction'
 
 export const maxDuration = 300 // 5 minutes
@@ -21,7 +21,6 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient() as any
-  const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
   let generated = 0
   let skipped = 0
   let errors: string[] = []
@@ -146,9 +145,12 @@ Retorne EXATAMENTE neste formato JSON:
   "body": "corpo aqui"
 }`
 
-        const model = genai.getGenerativeModel({ model: 'gemini-1.5-flash' })
-        const result = await model.generateContent(prompt)
-        const responseText = result.response.text()
+        const result = await generateText(prompt, {
+          maxOutputTokens: 500,
+          responseMimeType: 'application/json',
+          disableThinking: true,
+        })
+        const responseText = result.result
 
         // Parse JSON response
         const match = responseText.match(/\{[\s\S]*\}/)

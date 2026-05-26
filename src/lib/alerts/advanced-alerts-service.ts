@@ -1,15 +1,11 @@
-import { Anthropic } from '@anthropic-ai/sdk'
+import { generateText } from '@/lib/llm/gateway'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export class AdvancedAlertsService {
   private supabase: SupabaseClient
-  private anthropic: Anthropic
 
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    })
   }
 
   /**
@@ -175,27 +171,13 @@ export class AdvancedAlertsService {
         .eq('id', event.account_id)
         .single()
 
-      // Use Claude to suggest response
       let suggestedResponse = 'Schedule check-in call to address concerns'
       try {
-        const message = await this.anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 200,
-          messages: [
-            {
-              role: 'user',
-              content: `Customer feedback: "${event.sentiment_text}"
-
-              Suggest a 1-sentence response that addresses their concern. Be empathetic and action-oriented.`,
-            },
-          ],
-        })
-
-        const textContent = message.content.find((b) => b.type === 'text')
-        suggestedResponse =
-          textContent && textContent.type === 'text'
-            ? textContent.text
-            : suggestedResponse
+        const aiResponse = await generateText(
+          `Customer feedback: "${event.sentiment_text}"\n\nSuggest a 1-sentence response that addresses their concern. Be empathetic and action-oriented.`,
+          { maxOutputTokens: 200 }
+        )
+        suggestedResponse = aiResponse.result || suggestedResponse
       } catch (error) {
         console.error('[AdvancedAlerts] Sentiment analysis error:', error)
       }

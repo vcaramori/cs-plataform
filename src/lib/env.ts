@@ -23,8 +23,8 @@ const DUMMY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy'
 export const env = {
   gemini: {
     apiKey: required('GEMINI_API_KEY'),
-    embeddingModel: process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-004',
-    embeddingDimensions: parseInt(process.env.GEMINI_EMBEDDING_DIMENSIONS ?? '768'),
+    embeddingModel: process.env.GEMINI_EMBEDDING_MODEL ?? 'text-embedding-005',
+    embeddingDimensions: parseInt(process.env.GEMINI_EMBEDDING_DIMENSIONS ?? '1536'),
     flashModel: process.env.GEMINI_FLASH_MODEL ?? 'gemini-flash-latest',
     proModel: process.env.GEMINI_PRO_MODEL ?? 'gemini-pro-latest',
   },
@@ -75,6 +75,9 @@ export const env = {
     port: parseInt(process.env.SMTP_PORT ?? '587'),
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
+  },
+  crypto: {
+    encryptionKey: process.env.ENCRYPTION_KEY ?? '',
   },
   app: {
     instanceName: process.env.NEXT_PUBLIC_INSTANCE_NAME ?? 'CS-Continuum',

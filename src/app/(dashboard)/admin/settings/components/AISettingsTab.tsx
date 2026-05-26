@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -9,8 +9,77 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SectionHeader } from '@/components/ui/section-header'
 import { toast } from 'sonner'
-import { Loader2, TestTube2, RotateCcw, Sparkles, MessageSquare, TicketCheck, Brain, Mail, User, Zap } from 'lucide-react'
+import { Loader2, TestTube2, RotateCcw, Sparkles, MessageSquare, TicketCheck, Brain, Mail, User, Zap, CheckCircle2, XCircle, AlertTriangle, Key, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+// ─── Provider Definitions ───────────────────────────────────────────────────
+
+type LLMProvider = 'gemini' | 'claude' | 'openai' | 'groq'
+
+interface ProviderDef {
+  id: LLMProvider
+  label: string
+  supportsEmbeddings: boolean
+  textModels: { id: string; label: string }[]
+  embeddingModels: { id: string; label: string; dimensions: number }[]
+}
+
+const PROVIDERS: ProviderDef[] = [
+  {
+    id: 'gemini',
+    label: 'Google Gemini',
+    supportsEmbeddings: true,
+    textModels: [
+      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Rápido)' },
+      { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Avançado)' },
+      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Legado)' },
+    ],
+    embeddingModels: [
+      { id: 'text-embedding-005', label: 'text-embedding-005 (1536d)', dimensions: 1536 },
+      { id: 'text-embedding-004', label: 'text-embedding-004 (768d)', dimensions: 768 },
+    ],
+  },
+  {
+    id: 'claude',
+    label: 'Anthropic Claude',
+    supportsEmbeddings: false,
+    textModels: [
+      { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Rápido, econômico)' },
+      { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Balanceado)' },
+      { id: 'claude-opus-4-7', label: 'Claude Opus 4.7 (Máxima capacidade)' },
+    ],
+    embeddingModels: [],
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    supportsEmbeddings: true,
+    textModels: [
+      { id: 'gpt-4o', label: 'GPT-4o (Avançado)' },
+      { id: 'gpt-4o-mini', label: 'GPT-4o Mini (Rápido, econômico)' },
+      { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini (Novo)' },
+      { id: 'o3-mini', label: 'o3-mini (Raciocínio)' },
+    ],
+    embeddingModels: [
+      { id: 'text-embedding-3-small', label: 'text-embedding-3-small (1536d)', dimensions: 1536 },
+      { id: 'text-embedding-3-large', label: 'text-embedding-3-large (3072d)', dimensions: 3072 },
+    ],
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    supportsEmbeddings: false,
+    textModels: [
+      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Versátil)' },
+      { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Ultra-rápido)' },
+      { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B (32K contexto)' },
+      { id: 'gemma2-9b-it', label: 'Gemma 2 9B (Google)' },
+    ],
+    embeddingModels: [],
+  },
+]
+
+const EMBEDDING_PROVIDERS = PROVIDERS.filter(p => p.supportsEmbeddings)
 
 // ─── Defaults de cada instrução ─────────────────────────────────────────────
 
@@ -42,7 +111,7 @@ PADRÃO PLANNERA — toda resposta deve ter:
 3. Explicação objetiva ou status
 4. Próximos passos ou orientação
 5. Fechamento empático
-6. Assinatura: "Atenciosamente, [Nome do agente]\nEquipe de Suporte – Plannera"
+6. Assinatura: "Atenciosamente, [Nome do agente]\\nEquipe de Suporte – Plannera"
 
 AVALIAÇÃO DOS 5 CRITÉRIOS (0-10): Tom, Estrutura, Empatia, Clareza, Alinhamento.
 Nota final = Média Harmônica dos 5 critérios. show_alert=true se nota < 6.`,
@@ -56,10 +125,6 @@ CRITÉRIOS DE SCORE:
 - 20-39: Alto risco, intervenção necessária
 - 0-19: Risco crítico de churn
 
-REGRAS ESPECIAIS:
-- Tickets com internal_level "critical" pesam 2x mais negativamente
-- Tickets com sla_breach_resolution = true adicionam "sla_breached" aos risk_factors
-
 Retorne APENAS JSON válido com: score, trend, justification, risk_factors, confidence.`,
 
   instruction_auto_checkin: `Você é um gerente de sucesso do cliente em uma plataforma SaaS. Gere um email de check-in profissional e personalizado.
@@ -69,7 +134,6 @@ INSTRUÇÕES:
 2. Gere um corpo PROFISSIONAL (máx 200 palavras)
 3. Tom: consultivo, não vendedor
 4. Mencione o período de silêncio e sugira uma breve call de alinhamento
-5. Não use placeholders — personalize de verdade com os dados fornecidos
 
 Retorne APENAS JSON com: subject, body.`,
 }
@@ -130,34 +194,60 @@ const INSTRUCTION_CONFIGS: InstructionConfig[] = [
 
 // ─── Defaults dos parâmetros do modelo ───────────────────────────────────────
 
-const DEFAULT_AI = {
-  llm_model: 'claude-haiku-4-5-20251001',
+interface AIValues {
+  text_provider: LLMProvider
+  text_model: string
+  embedding_provider: LLMProvider
+  embedding_model: string
+  embedding_dimensions: number
+  rag_top_k: number
+  rag_confidence_threshold: number
+  rag_cache_ttl_hours: number
+  max_tokens_response: number
+  temperature: number
+}
+
+const DEFAULT_AI: AIValues = {
+  text_provider: 'gemini',
+  text_model: 'gemini-2.5-flash',
+  embedding_provider: 'gemini',
+  embedding_model: 'text-embedding-005',
+  embedding_dimensions: 1536,
   rag_top_k: 5,
   rag_confidence_threshold: 0.7,
   rag_cache_ttl_hours: 24,
-  embedding_model: 'text-embedding-004',
   max_tokens_response: 2048,
   temperature: 0.1,
 }
 
-const MODELS = [
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Rápido, econômico)' },
-  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Balanceado)' },
-  { value: 'claude-opus-4-7', label: 'Claude Opus 4.7 (Máxima capacidade)' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Google)' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Google)' },
-]
-
 // ─── Componente ──────────────────────────────────────────────────────────────
 
 export function AISettingsTab() {
-  const [aiValues, setAiValues] = useState(DEFAULT_AI)
+  const [aiValues, setAiValues] = useState<AIValues>(DEFAULT_AI)
+  const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>({
+    gemini: '', claude: '', openai: '', groq: '',
+  })
+  const [savedKeys, setSavedKeys] = useState<Record<LLMProvider, boolean>>({
+    gemini: false, claude: false, openai: false, groq: false,
+  })
+  const [testingProvider, setTestingProvider] = useState<LLMProvider | null>(null)
+  const [testResults, setTestResults] = useState<Record<LLMProvider, 'ok' | 'fail' | null>>({
+    gemini: null, claude: null, openai: null, groq: null,
+  })
   const [instructions, setInstructions] = useState<Record<string, string>>(() =>
     Object.fromEntries(INSTRUCTION_CONFIGS.map(c => [c.key, '']))
   )
   const [saving, setSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [reindexing, setReindexing] = useState(false)
+  const [initialEmbeddingProvider, setInitialEmbeddingProvider] = useState<string>('gemini')
+  const [initialEmbeddingModel, setInitialEmbeddingModel] = useState<string>('text-embedding-004')
+
+  const textProvider = useMemo(() => PROVIDERS.find(p => p.id === aiValues.text_provider)!, [aiValues.text_provider])
+  const embeddingProvider = useMemo(() => EMBEDDING_PROVIDERS.find(p => p.id === aiValues.embedding_provider)!, [aiValues.embedding_provider])
+
+  const embeddingChanged = aiValues.embedding_provider !== initialEmbeddingProvider ||
+    aiValues.embedding_model !== initialEmbeddingModel
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -165,6 +255,15 @@ export function AISettingsTab() {
       .then(data => {
         if (data.rag_ai_settings && typeof data.rag_ai_settings === 'object') {
           setAiValues(v => ({ ...v, ...data.rag_ai_settings }))
+          setInitialEmbeddingProvider(data.rag_ai_settings.embedding_provider ?? 'gemini')
+          setInitialEmbeddingModel(data.rag_ai_settings.embedding_model ?? 'text-embedding-004')
+        }
+        if (data.llm_provider_keys && typeof data.llm_provider_keys === 'object') {
+          const keys = data.llm_provider_keys as Record<string, string>
+          setSavedKeys({
+            gemini: !!keys.gemini, claude: !!keys.claude,
+            openai: !!keys.openai, groq: !!keys.groq,
+          })
         }
         const loaded: Record<string, string> = {}
         for (const config of INSTRUCTION_CONFIGS) {
@@ -177,8 +276,28 @@ export function AISettingsTab() {
       .finally(() => setLoading(false))
   }, [])
 
-  function setAi(key: keyof typeof DEFAULT_AI, val: string | number) {
-    setAiValues(v => ({ ...v, [key]: val }))
+  function setAi<K extends keyof AIValues>(key: K, val: AIValues[K]) {
+    setAiValues(v => {
+      const next = { ...v, [key]: val }
+      // Auto-select first model when provider changes
+      if (key === 'text_provider') {
+        const p = PROVIDERS.find(p => p.id === val)
+        if (p) next.text_model = p.textModels[0]?.id ?? ''
+      }
+      if (key === 'embedding_provider') {
+        const p = EMBEDDING_PROVIDERS.find(p => p.id === val)
+        if (p && p.embeddingModels[0]) {
+          next.embedding_model = p.embeddingModels[0].id
+          next.embedding_dimensions = p.embeddingModels[0].dimensions
+        }
+      }
+      if (key === 'embedding_model') {
+        const p = EMBEDDING_PROVIDERS.find(p => p.id === next.embedding_provider)
+        const model = p?.embeddingModels.find(m => m.id === val)
+        if (model) next.embedding_dimensions = model.dimensions
+      }
+      return next
+    })
   }
 
   function setInstruction(key: string, val: string) {
@@ -190,36 +309,101 @@ export function AISettingsTab() {
     toast.info('Instrução restaurada para o padrão ao salvar')
   }
 
+  async function handleTestProvider(provider: LLMProvider) {
+    const key = apiKeys[provider]
+    if (!key && !savedKeys[provider]) {
+      toast.error('Insira a API Key antes de testar')
+      return
+    }
+
+    setTestingProvider(provider)
+    setTestResults(v => ({ ...v, [provider]: null }))
+
+    try {
+      const res = await fetch('/api/admin/settings/test-provider', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider,
+          apiKey: key || 'USE_SAVED',
+          model: provider === aiValues.text_provider ? aiValues.text_model : undefined,
+        }),
+      })
+      const data = await res.json()
+      setTestResults(v => ({ ...v, [provider]: data.ok ? 'ok' : 'fail' }))
+      if (data.ok) toast.success(`${provider} — Conexão OK`)
+      else toast.error(`${provider} — ${data.error}`)
+    } catch {
+      setTestResults(v => ({ ...v, [provider]: 'fail' }))
+      toast.error(`${provider} — Erro de conexão`)
+    } finally {
+      setTestingProvider(null)
+    }
+  }
+
   async function handleSave() {
     setSaving(true)
     try {
+      const llmKeys: Record<string, string> = {}
+      for (const p of ['gemini', 'claude', 'openai', 'groq'] as LLMProvider[]) {
+        if (apiKeys[p].trim()) llmKeys[p] = apiKeys[p]
+      }
+
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           module: 'ai',
-          settings: { ...aiValues, ...instructions },
+          settings: {
+            ...aiValues,
+            ...instructions,
+            ...(Object.keys(llmKeys).length > 0 ? { llm_keys: llmKeys } : {}),
+          },
         }),
       })
-      if (!res.ok) throw new Error()
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      // Update saved keys state
+      for (const p of ['gemini', 'claude', 'openai', 'groq'] as LLMProvider[]) {
+        if (apiKeys[p].trim()) {
+          setSavedKeys(v => ({ ...v, [p]: true }))
+          setApiKeys(v => ({ ...v, [p]: '' }))
+        }
+      }
+
+      setInitialEmbeddingProvider(aiValues.embedding_provider)
+      setInitialEmbeddingModel(aiValues.embedding_model)
+
       toast.success('Configurações de IA salvas com sucesso')
-    } catch {
-      toast.error('Erro ao salvar configurações')
+
+      if (data.reindexTriggered) {
+        toast.warning('Provider de embedding alterado — re-indexação necessária.', {
+          action: {
+            label: 'Re-indexar agora',
+            onClick: handleReindex,
+          },
+          duration: 10000,
+        })
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar configurações')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleTest() {
-    setTesting(true)
+  async function handleReindex() {
+    setReindexing(true)
     try {
-      const res = await fetch('/api/rag/query')
-      if (res.ok) toast.success('Conexão com IA OK')
-      else toast.error('Falha na conexão com IA')
-    } catch {
-      toast.error('Erro ao testar conexão')
+      const res = await fetch('/api/admin/settings/reindex-embeddings', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success(data.message || 'Re-indexação iniciada')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao iniciar re-indexação')
     } finally {
-      setTesting(false)
+      setReindexing(false)
     }
   }
 
@@ -234,24 +418,160 @@ export function AISettingsTab() {
         </div>
       ) : (
         <>
-          {/* Parâmetros do modelo */}
+          {/* ═══ Provider Configuration ═══ */}
+          <Card className="p-6 space-y-6">
+            <div className="flex items-center gap-3">
+              <Key className="w-5 h-5 text-plannera-orange" />
+              <h3 className="font-bold text-content-primary text-sm uppercase tracking-widest">Configuração de Providers</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Text Provider */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Provider de Texto (LLM)</Label>
+                  <Select value={aiValues.text_provider} onValueChange={v => setAi('text_provider', v as LLMProvider)}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      {PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Texto</Label>
+                  <Select value={aiValues.text_model} onValueChange={v => setAi('text_model', v)}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      {textProvider.textModels.map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Embedding Provider */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Provider de Embeddings</Label>
+                  <Select value={aiValues.embedding_provider} onValueChange={v => setAi('embedding_provider', v as LLMProvider)}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      {EMBEDDING_PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Embedding</Label>
+                  <Select value={aiValues.embedding_model} onValueChange={v => setAi('embedding_model', v)}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      {embeddingProvider?.embeddingModels.map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] text-content-secondary">
+                  <span className="font-bold">Dimensões:</span>
+                  <span className="font-mono font-black">{aiValues.embedding_dimensions}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Embedding change warning */}
+            {embeddingChanged && (
+              <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                    Alterar o provider ou modelo de embeddings requer re-indexação completa.
+                  </p>
+                  <p className="text-[10px] text-content-secondary mt-1">
+                    Todos os vetores existentes serão removidos e recriados com o novo modelo.
+                    Isso pode levar vários minutos dependendo do volume de dados.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* API Keys */}
+            <div className="space-y-3 pt-2 border-t border-border-divider">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">API Keys dos Providers</h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {PROVIDERS.map(p => (
+                  <div key={p.id} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">
+                        {p.label}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        {savedKeys[p.id] && !apiKeys[p.id] && (
+                          <span className="flex items-center gap-1 text-[9px] font-bold text-success">
+                            <CheckCircle2 className="w-3 h-3" /> Configurada
+                          </span>
+                        )}
+                        {testResults[p.id] === 'ok' && (
+                          <span className="flex items-center gap-1 text-[9px] font-bold text-success">
+                            <CheckCircle2 className="w-3 h-3" /> OK
+                          </span>
+                        )}
+                        {testResults[p.id] === 'fail' && (
+                          <span className="flex items-center gap-1 text-[9px] font-bold text-destructive">
+                            <XCircle className="w-3 h-3" /> Falhou
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        value={apiKeys[p.id]}
+                        onChange={e => setApiKeys(v => ({ ...v, [p.id]: e.target.value }))}
+                        placeholder={savedKeys[p.id] ? '••••••••••••' : 'Cole a API Key aqui'}
+                        className="bg-surface-background/50 border-border-divider rounded-xl text-xs font-mono"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestProvider(p.id)}
+                        disabled={testingProvider === p.id || (!apiKeys[p.id] && !savedKeys[p.id])}
+                        className="gap-1.5 flex-shrink-0 h-9"
+                      >
+                        {testingProvider === p.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <TestTube2 className="w-3.5 h-3.5" />
+                        )}
+                        <span className="text-[10px]">Testar</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* ═══ RAG & Model Parameters ═══ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="p-6 space-y-5">
-              <h3 className="font-bold text-content-primary text-sm">Modelo de Linguagem</h3>
-
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo Principal (LLM)</Label>
-                <Select value={aiValues.llm_model} onValueChange={v => setAi('llm_model', v)}>
-                  <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider">
-                    {MODELS.map(m => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <h3 className="font-bold text-content-primary text-sm">Parâmetros do Modelo</h3>
 
               <div className="space-y-1.5">
                 <div className="flex justify-between">
@@ -276,19 +596,6 @@ export function AISettingsTab() {
               <h3 className="font-bold text-content-primary text-sm">Parâmetros RAG</h3>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Embeddings</Label>
-                <Select value={aiValues.embedding_model} onValueChange={v => setAi('embedding_model', v)}>
-                  <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-surface-card border-border-divider">
-                    <SelectItem value="text-embedding-004">text-embedding-004 (Google)</SelectItem>
-                    <SelectItem value="text-embedding-3-small">text-embedding-3-small (OpenAI)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Top-K resultados para contexto</Label>
                 <Input type="number" min={1} max={20} value={aiValues.rag_top_k}
                   onChange={e => setAi('rag_top_k', Number(e.target.value))}
@@ -311,10 +618,24 @@ export function AISettingsTab() {
                   onChange={e => setAi('rag_cache_ttl_hours', Number(e.target.value))}
                   className="bg-surface-background/50 border-border-divider rounded-xl" />
               </div>
+
+              {/* Re-index button */}
+              <div className="pt-3 border-t border-border-divider">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReindex}
+                  disabled={reindexing}
+                  className="gap-2 text-[10px] w-full"
+                >
+                  {reindexing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  Re-indexar todos os embeddings
+                </Button>
+              </div>
             </Card>
           </div>
 
-          {/* Instruções dos Assistentes */}
+          {/* ═══ Instruções dos Assistentes ═══ */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 pb-1">
               <h3 className="text-sm font-bold text-content-primary uppercase tracking-widest">Instruções dos Assistentes</h3>
@@ -401,10 +722,9 @@ export function AISettingsTab() {
       )}
 
       <div className="flex justify-between items-center pt-4 border-t border-border-divider">
-        <Button variant="outline" onClick={handleTest} disabled={testing || loading} className="gap-2">
-          {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube2 className="w-4 h-4" />}
-          Testar Conexão
-        </Button>
+        <div className="text-[9px] text-content-secondary">
+          Provider: <span className="font-bold">{textProvider?.label}</span> · Embedding: <span className="font-bold">{embeddingProvider?.label} ({aiValues.embedding_dimensions}d)</span>
+        </div>
         <Button onClick={handleSave} disabled={saving || loading} className="bg-plannera-orange hover:bg-plannera-orange/90 gap-2">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           Salvar Configurações

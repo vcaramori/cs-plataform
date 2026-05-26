@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { encrypt, maskApiKey } from '@/lib/crypto/encryption'
+import { invalidateLLMSettingsCache } from '@/lib/llm/settings'
+import type { LLMProvider } from '@/lib/llm/providers/types'
 
 const INSTRUCTION_KEYS = [
   'rag_system_instruction',
@@ -9,6 +12,8 @@ const INSTRUCTION_KEYS = [
   'instruction_shadow_score',
   'instruction_auto_checkin',
 ] as const
+
+const LLM_PROVIDERS: LLMProvider[] = ['gemini', 'claude', 'openai', 'groq']
 
 async function requireAdmin() {
   const supabase = await getSupabaseServerClient()
@@ -33,13 +38,24 @@ export async function GET() {
   const { data, error } = await (admin as any)
     .from('app_settings')
     .select('key, value')
-    .in('key', ['rag_ai_settings', ...INSTRUCTION_KEYS])
+    .in('key', ['rag_ai_settings', 'llm_provider_keys', ...INSTRUCTION_KEYS])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const result: Record<string, unknown> = {}
   for (const row of data ?? []) {
-    result[row.key] = row.value
+    if (row.key === 'llm_provider_keys') {
+      const keys = row.value as Record<string, string> | null
+      const masked: Record<string, string> = {}
+      if (keys) {
+        for (const provider of LLM_PROVIDERS) {
+          masked[provider] = keys[provider] ? maskApiKey('configured') : ''
+        }
+      }
+      result.llm_provider_keys = masked
+    } else {
+      result[row.key] = row.value
+    }
   }
 
   return NextResponse.json(result)
@@ -49,63 +65,131 @@ export async function POST(request: Request) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json()
-  const { module, settings } = body as { module: string; settings: Record<string, unknown> }
+  try {
+    const body = await request.json()
+    const { module, settings } = body as { module: string; settings: Record<string, unknown> }
 
-  if (module !== 'ai') {
-    return NextResponse.json({ error: 'Module not supported' }, { status: 400 })
+    if (module !== 'ai') {
+      return NextResponse.json({ error: 'Module not supported' }, { status: 400 })
+    }
+
+    const admin = getSupabaseAdminClient()
+    const db = admin as any
+
+    const {
+      rag_system_instruction, instruction_chat, instruction_review_reply,
+      instruction_shadow_score, instruction_auto_checkin,
+      llm_keys,
+      ...aiSettings
+    } = settings
+
+    // Detect embedding provider change for re-index
+    let reindexTriggered = false
+    if (aiSettings.embedding_provider || aiSettings.embedding_model) {
+      const { data: currentSettings } = await db
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'rag_ai_settings')
+        .single()
+
+      const current = currentSettings?.value ?? {}
+      if (
+        (aiSettings.embedding_provider && aiSettings.embedding_provider !== current.embedding_provider) ||
+        (aiSettings.embedding_model && aiSettings.embedding_model !== current.embedding_model)
+      ) {
+        reindexTriggered = true
+      }
+    }
+
+    const upserts: any[] = [
+      {
+        key: 'rag_ai_settings',
+        value: aiSettings,
+        description: 'AI model and RAG engine parameters',
+        updated_by: user.id,
+      },
+      {
+        key: 'rag_system_instruction',
+        value: rag_system_instruction ?? '',
+        description: 'System instruction do Plannera Assistant (módulo Perguntar)',
+        updated_by: user.id,
+      },
+      {
+        key: 'instruction_chat',
+        value: instruction_chat ?? '',
+        description: 'System instruction do Chat Rápido',
+        updated_by: user.id,
+      },
+      {
+        key: 'instruction_review_reply',
+        value: instruction_review_reply ?? '',
+        description: 'System instruction do Revisor de Respostas',
+        updated_by: user.id,
+      },
+      {
+        key: 'instruction_shadow_score',
+        value: instruction_shadow_score ?? '',
+        description: 'System instruction do Shadow Health Score',
+        updated_by: user.id,
+      },
+      {
+        key: 'instruction_auto_checkin',
+        value: instruction_auto_checkin ?? '',
+        description: 'System instruction do Auto Check-in',
+        updated_by: user.id,
+      },
+    ]
+
+    // Encrypt and save API keys
+    if (llm_keys && typeof llm_keys === 'object') {
+      const keysObj = llm_keys as Record<string, string>
+      const encryptedKeys: Record<string, string> = {}
+
+      // Load existing encrypted keys to preserve unchanged ones
+      const { data: existingRow } = await db
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'llm_provider_keys')
+        .single()
+
+      const existingKeys = (existingRow?.value as Record<string, string>) ?? {}
+
+      const hasEncryptionKey = process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length === 64
+
+      for (const provider of LLM_PROVIDERS) {
+        const newKey = keysObj[provider]
+        if (newKey && newKey.trim().length > 0) {
+          if (!hasEncryptionKey) {
+            return NextResponse.json(
+              { error: 'ENCRYPTION_KEY não configurada no servidor. Defina uma chave hex de 64 caracteres na variável de ambiente.' },
+              { status: 500 }
+            )
+          }
+          encryptedKeys[provider] = encrypt(newKey)
+        } else if (existingKeys[provider]) {
+          encryptedKeys[provider] = existingKeys[provider]
+        }
+      }
+
+      upserts.push({
+        key: 'llm_provider_keys',
+        value: encryptedKeys,
+        description: 'Encrypted LLM provider API keys',
+        updated_by: user.id,
+      })
+    }
+
+    const { error } = await db
+      .from('app_settings')
+      .upsert(upserts, { onConflict: 'key' })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    invalidateLLMSettingsCache()
+
+    return NextResponse.json({ ok: true, reindexTriggered })
+  } catch (err: any) {
+    console.error('[Admin Settings POST] Error:', err)
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
   }
-
-  const admin = getSupabaseAdminClient()
-  const db = admin as any
-
-  const { rag_system_instruction, instruction_chat, instruction_review_reply,
-    instruction_shadow_score, instruction_auto_checkin, ...aiSettings } = settings
-
-  const upserts = [
-    {
-      key: 'rag_ai_settings',
-      value: aiSettings,
-      description: 'AI model and RAG engine parameters',
-      updated_by: user.id,
-    },
-    {
-      key: 'rag_system_instruction',
-      value: rag_system_instruction ?? '',
-      description: 'System instruction do Plannera Assistant (módulo Perguntar)',
-      updated_by: user.id,
-    },
-    {
-      key: 'instruction_chat',
-      value: instruction_chat ?? '',
-      description: 'System instruction do Chat Rápido',
-      updated_by: user.id,
-    },
-    {
-      key: 'instruction_review_reply',
-      value: instruction_review_reply ?? '',
-      description: 'System instruction do Revisor de Respostas',
-      updated_by: user.id,
-    },
-    {
-      key: 'instruction_shadow_score',
-      value: instruction_shadow_score ?? '',
-      description: 'System instruction do Shadow Health Score',
-      updated_by: user.id,
-    },
-    {
-      key: 'instruction_auto_checkin',
-      value: instruction_auto_checkin ?? '',
-      description: 'System instruction do Auto Check-in',
-      updated_by: user.id,
-    },
-  ]
-
-  const { error } = await db
-    .from('app_settings')
-    .upsert(upserts, { onConflict: 'key' })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ ok: true })
 }
