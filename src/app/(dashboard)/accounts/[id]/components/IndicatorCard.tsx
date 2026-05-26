@@ -45,7 +45,12 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
       ? `R$ ${target}` 
       : `${target} ${indicator.unit}`
 
-  // Calculate percentage relative to target for the bottom bar if applicable
+  const isPercent = indicator.unit === '%'
+  // Se for porcentagem, a altura total do card representa sempre 100%.
+  // Se não for, representa a meta (ou 120% do valor se não houver meta)
+  const maxDomain = isPercent ? 100 : (target > 0 ? Math.max(target, value) : value * 1.2 || 100)
+
+  // Barra inferior sempre baseada na porcentagem em relação à meta
   const pctOfTarget = target > 0 ? Math.min(100, Math.max(0, (value / target) * 100)) : 0
 
   return (
@@ -66,7 +71,7 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
                 <stop offset="95%" stopColor={color} stopOpacity={0.1} />
               </linearGradient>
             </defs>
-            <YAxis hide domain={[0, target > 0 ? Math.max(target, value) : 100]} />
+            <YAxis hide type="number" domain={[0, maxDomain]} allowDataOverflow={true} />
             <Area
               type="monotone"
               dataKey="score"

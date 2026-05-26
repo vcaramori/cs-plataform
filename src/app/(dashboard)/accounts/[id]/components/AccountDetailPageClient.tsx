@@ -287,7 +287,7 @@ export function AccountDetailPageClient({
           ) : (
             <section className="space-y-6">
               <div className="flex items-center gap-4 px-1 h-12">
-                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
                   <PlayCircle className="w-5 h-5" />
                 </div>
                 <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Playbooks</Text>
@@ -300,7 +300,7 @@ export function AccountDetailPageClient({
           <section className="space-y-6">
             <div className="flex items-center justify-between px-1 h-12">
               <div className="flex items-center gap-4">
-                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-success/10 text-emerald-600 dark:text-success border border-success-100 dark:border-success-500/20 shadow-sm">
+                <div className="p-2.5 rounded-xl bg-success/10 text-success border border-success/20 shadow-sm">
                   <Target className="w-5 h-5" />
                 </div>
                 <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Success Plan</Text>
@@ -312,7 +312,7 @@ export function AccountDetailPageClient({
           {/* Uso & Adoção Funcional */}
           <section className="space-y-6">
             <div className="flex items-center gap-4 px-1 h-12 mb-2">
-              <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-primary/10 text-brand-primary dark:text-primary border border-indigo-100 dark:border-primary/20 shadow-sm">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Adoção Executiva</Text>
