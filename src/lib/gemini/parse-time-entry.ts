@@ -66,7 +66,11 @@ Instruções para os outros campos:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
 - date: use ${today} se nenhuma data for mencionada; interprete "ontem", "segunda", etc. relativos à data de hoje`
 
-  const { result: raw } = await generateText(prompt, { allowFallback: true })
+  const { result: raw } = await generateText(prompt, { 
+    allowFallback: true,
+    disableThinking: true,
+    maxOutputTokens: 4096
+  })
   
   // Extração robusta de JSON (procura o primeiro { e o último })
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
