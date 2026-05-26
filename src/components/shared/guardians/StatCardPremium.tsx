@@ -43,13 +43,48 @@ export function StatCardPremium({
   const Icon = iconName ? (Icons[iconName] as LucideIcon) : IconProp
   
   const colorClasses = {
-    default: { text: 'text-plannera-primary', bg: 'bg-plannera-primary', border: 'hover:border-plannera-primary/50', glow: 'rgba(45,53,88,0.6)' },
-    demand: { text: 'text-plannera-demand', bg: 'bg-plannera-demand', border: 'hover:border-plannera-demand/50', glow: 'rgba(216,93,75,0.6)' },
-    destructive: { text: 'text-plannera-demand', bg: 'bg-plannera-demand', border: 'hover:border-plannera-demand/50', glow: 'rgba(216,93,75,0.6)' },
-    ds: { text: 'text-plannera-ds', bg: 'bg-plannera-ds', border: 'hover:border-plannera-ds/50', glow: 'rgba(43,160,157,0.6)' },
-    sop: { text: 'text-plannera-sop', bg: 'bg-plannera-sop', border: 'hover:border-plannera-sop/50', glow: 'rgba(58,76,138,0.6)' },
-    emerald: { text: 'text-success', bg: 'bg-success', border: 'hover:border-success-500/50', glow: 'rgba(16,185,129,0.6)' },
-    orange: { text: 'text-plannera-orange', bg: 'bg-plannera-orange', border: 'hover:border-plannera-orange/50', glow: 'rgba(247,148,30,0.6)' }
+    default: { 
+      text: 'text-plannera-primary dark:text-blue-400', 
+      bg: 'bg-plannera-primary dark:bg-blue-500', 
+      border: 'hover:border-plannera-primary/50 dark:hover:border-blue-500/30', 
+      glow: 'rgba(96,165,250,0.6)' 
+    },
+    demand: { 
+      text: 'text-plannera-demand dark:text-rose-400', 
+      bg: 'bg-plannera-demand dark:bg-rose-500', 
+      border: 'hover:border-plannera-demand/50 dark:hover:border-rose-500/30', 
+      glow: 'rgba(244,63,94,0.6)' 
+    },
+    destructive: { 
+      text: 'text-plannera-demand dark:text-rose-400', 
+      bg: 'bg-plannera-demand dark:bg-rose-500', 
+      border: 'hover:border-plannera-demand/50 dark:hover:border-rose-500/30', 
+      glow: 'rgba(244,63,94,0.6)' 
+    },
+    ds: { 
+      text: 'text-plannera-ds dark:text-cyan-400', 
+      bg: 'bg-plannera-ds dark:bg-cyan-500', 
+      border: 'hover:border-plannera-ds/50 dark:hover:border-cyan-500/30', 
+      glow: 'rgba(6,182,212,0.6)' 
+    },
+    sop: { 
+      text: 'text-plannera-sop dark:text-indigo-400', 
+      bg: 'bg-plannera-sop dark:bg-indigo-500', 
+      border: 'hover:border-plannera-sop/50 dark:hover:border-indigo-500/30', 
+      glow: 'rgba(99,102,241,0.6)' 
+    },
+    emerald: { 
+      text: 'text-success dark:text-emerald-400', 
+      bg: 'bg-success dark:bg-emerald-500', 
+      border: 'hover:border-success/50 dark:hover:border-emerald-500/30', 
+      glow: 'rgba(16,185,129,0.6)' 
+    },
+    orange: { 
+      text: 'text-plannera-orange dark:text-amber-400', 
+      bg: 'bg-plannera-orange dark:bg-amber-500', 
+      border: 'hover:border-plannera-orange/50 dark:hover:border-amber-500/30', 
+      glow: 'rgba(245,158,11,0.6)' 
+    }
   }
 
   const formattedValue = typeof value === 'number' 
@@ -66,7 +101,7 @@ export function StatCardPremium({
       onClick={onClick}
     >
       <Card variant="glass" className={cn(
-        "p-6 rounded-2xl bg-surface-background border border-border-divider shadow-inner group transition-all h-full flex flex-col justify-between relative overflow-hidden",
+        "p-6 rounded-2xl bg-surface-card/60 dark:bg-slate-800/40 border border-border-divider/50 dark:border-slate-800/40 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] backdrop-blur-md group transition-all h-full flex flex-col justify-between relative overflow-hidden",
         colorClasses[colorVariant].border,
         className
       )}>

@@ -138,28 +138,28 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
               </div>
            </div>
 
-           <div className="flex items-center gap-3 relative z-10">
-             {!isEditing && (
-               <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setIsEditing(true)}
-                  className="bg-plannera-orange/10 border-plannera-orange/20 text-plannera-orange hover:bg-plannera-orange hover:text-white font-black uppercase tracking-widest text-[9px] h-8 gap-2 shadow-lg px-3"
-               >
-                  <Edit2 className="w-3 h-3" /> Editar Log
-               </Button>
-             )}
-             {isEditing && (
+            <div className="flex items-center gap-3 relative z-10 mr-10">
+              {!isEditing && (
                 <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIsEditing(false)}
-                  className="text-content-secondary dark:text-content-secondary hover:text-foreground dark:hover:text-white hover:bg-surface-card dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[9px] h-8 px-3"
+                   variant="outline" 
+                   size="sm" 
+                   onClick={() => setIsEditing(true)}
+                   className="bg-plannera-orange/10 border-plannera-orange/20 text-plannera-orange hover:bg-plannera-orange hover:text-white font-black uppercase tracking-widest text-[10px] h-9 gap-2 shadow-lg px-4 rounded-xl"
                 >
-                   Cancelar
+                   <Edit2 className="w-3.5 h-3.5" /> Editar Log
                 </Button>
-             )}
-          </div>
+              )}
+              {isEditing && (
+                 <Button 
+                   variant="ghost" 
+                   size="sm" 
+                   onClick={() => setIsEditing(false)}
+                   className="text-content-secondary dark:text-content-secondary hover:text-foreground dark:hover:text-white hover:bg-surface-card dark:hover:bg-slate-800 font-black uppercase tracking-widest text-[10px] h-9 px-4 rounded-xl"
+                 >
+                    Cancelar
+                 </Button>
+              )}
+           </div>
         </div>
 
          <div className="p-6 space-y-5 max-h-[72vh] overflow-y-auto custom-scrollbar">
@@ -335,9 +335,9 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
                <Button 
                  variant="ghost" 
                  onClick={handleDelete}
-                 className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 font-black uppercase tracking-widest text-[9px] gap-1.5 h-8 px-4 rounded-lg transition-all"
+                 className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 font-black uppercase tracking-widest text-[10px] gap-2 h-10 px-5 rounded-xl transition-all"
                >
-                  <Trash2 className="w-4 h-4" /> Remover Registro
+                  <Trash2 className="w-4.5 h-4.5" /> Remover Registro
                </Button>
             ) : <div />}
 
@@ -346,9 +346,9 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
                   <Button 
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] h-9 px-6 shadow-xl shadow-plannera-orange/20 gap-2 group rounded-lg active:scale-[0.98] transition-all"
+                    className="bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-[0.2em] h-10 px-6 shadow-xl shadow-plannera-orange/20 gap-3 group rounded-xl active:scale-[0.98] transition-all"
                   >
-                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 group-hover:scale-125 transition-transform" />}
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 group-hover:scale-125 transition-transform" />}
                     Salvar Alterações
                   </Button>
                </div>
