@@ -68,10 +68,10 @@ export function hasAllPermissions(role: UserRole | null | undefined, permissions
 export function canManageUser(authRole: UserRole | null | undefined, targetRole: UserRole): boolean {
   if (!authRole) return false
 
-  // Super admin can manage anyone except their own role can't be changed
-  if (authRole === 'super_admin') return targetRole !== 'super_admin'
+  // Super admin can manage anyone, including other super_admins
+  if (authRole === 'super_admin') return true
 
-  // Admin can manage anyone except super_admin
+  // Admin can manage anyone except super_admin and other admins
   if (authRole === 'admin') return targetRole !== 'super_admin' && targetRole !== 'admin'
 
   // Head CS can only view

@@ -1,23 +1,26 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServerClient, getUserRole } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { hasPermission } from '@/lib/auth/permissions'
 
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+async function requireAuth(permission: 'view:users' | 'manage:roles') {
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Configurações de ambiente do Supabase ausentes')
-  }
+  const role = await getUserRole(user.id)
+  if (!role || !hasPermission(role, permission)) return null
 
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  })
+  return { user, role }
 }
 
 export async function GET() {
+  const auth = await requireAuth('view:users')
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const { data, error } = await supabaseAdmin
+    const admin = getSupabaseAdminClient()
+    const { data, error } = await admin
       .from('custom_roles')
       .select('*')
       .order('name', { ascending: true })
@@ -33,15 +36,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth('manage:roles')
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const supabaseAdmin = getSupabaseAdmin()
+    const admin = getSupabaseAdminClient()
     const { name, description, permissions } = await request.json()
 
     if (!name) {
-      return NextResponse.json({ error: 'O nome do perfil é obrigatório' }, { status: 400 })
+      return NextResponse.json({ error: 'O nome do perfil e obrigatorio' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await admin
       .from('custom_roles')
       .insert([{ name, description, permissions: permissions || [] }])
       .select()
@@ -58,20 +64,23 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireAuth('manage:roles')
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const supabaseAdmin = getSupabaseAdmin()
+    const admin = getSupabaseAdminClient()
     const { id, name, description, permissions } = await request.json()
 
     if (!id || !name) {
-      return NextResponse.json({ error: 'ID e nome são obrigatórios' }, { status: 400 })
+      return NextResponse.json({ error: 'ID e nome sao obrigatorios' }, { status: 400 })
     }
 
-    const updates: any = { name, description, updated_at: new Date().toISOString() }
+    const updates: Record<string, any> = { name, description, updated_at: new Date().toISOString() }
     if (permissions !== undefined) {
       updates.permissions = permissions
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await admin
       .from('custom_roles')
       .update(updates)
       .eq('id', id)
@@ -89,16 +98,19 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const auth = await requireAuth('manage:roles')
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const supabaseAdmin = getSupabaseAdmin()
+    const admin = getSupabaseAdminClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'ID do perfil é obrigatório' }, { status: 400 })
+      return NextResponse.json({ error: 'ID do perfil e obrigatorio' }, { status: 400 })
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await admin
       .from('custom_roles')
       .delete()
       .eq('id', id)

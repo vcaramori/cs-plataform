@@ -451,81 +451,80 @@ export default function RolesPage() {
                 </div>
 
                 {/* Grid de Permissões */}
-                <div className="border border-border-divider rounded-2xl overflow-hidden shadow-sm">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-2 md:grid-cols-6 bg-surface-background/70 border-b border-border-divider px-6 py-3 text-[10px] font-black uppercase tracking-widest text-content-secondary">
-                    <div className="col-span-1 md:col-span-2">Módulo / Tela</div>
-                    <div className="text-center">Visualizar</div>
-                    <div className="text-center">Criar</div>
-                    <div className="text-center">Editar</div>
-                    <div className="text-center">Excluir</div>
-                    <div className="text-center hidden md:block">Exportar</div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="divide-y divide-border-divider bg-surface-card">
-                    {selectedRole.permissions.map(p => (
-                      <div key={p.module} className="grid grid-cols-2 md:grid-cols-6 px-6 py-4 items-center gap-4 hover:bg-surface-background/20 transition-colors">
-                        <div className="col-span-1 md:col-span-2 space-y-1">
-                          <p className="text-xs font-bold text-content-primary">{p.label}</p>
-                          <p className="text-[9px] text-content-secondary font-mono tracking-tight opacity-55">module:{p.module}</p>
-                        </div>
-
-                        {/* Visualizar */}
-                        <div className="flex items-center justify-center gap-2 md:justify-center">
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-content-secondary md:hidden">Visualizar:</span>
-                          <Switch
-                            checked={p.view}
-                            onCheckedChange={c => onTogglePermission(p.module, 'view', c)}
-                            className="scale-90"
-                          />
-                        </div>
-
-                        {/* Criar */}
-                        <div className="flex items-center justify-center gap-2 md:justify-center">
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-content-secondary md:hidden">Criar:</span>
-                          <Switch
-                            checked={p.create}
-                            onCheckedChange={c => onTogglePermission(p.module, 'create', c)}
-                            className="scale-90"
-                            disabled={!p.view}
-                          />
-                        </div>
-
-                        {/* Editar */}
-                        <div className="flex items-center justify-center gap-2 md:justify-center">
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-content-secondary md:hidden">Editar:</span>
-                          <Switch
-                            checked={p.edit}
-                            onCheckedChange={c => onTogglePermission(p.module, 'edit', c)}
-                            className="scale-90"
-                            disabled={!p.view}
-                          />
-                        </div>
-
-                        {/* Excluir */}
-                        <div className="flex items-center justify-center gap-2 md:justify-center">
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-content-secondary md:hidden">Excluir:</span>
-                          <Switch
-                            checked={p.delete}
-                            onCheckedChange={c => onTogglePermission(p.module, 'delete', c)}
-                            className="scale-90"
-                            disabled={!p.view}
-                          />
-                        </div>
-
-                        {/* Exportar */}
-                        <div className="flex items-center justify-center gap-2 md:justify-center col-span-2 md:col-span-1">
-                          <span className="text-[8px] font-bold uppercase tracking-widest text-content-secondary md:hidden">Exportar:</span>
-                          <Switch
-                            checked={p.export}
-                            onCheckedChange={c => onTogglePermission(p.module, 'export', c)}
-                            className="scale-90"
-                            disabled={!p.view}
-                          />
-                        </div>
+                <div className="border border-border-divider rounded-2xl overflow-hidden shadow-sm bg-surface-card">
+                  <div className="overflow-x-auto scrollbar-thin">
+                    <div className="min-w-[768px]">
+                      {/* Table Header */}
+                      <div className="grid grid-cols-7 bg-surface-background/70 border-b border-border-divider px-5 py-2.5 text-[9px] font-black uppercase tracking-widest text-content-secondary">
+                        <div className="col-span-2">Módulo / Tela</div>
+                        <div className="text-center">Visualizar</div>
+                        <div className="text-center">Criar</div>
+                        <div className="text-center">Editar</div>
+                        <div className="text-center">Excluir</div>
+                        <div className="text-center">Exportar</div>
                       </div>
-                    ))}
+
+                      {/* Rows */}
+                      <div className="divide-y divide-border-divider">
+                        {selectedRole.permissions.map(p => (
+                          <div key={p.module} className="grid grid-cols-7 px-5 py-2.5 items-center gap-2 hover:bg-surface-background/20 transition-colors">
+                            <div className="col-span-2 space-y-0.5">
+                              <p className="text-xs font-extrabold text-content-primary leading-tight">{p.label}</p>
+                              <p className="text-[8px] text-content-secondary font-mono tracking-tight opacity-40">module:{p.module}</p>
+                            </div>
+
+                            {/* Visualizar */}
+                            <div className="flex items-center justify-center">
+                              <Switch
+                                checked={p.view}
+                                onCheckedChange={c => onTogglePermission(p.module, 'view', c)}
+                                className="scale-[0.8]"
+                              />
+                            </div>
+
+                            {/* Criar */}
+                            <div className="flex items-center justify-center">
+                              <Switch
+                                checked={p.create}
+                                onCheckedChange={c => onTogglePermission(p.module, 'create', c)}
+                                className="scale-[0.8]"
+                                disabled={!p.view}
+                              />
+                            </div>
+
+                            {/* Editar */}
+                            <div className="flex items-center justify-center">
+                              <Switch
+                                checked={p.edit}
+                                onCheckedChange={c => onTogglePermission(p.module, 'edit', c)}
+                                className="scale-[0.8]"
+                                disabled={!p.view}
+                              />
+                            </div>
+
+                            {/* Excluir */}
+                            <div className="flex items-center justify-center">
+                              <Switch
+                                checked={p.delete}
+                                onCheckedChange={c => onTogglePermission(p.module, 'delete', c)}
+                                className="scale-[0.8]"
+                                disabled={!p.view}
+                              />
+                            </div>
+
+                            {/* Exportar */}
+                            <div className="flex items-center justify-center">
+                              <Switch
+                                checked={p.export}
+                                onCheckedChange={c => onTogglePermission(p.module, 'export', c)}
+                                className="scale-[0.8]"
+                                disabled={!p.view}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
