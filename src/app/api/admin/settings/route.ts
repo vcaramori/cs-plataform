@@ -46,11 +46,10 @@ export async function GET() {
   for (const row of data ?? []) {
     if (row.key === 'llm_provider_keys') {
       const keys = row.value as Record<string, string> | null
+      // Return a simple boolean-like object: 'saved' = has key, '' = not configured
       const masked: Record<string, string> = {}
-      if (keys) {
-        for (const provider of LLM_PROVIDERS) {
-          masked[provider] = keys[provider] ? maskApiKey('configured') : ''
-        }
+      for (const provider of LLM_PROVIDERS) {
+        masked[provider] = keys && keys[provider] ? maskApiKey('configured') : ''
       }
       result.llm_provider_keys = masked
     } else {
@@ -60,6 +59,7 @@ export async function GET() {
 
   return NextResponse.json(result)
 }
+
 
 export async function POST(request: Request) {
   const user = await requireAdmin()

@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { SectionHeader } from '@/components/ui/section-header'
 import { toast } from 'sonner'
-import { Loader2, TestTube2, RotateCcw, Sparkles, MessageSquare, TicketCheck, Brain, Mail, User, Zap, CheckCircle2, XCircle, AlertTriangle, Key, RefreshCw } from 'lucide-react'
+import { Loader2, TestTube2, RotateCcw, Sparkles, MessageSquare, TicketCheck, Brain, Mail, User, Zap, CheckCircle2, XCircle, AlertTriangle, Key, RefreshCw, ShieldCheck, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ─── Provider Definitions ───────────────────────────────────────────────────
@@ -69,8 +70,8 @@ const PROVIDERS: ProviderDef[] = [
     label: 'Groq',
     supportsEmbeddings: false,
     textModels: [
-      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Versátil)' },
-      { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Ultra-rápido)' },
+      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile ⭐ (Free tier — recomendado)' },
+      { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant (Ultra-rápido, free tier)' },
       { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B (32K contexto)' },
       { id: 'gemma2-9b-it', label: 'Gemma 2 9B (Google)' },
     ],
@@ -514,6 +515,7 @@ export function AISettingsTab() {
               <h4 className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">API Keys dos Providers</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <TooltipProvider delayDuration={300}>
                 {PROVIDERS.map(p => (
                   <div key={p.id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -522,9 +524,20 @@ export function AISettingsTab() {
                       </Label>
                       <div className="flex items-center gap-2">
                         {savedKeys[p.id] && !apiKeys[p.id] && (
-                          <span className="flex items-center gap-1 text-[9px] font-bold text-success">
-                            <CheckCircle2 className="w-3 h-3" /> Configurada
-                          </span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="flex items-center gap-1 text-[9px] font-bold text-success cursor-help">
+                                <ShieldCheck className="w-3 h-3" /> Configurada
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[240px] text-center text-[11px]">
+                              <p className="font-semibold mb-1">🔐 Chave encriptada com AES-256</p>
+                              <p className="text-content-secondary leading-relaxed">
+                                Por segurança, a chave real nunca é retornada ao browser.
+                                Para substituir, cole a nova chave no campo e salve.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                         {testResults[p.id] === 'ok' && (
                           <span className="flex items-center gap-1 text-[9px] font-bold text-success">
@@ -539,13 +552,32 @@ export function AISettingsTab() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Input
-                        type="password"
-                        value={apiKeys[p.id]}
-                        onChange={e => setApiKeys(v => ({ ...v, [p.id]: e.target.value }))}
-                        placeholder={savedKeys[p.id] ? '••••••••••••' : 'Cole a API Key aqui'}
-                        className="bg-surface-background/50 border-border-divider rounded-xl text-xs font-mono"
-                      />
+                      <div className="relative flex-1">
+                        <Input
+                          type="password"
+                          value={apiKeys[p.id]}
+                          onChange={e => setApiKeys(v => ({ ...v, [p.id]: e.target.value }))}
+                          placeholder={savedKeys[p.id] ? '••••••••••••' : 'Cole a API Key aqui'}
+                          className="bg-surface-background/50 border-border-divider rounded-xl text-xs font-mono w-full"
+                        />
+                        {savedKeys[p.id] && !apiKeys[p.id] && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-help">
+                                <Info className="w-3 h-3 text-content-secondary/50 hover:text-content-secondary transition-colors" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[240px] text-center text-[11px]">
+                              <p className="font-semibold mb-1">🔐 Campo protegido</p>
+                              <p className="text-content-secondary leading-relaxed">
+                                A chave está salva e encriptada no servidor.
+                                Ela nunca é exibida por segurança.
+                                Cole uma nova chave aqui para substituí-la.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -563,6 +595,7 @@ export function AISettingsTab() {
                     </div>
                   </div>
                 ))}
+                </TooltipProvider>
               </div>
             </div>
           </Card>
