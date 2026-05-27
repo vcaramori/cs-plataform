@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { LayoutDashboard, Ticket, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -23,7 +23,7 @@ export function PortalHeader({ accountName, accountLogoUrl }: PortalHeaderProps)
   const router = useRouter()
 
   async function handleLogout() {
-    const supabase = createClient()
+    const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
     toast.success('Sessão encerrada')
     router.push('/portal/login')
