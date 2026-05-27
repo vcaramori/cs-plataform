@@ -92,7 +92,7 @@ export function AddContactModal({ open, onClose, accountId }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-3xl rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
         <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
@@ -135,20 +135,19 @@ export function AddContactModal({ open, onClose, accountId }: {
               </div>
             </div>
 
-            {/* Cargo */}
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Cargo *</Label>
-              <Input
-                {...register('role')}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                placeholder="Head de TI, CEO, Gerente de Projetos..."
-              />
-              {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
-            </div>
+            {/* Cargo, Senioridade, Influência e Tomador de Decisão Lado a Lado */}
+            <div className="grid grid-cols-12 gap-6 items-end">
+              <div className="col-span-4 space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Cargo *</Label>
+                <Input
+                  {...register('role')}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  placeholder="Head de TI, CEO..."
+                />
+                {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
+              </div>
 
-            {/* Senioridade e Nível de Influência */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
+              <div className="col-span-3 space-y-2">
                 <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Senioridade</Label>
                 <SearchableSelect
                   value={watch('seniority')}
@@ -157,7 +156,8 @@ export function AddContactModal({ open, onClose, accountId }: {
                   options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
                 />
               </div>
-              <div className="space-y-2">
+
+              <div className="col-span-3 space-y-2">
                 <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nível de Influência</Label>
                 <SearchableSelect
                   value={watch('influence_level')}
@@ -170,6 +170,20 @@ export function AddContactModal({ open, onClose, accountId }: {
                     { label: 'Bloqueador', value: 'Bloqueador' },
                   ]}
                 />
+              </div>
+
+              <div className="col-span-2 pb-3">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div
+                    onClick={() => setValue('decision_maker', !watch('decision_maker'))}
+                    className={`w-10 h-5 rounded-full transition-all relative shrink-0 ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-surface-card dark:bg-slate-700'}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
+                  </div>
+                  <span className="text-[#2d3558] dark:text-white text-[10px] font-bold uppercase tracking-wider leading-tight">
+                    Decisor
+                  </span>
+                </label>
               </div>
             </div>
 
@@ -211,19 +225,6 @@ export function AddContactModal({ open, onClose, accountId }: {
               />
               {errors.linkedin_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.linkedin_url.message}</p>}
             </div>
-
-            {/* Tomador de decisão */}
-            <label className="flex items-center gap-3 cursor-pointer group mt-2">
-              <div
-                onClick={() => setValue('decision_maker', !watch('decision_maker'))}
-                className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-surface-card dark:bg-slate-700'}`}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
-              </div>
-              <span className="text-[#2d3558] dark:text-white text-sm font-bold">
-                Tomador de decisão
-              </span>
-            </label>
           </div>
 
           {/* Footer fixo dentro do form */}
