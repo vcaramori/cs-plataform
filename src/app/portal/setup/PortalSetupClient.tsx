@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 
 export function PortalSetupClient() {
   const router = useRouter()
+  const [supabase] = useState(() => getSupabaseBrowserClient())
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -29,9 +30,7 @@ export function PortalSetupClient() {
     }
     setLoading(true)
     try {
-      const supabase = getSupabaseBrowserClient()
-
-      // Atualiza senha e nome
+      // Atualiza senha e nome utilizando a instância do Supabase carregada na montagem do componente
       const { error: pwErr } = await supabase.auth.updateUser({ password })
       if (pwErr) throw pwErr
 
