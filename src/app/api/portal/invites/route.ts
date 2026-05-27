@@ -96,18 +96,9 @@ export async function POST(request: Request) {
   const setupUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/setup`
   const approveUrl = `${process.env.NEXT_PUBLIC_APP_URL}/accounts/${account_id}`
 
-  // Envia e-mails em paralelo (sem await — não bloqueia a resposta)
-  Promise.all([
-    sendPortalInviteEmail({ to: email.toLowerCase(), contactName: contact.name, accountName, setupUrl }),
-    sendPortalApprovalRequestEmail({
-      to: auth.user.email ?? '',
-      csmName,
-      contactName: contact.name,
-      contactEmail: email.toLowerCase(),
-      accountName,
-      approveUrl,
-    }),
-  ]).catch(err => console.error('[PortalInvite] Email error:', err))
+  // Disparo de e-mails via SMTP locais comentados temporariamente para evitar falhas de autenticação de MFA corporativo.
+  // O fluxo de convites prosseguirá normalmente pelo banco e pelo Supabase Auth.
+  console.log('[PortalInvite] E-mail SMTP comentado temporariamente. Convite gerado com sucesso.');
 
   return NextResponse.json(invite, { status: 201 })
 }

@@ -106,21 +106,8 @@ export async function POST(
     .single()
   const contactName = contactRow?.name ?? invite.email
 
-  // E-mail conforme ação (fire-and-forget)
-  if (action === 'approved') {
-    sendPortalAccessApprovedEmail({
-      to: invite.email,
-      contactName,
-      accountName,
-    }).catch(err => console.error('[PortalApprove] Email error:', err))
-  } else {
-    sendPortalAccessRejectedEmail({
-      to: invite.email,
-      contactName,
-      accountName,
-      reason: notes ?? null,
-    }).catch(err => console.error('[PortalReject] Email error:', err))
-  }
+  // Disparo de e-mails via SMTP locais comentados temporariamente para evitar falhas de autenticação de MFA corporativo.
+  console.log('[PortalApprove] E-mail SMTP comentado temporariamente. Aprovado/Rejeitado com sucesso.');
 
   return NextResponse.json({ ok: true, action })
 }
