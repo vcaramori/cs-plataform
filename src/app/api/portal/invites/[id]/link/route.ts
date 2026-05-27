@@ -24,7 +24,11 @@ export async function POST(
   }
 
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const requestUrl = new URL(request.url)
+    const protocol = request.headers.get('x-forwarded-proto') || 'http'
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || requestUrl.host
+    const appUrl = `${protocol}://${host}`
+
     let setupLink = ''
 
     // Tenta gerar primeiro o link do tipo 'invite' (se o usuário for totalmente novo e não confirmado)

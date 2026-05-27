@@ -59,11 +59,16 @@ export async function POST(
     if (existingUser) {
       userId = existingUser.id
     } else {
+      const requestUrl = new URL(request.url)
+      const protocol = request.headers.get('x-forwarded-proto') || 'http'
+      const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || requestUrl.host
+      const appUrl = `${protocol}://${host}`
+
       // Cria usuário e envia e-mail de convite via Supabase Auth
       const { data: newUser, error: createErr } = await admin.auth.admin.inviteUserByEmail(
         invite.email,
         {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/portal/setup`,
+          redirectTo: `${appUrl}/portal/setup`,
           data: {
             portal_invite_id: invite.id,
             account_id: invite.account_id,

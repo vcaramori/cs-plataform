@@ -93,8 +93,13 @@ export async function POST(request: Request) {
 
   const accountName = accountRow.data?.name ?? 'sua conta'
   const csmName = csmRow.data?.full_name ?? 'Seu CSM'
-  const setupUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/setup`
-  const approveUrl = `${process.env.NEXT_PUBLIC_APP_URL}/accounts/${account_id}`
+  const requestUrl = new URL(request.url)
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || requestUrl.host
+  const appUrl = `${protocol}://${host}`
+
+  const setupUrl = `${appUrl}/portal/setup`
+  const approveUrl = `${appUrl}/accounts/${account_id}`
 
   // Disparo de e-mails via SMTP locais comentados temporariamente para evitar falhas de autenticação de MFA corporativo.
   // O fluxo de convites prosseguirá normalmente pelo banco e pelo Supabase Auth.
