@@ -32,7 +32,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { AlertCenter } from '@/components/alerts/AlertCenter'
-import { ThemeSelector } from './ThemeSelector'
+
 import { UserRole } from '@/lib/supabase/types'
 import { env } from '@/lib/env'
 
@@ -330,8 +330,6 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
               </p>
             </motion.div>
           )}
-
-          {!isCollapsed && <ThemeSelector />}
 
           {!isCollapsed && (
             <button
