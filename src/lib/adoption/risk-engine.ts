@@ -10,14 +10,17 @@ export async function getAccountPlanSummary(
   accountId: string,
   supabase: SupabaseClient
 ): Promise<PlanSummary> {
-  // 1. Get active contracts first
-  const { data: activeContracts } = await supabase
+  // 1. Busca contratos — prefere ativos, mas aceita qualquer status para não invisibilizar clientes expirados
+  const { data: allContracts } = await supabase
     .from('contracts')
-    .select('id, service_type')
+    .select('id, service_type, status, renewal_date')
     .eq('account_id', accountId)
-    .eq('status', 'active')
+    .order('renewal_date', { ascending: false })
+    .limit(5)
 
-  const activePlanNames = activeContracts?.map(c => c.service_type).filter(Boolean) || []
+  const activeContracts = allContracts?.filter(c => c.status === 'active') || []
+  const contractsToUse = activeContracts.length > 0 ? activeContracts : (allContracts || []).slice(0, 1)
+  const activePlanNames = contractsToUse.map(c => c.service_type).filter(Boolean)
 
   let plans: any[] = []
   let currentPlan: any = null
@@ -181,20 +184,34 @@ export async function getPortfolioSummary(
     .sort((a, b) => (a.risk === 'high' ? -1 : 1))
     .slice(0, 5)
 
-  // Clientes em risco: health < 40 OU flagados pela IA em account_risk_assessments
+  // Clientes em risco: health < 40 OU flagados pela IA OU com contrato expirado/churn
   const healthRiskAccounts = accounts
     .filter(a => Number(a.health_score) < 40)
     .map(a => ({ name: a.name, health_score: Number(a.health_score), risk_reason: 'Health Score Crítico (<40)' }))
 
-  const { data: riskRows } = await (supabase as any)
-    .from('account_risk_assessments')
-    .select('account_id, risk_score, sentiment_label')
-    .or('risk_score.gte.80,sentiment_label.in.(at-risk,negative)')
+  const [{ data: riskRows }, { data: expiredContracts }] = await Promise.all([
+    (supabase as any)
+      .from('account_risk_assessments')
+      .select('account_id, risk_score, sentiment_label')
+      .or('risk_score.gte.80,sentiment_label.in.(at-risk,negative)'),
+    (supabase as any)
+      .from('contracts')
+      .select('account_id, renewal_date, status')
+      .or('status.eq.churned,status.eq.at-risk,status.eq.expired'),
+  ])
+
+  const today = new Date()
+  const expiredContractAccountIds = new Set(
+    (expiredContracts || [])
+      .filter((c: any) => ['churned', 'expired'].includes(c.status) || (c.renewal_date && new Date(c.renewal_date) < today))
+      .map((c: any) => c.account_id)
+  )
 
   const healthRiskIds = new Set(accounts.filter(a => Number(a.health_score) < 40).map(a => a.id))
+
   const aiRiskAccounts = (accounts as any[])
     .filter(a => {
-      if (healthRiskIds.has(a.id)) return false // já incluso acima
+      if (healthRiskIds.has(a.id)) return false
       return (riskRows || []).some((r: any) => r.account_id === a.id)
     })
     .map(a => {
@@ -206,7 +223,22 @@ export async function getPortfolioSummary(
       }
     })
 
-  const at_risk_accounts = [...healthRiskAccounts, ...aiRiskAccounts]
+  const alreadyRiskIds = new Set([...healthRiskIds, ...(accounts as any[]).filter(a => (riskRows || []).some((r: any) => r.account_id === a.id)).map((a: any) => a.id)])
+  const contractRiskAccounts = (accounts as any[])
+    .filter(a => expiredContractAccountIds.has(a.id) && !alreadyRiskIds.has(a.id))
+    .map(a => {
+      const contract = (expiredContracts || []).find((c: any) => c.account_id === a.id)
+      const daysExpired = contract?.renewal_date
+        ? Math.abs(Math.round((new Date(contract.renewal_date).getTime() - today.getTime()) / 86400000))
+        : null
+      return {
+        name: a.name,
+        health_score: Number(a.health_score),
+        risk_reason: `Contrato ${contract?.status === 'churned' ? 'em churn' : daysExpired ? `vencido há ${daysExpired} dias` : 'expirado'} — risco de cancelamento total`,
+      }
+    })
+
+  const at_risk_accounts = [...healthRiskAccounts, ...aiRiskAccounts, ...contractRiskAccounts]
     .sort((a, b) => a.health_score - b.health_score)
 
   // Top Blockers

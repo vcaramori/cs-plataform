@@ -88,7 +88,7 @@ export async function runRAGPipeline(
     accountId
       ? db
           .from('contacts')
-          .select('name, role, influence_level, decision_maker')
+          .select('name, role, seniority, influence_level, decision_maker, departed_at, departure_reason')
           .eq('account_id', accountId)
       : Promise.resolve({ data: [] as any[] }),
     db.from('accounts').select('id, name'),
@@ -120,13 +120,13 @@ export async function runRAGPipeline(
           .order('evaluated_at', { ascending: false })
           .limit(3)
       : Promise.resolve({ data: [] as any[] }),
-    // [10] Financeiro — MRR, ARR, status do contrato e renovação
+    // [10] Financeiro — MRR, ARR, status do contrato e renovação (todos os status, mais recente primeiro)
     accountId
       ? db
           .from('contracts')
           .select('mrr, arr, renewal_date, status, service_type, contracted_hours_monthly, notes')
           .eq('account_id', accountId)
-          .eq('status', 'active')
+          .order('renewal_date', { ascending: false })
           .limit(1)
       : Promise.resolve({ data: [] as any[] }),
     // [11] Playbooks — em andamento e concluídos recentemente
@@ -148,7 +148,22 @@ export async function runRAGPipeline(
           .order('opened_at', { ascending: false })
           .limit(10)
       : Promise.resolve({ data: [] as any[] }),
-  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }]
+    // [13] Alertas ativos — proactive_alerts não resolvidos (churn, downgrade, expansão, etc.)
+    accountId
+      ? db
+          .from('proactive_alerts')
+          .select('alert_type, title, description, severity, created_at, tags')
+          .eq('account_id', accountId)
+          .is('resolved_at', null)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      : db
+          .from('proactive_alerts')
+          .select('alert_type, title, description, severity, created_at, tags, accounts(name)')
+          .is('resolved_at', null)
+          .order('created_at', { ascending: false })
+          .limit(10),
+  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }]
 
   const interactionRecords = results[0].data
   const ticketRecords = results[1].data
@@ -163,6 +178,7 @@ export async function runRAGPipeline(
   const contracts = results[10].data
   const playbooks = results[11].data
   const ticketsWithSLA = results[12].data
+  const alertRecords = results[13].data
 
   // 2.1 Detecção de Entidades (Account Discovery)
   // Se estamos em modo global, tentamos detectar se a pergunta cita algum cliente
@@ -258,15 +274,37 @@ ${extraLines || 'Dados de adoção não encontrados.'}`
     adoptionContext = `\n\n## STATUS DE ADOÇÃO E PLANOS DE AÇÃO\n${adoptionLines}`
   }
 
-  // 3.2 Adiciona Contexto de Plano e Risco de Downgrade
+  // 3.2 Adiciona Contexto de Plano — distingue CHURN de DOWNGRADE
   let planRiskContext = ''
   if (planSummary) {
-    planRiskContext = `\n\n## PLANO E RISCO COMERCIAL
+    const contractNotActive = contracts && contracts.length > 0 && contracts[0].status !== 'active'
+    const contractExpired = contracts && contracts.length > 0 && contracts[0].renewal_date &&
+      new Date(contracts[0].renewal_date) < new Date()
+    const adoptionIsZero = adoptionRecords && adoptionRecords.length > 0 &&
+      adoptionRecords.every((a: any) => ['not_started', 'na', 'blocked'].includes(a.status))
+    const noAdoption = !adoptionRecords || adoptionRecords.length === 0
+
+    const isChurnRisk = (contractNotActive || contractExpired) && (adoptionIsZero || noAdoption)
+
+    if (isChurnRisk) {
+      const reasons: string[] = []
+      if (contractExpired) reasons.push('contrato vencido sem renovação')
+      else if (contractNotActive) reasons.push(`contrato com status "${contracts[0].status}"`)
+      if (adoptionIsZero) reasons.push('adoção 0% — nenhuma funcionalidade em uso ativo')
+      else if (noAdoption) reasons.push('sem registros de adoção')
+
+      planRiskContext = `\n\n## RISCO CRÍTICO: CHURN (NÃO DOWNGRADE)
+⚠️ CLASSIFICAÇÃO CORRETA: Este cliente apresenta risco de CHURN (cancelamento total), NÃO de downgrade.
+Evidências: ${reasons.join('; ')}.
+Contexto: downgrade implica uso parcial e negociação de plano menor; aqui o cliente não utiliza nada e o contrato não está ativo — o risco é de abandono definitivo.
+Plano: ${planSummary.plan_name}${planSummary.at_risk_features.length > 0 ? `\nFuncionalidades contratadas sem adoção: ${planSummary.at_risk_features.join(', ')}` : ''}`
+    } else {
+      planRiskContext = `\n\n## PLANO E RISCO COMERCIAL
 Plano Atual: ${planSummary.plan_name}
 Risco de Downgrade: ${planSummary.risk_level === 'high' ? 'CRÍTICO' : planSummary.risk_level === 'low' ? 'MÉDIO (Atenção)' : 'BAIXO/NENHUM'}`
-    
-    if (planSummary.risk_level !== 'none' && planSummary.at_risk_features.length > 0) {
-      planRiskContext += `\nFuncionalidades Críticas Não Adotadas: ${planSummary.at_risk_features.join(', ')}`
+      if (planSummary.risk_level !== 'none' && planSummary.at_risk_features.length > 0) {
+        planRiskContext += `\nFuncionalidades Críticas Não Adotadas: ${planSummary.at_risk_features.join(', ')}`
+      }
     }
   }
 
@@ -366,7 +404,7 @@ Score Manual (CSM): ${latest.manual_score ?? '—'} | Score Shadow (IA): ${lates
 Classificação: ${latest.classification ?? '—'}${latest.manual_notes ? `\nNotas do CSM: ${latest.manual_notes}` : ''}${latest.shadow_reasoning ? `\nRaciocínio IA: ${latest.shadow_reasoning}` : ''}`
   }
 
-  // 3.7 Financeiro — MRR, ARR, status contratual e SLA
+  // 3.7 Financeiro — MRR, ARR, status contratual e renovação
   let financialContext = ''
   if (contracts && contracts.length > 0) {
     const c = contracts[0]
@@ -375,11 +413,29 @@ Classificação: ${latest.classification ?? '—'}${latest.manual_notes ? `\nNot
       'at-risk': 'EM RISCO',
       'churned': 'CHURN',
       'in-negotiation': 'EM NEGOCIAÇÃO',
+      'expired': 'EXPIRADO',
+      'cancelled': 'CANCELADO',
+    }
+    let renewalInfo = c.renewal_date ?? '—'
+    let churnSignal = ''
+    if (c.renewal_date) {
+      const diffDays = Math.round((new Date(c.renewal_date).getTime() - Date.now()) / 86400000)
+      if (diffDays < 0) {
+        renewalInfo = `${c.renewal_date} ⚠️ VENCIDO HÁ ${Math.abs(diffDays)} DIAS`
+        churnSignal = '\n⚠️ ALERTA CRÍTICO DE CHURN: Renovação não realizada — contrato vencido há ' + Math.abs(diffDays) + ' dias.'
+      } else if (diffDays <= 90) {
+        renewalInfo = `${c.renewal_date} (vence em ${diffDays} dias — ATENÇÃO)`
+      } else {
+        renewalInfo = `${c.renewal_date} (${diffDays} dias restantes)`
+      }
+    }
+    if (!churnSignal && c.status !== 'active') {
+      churnSignal = `\n⚠️ ALERTA: Status do contrato é "${statusMap[c.status] ?? c.status}" — contrato não está ativo.`
     }
     financialContext = `\n\n## FINANCEIRO E CONTRATO
 MRR: R$ ${c.mrr?.toLocaleString('pt-BR') ?? '—'} | ARR: R$ ${c.arr?.toLocaleString('pt-BR') ?? '—'}
 Status: ${statusMap[c.status] ?? c.status} | Plano: ${c.service_type ?? '—'}
-Renovação: ${c.renewal_date ?? '—'} | Horas Contratadas/Mês: ${c.contracted_hours_monthly ?? '—'}h${c.notes ? `\nObservações contratuais: ${c.notes}` : ''}`
+Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_monthly ?? '—'}h${c.notes ? `\nObservações contratuais: ${c.notes}` : ''}${churnSignal}`
   }
 
   let stakeholderContext = ''
@@ -430,7 +486,25 @@ Renovação: ${c.renewal_date ?? '—'} | Horas Contratadas/Mês: ${c.contracted
     playbooksContext = `\n\n## PLAYBOOKS\n${lines}`
   }
 
-  // 3.9 SLA Violations — tickets com breaches ativos
+  // 3.9 Alertas ativos — proactive_alerts não resolvidos
+  let alertsContext = ''
+  if (alertRecords && alertRecords.length > 0) {
+    const severityMap: Record<string, string> = {
+      'critical': 'CRÍTICO',
+      'high': 'ALTO',
+      'medium': 'MÉDIO',
+      'low': 'BAIXO',
+    }
+    const lines = alertRecords.map((a: any) => {
+      const severity = severityMap[a.severity] ?? a.severity?.toUpperCase() ?? 'N/A'
+      const tags = a.tags?.length > 0 ? ` [${a.tags.join(', ')}]` : ''
+      const accountLine = a.accounts?.name ? ` | Conta: ${a.accounts.name}` : ''
+      return `- [${severity}] ${a.title}${accountLine}${tags}: ${a.description ?? ''} (desde ${a.created_at?.slice(0, 10) ?? 'N/A'})`
+    }).join('\n')
+    alertsContext = `\n\n## ALERTAS ATIVOS (NÃO RESOLVIDOS)\n${lines}`
+  }
+
+  // 3.10 SLA Violations — tickets com breaches ativos
   let slaViolationsContext = ''
   if (ticketsWithSLA && ticketsWithSLA.length > 0) {
     const breachedTickets = ticketsWithSLA.filter((t: any) => {
@@ -487,6 +561,7 @@ ${contextBlocks || 'Nenhum dado de interação/tickets recente.'}
 ${effortJournalContext}
 ${healthComparisonContext}
 ${financialContext}
+${alertsContext}
 ${adoptionContext}
 ${planRiskContext}
 ${playbooksContext}

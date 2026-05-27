@@ -645,14 +645,23 @@ Interface de chat com o motor RAG. O CSM digita uma pergunta em português e o s
 5. Monta o prompt com contexto 360° (ver abaixo) e chama o provider de texto configurado
 6. Retorna resposta em PT-BR com citação das fontes
 
-**Visão 360° — Auditoria Exaustiva (4 dimensões cruzadas):**
+**Visão 360° — Auditoria Exaustiva (14 fontes de contexto estruturado):**
 
 | Dimensão | Fonte | Descrição |
 |----------|-------|-----------|
 | **Journal de Esforço** | `time_entries` | Transcrições de reuniões, relatos de atividades e notas de contato — fonte primária qualitativa |
-| **Power Map** | `contacts` | Decisores, influenciadores e nível de engajamento por stakeholder |
-| **Financeiro/SLA** | `contracts` | MRR, ARR, status contratual, data de renovação e horas contratadas |
+| **Power Map** | `contacts` | Decisores, influenciadores, senioridade, desligamentos e nível de engajamento por stakeholder |
+| **Financeiro/Contrato** | `contracts` | MRR, ARR, status contratual (todos os status — expirados visíveis), dias até/desde renovação, sinal de churn automático |
+| **Alertas Ativos** | `proactive_alerts` | Todos os alertas não resolvidos da conta ou portfólio injetados no contexto |
 | **Saúde** | `health_scores` | Health Score Manual (CSM) vs Shadow IA — discrepância > 20 sinalizada como alerta |
+| **Adoção** | `feature_adoption` | Status por funcionalidade com planos de ação e bloqueios |
+| **NPS** | `nps_responses` | Score, segmentação, comentários recentes |
+| **Playbooks** | `account_playbooks` | Playbooks em andamento, pausados e concluídos |
+| **SLA** | `sla_events` | Tickets com breaches/escalações abertas |
+
+**Classificação de Risco Comercial (automática):**
+- Contrato vencido/inativo + adoção 0% → **CHURN** (cancelamento total) — não downgrade
+- Adoção parcial + funcionalidades diferenciadas não usadas → **DOWNGRADE** (migração de plano)
 
 A IA nunca omite detalhes: se houver transcrição ou nota no Journal de Esforço, ela é obrigatoriamente sintetizada na resposta.
 
