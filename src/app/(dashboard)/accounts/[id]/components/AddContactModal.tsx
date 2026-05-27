@@ -88,8 +88,8 @@ export function AddContactModal({ open, onClose, accountId }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
-      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50">
+      <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white max-w-lg rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+        <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
               <UserPlus className="w-6 h-6 text-plannera-orange" />
@@ -105,7 +105,7 @@ export function AddContactModal({ open, onClose, accountId }: {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-6 py-6">
+        <form onSubmit={handleSubmit(onSubmit)} id="add-contact-form" className="space-y-6 px-6 py-6 overflow-y-auto flex-1">
 
           {/* Nome e Sobrenome */}
           <div className="grid grid-cols-2 gap-6">
@@ -219,12 +219,13 @@ export function AddContactModal({ open, onClose, accountId }: {
           </label>
         </form>
         
-        <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl">
+        <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl shrink-0">
           <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white">
             Cancelar
           </Button>
           <Button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
+            form="add-contact-form"
             disabled={loading}
             className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest gap-2"
           >
