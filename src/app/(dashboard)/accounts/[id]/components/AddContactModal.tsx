@@ -105,7 +105,7 @@ export function AddContactModal({ open, onClose, accountId }: {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit(onSubmit, (errs) => { console.error('[AddContact] Validation errors:', errs); toast.error('Preencha os campos obrigatórios: ' + Object.keys(errs).join(', ')) })} className="flex flex-col flex-1 min-h-0">
           {/* Campos com scroll */}
           <div className="space-y-6 px-6 py-6 overflow-y-auto flex-1">
 
