@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
 
 /*
   Fontes latinas de alta qualidade como base de renderização.
@@ -48,6 +49,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
