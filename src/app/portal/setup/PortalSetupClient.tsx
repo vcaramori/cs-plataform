@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -17,6 +17,31 @@ export function PortalSetupClient() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [account, setAccount] = useState<{ name: string; logoUrl: string | null } | null>(null)
+
+  useEffect(() => {
+    async function loadAccount() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && user.user_metadata?.account_id) {
+          const { data } = await supabase
+            .from('accounts')
+            .select('name, logo_url')
+            .eq('id', user.user_metadata.account_id)
+            .single()
+          if (data) {
+            setAccount({
+              name: data.name,
+              logoUrl: data.logo_url
+            })
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao carregar conta no setup:', e)
+      }
+    }
+    loadAccount()
+  }, [supabase])
 
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault()
@@ -55,10 +80,16 @@ export function PortalSetupClient() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface-background px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-4">
-          <Image src="/brand/logo.png" alt="Portal" width={160} height={52} className="h-12 w-auto object-contain" priority />
+          {account?.logoUrl ? (
+            <Image src={account.logoUrl} alt={account.name} width={160} height={52} className="h-12 w-auto object-contain" priority />
+          ) : (
+            <Image src="/brand/logo.png" alt="Portal" width={160} height={52} className="h-12 w-auto object-contain" priority />
+          )}
           <div className="text-center">
             <h1 className="text-xl font-black uppercase tracking-tight text-foreground">Primeiro Acesso</h1>
-            <p className="text-xs text-content-secondary mt-1 font-medium">Configure seu nome e senha para continuar</p>
+            <p className="text-xs text-content-secondary mt-1 font-medium">
+              {account?.name ? `Configure seu acesso ao portal de ${account.name}` : 'Configure seu nome e senha para continuar'}
+            </p>
           </div>
         </div>
 

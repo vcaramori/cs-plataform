@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -11,10 +11,49 @@ import { Loader2, Lock, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function PortalLoginClient() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-background px-4">
+        <Loader2 className="w-8 h-8 animate-spin text-plannera-orange" />
+      </div>
+    }>
+      <PortalLoginClientInternal />
+    </Suspense>
+  )
+}
+
+function PortalLoginClientInternal() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [account, setAccount] = useState<{ name: string; logoUrl: string | null } | null>(null)
+
+  useEffect(() => {
+    async function loadAccount() {
+      const accountId = searchParams.get('account') || searchParams.get('account_id')
+      if (accountId) {
+        try {
+          const supabase = getSupabaseBrowserClient()
+          const { data } = await supabase
+            .from('accounts')
+            .select('name, logo_url')
+            .eq('id', accountId)
+            .single()
+          if (data) {
+            setAccount({
+              name: data.name,
+              logoUrl: data.logo_url
+            })
+          }
+        } catch (e) {
+          console.error('Erro ao buscar conta no login:', e)
+        }
+      }
+    }
+    loadAccount()
+  }, [searchParams])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -57,20 +96,31 @@ export function PortalLoginClient() {
 
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <Image
-            src="/brand/logo.png"
-            alt="Portal do Cliente"
-            width={160}
-            height={52}
-            className="h-12 w-auto object-contain"
-            priority
-          />
+          {account?.logoUrl ? (
+            <Image
+              src={account.logoUrl}
+              alt={account.name}
+              width={160}
+              height={52}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+          ) : (
+            <Image
+              src="/brand/logo.png"
+              alt="Portal do Cliente"
+              width={160}
+              height={52}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+          )}
           <div className="text-center">
             <h1 className="text-xl font-black uppercase tracking-tight text-foreground">
               Portal do Cliente
             </h1>
             <p className="text-xs text-content-secondary mt-1 font-medium">
-              Acompanhe seus chamados e indicadores
+              {account?.name ? `Acompanhe seus chamados da ${account.name}` : 'Acompanhe seus chamados e indicadores'}
             </p>
           </div>
         </div>
