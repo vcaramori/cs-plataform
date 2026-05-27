@@ -116,6 +116,41 @@ export function PortalInviteDialog({
     }
   }
 
+  async function handleApproveAndCopyLink() {
+    if (!existingInvite) return
+    setLoading(true)
+    try {
+      // 1. Aprova o acesso
+      const approveRes = await fetch(`/api/portal/invites/${existingInvite.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approved' }),
+      })
+      const approveData = await approveRes.json()
+      if (!approveRes.ok) throw new Error(approveData.error ?? 'Erro ao aprovar acesso')
+
+      // 2. Busca o link manual
+      const linkRes = await fetch(`/api/portal/invites/${existingInvite.id}/link`, {
+        method: 'POST',
+      })
+      const linkData = await linkRes.json()
+      if (!linkRes.ok) throw new Error(linkData.error ?? 'Erro ao gerar link')
+
+      setGeneratedLink(linkData.link)
+      await navigator.clipboard.writeText(linkData.link)
+      setCopied(true)
+      toast.success('Acesso aprovado e link copiado para a área de transferência!')
+      setTimeout(() => setCopied(false), 3000)
+
+      // Atualiza o estado no pai para 'approved'
+      onSuccess({ ...existingInvite, status: 'approved' })
+    } catch (e: any) {
+      toast.error(e.message ?? 'Erro no fluxo de aprovação')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
       <DialogContent className="max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-border-divider p-0 overflow-hidden">
@@ -160,6 +195,28 @@ export function PortalInviteDialog({
                 <p className="text-xs text-content-secondary mt-1">E-mail: <strong>{contact.email}</strong></p>
               </div>
 
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-400">
+                <Globe className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong>Evite falhas de e-mail:</strong> Use o botão de aprovação rápida abaixo para aprovar o acesso e copiar o link manual imediatamente.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleApproveAndCopyLink}
+                disabled={loading || copyingLink}
+                className="w-full rounded-xl bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[11px] gap-2 h-11 shadow-md"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                Aprovar e Copiar Link Manual
+              </Button>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-border-divider"></div>
+                <span className="flex-shrink mx-4 text-[9px] font-black uppercase tracking-wider text-content-secondary">Ou aprovação padrão</span>
+                <div className="flex-grow border-t border-border-divider"></div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
                   Motivo da rejeição <span className="opacity-50 normal-case font-medium">(opcional)</span>
@@ -168,7 +225,7 @@ export function PortalInviteDialog({
                   value={rejectNotes}
                   onChange={e => setRejectNotes(e.target.value)}
                   placeholder="Motivo para informar ao cliente..."
-                  className="rounded-xl resize-none h-20 text-sm"
+                  className="rounded-xl resize-none h-16 text-sm"
                 />
               </div>
 
