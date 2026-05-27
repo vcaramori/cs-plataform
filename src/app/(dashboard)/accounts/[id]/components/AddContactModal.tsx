@@ -105,134 +105,137 @@ export function AddContactModal({ open, onClose, accountId }: {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} id="add-contact-form" className="space-y-6 px-6 py-6 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          {/* Campos com scroll */}
+          <div className="space-y-6 px-6 py-6 overflow-y-auto flex-1">
 
-          {/* Nome e Sobrenome */}
-          <div className="grid grid-cols-2 gap-6">
+            {/* Nome e Sobrenome */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nome *</Label>
+                <Input
+                  {...register('firstName')}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  placeholder="João"
+                />
+                {errors.firstName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.firstName.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Sobrenome *</Label>
+                <Input
+                  {...register('lastName')}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  placeholder="Silva"
+                />
+                {errors.lastName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.lastName.message}</p>}
+              </div>
+            </div>
+
+            {/* Cargo */}
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nome *</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Cargo *</Label>
               <Input
-                {...register('firstName')}
+                {...register('role')}
                 className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                placeholder="João"
+                placeholder="Head de TI, CEO, Gerente de Projetos..."
               />
-              {errors.firstName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.firstName.message}</p>}
+              {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
             </div>
+
+            {/* Senioridade e Nível de Influência */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Senioridade</Label>
+                <SearchableSelect
+                  value={watch('seniority')}
+                  onValueChange={v => setValue('seniority', v as any)}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nível de Influência</Label>
+                <SearchableSelect
+                  value={watch('influence_level')}
+                  onValueChange={v => setValue('influence_level', v as any)}
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  options={[
+                    { label: 'Campeão', value: 'Campeão' },
+                    { label: 'Neutro', value: 'Neutro' },
+                    { label: 'Detrator', value: 'Detrator' },
+                    { label: 'Bloqueador', value: 'Bloqueador' },
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* E-mail e Telefone */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">E-mail</Label>
+                <Input
+                  {...register('email')}
+                  type="email"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                  placeholder="joao@empresa.com"
+                />
+                {errors.email && <p className="text-destructive text-[10px] font-bold ml-1">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Telefone</Label>
+                <MaskedInput
+                  maskType="phone"
+                  value={watch('phone')}
+                  onValueChange={(v) => setValue('phone', v)}
+                  placeholder="(00) 00000-0000"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                />
+              </div>
+            </div>
+
+            {/* LinkedIn */}
             <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Sobrenome *</Label>
+              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">
+                URL do LinkedIn
+                <span className="ml-1 text-content-secondary dark:text-content-secondary normal-case font-medium">— foto carregada automaticamente</span>
+              </Label>
               <Input
-                {...register('lastName')}
+                {...register('linkedin_url')}
                 className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                placeholder="Silva"
+                placeholder="https://linkedin.com/in/joaosilva"
               />
-              {errors.lastName && <p className="text-destructive text-[10px] font-bold ml-1">{errors.lastName.message}</p>}
+              {errors.linkedin_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.linkedin_url.message}</p>}
             </div>
+
+            {/* Tomador de decisão */}
+            <label className="flex items-center gap-3 cursor-pointer group mt-2">
+              <div
+                onClick={() => setValue('decision_maker', !watch('decision_maker'))}
+                className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-surface-card dark:bg-slate-700'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
+              </div>
+              <span className="text-[#2d3558] dark:text-white text-sm font-bold">
+                Tomador de decisão
+              </span>
+            </label>
           </div>
 
-          {/* Cargo */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Cargo *</Label>
-            <Input
-              {...register('role')}
-              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-              placeholder="Head de TI, CEO, Gerente de Projetos..."
-            />
-            {errors.role && <p className="text-destructive text-[10px] font-bold ml-1">{errors.role.message}</p>}
-          </div>
-
-          {/* Senioridade e Nível de Influência */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Senioridade</Label>
-              <SearchableSelect
-                value={watch('seniority')}
-                onValueChange={v => setValue('seniority', v as any)}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                options={['C-Level', 'VP', 'Director', 'Manager', 'IC'].map(s => ({ label: s, value: s }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Nível de Influência</Label>
-              <SearchableSelect
-                value={watch('influence_level')}
-                onValueChange={v => setValue('influence_level', v as any)}
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                options={[
-                  { label: 'Campeão', value: 'Campeão' },
-                  { label: 'Neutro', value: 'Neutro' },
-                  { label: 'Detrator', value: 'Detrator' },
-                  { label: 'Bloqueador', value: 'Bloqueador' },
-                ]}
-              />
-            </div>
-          </div>
-
-          {/* E-mail e Telefone */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">E-mail</Label>
-              <Input
-                {...register('email')}
-                type="email"
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-                placeholder="joao@empresa.com"
-              />
-              {errors.email && <p className="text-destructive text-[10px] font-bold ml-1">{errors.email.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Telefone</Label>
-              <MaskedInput
-                maskType="phone"
-                value={watch('phone')}
-                onValueChange={(v) => setValue('phone', v)}
-                placeholder="(00) 00000-0000"
-                className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-              />
-            </div>
-          </div>
-
-          {/* LinkedIn e Foto */}
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">
-              URL do LinkedIn
-              <span className="ml-1 text-content-secondary dark:text-content-secondary normal-case font-medium">— foto carregada automaticamente</span>
-            </Label>
-            <Input
-              {...register('linkedin_url')}
-              className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
-              placeholder="https://linkedin.com/in/joaosilva"
-            />
-            {errors.linkedin_url && <p className="text-destructive text-[10px] font-bold ml-1">{errors.linkedin_url.message}</p>}
-          </div>
-
-          {/* Tomador de decisão */}
-          <label className="flex items-center gap-3 cursor-pointer group mt-2">
-            <div
-              onClick={() => setValue('decision_maker', !watch('decision_maker'))}
-              className={`w-10 h-5 rounded-full transition-all relative ${watch('decision_maker') ? 'bg-plannera-orange' : 'bg-surface-card dark:bg-slate-700'}`}
+          {/* Footer fixo dentro do form */}
+          <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl shrink-0">
+            <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white">
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest gap-2"
             >
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${watch('decision_maker') ? 'left-5' : 'left-0.5'}`} />
-            </div>
-            <span className="text-[#2d3558] dark:text-white text-sm font-bold">
-              Tomador de decisão
-            </span>
-          </label>
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Salvar Stakeholder
+            </Button>
+          </div>
         </form>
-        
-        <div className="p-6 bg-surface-background dark:bg-slate-800/50 border-t border-border-divider dark:border-slate-800 flex items-center justify-between rounded-b-2xl shrink-0">
-          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold text-content-secondary dark:text-content-secondary hover:text-[#2d3558] dark:hover:text-white">
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            form="add-contact-form"
-            disabled={loading}
-            className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest gap-2"
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            Salvar Stakeholder
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   )
