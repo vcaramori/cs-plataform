@@ -61,6 +61,7 @@ interface Props {
   tickets: SupportTicket[]
   efforts: TimeEntry[]
   contacts: Contact[]
+  portalInvites?: any[]
   adoptionMetrics: AdoptionMetrics[]
   activePlaybook?: AccountPlaybook
   latestRiskAssessment?: RiskAssessmentRow
@@ -205,6 +206,7 @@ export function AccountDetailPageClient({
   tickets,
   efforts,
   contacts,
+  portalInvites = [],
   successGoals,
   adoptionMetrics,
   activePlaybook,
@@ -338,7 +340,7 @@ export function AccountDetailPageClient({
               </div>
               <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Mapeamento de Poder</Text>
             </div>
-            <ContactsPowerMap contacts={contacts} accountId={id} />
+            <ContactsPowerMap contacts={contacts} accountId={id} portalInvites={portalInvites} />
           </section>
 
           {/* Governança Contratual */}

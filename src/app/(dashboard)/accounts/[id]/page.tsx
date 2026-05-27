@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AccountHeader } from './components/AccountHeader'
 import { AccountDetailPageClient } from './components/AccountDetailPageClient'
 import type {
@@ -51,6 +52,13 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
     .single()
 
   if (error || !account) notFound()
+
+  // Busca convites do portal para esta conta (service role para bypassar RLS)
+  const admin = getSupabaseAdminClient() as any
+  const { data: portalInvites } = await admin
+    .from('portal_invites')
+    .select('id, contact_id, email, status, invited_at, responded_at')
+    .eq('account_id', id)
 
   // Normalização de arrays (Supabase pode retornar null para joins vazios)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,6 +132,7 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         tickets={tickets}
         efforts={entries}
         contacts={contacts}
+        portalInvites={portalInvites ?? []}
         successGoals={successGoals}
         adoptionMetrics={adoptionMetrics}
         activePlaybook={activePlaybook}

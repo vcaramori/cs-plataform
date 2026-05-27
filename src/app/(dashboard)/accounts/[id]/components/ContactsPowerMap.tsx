@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import type { ElementType } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Crown, ShieldAlert, User, ShieldCheck, UserPlus, Mail, Phone, Link2, ExternalLink, UserX, AlertTriangle } from 'lucide-react'
+import { Crown, ShieldAlert, User, ShieldCheck, UserPlus, Mail, Phone, Link2, ExternalLink, UserX, AlertTriangle, Globe, Clock, CheckCircle2, XCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { AddContactModal } from './AddContactModal'
+import { PortalInviteDialog } from './PortalInviteDialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -154,11 +155,27 @@ function DepartureDialog({
   )
 }
 
-export function ContactsPowerMap({ contacts: initialContacts, accountId }: { contacts: Contact[]; accountId: string }) {
+const INVITE_STATUS_CONFIG = {
+  pending:  { label: 'Aprovação Pendente', color: 'text-amber-500',   bg: 'bg-amber-500/10',   ring: 'ring-amber-500/20',   icon: Clock },
+  approved: { label: 'Acesso Ativo',       color: 'text-emerald-500', bg: 'bg-emerald-500/10', ring: 'ring-emerald-500/20', icon: CheckCircle2 },
+  rejected: { label: 'Acesso Rejeitado',   color: 'text-red-400',     bg: 'bg-red-500/10',     ring: 'ring-red-500/20',     icon: XCircle },
+}
+
+export function ContactsPowerMap({
+  contacts: initialContacts,
+  accountId,
+  portalInvites: initialInvites = [],
+}: {
+  contacts: Contact[]
+  accountId: string
+  portalInvites?: any[]
+}) {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts)
+  const [portalInvites, setPortalInvites] = useState<any[]>(initialInvites)
   const [addOpen, setAddOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [departureTarget, setDepartureTarget] = useState<Contact | null>(null)
+  const [inviteTarget, setInviteTarget] = useState<Contact | null>(null)
 
   const visible = expanded ? contacts : contacts.slice(0, 4)
 
@@ -166,6 +183,24 @@ export function ContactsPowerMap({ contacts: initialContacts, accountId }: { con
     setContacts(prev => prev.map(c =>
       c.id === id ? { ...c, departed_at: new Date().toISOString(), departure_reason: reason } : c
     ))
+  }
+
+  function handleInviteSuccess(invite: any) {
+    setPortalInvites(prev => {
+      const existing = prev.findIndex(i => i.contact_id === invite.contact_id)
+      if (existing >= 0) {
+        const updated = [...prev]
+        updated[existing] = invite
+        return updated
+      }
+      return [...prev, invite]
+    })
+  }
+
+  function getInviteForContact(contactId: string) {
+    return portalInvites
+      .filter(i => i.contact_id === contactId)
+      .sort((a, b) => new Date(b.invited_at).getTime() - new Date(a.invited_at).getTime())[0] ?? null
   }
 
   return (
@@ -177,6 +212,16 @@ export function ContactsPowerMap({ contacts: initialContacts, accountId }: { con
           open={!!departureTarget}
           onClose={() => setDepartureTarget(null)}
           onSuccess={handleDepartureSuccess}
+        />
+      )}
+      {inviteTarget && (
+        <PortalInviteDialog
+          open={!!inviteTarget}
+          onClose={() => setInviteTarget(null)}
+          contact={inviteTarget}
+          accountId={accountId}
+          existingInvite={getInviteForContact(inviteTarget.id)}
+          onSuccess={handleInviteSuccess}
         />
       )}
 
@@ -209,6 +254,9 @@ export function ContactsPowerMap({ contacts: initialContacts, accountId }: { con
                 const photoSrc = c.photo_url || linkedinPhoto(c.linkedin_url)
                 const isDeparted = !!c.departed_at
                 const isHighRisk = isDeparted && isDepartureHighRisk(c)
+                const invite = getInviteForContact(c.id)
+                const inviteConfig = invite ? INVITE_STATUS_CONFIG[invite.status as keyof typeof INVITE_STATUS_CONFIG] : null
+                const InviteIcon = inviteConfig?.icon
 
                 return (
                   <motion.div
@@ -300,6 +348,17 @@ export function ContactsPowerMap({ contacts: initialContacts, accountId }: { con
                               </p>
                             )}
 
+                            {/* Badge portal sempre visível */}
+                            {!isDeparted && inviteConfig && InviteIcon && (
+                              <span className={cn(
+                                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset w-fit',
+                                inviteConfig.bg, inviteConfig.color, inviteConfig.ring
+                              )}>
+                                <InviteIcon className="w-2.5 h-2.5" />
+                                {inviteConfig.label}
+                              </span>
+                            )}
+
                             {!isDeparted && (c.email || c.phone || c.linkedin_url) && (
                               <div className="flex items-center gap-2 pt-1 flex-wrap">
                                 {c.email && (
@@ -339,15 +398,39 @@ export function ContactsPowerMap({ contacts: initialContacts, accountId }: { con
                               </div>
                             )}
 
-                            {/* Botão desligar — só para ativos */}
+                            {/* Ações para ativos */}
                             {!isDeparted && (
-                              <button
-                                onClick={() => setDepartureTarget(c)}
-                                className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-bold text-content-secondary hover:text-red-500 transition-colors uppercase tracking-wide opacity-0 group-hover:opacity-100"
-                              >
-                                <UserX className="w-3 h-3" />
-                                Registrar desligamento
-                              </button>
+                              <div className="flex items-center gap-3 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {/* Badge portal ou botão convidar */}
+                                {inviteConfig && InviteIcon ? (
+                                  <button
+                                    onClick={() => setInviteTarget(c)}
+                                    className={cn(
+                                      'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide transition-colors',
+                                      inviteConfig.color
+                                    )}
+                                  >
+                                    <InviteIcon className="w-3 h-3" />
+                                    {inviteConfig.label}
+                                  </button>
+                                ) : c.email ? (
+                                  <button
+                                    onClick={() => setInviteTarget(c)}
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold text-plannera-ds hover:text-plannera-ds/80 transition-colors uppercase tracking-wide"
+                                  >
+                                    <Globe className="w-3 h-3" />
+                                    Convidar para Portal
+                                  </button>
+                                ) : null}
+
+                                <button
+                                  onClick={() => setDepartureTarget(c)}
+                                  className="inline-flex items-center gap-1 text-[9px] font-bold text-content-secondary hover:text-red-500 transition-colors uppercase tracking-wide"
+                                >
+                                  <UserX className="w-3 h-3" />
+                                  Desligar
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
