@@ -50,6 +50,9 @@ export function AddContactModal({ open, onClose, accountId }: {
       seniority: 'Manager',
       influence_level: 'Neutro',
       decision_maker: false,
+      email: '',
+      phone: '',
+      linkedin_url: '',
     },
   })
 
@@ -191,6 +194,7 @@ export function AddContactModal({ open, onClose, accountId }: {
                   placeholder="(00) 00000-0000"
                   className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
+                {errors.phone && <p className="text-destructive text-[10px] font-bold ml-1">{errors.phone.message}</p>}
               </div>
             </div>
 

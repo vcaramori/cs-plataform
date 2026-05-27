@@ -23,8 +23,10 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
       ),
       onValueChange: (values: any) => {
         if (onValueChange) {
-           // Retorna o valor "bruto" (clean) para o form lidar
-           onValueChange(values.floatValue !== undefined ? values.floatValue : values.value)
+           // Retorna o valor "bruto" (clean) para o form lidar.
+           // Se for telefone ou CNPJ/CPF (tax_id), precisamos retornar o valor como string (values.value) para evitar quebras de validação no Zod/React Hook Form que esperam string.
+           const isNumericString = maskType === 'phone' || maskType === 'tax_id';
+           onValueChange(isNumericString ? values.value : (values.floatValue !== undefined ? values.floatValue : values.value))
         }
       },
       ...otherProps,
