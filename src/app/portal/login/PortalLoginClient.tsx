@@ -82,6 +82,13 @@ function PortalLoginClientInternal() {
         throw new Error('Seu acesso ainda está pendente de aprovação')
       }
 
+      // Aguarda o client do Supabase gravar o cookie no browser para evitar race condition
+      let attempts = 0
+      while (attempts < 20 && !document.cookie.includes('-auth-token')) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+        attempts++
+      }
+
       router.push('/portal/tickets')
     } catch (e: any) {
       toast.error(e.message || 'Erro ao entrar')

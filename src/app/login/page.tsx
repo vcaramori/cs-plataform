@@ -30,6 +30,13 @@ export default function LoginPage() {
       return
     }
 
+    // Aguarda o client do Supabase gravar o cookie no browser para evitar race condition
+    let attempts = 0
+    while (attempts < 20 && !document.cookie.includes('-auth-token')) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+      attempts++
+    }
+
     router.push('/dashboard')
     router.refresh()
   }
