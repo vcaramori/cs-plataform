@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Globe, CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react'
+import { Globe, CheckCircle2, XCircle, Loader2, Mail, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +33,10 @@ export function PortalInviteDialog({
   const [loading, setLoading] = useState(false)
   const [rejectNotes, setRejectNotes] = useState('')
   const [view, setView] = useState<'invite' | 'approve'>('invite')
+  
+  const [copyingLink, setCopyingLink] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [generatedLink, setGeneratedLink] = useState('')
 
   const isPending = existingInvite?.status === 'pending'
 
@@ -75,13 +79,40 @@ export function PortalInviteDialog({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erro ao processar convite')
-      toast.success(action === 'approved' ? 'Acesso aprovado! O cliente receberá um e-mail.' : 'Convite rejeitado.')
+      
+      toast.success(action === 'approved' ? 'Acesso aprovado com sucesso!' : 'Convite rejeitado.')
       onSuccess({ ...existingInvite, status: action })
-      onClose()
+      
+      // Se aprovado, mantém aberto para que o usuário possa copiar o link manual
+      if (action !== 'approved') {
+        onClose()
+      }
     } catch (e: any) {
       toast.error(e.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCopyManualLink() {
+    if (!existingInvite) return
+    setCopyingLink(true)
+    try {
+      const res = await fetch(`/api/portal/invites/${existingInvite.id}/link`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao gerar link')
+      
+      setGeneratedLink(data.link)
+      await navigator.clipboard.writeText(data.link)
+      setCopied(true)
+      toast.success('Link de acesso copiado para a área de transferência!')
+      setTimeout(() => setCopied(false), 3000)
+    } catch (e: any) {
+      toast.error(e.message ?? 'Não foi possível gerar/copiar o link')
+    } finally {
+      setCopyingLink(false)
     }
   }
 
@@ -188,11 +219,58 @@ export function PortalInviteDialog({
 
           {/* Já aprovado */}
           {existingInvite?.status === 'approved' && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-emerald-600">Acesso ativo</p>
-                <p className="text-xs text-content-secondary mt-0.5">{contact.name} já tem acesso ao portal do cliente.</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-emerald-600">Acesso ativo</p>
+                  <p className="text-xs text-content-secondary mt-0.5">
+                    <strong>{contact.name}</strong> já está com o acesso aprovado no portal.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-border-divider bg-surface-background/50 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-plannera-orange/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Globe className="w-4 h-4 text-plannera-orange" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wide">Link de Primeiro Acesso</h4>
+                    <p className="text-[11px] text-content-secondary mt-0.5 leading-relaxed">
+                      Caso o e-mail de convite tenha sido retido por filtros de spam, você pode copiar o link de ativação manual e enviá-lo diretamente ao stakeholder.
+                    </p>
+                  </div>
+                </div>
+
+                {generatedLink && (
+                  <div className="space-y-1.5 pt-1.5">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-content-secondary">
+                      Link gerado
+                    </Label>
+                    <textarea
+                      readOnly
+                      value={generatedLink}
+                      onClick={e => (e.target as any).select()}
+                      className="w-full text-xs font-mono p-2.5 rounded-lg border border-border-divider bg-white dark:bg-slate-900 resize-none h-16 text-content-secondary focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleCopyManualLink}
+                  disabled={copyingLink}
+                  className="w-full rounded-xl bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest text-[10px] gap-2 h-10 shadow-sm"
+                >
+                  {copyingLink ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : copied ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                  {copied ? 'Copiado para área de transferência!' : 'Gerar e Copiar Link Manual'}
+                </Button>
               </div>
             </div>
           )}
