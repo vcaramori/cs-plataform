@@ -14,6 +14,8 @@ const UpdateSchema = z.object({
   photo_url: z.string().url().optional().or(z.literal('')),
   last_interaction_date: z.string().optional(),
   notes: z.string().optional(),
+  departed_at: z.string().nullable().optional(),
+  departure_reason: z.string().nullable().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {

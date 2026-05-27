@@ -129,7 +129,26 @@ export async function runRAGPipeline(
           .eq('status', 'active')
           .limit(1)
       : Promise.resolve({ data: [] as any[] }),
-  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }]
+    // [11] Playbooks — em andamento e concluídos recentemente
+    accountId
+      ? db
+          .from('account_playbooks')
+          .select('id, status, started_at, completed_at, expected_end_date, objective, success_criteria, playbook_templates(name, description)')
+          .eq('account_id', accountId)
+          .order('started_at', { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: [] as any[] }),
+    // [12] SLA violations — tickets da conta com breaches
+    accountId
+      ? db
+          .from('support_tickets')
+          .select('id, title, priority, status, opened_at, sla_events(event_type, occurred_at, metadata)')
+          .eq('account_id', accountId)
+          .in('status', ['open', 'in_progress', 'escalated'])
+          .order('opened_at', { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] as any[] }),
+  ]) as [{ data: any[] }, { data: any[] }, { data: any[] }, any, PortfolioSummary | null, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }, { data: any[] }]
 
   const interactionRecords = results[0].data
   const ticketRecords = results[1].data
@@ -142,6 +161,8 @@ export async function runRAGPipeline(
   const timeEntries = results[8].data
   const healthScores = results[9].data
   const contracts = results[10].data
+  const playbooks = results[11].data
+  const ticketsWithSLA = results[12].data
 
   // 2.1 Detecção de Entidades (Account Discovery)
   // Se estamos em modo global, tentamos detectar se a pergunta cita algum cliente
@@ -363,10 +384,68 @@ Renovação: ${c.renewal_date ?? '—'} | Horas Contratadas/Mês: ${c.contracted
 
   let stakeholderContext = ''
   if (contacts && contacts.length > 0) {
-    const contactLines = contacts.map((c: any) =>
-      `- ${c.name} (${c.role}): Influência: ${c.influence_level} | Decisor: ${c.decision_maker ? 'Sim' : 'Não'}`
+    const HIGH_RISK_INFLUENCES = ['Champion']
+    const HIGH_RISK_SENIORITIES = ['C-Level', 'VP', 'Director']
+
+    const activeContacts = contacts.filter((c: any) => !c.departed_at)
+    const departedContacts = contacts.filter((c: any) => c.departed_at)
+
+    const activeLines = activeContacts.map((c: any) =>
+      `- ${c.name} (${c.role} · ${c.seniority}): Influência: ${c.influence_level} | Decisor: ${c.decision_maker ? 'Sim' : 'Não'}`
     ).join('\n')
-    stakeholderContext = `\n\n## STAKEHOLDERS (POWER MAP)\n${contactLines}`
+
+    const departedLines = departedContacts.map((c: any) => {
+      const isHighRisk = HIGH_RISK_INFLUENCES.includes(c.influence_level) || HIGH_RISK_SENIORITIES.includes(c.seniority) || c.decision_maker
+      const riskTag = isHighRisk ? ' ⚠️ RISCO ALTO' : ''
+      const reason = c.departure_reason ? ` — Motivo: ${c.departure_reason}` : ''
+      return `- [DESLIGADO${riskTag}] ${c.name} (${c.role} · ${c.seniority}): era ${c.influence_level}${reason}`
+    }).join('\n')
+
+    stakeholderContext = `\n\n## STAKEHOLDERS (POWER MAP)`
+    if (activeLines) stakeholderContext += `\n${activeLines}`
+    if (departedLines) stakeholderContext += `\n\n### Stakeholders Desligados:\n${departedLines}`
+  }
+
+  // 3.8 Playbooks — em andamento e recentes
+  let playbooksContext = ''
+  if (playbooks && playbooks.length > 0) {
+    const statusMap: Record<string, string> = {
+      'active': 'EM ANDAMENTO',
+      'completed': 'CONCLUÍDO',
+      'paused': 'PAUSADO',
+      'cancelled': 'CANCELADO',
+    }
+    const lines = playbooks.map((p: any) => {
+      const name = (p.playbook_templates as any)?.name ?? 'Playbook'
+      const status = statusMap[p.status] ?? p.status?.toUpperCase() ?? 'N/A'
+      const started = p.started_at ? p.started_at.slice(0, 10) : '—'
+      const expected = p.expected_end_date ? p.expected_end_date.slice(0, 10) : '—'
+      const completed = p.completed_at ? p.completed_at.slice(0, 10) : null
+      let line = `- [${status}] ${name} | Início: ${started}`
+      if (completed) line += ` | Concluído: ${completed}`
+      else line += ` | Previsão: ${expected}`
+      if (p.objective) line += `\n  Objetivo: ${p.objective}`
+      return line
+    }).join('\n')
+    playbooksContext = `\n\n## PLAYBOOKS\n${lines}`
+  }
+
+  // 3.9 SLA Violations — tickets com breaches ativos
+  let slaViolationsContext = ''
+  if (ticketsWithSLA && ticketsWithSLA.length > 0) {
+    const breachedTickets = ticketsWithSLA.filter((t: any) => {
+      const events: any[] = t.sla_events ?? []
+      return events.some((e: any) => e.event_type === 'breach' || e.event_type === 'escalation')
+    })
+    if (breachedTickets.length > 0) {
+      const lines = breachedTickets.map((t: any) => {
+        const events: any[] = t.sla_events ?? []
+        const breaches = events.filter((e: any) => e.event_type === 'breach' || e.event_type === 'escalation')
+        const latest = breaches.sort((a: any, b: any) => b.occurred_at.localeCompare(a.occurred_at))[0]
+        return `- [${t.priority?.toUpperCase() ?? 'MEDIUM'}] ${t.title} | Aberto: ${t.opened_at?.slice(0, 10)} | Evento SLA: ${latest?.event_type?.toUpperCase()} em ${latest?.occurred_at?.slice(0, 10)}`
+      }).join('\n')
+      slaViolationsContext = `\n\n## SLA VIOLATIONS (Tickets com Breach/Escalação)\n${lines}`
+    }
   }
 
   // 4. Carrega system instruction do banco (admin pode editar via /admin/settings)
@@ -410,6 +489,8 @@ ${healthComparisonContext}
 ${financialContext}
 ${adoptionContext}
 ${planRiskContext}
+${playbooksContext}
+${slaViolationsContext}
 ${npsContext}
 ${portfolioContext}
 ${stakeholderContext}

@@ -772,6 +772,8 @@ export type Database = {
         Row: {
           account_id: string
           decision_maker: boolean
+          departed_at: string | null
+          departure_reason: string | null
           email: string | null
           id: string
           influence_level: string
@@ -787,6 +789,8 @@ export type Database = {
         Insert: {
           account_id: string
           decision_maker?: boolean
+          departed_at?: string | null
+          departure_reason?: string | null
           email?: string | null
           id?: string
           influence_level: string
@@ -802,6 +806,8 @@ export type Database = {
         Update: {
           account_id?: string
           decision_maker?: boolean
+          departed_at?: string | null
+          departure_reason?: string | null
           email?: string | null
           id?: string
           influence_level?: string
