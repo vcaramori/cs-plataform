@@ -28,12 +28,33 @@ export function PortalSetupClient() {
 
     async function loadAccount() {
       try {
+        // Tenta ler o account_id da URL primeiro
+        const searchParams = new URLSearchParams(window.location.search)
+        let accountId = searchParams.get('account') || searchParams.get('account_id')
+
         const { data: { user } } = await supabase.auth.getUser()
-        if (user && user.user_metadata?.account_id) {
+        
+        if (!accountId && user) {
+          // Fallback: Busca da tabela profiles no banco
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('account_id')
+            .eq('id', user.id)
+            .single()
+          if (profile?.account_id) {
+            accountId = profile.account_id
+          }
+        }
+
+        if (!accountId && user && user.user_metadata?.account_id) {
+          accountId = user.user_metadata.account_id
+        }
+
+        if (accountId) {
           const { data } = await supabase
             .from('accounts')
             .select('name, logo_url')
-            .eq('id', user.user_metadata.account_id)
+            .eq('id', accountId)
             .single()
           if (data) {
             setAccount({

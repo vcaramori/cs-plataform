@@ -36,7 +36,7 @@ export async function POST(
       type: 'invite',
       email: invite.email,
       options: {
-        redirectTo: `${appUrl}/portal/setup`
+        redirectTo: `${appUrl}/portal/setup?account=${invite.account_id}`
       }
     })
 
@@ -47,7 +47,7 @@ export async function POST(
           type: 'recovery',
           email: invite.email,
           options: {
-            redirectTo: `${appUrl}/portal/setup`
+            redirectTo: `${appUrl}/portal/setup?account=${invite.account_id}`
           }
         })
         if (recoveryErr) throw recoveryErr
@@ -62,7 +62,7 @@ export async function POST(
     // Garante que o redirect_to na URL aponte perfeitamente para /portal/setup
     if (setupLink && !setupLink.includes('/portal/setup')) {
       // Se o redirecionamento padrão do Supabase ignorou o path, nós podemos formatá-lo
-      setupLink = setupLink.replace(/redirect_to=([^&]+)/, `redirect_to=${encodeURIComponent(appUrl + '/portal/setup')}`)
+      setupLink = setupLink.replace(/redirect_to=([^&]+)/, `redirect_to=${encodeURIComponent(appUrl + '/portal/setup?account=' + invite.account_id)}`)
     }
 
     return NextResponse.json({ link: setupLink })
