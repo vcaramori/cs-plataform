@@ -189,6 +189,9 @@ export async function getPortfolioSummary(
     .filter(a => Number(a.health_score) < 40)
     .map(a => ({ name: a.name, health_score: Number(a.health_score), risk_reason: 'Health Score Crítico (<40)' }))
 
+  const today = new Date()
+  const todayISO = today.toISOString().slice(0, 10)
+
   const [{ data: riskRows }, { data: expiredContracts }] = await Promise.all([
     (supabase as any)
       .from('account_risk_assessments')
@@ -197,13 +200,11 @@ export async function getPortfolioSummary(
     (supabase as any)
       .from('contracts')
       .select('account_id, renewal_date, status')
-      .or('status.eq.churned,status.eq.at-risk,status.eq.expired'),
+      .or(`status.eq.churned,status.eq.at-risk,status.eq.expired,renewal_date.lt.${todayISO}`),
   ])
-
-  const today = new Date()
   const expiredContractAccountIds = new Set(
     (expiredContracts || [])
-      .filter((c: any) => ['churned', 'expired'].includes(c.status) || (c.renewal_date && new Date(c.renewal_date) < today))
+      .filter((c: any) => ['churned', 'expired', 'at-risk'].includes(c.status) || (c.renewal_date && new Date(c.renewal_date) < today))
       .map((c: any) => c.account_id)
   )
 

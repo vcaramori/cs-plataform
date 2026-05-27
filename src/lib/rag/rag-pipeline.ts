@@ -324,7 +324,8 @@ Risco de Downgrade: ${planSummary.risk_level === 'high' ? 'CRÍTICO' : planSumma
       .join('\n')
 
     portfolioContext = `\n\n## RESUMO GLOBAL DO PORTFÓLIO
-Média de Health Score: ${portfolioSummary.avg_health}/100
+⚠️ NOTA: O health score abaixo é o score MANUAL definido pelo CSM — pode divergir do score calculado pela IA (shadow score). Não interprete o score manual como indicador definitivo de saúde sem cruzar com os dados de contrato e adoção.
+Média de Health Score (manual): ${portfolioSummary.avg_health}/100
 Distribuição de Saúde: ${portfolioSummary.health_dist.healthy} Saudáveis, ${portfolioSummary.health_dist.attention} Atenção, ${portfolioSummary.health_dist.risk} em Risco Crítico.
 Total de Contas: ${portfolioSummary.total_accounts}
 
