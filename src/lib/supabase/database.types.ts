@@ -1915,6 +1915,52 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_invites: {
+        Row: {
+          id: string
+          account_id: string
+          contact_id: string
+          email: string
+          invited_by: string
+          status: string
+          token: string | null
+          invited_at: string
+          responded_at: string | null
+          expires_at: string
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          account_id: string
+          contact_id: string
+          email: string
+          invited_by: string
+          status?: string
+          token?: string | null
+          invited_at?: string
+          responded_at?: string | null
+          expires_at?: string
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          account_id?: string
+          contact_id?: string
+          email?: string
+          invited_by?: string
+          status?: string
+          token?: string | null
+          invited_at?: string
+          responded_at?: string | null
+          expires_at?: string
+          notes?: string | null
+        }
+        Relationships: [
+          { foreignKeyName: "portal_invites_account_id_fkey"; columns: ["account_id"]; referencedRelation: "accounts"; referencedColumns: ["id"] },
+          { foreignKeyName: "portal_invites_contact_id_fkey"; columns: ["contact_id"]; referencedRelation: "contacts"; referencedColumns: ["id"] },
+          { foreignKeyName: "portal_invites_invited_by_fkey"; columns: ["invited_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1923,6 +1969,11 @@ export type Database = {
           id: string
           role: string | null
           updated_at: string | null
+          user_type: string
+          account_id: string | null
+          contact_id: string | null
+          portal_approved_at: string | null
+          portal_approved_by: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1931,6 +1982,11 @@ export type Database = {
           id: string
           role?: string | null
           updated_at?: string | null
+          user_type?: string
+          account_id?: string | null
+          contact_id?: string | null
+          portal_approved_at?: string | null
+          portal_approved_by?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1939,6 +1995,11 @@ export type Database = {
           id?: string
           role?: string | null
           updated_at?: string | null
+          user_type?: string
+          account_id?: string | null
+          contact_id?: string | null
+          portal_approved_at?: string | null
+          portal_approved_by?: string | null
         }
         Relationships: []
       }
