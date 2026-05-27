@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { buildResolutionSLAFreeze, logSLAEvent } from '@/lib/support/lifecycle'
 import { sendCSATEmail } from '@/lib/support/csat-service'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
+import { sendPortalTicketStatusEmail } from '@/lib/email/portal-emails'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 const PatchSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'closed', 'reopened']).optional(),
@@ -97,7 +99,46 @@ export async function PATCH(
   // 4. Fire Async Events
   if (statusChanged) {
     logSLAEvent(id, `ticket_${parsed.data.status}`, { source: 'api_patch' }).catch(console.error)
-    
+
+    // Notifica usuários do portal com acesso aprovado na conta
+    if (ticket.account_id && parsed.data.status) {
+      const newStatus = parsed.data.status
+      const ticketRef = updatedTicket.external_ticket_id ?? `#${id.slice(0, 8).toUpperCase()}`
+      ;(async () => {
+        try {
+          const admin = getSupabaseAdminClient() as any
+          const { data: portalUsers } = await admin
+            .from('profiles')
+            .select('id, full_name')
+            .eq('account_id', ticket.account_id)
+            .eq('user_type', 'external')
+            .not('portal_approved_at', 'is', null)
+
+          if (!portalUsers?.length) return
+
+          const { data: accountRow } = await admin.from('accounts').select('name').eq('id', ticket.account_id).single()
+          const accountName = accountRow?.name ?? ''
+
+          for (const pu of portalUsers) {
+            const { data: authUser } = await admin.auth.admin.getUserById(pu.id)
+            const email = authUser?.user?.email
+            if (!email) continue
+            sendPortalTicketStatusEmail({
+              to: email,
+              contactName: pu.full_name ?? email,
+              accountName,
+              ticketTitle: updatedTicket.title,
+              ticketRef,
+              newStatus,
+              ticketId: id,
+            }).catch(console.error)
+          }
+        } catch (err) {
+          console.error('[PortalTicketEmail] Error:', err)
+        }
+      })()
+    }
+
     // Auto-trigger CSAT if resolving
     if (isResolving) {
       sendCSATEmail(id).catch(err => {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
+import { sendPortalInviteEmail, sendPortalApprovalRequestEmail } from '@/lib/email/portal-emails'
 
 const InviteSchema = z.object({
   account_id: z.string().uuid(),
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Já existe um convite pendente para este stakeholder' }, { status: 409 })
   }
 
-  const { data, error } = await admin
+  const { data: invite, error } = await admin
     .from('portal_invites')
     .insert({
       account_id,
@@ -83,5 +84,30 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+
+  // Busca dados da conta e do CSM para os e-mails
+  const [accountRow, csmRow] = await Promise.all([
+    admin.from('accounts').select('name').eq('id', account_id).single(),
+    admin.from('profiles').select('full_name').eq('id', auth.user.id).single(),
+  ])
+
+  const accountName = accountRow.data?.name ?? 'sua conta'
+  const csmName = csmRow.data?.full_name ?? 'Seu CSM'
+  const setupUrl = `${process.env.NEXT_PUBLIC_APP_URL}/portal/setup`
+  const approveUrl = `${process.env.NEXT_PUBLIC_APP_URL}/accounts/${account_id}`
+
+  // Envia e-mails em paralelo (sem await — não bloqueia a resposta)
+  Promise.all([
+    sendPortalInviteEmail({ to: email.toLowerCase(), contactName: contact.name, accountName, setupUrl }),
+    sendPortalApprovalRequestEmail({
+      to: auth.user.email ?? '',
+      csmName,
+      contactName: contact.name,
+      contactEmail: email.toLowerCase(),
+      accountName,
+      approveUrl,
+    }),
+  ]).catch(err => console.error('[PortalInvite] Email error:', err))
+
+  return NextResponse.json(invite, { status: 201 })
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { z } from 'zod'
+import { sendPortalAccessApprovedEmail, sendPortalAccessRejectedEmail } from '@/lib/email/portal-emails'
 
 const ApproveSchema = z.object({
   action: z.enum(['approved', 'rejected']),
@@ -87,6 +88,38 @@ export async function POST(
         portal_approved_at: new Date().toISOString(),
         portal_approved_by: auth.user.id,
       }, { onConflict: 'id' })
+  }
+
+  // Busca dados da conta para o e-mail
+  const { data: accountRow } = await admin
+    .from('accounts')
+    .select('name')
+    .eq('id', invite.account_id)
+    .single()
+  const accountName = accountRow?.name ?? 'sua conta'
+
+  // Busca nome do contato para personalizar o e-mail
+  const { data: contactRow } = await admin
+    .from('contacts')
+    .select('name')
+    .eq('id', invite.contact_id)
+    .single()
+  const contactName = contactRow?.name ?? invite.email
+
+  // E-mail conforme ação (fire-and-forget)
+  if (action === 'approved') {
+    sendPortalAccessApprovedEmail({
+      to: invite.email,
+      contactName,
+      accountName,
+    }).catch(err => console.error('[PortalApprove] Email error:', err))
+  } else {
+    sendPortalAccessRejectedEmail({
+      to: invite.email,
+      contactName,
+      accountName,
+      reason: notes ?? null,
+    }).catch(err => console.error('[PortalReject] Email error:', err))
   }
 
   return NextResponse.json({ ok: true, action })
