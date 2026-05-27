@@ -43,14 +43,29 @@ export function HealthScoreCard({
   accountId,
 }: HealthScoreCardProps) {
   const scoreValue = Math.round(healthScore)
-  const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? 'hsl(var(--primary))' : '#10b981'
+  const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? '#f7941e' : '#10b981'
 
-  const trendIcon = {
-    up: <TrendingUp className="w-5 h-5 text-success" />,
-    down: <TrendingDown className="w-5 h-5 text-destructive" />,
-    critical: <AlertTriangle className="w-5 h-5 text-destructive animate-pulse" />,
-    stable: <Minus className="w-5 h-5 text-muted-foreground" />,
-  }[healthTrend] ?? <Minus className="w-5 h-5 text-muted-foreground" />
+  const trendStyle = {
+    up: {
+      bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+      icon: <TrendingUp className="w-5 h-5" />
+    },
+    down: {
+      bg: 'bg-red-500/10 border-red-500/20 text-red-400',
+      icon: <TrendingDown className="w-5 h-5" />
+    },
+    critical: {
+      bg: 'bg-red-500/20 border-red-500/30 text-red-400 animate-pulse',
+      icon: <AlertTriangle className="w-5 h-5" />
+    },
+    stable: {
+      bg: 'bg-slate-800/50 border-slate-700/30 text-slate-400',
+      icon: <Minus className="w-5 h-5" />
+    }
+  }[healthTrend as 'up' | 'down' | 'critical' | 'stable'] ?? {
+    bg: 'bg-slate-800/50 border-slate-700/30 text-slate-400',
+    icon: <Minus className="w-5 h-5" />
+  }
 
   const displayChartData = chartData.length === 1
     ? [{ date: 'Start', score: chartData[0].score }, { date: 'End', score: chartData[0].score }]
@@ -103,7 +118,7 @@ export function HealthScoreCard({
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-black text-foreground tracking-tighter tabular-nums">{scoreValue}</span>
             {discrepancyAlert && (
-              <AlertTriangle className="w-4 h-4 text-primary animate-pulse -mt-1" />
+              <AlertTriangle className="w-4 h-4 text-plannera-orange animate-pulse -mt-1" />
             )}
           </div>
         </div>
@@ -124,7 +139,7 @@ export function HealthScoreCard({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-success/10 text-emerald-600 dark:text-success border border-success-100 dark:border-success-500/20 shadow-sm">{trendIcon}</div>
+            <div className={`p-2.5 rounded-xl border shadow-sm ${trendStyle.bg}`}>{trendStyle.icon}</div>
             <span className="text-lg font-black text-foreground uppercase tracking-tighter">
               {{ up: 'Alta', down: 'Queda', critical: 'Crítico', stable: 'Estável' }[healthTrend] ?? healthTrend}
             </span>
