@@ -204,21 +204,33 @@ export async function runRAGPipeline(
       try {
         // Busca contexto extra para o primeiro cliente mencionado (limite para não explodir tokens)
         const targetAcc = mentionedAccounts[0]
-        const [extraAdoption, extraPlan] = await Promise.all([
+        const [extraAdoption, extraPlan, extraTimeEntries] = await Promise.all([
           db.from('feature_adoption')
             .select('id, status, action_plan, action_status, product_features(name)')
             .eq('account_id', targetAcc.id),
-          getAccountPlanSummary(targetAcc.id, supabase)
+          getAccountPlanSummary(targetAcc.id, supabase),
+          db.from('time_entries')
+            .select('date, activity_type, parsed_hours, parsed_description, natural_language_input')
+            .eq('account_id', targetAcc.id)
+            .order('date', { ascending: false })
+            .limit(10),
         ])
 
-        const extraLines = (extraAdoption.data || []).map((a: any) => 
+        const extraLines = (extraAdoption.data || []).map((a: any) =>
           `- ${a.product_features?.name || 'Funcionalidade'}: ${(a.status || 'N/A').toUpperCase()}`
+        ).join('\n')
+
+        const effortLines = (extraTimeEntries.data || []).map((e: any) =>
+          `- [${e.date}] ${(e.activity_type || '').toUpperCase()} (${e.parsed_hours}h): ${e.parsed_description || e.natural_language_input || ''}`
         ).join('\n')
 
         extraAccountContext = `\n\n## CONTEXTO ESPECÍFICO DEEP-DIVE: ${targetAcc.name}
 Plan: ${extraPlan?.plan_name || 'Nenhum'} | Downside Risk: ${(extraPlan?.risk_level || 'none').toUpperCase()}
 Adoption:
-${extraLines || 'Dados de adoção não encontrados.'}`
+${extraLines || 'Dados de adoção não encontrados.'}
+
+### JOURNAL DE ESFORÇO — Interações recentes com ${targetAcc.name}
+${effortLines || 'Nenhum esforço registrado.'}`
       } catch (err) {
         console.error('[RAG] Erro no Deep-Dive context:', err)
       }

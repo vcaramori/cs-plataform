@@ -7,6 +7,7 @@ type Theme = "light" | "dark" | "system"
 type ThemeProviderProps = React.PropsWithChildren<{
   attribute?: "class"
   defaultTheme?: Theme
+  forcedTheme?: Theme
   enableSystem?: boolean
   disableTransitionOnChange?: boolean
 }>
@@ -28,29 +29,36 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const {
     attribute = "class",
     defaultTheme = "light",
+    forcedTheme,
     enableSystem = true,
     disableTransitionOnChange = false,
   } = props
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme)
+  const [theme, setThemeState] = React.useState<Theme>(forcedTheme ?? defaultTheme)
   const [systemTheme, setSystemTheme] = React.useState<"light" | "dark">("light")
 
   React.useEffect(() => {
+    if (forcedTheme) {
+      setThemeState(forcedTheme)
+      return
+    }
     const storedTheme = window.localStorage.getItem("theme") as Theme | null
     setThemeState(storedTheme ?? defaultTheme)
     setSystemTheme(getSystemTheme())
-  }, [defaultTheme])
+  }, [defaultTheme, forcedTheme])
 
   React.useEffect(() => {
-    if (!enableSystem) return
+    if (!enableSystem || forcedTheme) return
 
     const media = window.matchMedia("(prefers-color-scheme: dark)")
     const onChange = () => setSystemTheme(getSystemTheme())
 
     media.addEventListener("change", onChange)
     return () => media.removeEventListener("change", onChange)
-  }, [enableSystem])
+  }, [enableSystem, forcedTheme])
 
-  const resolvedTheme = theme === "system" && enableSystem ? systemTheme : theme === "dark" ? "dark" : "light"
+  const resolvedTheme = forcedTheme 
+    ? (forcedTheme === "system" ? systemTheme : forcedTheme as "light" | "dark")
+    : (theme === "system" && enableSystem ? systemTheme : theme === "dark" ? "dark" : "light")
 
   React.useEffect(() => {
     const root = document.documentElement
@@ -79,9 +87,10 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   }, [attribute, disableTransitionOnChange, resolvedTheme])
 
   const setTheme = React.useCallback((nextTheme: Theme) => {
+    if (forcedTheme) return
     setThemeState(nextTheme)
     window.localStorage.setItem("theme", nextTheme)
-  }, [])
+  }, [forcedTheme])
 
   const value = React.useMemo(
     () => ({ theme, setTheme, resolvedTheme }),
