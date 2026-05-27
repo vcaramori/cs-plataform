@@ -109,11 +109,12 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
     if (!acc[dateKey]) {
       acc[dateKey] = { date: h.date, score: null }
     }
-    acc[dateKey].score = h.manual_score ?? h.shadow_score
+    acc[dateKey].score = h.manual_score ?? null
     return acc
   }, {})
 
   const chartData = (Object.values(groupedSparkline) as { date: string, score: number | null }[])
+    .filter(d => d.score !== null)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-10)
 
