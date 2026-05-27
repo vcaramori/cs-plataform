@@ -20,6 +20,12 @@ export function PortalSetupClient() {
   const [account, setAccount] = useState<{ name: string; logoUrl: string | null } | null>(null)
 
   useEffect(() => {
+    console.log('PORTAL SETUP SUPABASE KEY:', supabase.supabaseKey === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy' ? 'DUMMY_KEY' : 'REAL_KEY');
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('PORTAL SETUP AUTH EVENT:', event, session ? 'SESSION OK' : 'SESSION NULL');
+    });
+
     async function loadAccount() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -36,11 +42,14 @@ export function PortalSetupClient() {
             })
           }
         }
-      } catch (e) {
-        console.error('Erro ao carregar conta no setup:', e)
+      } catch (e: any) {
+        console.error('Erro ao carregar conta no setup:', e?.message || e);
       }
     }
     loadAccount()
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [supabase])
 
   async function handleSetup(e: React.FormEvent) {
@@ -55,6 +64,9 @@ export function PortalSetupClient() {
     }
     setLoading(true)
     try {
+      const sessionRes = await supabase.auth.getSession();
+      console.log('PORTAL SETUP SUBMIT SESSION:', sessionRes.data.session ? 'ACTIVE' : 'NULL', sessionRes.error?.message || 'NO ERR');
+
       // Atualiza senha e nome utilizando a instância do Supabase carregada na montagem do componente
       const { error: pwErr } = await supabase.auth.updateUser({ password })
       if (pwErr) throw pwErr
@@ -70,6 +82,7 @@ export function PortalSetupClient() {
       toast.success('Conta configurada! Bem-vindo ao portal.')
       router.push('/portal/tickets')
     } catch (e: any) {
+      console.error('Erro ao configurar conta:', e?.message || e);
       toast.error(e.message || 'Erro ao configurar conta')
     } finally {
       setLoading(false)
