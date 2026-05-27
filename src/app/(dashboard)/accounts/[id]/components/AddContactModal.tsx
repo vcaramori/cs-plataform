@@ -73,7 +73,8 @@ export function AddContactModal({ open, onClose, accountId }: {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error ?? 'Erro ao salvar')
+        const msg = typeof err.error === 'string' ? err.error : JSON.stringify(err.error)
+        throw new Error(msg ?? 'Erro ao salvar')
       }
       toast.success('Stakeholder adicionado!')
       reset()
@@ -105,7 +106,7 @@ export function AddContactModal({ open, onClose, accountId }: {
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit, (errs) => { console.error('[AddContact] Validation errors:', errs); toast.error('Preencha os campos obrigatórios: ' + Object.keys(errs).join(', ')) })} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
           {/* Campos com scroll */}
           <div className="space-y-6 px-6 py-6 overflow-y-auto flex-1">
 
