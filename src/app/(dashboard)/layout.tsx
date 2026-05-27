@@ -11,6 +11,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const profile = await getUserProfile(user.id)
 
+  // Segurança: impede que usuários externos (clientes do portal) acessem a plataforma interna de CSM
+  if (profile && profile.user_type === 'external') {
+    redirect("/portal/dashboard")
+  }
+
   return (
     <ReactQueryProvider>
       <ClientDashboardLayout user={user} profile={profile}>
