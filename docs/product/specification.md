@@ -22,6 +22,8 @@
 | 9 | Login | Autenticação | [09-login.md](09-login.md) |
 | 10 | CS Ops Audit | Auditoria de Performance | [10-cs-ops-audit.md](10-cs-ops-audit.md) |
 | 11 | CS Ops Cockpit | Painel de Operações | [11-cs-ops.md](11-cs-ops.md) |
+| 12 | Atividades do CSM | Hub `/atividades` — List/Kanban, sugestões IA, filtro time | [plano-atividades-e-governanca.md](plano-atividades-e-governanca.md) |
+| 13 | Governança de Permissões | Custom roles em runtime — `useModulePermission`, `has_module_permission()`, `csm_tasks` | [plano-atividades-e-governanca.md](plano-atividades-e-governanca.md) |
 
 ---
 

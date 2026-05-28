@@ -190,9 +190,32 @@ export async function POST(request: Request) {
     }
   }
 
+  // Cria tarefas sugeridas a partir dos action_items extraídos pela IA
+  if (parsedEntry.action_items && parsedEntry.action_items.length > 0) {
+    const taskInserts = parsedEntry.action_items.map((item) => ({
+      csm_id: user.id,
+      account_id: accountId,
+      title: item.title,
+      status: 'suggested',
+      priority: 'medium',
+      due_date: item.due_date ?? null,
+      time_entry_id: result.id,
+      source_label: 'time_entry',
+    }))
+
+    const adminClient = getSupabaseAdminClient() as any
+    const { error: taskError } = await adminClient.from('csm_tasks').insert(taskInserts)
+    if (taskError) {
+      console.error('[TimeEntry] Error creating suggested tasks:', taskError)
+    } else {
+      console.log(`[TimeEntry] ${taskInserts.length} tarefas sugeridas criadas`)
+    }
+  }
+
   return NextResponse.json({
     ...result,
     confidence_score: parsedEntry.confidence_score,
     needs_review: needsReview,
+    suggested_tasks: parsedEntry.action_items?.length ?? 0,
   }, { status: 201 })
 }

@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Loader2, Settings2, CheckCircle2, AlertCircle, Clock, Ban, HelpCircle, User, Calendar, Save } from 'lucide-react'
+import { Loader2, Settings2, CheckCircle2, AlertCircle, Clock, Ban, HelpCircle, User, Calendar, Save, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { CreateTaskModal } from '@/app/(dashboard)/atividades/components/CreateTaskModal'
 
 interface Feature {
   id: string
@@ -41,6 +42,7 @@ interface AdoptionFormProps {
   selectedRecord: AdoptionRecord | null
   users: User[]
   saving: string | null
+  accountId?: string
   onUpdate: (record: AdoptionRecord) => void
   onRecordChange: (record: AdoptionRecord) => void
 }
@@ -49,9 +51,11 @@ export function AdoptionForm({
   selectedRecord,
   users,
   saving,
+  accountId,
   onUpdate,
   onRecordChange
 }: AdoptionFormProps) {
+  const [taskModalOpen, setTaskModalOpen] = useState(false)
   const statusOptions = [
     { label: 'Não Iniciado', value: 'not_started', icon: Clock, color: 'text-content-secondary', bg: 'bg-surface-background' },
     { label: 'Uso Parcial', value: 'partial', icon: AlertCircle, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
@@ -269,6 +273,36 @@ export function AdoptionForm({
           className="bg-surface-background border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange"
         />
       </div>
+
+      {accountId && (
+        <div className="border-t border-border-divider pt-6">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2 text-[10px] font-black uppercase tracking-wide"
+            onClick={() => setTaskModalOpen(true)}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Criar Atividade para esta Feature
+          </Button>
+        </div>
+      )}
+
+      {accountId && (
+        <CreateTaskModal
+          open={taskModalOpen}
+          onOpenChange={setTaskModalOpen}
+          onSaved={() => {}}
+          prefill={{
+            account_id: accountId,
+            adoption_id: selectedRecord.id,
+            source_label: 'adoption',
+            title: `Ativar: ${selectedRecord.product_features.name}`,
+            description: selectedRecord.action_plan ?? undefined,
+          }}
+        />
+      )}
     </div>
   )
 }

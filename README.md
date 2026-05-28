@@ -276,8 +276,9 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 
 **Páginas UI existentes e funcionais:**
 * `/dashboard` — Dashboard Executivo & KPIs de Saúde
-* `/home` — Command Center & Briefing IA
-* `/accounts/[id]` — Detalhe 360° da Conta (com Power Map)
+* `/home` — Command Center & Briefing IA (redirect pós-login controlado por governança de módulos)
+* `/atividades` — Hub Central de Atividades do CSM (List/Kanban, sugestões IA, filtro de time)
+* `/accounts/[id]` — Detalhe 360° da Conta (com Power Map + widget de Atividades)
 * `/accounts/[id]/renewal` — Cockpit de Renovação
 * `/accounts/[id]/sla` — Configuração de Acordos de SLA
 * `/accounts/[id]/success-plan` — Success Plans Compartilhados
@@ -290,6 +291,7 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 * `/users` — Gestão de Equipe (IAM) e Atribuição de Roles
 * `/admin`, `/admin/integrations`, `/admin/settings` — Hub Administrativo e Integrações (Webhooks, CRM, Support, BI, Health, SLA)
 * `/adoption` e `/cs-ops` — Métricas de Adoção e Capacity Planning
+* `/settings/roles` — Matriz de Permissões por Módulo (custom roles + `home` e `atividades` incluídos)
 
 **Páginas UI integradas / bypassadas (para melhor UX):**
 * `/alertas` — integrado na Sidebar no **AlertCenter Drawer** flutuante.
@@ -307,6 +309,7 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 - ✅ Remoção do Ollama (Local) — May 11
 - ✅ LLM Multi-Provider (Gemini, Claude, OpenAI, Groq) — May 25
 - ✅ TypeScript compilation (0 errors in-scope) — May 12 + estabilização May 12
+- ✅ Módulo Atividades + Governança de Permissões — May 28
 - ⏳ E2E testing phase (Playwright) — May 12-14
 - ⏳ RLS audit (3 roles) — May 14
 - ⏳ Performance baseline — May 14
@@ -318,8 +321,58 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 - [`docs/WAVES-6-7-EXECUTION-STATUS.md`](docs/WAVES-6-7-EXECUTION-STATUS.md) — Dashboard de execução
 - [`docs/product/WAVE7.md`](docs/product/WAVE7.md) — Especificação de Wave 7
 - [`WAVE6_IMPLEMENTATION_STATUS.md`](WAVE6_IMPLEMENTATION_STATUS.md) — Guia de Wave 6
+- [`docs/product/plano-atividades-e-governanca.md`](docs/product/plano-atividades-e-governanca.md) — Módulo Atividades + Governança (2026-05-28)
 
 **Total Roadmap:** 364 SP (Wave 4-7) — Entrega de Major Release
+
+---
+
+## Sprint — Módulo de Atividades + Governança de Permissões (2026-05-28)
+
+**Status:** ✅ Implementado — Backend + UI + Migrations + Governança
+
+### Entregues nesta sprint
+
+#### Governança de Permissões (runtime enforcement)
+- **`custom_role_id`** adicionado a `profiles` (FK para `custom_roles`, migration `20260528000000`)
+- **`has_module_permission()`** — função SQL `SECURITY DEFINER` para avaliação performática de permissão em RLS
+- **`src/lib/auth/permission-schema.ts`** — Zod schema para JSONB de permissões (`view`, `create`, `edit`, `delete`, `export`, `view_team`)
+- **`src/hooks/useModulePermission.ts`** — hook client-side: lê `custom_role_id` → fallback para enum built-in
+- **`src/lib/auth/get-module-permission.ts`** — equivalente server-side para page.tsx e API routes
+- **`PLATFORM_MODULES`** — `home` e `atividades` adicionados à matriz (aparecem em `/settings/roles` automaticamente)
+
+#### Tabela `csm_tasks` (migration `20260528010000`)
+- Campos: `csm_id`, `account_id`, `title`, `description`, `activity_type`, `status` (`suggested|todo|in_progress|completed|cancelled`), `priority`, `due_date`, `source_label`
+- **FKs explícitas** (sem polimorfismo): `adoption_id`, `time_entry_id`, `alert_id` — CHECK garante no máximo um preenchido
+- **RLS:** dono vê tudo + `has_module_permission('atividades','view_team')` para gestores
+- GIN index em `custom_roles.permissions`
+
+#### Módulo `/atividades`
+- **List View** — grupos: Sugestões da IA / Atrasadas / Hoje / Esta Semana / Próximas / Sem Data
+- **Kanban View** — colunas: Sugestão / A Fazer / Em Andamento / Concluído / Cancelado
+- **Filtro Mine/Team** — visível somente para quem tem `atividades.view_team`
+- **Realtime dinâmico** — channel com filtro `csm_id=eq.${userId}` no modo "mine", sem filtro no modo "team"
+- **Sugestões da IA** — tasks `status='suggested'` geradas automaticamente por: Gemini (time entries com `action_items[]`), Smart Alerts, Adoção Funcional
+
+#### Integrações Automáticas de Criação de Tarefas
+| Origem | Onde | Como |
+|--------|------|------|
+| **Time Entry (Esforço)** | `parse-time-entry.ts` + `time-entries/route.ts` | Gemini extrai `action_items[]`; API cria tasks `suggested` com `time_entry_id` |
+| **Smart Alert** | `cron/proactive-alerts/route.ts` | Alerta crítico → task `suggested` com `alert_id` |
+| **Adoção Funcional** | `AdoptionForm.tsx` | Botão "Criar Atividade" → `CreateTaskModal` pré-preenchido com `adoption_id` |
+| **Manual** | `/atividades` → "+ Nova" | Modal em branco |
+
+#### Sidebar e Routing
+- `/home` e `/atividades` renderizados no Sidebar via `useModulePermission` (sem hardcode de role)
+- `src/app/page.tsx` — redirect pós-login: `/home` se `home.view=true`, senão `/dashboard`
+- `AccountActivitiesWidget.tsx` — widget de tarefas pendentes na página de conta
+- `HomePrioritiesClient.tsx` — seções "Atrasadas" e "Hoje" alimentadas pela `csm_tasks`
+
+#### Banco de Dados — Resumo
+| Migration | Tabela/Coluna | Descrição |
+|-----------|--------------|-----------|
+| `20260528000000` | `profiles.custom_role_id` | FK para `custom_roles` + backfill por nome de role |
+| `20260528010000` | `csm_tasks` | Nova tabela + RLS + função `has_module_permission` |
 
 ---
 

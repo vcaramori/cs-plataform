@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     // Buscar accounts com contrato ativo
     const { data: accounts, error: accountsError } = await supabase
       .from('accounts')
-      .select('id, health_score_v2')
+      .select('id, health_score_v2, csm_owner_id')
       .eq('contract_status', 'active')
 
     if (accountsError || !accounts) {
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
               }
 
               // Insere novo alerta
-              const { error: insertError } = await supabase
+              const { data: insertedAlert, error: insertError } = await supabase
                 .from('proactive_alerts')
                 .insert({
                   account_id: account.id,
@@ -77,9 +77,24 @@ export async function POST(request: Request) {
                   metadata: alert.metadata,
                   created_at: new Date().toISOString()
                 })
+                .select('id')
+                .single()
 
               if (insertError) {
                 errors.push(`[${account.id}] ${alert.type}: ${insertError.message}`)
+              } else if (insertedAlert && account.csm_owner_id) {
+                // Cria tarefa sugerida vinculada ao alerta para o CSM da conta
+                const recommendation = alert.metadata?.recommendation as string | undefined
+                await supabase.from('csm_tasks').insert({
+                  csm_id: account.csm_owner_id,
+                  account_id: account.id,
+                  title: recommendation || alert.message.slice(0, 120),
+                  description: alert.message,
+                  status: 'suggested',
+                  priority: alert.severity === 'critical' ? 'high' : 'medium',
+                  alert_id: insertedAlert.id,
+                  source_label: 'alert',
+                })
               }
             }
 

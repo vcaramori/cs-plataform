@@ -25,6 +25,7 @@ import {
   SmilePlus,
   Workflow,
   CheckCircle2,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -32,6 +33,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { AlertCenter } from '@/components/alerts/AlertCenter'
+import { useModulePermission } from '@/hooks/useModulePermission'
 
 import { UserRole } from '@/lib/supabase/types'
 import { env } from '@/lib/env'
@@ -71,6 +73,9 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const canViewHome       = useModulePermission('home', 'view')
+  const canViewAtividades = useModulePermission('atividades', 'view')
 
   const roleHierarchy: Record<UserRole, number> = {
     'csm': 0,
@@ -232,6 +237,12 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
       )}>
         {/* Main Section */}
         <div className="space-y-2">
+          {canViewHome && (
+            <NavLink href="/home" label="Home" icon={Zap} />
+          )}
+          {canViewAtividades && (
+            <NavLink href="/atividades" label="Atividades" icon={CheckCircle2} />
+          )}
           {navItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}

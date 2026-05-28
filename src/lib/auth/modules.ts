@@ -5,18 +5,20 @@
  * When adding a new module/screen to the platform, add it here.
  */
 export const PLATFORM_MODULES = [
-  { module: 'dashboard', label: 'Dashboard & Home' },
-  { module: 'suporte', label: 'Suporte & Tickets' },
-  { module: 'nps', label: 'Pesquisas NPS' },
-  { module: 'voc', label: 'Voz do Cliente (VoC)' },
-  { module: 'adoption', label: 'Adoption & Heatmaps' },
-  { module: 'esforco', label: 'Esforço & Capacity' },
-  { module: 'ask', label: 'Perguntar (Ask AI)' },
-  { module: 'playbooks', label: 'Automação & Playbooks' },
-  { module: 'contracts', label: 'Contratos & Faturamento' },
-  { module: 'accounts', label: 'Gestão de Contas' },
-  { module: 'governance', label: 'Governança & Auditoria' },
-  { module: 'sla_config', label: 'Configuração SLA' },
+  { module: 'home',          label: 'Home & Command Center' },
+  { module: 'atividades',    label: 'Atividades do CSM' },
+  { module: 'dashboard',     label: 'Dashboard & Home' },
+  { module: 'suporte',       label: 'Suporte & Tickets' },
+  { module: 'nps',           label: 'Pesquisas NPS' },
+  { module: 'voc',           label: 'Voz do Cliente (VoC)' },
+  { module: 'adoption',      label: 'Adoption & Heatmaps' },
+  { module: 'esforco',       label: 'Esforço & Capacity' },
+  { module: 'ask',           label: 'Perguntar (Ask AI)' },
+  { module: 'playbooks',     label: 'Automação & Playbooks' },
+  { module: 'contracts',     label: 'Contratos & Faturamento' },
+  { module: 'accounts',      label: 'Gestão de Contas' },
+  { module: 'governance',    label: 'Governança & Auditoria' },
+  { module: 'sla_config',    label: 'Configuração SLA' },
   { module: 'product_config', label: 'Funcionalidades & Planos' },
 ] as const
 
@@ -30,6 +32,7 @@ export type PermissionRow = {
   edit: boolean
   delete: boolean
   export: boolean
+  view_team: boolean
 }
 
 export function makeDefaultPermissions(): PermissionRow[] {
@@ -41,5 +44,6 @@ export function makeDefaultPermissions(): PermissionRow[] {
     edit: false,
     delete: false,
     export: false,
+    view_team: false,
   }))
 }

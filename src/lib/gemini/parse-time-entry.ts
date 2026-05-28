@@ -1,6 +1,11 @@
 import { generateText } from '@/lib/llm/gateway'
 import type { ActivityType } from '@/lib/supabase/types'
 
+export type ActionItem = {
+  title: string
+  due_date: string | null  // YYYY-MM-DD ou null
+}
+
 export type ParsedTimeEntry = {
   activity_type: ActivityType
   parsed_hours: number
@@ -8,6 +13,7 @@ export type ParsedTimeEntry = {
   account_name_hint: string | null
   date: string
   confidence_score: number
+  action_items: ActionItem[]
 }
 
 export async function parseTimeEntry(
@@ -26,8 +32,17 @@ Retorne APENAS um JSON válido com esta estrutura:
   "parsed_description": "<descrição detalhada em texto>",
   "account_name_hint": "<nome da conta ou null>",
   "date": "<YYYY-MM-DD>",
-  "confidence_score": <número entre 0.0 e 1.0>
+  "confidence_score": <número entre 0.0 e 1.0>,
+  "action_items": [
+    { "title": "<ação concreta identificada>", "due_date": "<YYYY-MM-DD ou null>" }
+  ]
 }
+
+Regras para action_items:
+- Extraia SOMENTE tarefas/ações concretas mencionadas na transcrição (ex: "enviar proposta", "agendar reunião de follow-up", "corrigir bug X", "preparar relatório para cliente")
+- Se não houver ações identificáveis, retorne um array vazio []
+- Máximo de 5 itens; prefira qualidade a quantidade
+- due_date: interprete datas relativas (ex: "até sexta", "próxima semana") usando ${today} como referência; use null se não houver prazo mencionado
 
 Critérios para confidence_score:
 - 1.0: texto claro com tipo, duração, descrição e conta todos explícitos
@@ -78,13 +93,14 @@ Instruções para os outros campos:
 
   try {
     const parsed = JSON.parse(json) as ParsedTimeEntry
-    
+
     // Garantias de segurança
     if (!parsed.parsed_hours || parsed.parsed_hours <= 0) parsed.parsed_hours = 1.0
     if (!parsed.date) parsed.date = today
     if (typeof parsed.confidence_score !== 'number' || parsed.confidence_score < 0 || parsed.confidence_score > 1) {
       parsed.confidence_score = 0.7
     }
+    if (!Array.isArray(parsed.action_items)) parsed.action_items = []
 
     return parsed
   } catch (err) {

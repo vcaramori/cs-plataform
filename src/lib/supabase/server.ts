@@ -3,6 +3,7 @@ import { cookies, headers } from 'next/headers'
 import { env } from '@/lib/env'
 import { Database, UserRole, Profile } from './types'
 import { getSupabaseAdminClient } from './admin'
+import { parsePermissions } from '@/lib/auth/permission-schema'
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()
@@ -54,7 +55,7 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
   const supabase = getSupabaseAdminClient()
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, custom_roles(permissions)')
     .eq('id', userId)
     .single()
 
@@ -68,11 +69,18 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
   }
 
   if (!data) return null
+
+  const rawPerms = (data as any).custom_roles?.permissions ?? null
+  const custom_role_permissions = rawPerms ? parsePermissions(rawPerms) : null
+
   return {
     id: data.id,
     full_name: data.full_name,
     role: data.role as UserRole,
     avatar_url: data.avatar_url,
+    user_type: (data as any).user_type ?? null,
+    custom_role_id: (data as any).custom_role_id ?? null,
+    custom_role_permissions,
     created_at: data.created_at || '',
     updated_at: data.updated_at || '',
   }

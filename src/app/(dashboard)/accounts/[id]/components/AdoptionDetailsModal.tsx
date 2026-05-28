@@ -144,6 +144,7 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
               selectedRecord={selectedRecord}
               users={users}
               saving={saving}
+              accountId={accountId}
               onUpdate={updateRecord}
               onRecordChange={setSelectedRecord}
             />

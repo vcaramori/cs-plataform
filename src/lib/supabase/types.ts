@@ -594,8 +594,37 @@ export type Profile = {
   full_name: string | null
   role: UserRole
   avatar_url: string | null
+  user_type: string | null
+  custom_role_id: string | null
+  custom_role_permissions: import('@/lib/auth/permission-schema').ModulePermission[] | null
   created_at: string
   updated_at: string
+}
+
+// CSM Tasks (Módulo Atividades)
+export type CsmTaskStatus = 'suggested' | 'todo' | 'in_progress' | 'completed' | 'cancelled'
+export type CsmTaskPriority = 'low' | 'medium' | 'high'
+export type CsmTaskActivityType = 'meeting' | 'email' | 'call' | 'analysis' | 'follow_up' | 'internal' | 'other'
+export type CsmTaskSourceLabel = 'manual' | 'adoption' | 'time_entry' | 'alert' | 'playbook'
+
+export type CsmTask = {
+  id: string
+  csm_id: string
+  account_id: string | null
+  title: string
+  description: string | null
+  activity_type: CsmTaskActivityType | null
+  status: CsmTaskStatus
+  priority: CsmTaskPriority
+  due_date: string | null
+  adoption_id: string | null
+  time_entry_id: string | null
+  alert_id: string | null
+  source_label: CsmTaskSourceLabel | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+  accounts?: { name: string } | null
 }
 
 // App Settings (Epic 37)

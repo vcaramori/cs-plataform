@@ -7,6 +7,7 @@ import { RecentTicketsWidget } from './RecentTicketsWidget'
 import { ContactsPowerMap } from './ContactsPowerMap'
 import { QuickDocuments } from './QuickDocuments'
 import { AccountChat } from './AccountChat'
+import { AccountActivitiesWidget } from './AccountActivitiesWidget'
 import { EditContractDialog } from './EditContractDialog'
 import { AdoptionChart } from './AdoptionChart'
 import { PlaybookWidget } from './PlaybookWidget'
@@ -28,6 +29,7 @@ import {
   BrainCircuit,
   AlertTriangle,
   PlayCircle,
+  CheckSquare,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -320,12 +322,23 @@ export function AccountDetailPageClient({
               <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Adoção Executiva</Text>
             </div>
             <AdoptionExecutiveSection accountId={id} accountName={accountName} />
-            
+
             {adoptionMetrics.length > 0 && (
               <div className="scale-[0.98] origin-top -mt-2 opacity-80">
                 <AdoptionChart metrics={adoptionMetrics.map(m => ({ measured_at: m.week_date, value: m.adoption_score }))} />
               </div>
             )}
+          </section>
+
+          {/* Atividades */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-4 px-1 h-12">
+              <div className="p-2.5 rounded-xl bg-accent/10 text-accent border border-accent/20 shadow-sm">
+                <CheckSquare className="w-5 h-5" />
+              </div>
+              <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Atividades</Text>
+            </div>
+            <AccountActivitiesWidget accountId={id} accountName={accountName} />
           </section>
         </div>
 

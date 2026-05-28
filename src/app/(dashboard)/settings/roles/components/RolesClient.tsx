@@ -43,6 +43,7 @@ function normalizeRoles(rawRoles: RawRole[]): CustomRole[] {
         edit: match?.edit ?? false,
         delete: match?.delete ?? false,
         export: match?.export ?? false,
+        view_team: match?.view_team ?? false,
       }
     })
     return { ...r, permissions: perms }
