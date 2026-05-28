@@ -20,8 +20,9 @@ export default function PortalForgotPasswordPage() {
     setLoading(true)
     try {
       const supabase = getSupabaseBrowserClient()
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/api/auth/callback?redirect_to=/portal/update-password`
+        redirectTo: `${baseUrl}/api/auth/callback?redirect_to=/portal/update-password`
       })
       if (error) throw error
       setSuccess(true)
