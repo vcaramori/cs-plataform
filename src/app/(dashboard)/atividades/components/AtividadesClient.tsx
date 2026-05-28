@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AtividadesListView } from './AtividadesListView'
 import { AtividadesKanbanView } from './AtividadesKanbanView'
 import { CreateTaskModal } from './CreateTaskModal'
-import { List, LayoutGrid, Plus, Users, User } from 'lucide-react'
+import { List, LayoutGrid, Plus, Users, User, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CsmTask, CsmTaskStatus } from '@/lib/supabase/types'
 
@@ -21,9 +21,11 @@ type TeamFilter = 'mine' | 'team'
 export function AtividadesClient({ userId, canViewTeam }: Props) {
   const supabase = getSupabaseBrowserClient()
   const [tasks, setTasks] = useState<CsmTask[]>([])
+  const [deletedTasks, setDeletedTasks] = useState<CsmTask[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [teamFilter, setTeamFilter] = useState<TeamFilter>('mine')
+  const [showTrash, setShowTrash] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
 
@@ -31,9 +33,58 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
 
   const loadTasks = useCallback(async () => {
     setLoading(true)
+
+    let baseQuery = db
+      .from('csm_tasks')
+      .select('*, accounts(name)')
+
+    if (teamFilter === 'mine') {
+      baseQuery = baseQuery.eq('csm_id', userId)
+    }
+
+    // Tarefas ativas
+    const { data: active } = await baseQuery
+      .is('deleted_at', null)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+
+    // Tarefas excluídas (lixeira)
+    const { data: deleted } = await db
+      .from('csm_tasks')
+      .select('*, accounts(name)')
+      .not('deleted_at', 'is', null)
+      .eq(teamFilter === 'mine' ? 'csm_id' : 'id', teamFilter === 'mine' ? userId : db.rpc)
+      .order('deleted_at', { ascending: false })
+      .limit(50)
+
+    setTasks((active as CsmTask[]) ?? [])
+    setDeletedTasks((deleted as CsmTask[]) ?? [])
+    setLoading(false)
+  }, [db, userId, teamFilter])
+
+  // Query separada para lixeira respeitando filtro de equipe
+  const loadDeletedTasks = useCallback(async () => {
     let query = db
       .from('csm_tasks')
       .select('*, accounts(name)')
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false })
+      .limit(50)
+
+    if (teamFilter === 'mine') {
+      query = query.eq('csm_id', userId)
+    }
+
+    const { data } = await query
+    setDeletedTasks((data as CsmTask[]) ?? [])
+  }, [db, userId, teamFilter])
+
+  const loadActiveTasks = useCallback(async () => {
+    setLoading(true)
+    let query = db
+      .from('csm_tasks')
+      .select('*, accounts(name)')
+      .is('deleted_at', null)
       .order('due_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
 
@@ -47,10 +98,11 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   }, [db, userId, teamFilter])
 
   useEffect(() => {
-    loadTasks()
-  }, [loadTasks])
+    loadActiveTasks()
+    loadDeletedTasks()
+  }, [loadActiveTasks, loadDeletedTasks])
 
-  // Realtime: canal diferente dependendo do filtro (bug do Supabase RT com filter)
+  // Realtime
   useEffect(() => {
     const channelName = `csm_tasks_${teamFilter}`
     const filter = teamFilter === 'mine' ? `csm_id=eq.${userId}` : undefined
@@ -63,25 +115,36 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
         table: 'csm_tasks',
         ...(filter ? { filter } : {}),
       }, () => {
-        loadTasks()
+        loadActiveTasks()
+        loadDeletedTasks()
       })
       .subscribe()
 
     return () => { (supabase as any).removeChannel(channel) }
-  }, [supabase, userId, teamFilter, loadTasks])
+  }, [supabase, userId, teamFilter, loadActiveTasks, loadDeletedTasks])
 
   async function handleStatusChange(id: string, status: CsmTaskStatus) {
     const payload: Record<string, any> = { status }
     if (status === 'completed') payload.completed_at = new Date().toISOString()
-    if (status !== 'completed') payload.completed_at = null
+    else payload.completed_at = null
 
-    await (supabase as any).from('csm_tasks').update(payload).eq('id', id)
+    await db.from('csm_tasks').update(payload).eq('id', id)
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...payload } : t))
   }
 
   async function handleDelete(id: string) {
-    await (supabase as any).from('csm_tasks').delete().eq('id', id)
+    const deleted_at = new Date().toISOString()
+    await db.from('csm_tasks').update({ deleted_at }).eq('id', id)
+    const task = tasks.find(t => t.id === id)
     setTasks(prev => prev.filter(t => t.id !== id))
+    if (task) setDeletedTasks(prev => [{ ...task, deleted_at }, ...prev])
+  }
+
+  async function handleRestore(id: string) {
+    await db.from('csm_tasks').update({ deleted_at: null }).eq('id', id)
+    const task = deletedTasks.find(t => t.id === id)
+    setDeletedTasks(prev => prev.filter(t => t.id !== id))
+    if (task) setTasks(prev => [{ ...task, deleted_at: null }, ...prev])
   }
 
   function handleEdit(task: CsmTask) {
@@ -102,35 +165,35 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
     setEditTask(null)
   }
 
-  const suggestedCount = tasks.filter(t => t.status === 'suggested').length
-
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'list' && 'bg-surface-card shadow-sm')}
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'kanban' && 'bg-surface-card shadow-sm')}
-              onClick={() => setViewMode('kanban')}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-          </div>
+          {/* View toggle — só visível fora da lixeira */}
+          {!showTrash && (
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'list' && 'bg-surface-card shadow-sm')}
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'kanban' && 'bg-surface-card shadow-sm')}
+                onClick={() => setViewMode('kanban')}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
 
-          {/* Team filter — só visível para quem tem view_team */}
-          {canViewTeam && (
+          {/* Team filter */}
+          {canViewTeam && !showTrash && (
             <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
               <Button
                 variant="ghost"
@@ -152,14 +215,33 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
               </Button>
             </div>
           )}
+
+          {/* Lixeira toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'h-7 gap-1.5 px-3 rounded-xl text-[10px] font-black uppercase',
+              showTrash
+                ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                : 'text-content-secondary hover:text-content-primary'
+            )}
+            onClick={() => setShowTrash(v => !v)}
+          >
+            <Trash2 className="w-3 h-3" />
+            Lixeira
+            {deletedTasks.length > 0 && (
+              <span className={cn(
+                'ml-1 px-1.5 py-0 rounded-full text-[9px] font-black',
+                showTrash ? 'bg-destructive/20' : 'bg-muted'
+              )}>
+                {deletedTasks.length}
+              </span>
+            )}
+          </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {suggestedCount > 0 && (
-            <span className="text-[10px] font-black text-accent bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-full">
-              {suggestedCount} sugest{suggestedCount === 1 ? 'ão' : 'ões'} da IA
-            </span>
-          )}
+        {!showTrash && (
           <Button
             size="sm"
             className="gap-1.5 h-9"
@@ -168,7 +250,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
             <Plus className="w-4 h-4" />
             Nova
           </Button>
-        </div>
+        )}
       </div>
 
       {/* Content */}
@@ -178,6 +260,8 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
             <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
           ))}
         </div>
+      ) : showTrash ? (
+        <TrashView tasks={deletedTasks} onRestore={handleRestore} />
       ) : viewMode === 'list' ? (
         <AtividadesListView
           tasks={tasks}
@@ -200,6 +284,49 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
         onSaved={handleSaved}
         editTask={editTask}
       />
+    </div>
+  )
+}
+
+function TrashView({ tasks, onRestore }: { tasks: CsmTask[]; onRestore: (id: string) => void }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-content-secondary">
+        <Trash2 className="w-8 h-8 opacity-20 mb-3" />
+        <p className="text-sm font-semibold">Lixeira vazia</p>
+        <p className="text-xs mt-1 opacity-60">Atividades excluídas aparecem aqui.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-content-secondary mb-4">
+        Atividades excluídas logicamente. Restaure qualquer uma para que ela volte ao fluxo normal.
+      </p>
+      {tasks.map(task => (
+        <div
+          key={task.id}
+          className="flex items-center justify-between gap-3 bg-surface-card border border-border-divider rounded-2xl px-4 py-3 opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-content-primary truncate line-through">{task.title}</p>
+            <p className="text-[10px] text-content-secondary mt-0.5">
+              {task.accounts?.name && <span>{task.accounts.name} · </span>}
+              Excluída em {new Date(task.deleted_at!).toLocaleDateString('pt-BR')}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-7 text-[10px] font-black uppercase flex-shrink-0"
+            onClick={() => onRestore(task.id)}
+          >
+            <RotateCcw className="w-3 h-3" />
+            Restaurar
+          </Button>
+        </div>
+      ))}
     </div>
   )
 }

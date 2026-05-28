@@ -20,9 +20,7 @@ type Group = {
 }
 
 function getGroupKey(task: CsmTask): string {
-  if (task.status === 'suggested') return 'suggested'
   if (task.status === 'completed' || task.status === 'cancelled') return 'done'
-
   if (!task.due_date) return 'no_date'
 
   const due = new Date(task.due_date + 'T00:00:00')
@@ -50,12 +48,11 @@ export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete }: 
     })
 
     const orderedGroups: Group[] = [
-      { key: 'suggested', label: 'Sugestões da IA', tasks: grouped.suggested ?? [], colorClass: 'text-accent' },
-      { key: 'overdue',   label: 'Atrasadas',       tasks: grouped.overdue   ?? [], colorClass: 'text-destructive' },
-      { key: 'today',     label: 'Hoje',             tasks: grouped.today     ?? [], colorClass: 'text-amber-500' },
-      { key: 'week',      label: 'Esta semana',      tasks: grouped.week      ?? [], colorClass: 'text-content-primary' },
-      { key: 'upcoming',  label: 'Próximas',         tasks: grouped.upcoming  ?? [], colorClass: 'text-content-secondary' },
-      { key: 'no_date',   label: 'Sem data',         tasks: grouped.no_date   ?? [], colorClass: 'text-content-secondary/60' },
+      { key: 'overdue',  label: 'Atrasadas',    tasks: grouped.overdue  ?? [], colorClass: 'text-destructive' },
+      { key: 'today',    label: 'Hoje',          tasks: grouped.today    ?? [], colorClass: 'text-amber-500' },
+      { key: 'week',     label: 'Esta semana',   tasks: grouped.week     ?? [], colorClass: 'text-content-primary' },
+      { key: 'upcoming', label: 'Próximas',      tasks: grouped.upcoming ?? [], colorClass: 'text-content-secondary' },
+      { key: 'no_date',  label: 'Sem data',      tasks: grouped.no_date  ?? [], colorClass: 'text-content-secondary/60' },
     ]
 
     return orderedGroups.filter(g => g.tasks.length > 0)

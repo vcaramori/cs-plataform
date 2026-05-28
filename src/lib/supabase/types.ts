@@ -622,6 +622,7 @@ export type CsmTask = {
   alert_id: string | null
   source_label: CsmTaskSourceLabel | null
   completed_at: string | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
   accounts?: { name: string } | null

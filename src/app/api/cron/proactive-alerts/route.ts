@@ -90,7 +90,7 @@ export async function POST(request: Request) {
                   account_id: account.id,
                   title: recommendation || alert.message.slice(0, 120),
                   description: alert.message,
-                  status: 'suggested',
+                  status: 'todo',
                   priority: alert.severity === 'critical' ? 'high' : 'medium',
                   alert_id: insertedAlert.id,
                   source_label: 'alert',
