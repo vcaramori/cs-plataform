@@ -10,6 +10,7 @@ interface Props {
   onEdit: (task: CsmTask) => void
   onStatusChange: (id: string, status: CsmTaskStatus) => void
   onDelete: (id: string) => void
+  onOpenDetail: (task: CsmTask) => void
 }
 
 type Column = {
@@ -51,7 +52,7 @@ const COLUMNS: Column[] = [
   },
 ]
 
-export function AtividadesKanbanView({ tasks, onEdit, onStatusChange, onDelete }: Props) {
+export function AtividadesKanbanView({ tasks, onEdit, onStatusChange, onDelete, onOpenDetail }: Props) {
   const [dragOverCol, setDragOverCol] = useState<CsmTaskStatus | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const dragTaskRef = useRef<string | null>(null)
@@ -166,6 +167,7 @@ export function AtividadesKanbanView({ tasks, onEdit, onStatusChange, onDelete }
                       onEdit={onEdit}
                       onStatusChange={onStatusChange}
                       onDelete={onDelete}
+                      onOpenDetail={onOpenDetail}
                       isDragging={draggingId === task.id}
                     />
                   </div>

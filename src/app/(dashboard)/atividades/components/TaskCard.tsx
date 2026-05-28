@@ -11,6 +11,7 @@ interface TaskCardProps {
   onEdit: (task: CsmTask) => void
   onStatusChange: (id: string, status: CsmTaskStatus) => void
   onDelete: (id: string) => void
+  onOpenDetail?: (task: CsmTask) => void
   isDragging?: boolean
 }
 
@@ -36,7 +37,7 @@ const sourceLabelMap: Record<string, string> = {
   playbook:   'Playbook',
 }
 
-export function TaskCard({ task, onEdit, onStatusChange, onDelete, isDragging }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onStatusChange, onDelete, onOpenDetail, isDragging }: TaskCardProps) {
   const StatusIcon = statusIcon[task.status] ?? Clock
   const priority = priorityConfig[task.priority]
 
@@ -46,12 +47,15 @@ export function TaskCard({ task, onEdit, onStatusChange, onDelete, isDragging }:
     && new Date(task.due_date) < new Date()
 
   return (
-    <div className={cn(
-      'group relative bg-surface-card border border-border-divider rounded-2xl p-4 space-y-3',
-      'hover:border-accent/40 hover:shadow-md transition-all cursor-pointer',
-      isDragging && 'opacity-50 rotate-1 shadow-xl',
-      isOverdue && 'border-destructive/30'
-    )}>
+    <div
+      className={cn(
+        'group relative bg-surface-card border border-border-divider rounded-2xl p-4 space-y-3',
+        'hover:border-accent/40 hover:shadow-md transition-all cursor-pointer',
+        isDragging && 'opacity-50 rotate-1 shadow-xl',
+        isOverdue && 'border-destructive/30'
+      )}
+      onClick={() => onOpenDetail?.(task)}
+    >
       {/* Cabeçalho */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -74,7 +78,7 @@ export function TaskCard({ task, onEdit, onStatusChange, onDelete, isDragging }:
             variant="ghost"
             size="icon"
             className="w-6 h-6 rounded-lg"
-            onClick={() => onEdit(task)}
+            onClick={e => { e.stopPropagation(); onEdit(task) }}
           >
             <Pencil className="w-3 h-3" />
           </Button>
@@ -82,7 +86,7 @@ export function TaskCard({ task, onEdit, onStatusChange, onDelete, isDragging }:
             variant="ghost"
             size="icon"
             className="w-6 h-6 rounded-lg text-destructive hover:text-destructive"
-            onClick={() => onDelete(task.id)}
+            onClick={e => { e.stopPropagation(); onDelete(task.id) }}
           >
             <Trash2 className="w-3 h-3" />
           </Button>

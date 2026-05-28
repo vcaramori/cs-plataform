@@ -10,6 +10,7 @@ interface Props {
   onEdit: (task: CsmTask) => void
   onStatusChange: (id: string, status: CsmTaskStatus) => void
   onDelete: (id: string) => void
+  onOpenDetail: (task: CsmTask) => void
 }
 
 type Group = {
@@ -35,7 +36,7 @@ function getGroupKey(task: CsmTask): string {
   return 'upcoming'
 }
 
-export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete }: Props) {
+export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete, onOpenDetail }: Props) {
   const groups = useMemo<Group[]>(() => {
     const grouped: Record<string, CsmTask[]> = {}
 
@@ -88,6 +89,7 @@ export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete }: 
                 onEdit={onEdit}
                 onStatusChange={onStatusChange}
                 onDelete={onDelete}
+                onOpenDetail={onOpenDetail}
               />
             ))}
           </div>

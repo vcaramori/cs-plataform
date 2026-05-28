@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AtividadesListView } from './AtividadesListView'
 import { AtividadesKanbanView } from './AtividadesKanbanView'
 import { CreateTaskModal } from './CreateTaskModal'
+import { TaskDetailSheet } from './TaskDetailSheet'
 import { List, LayoutGrid, Plus, Users, User, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CsmTask, CsmTaskStatus } from '@/lib/supabase/types'
@@ -28,6 +29,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   const [showTrash, setShowTrash] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
+  const [detailTask, setDetailTask] = useState<CsmTask | null>(null)
 
   const db = supabase as any
 
@@ -268,6 +270,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
           onEdit={handleEdit}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
+          onOpenDetail={setDetailTask}
         />
       ) : (
         <AtividadesKanbanView
@@ -275,6 +278,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
           onEdit={handleEdit}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
+          onOpenDetail={setDetailTask}
         />
       )}
 
@@ -283,6 +287,17 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
         onOpenChange={open => { setModalOpen(open); if (!open) setEditTask(null) }}
         onSaved={handleSaved}
         editTask={editTask}
+      />
+
+      <TaskDetailSheet
+        task={detailTask}
+        open={!!detailTask}
+        onOpenChange={open => { if (!open) setDetailTask(null) }}
+        onEdit={task => { setDetailTask(null); handleEdit(task) }}
+        onStatusChange={(id, status) => {
+          handleStatusChange(id, status)
+          if (detailTask?.id === id) setDetailTask(prev => prev ? { ...prev, status } : prev)
+        }}
       />
     </div>
   )
