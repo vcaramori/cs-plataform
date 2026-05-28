@@ -23,24 +23,34 @@ export async function getModulePermission(
   module: string,
   action: ModuleAction = 'view'
 ): Promise<boolean> {
-  // Cast para any: custom_role_id ainda não está no database.types.ts gerado
   const supabase = getSupabaseAdminClient() as any
 
+  // Query 1: fetch profile without join — safe even before migration is applied.
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, custom_role_id, custom_roles(permissions)')
+    .select('role, custom_role_id')
     .eq('id', userId)
     .single()
 
   if (error || !data) return false
 
-  const rawPerms = data.custom_roles?.permissions ?? null
-  if (rawPerms) {
-    const permissions = parsePermissions(rawPerms)
-    if (permissions) {
-      const perm = permissions.find((p: any) => p.module === module)
-      if (!perm) return false
-      return perm[action] === true
+  // Query 2: resolve custom role permissions only when FK is present.
+  const customRoleId = data.custom_role_id ?? null
+  if (customRoleId) {
+    const { data: crData } = await supabase
+      .from('custom_roles')
+      .select('permissions')
+      .eq('id', customRoleId)
+      .single()
+
+    const rawPerms = crData?.permissions ?? null
+    if (rawPerms) {
+      const permissions = parsePermissions(rawPerms)
+      if (permissions) {
+        const perm = permissions.find((p: any) => p.module === module)
+        if (!perm) return false
+        return perm[action] === true
+      }
     }
   }
 

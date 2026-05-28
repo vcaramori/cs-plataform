@@ -53,9 +53,12 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
 
 export async function getUserProfile(userId: string): Promise<Profile | null> {
   const supabase = getSupabaseAdminClient()
+
+  // Query 1: fetch profile without the custom_roles join so this never fails
+  // even if the custom_role_id migration hasn't been applied yet.
   const { data, error } = await supabase
     .from('profiles')
-    .select('*, custom_roles(permissions)')
+    .select('*')
     .eq('id', userId)
     .single()
 
@@ -70,8 +73,19 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
 
   if (!data) return null
 
-  const rawPerms = (data as any).custom_roles?.permissions ?? null
-  const custom_role_permissions = rawPerms ? parsePermissions(rawPerms) : null
+  // Query 2: fetch custom role permissions only when the FK is present.
+  // Gracefully absent if the column/migration doesn't exist yet.
+  let custom_role_permissions = null
+  const customRoleId = (data as any).custom_role_id ?? null
+  if (customRoleId) {
+    const { data: crData } = await (supabase as any)
+      .from('custom_roles')
+      .select('permissions')
+      .eq('id', customRoleId)
+      .single()
+    const rawPerms = crData?.permissions ?? null
+    custom_role_permissions = rawPerms ? parsePermissions(rawPerms) : null
+  }
 
   return {
     id: data.id,
@@ -79,7 +93,7 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
     role: data.role as UserRole,
     avatar_url: data.avatar_url,
     user_type: (data as any).user_type ?? null,
-    custom_role_id: (data as any).custom_role_id ?? null,
+    custom_role_id: customRoleId,
     custom_role_permissions,
     created_at: data.created_at || '',
     updated_at: data.updated_at || '',
