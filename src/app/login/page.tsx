@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -85,9 +86,14 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="password" className="text-slate-300 text-[10px] font-extrabold uppercase tracking-widest block">
-                Senha de Acesso
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="text-slate-300 text-[10px] font-extrabold uppercase tracking-widest block">
+                  Senha de Acesso
+                </label>
+                <Link href="/forgot-password" className="text-plannera-orange hover:text-plannera-soe text-[10px] font-bold uppercase tracking-widest transition-colors">
+                  Esqueci a senha
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"

@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.csm_tasks (
   due_date      DATE,
 
   -- Origem com integridade referencial (no máximo uma preenchida)
-  adoption_id    UUID REFERENCES public.account_feature_adoption(id) ON DELETE SET NULL,
+  adoption_id    UUID REFERENCES public.feature_adoption(id) ON DELETE SET NULL,
   time_entry_id  UUID REFERENCES public.time_entries(id)              ON DELETE SET NULL,
   alert_id       UUID REFERENCES public.proactive_alerts(id)          ON DELETE SET NULL,
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -152,9 +153,14 @@ function PortalLoginClientInternal() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
-              Senha
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
+                Senha
+              </Label>
+              <Link href="/portal/forgot-password" className="text-plannera-orange hover:text-plannera-orange/80 text-[10px] font-bold uppercase tracking-widest transition-colors">
+                Esqueci a senha
+              </Link>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />
               <Input
