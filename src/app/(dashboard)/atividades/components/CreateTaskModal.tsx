@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { Loader2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-import type { CsmTask, CsmTaskStatus, CsmTaskPriority, CsmTaskActivityType, CsmTaskSourceLabel } from '@/lib/supabase/types'
+import type { CsmTask, CsmTaskPriority, CsmTaskActivityType, CsmTaskSourceLabel } from '@/lib/supabase/types'
 
 interface CreateTaskModalProps {
   open: boolean
@@ -81,47 +81,63 @@ export function CreateTaskModal({ open, onOpenChange, onSaved, prefill, editTask
     })
   }, [supabase])
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!form.title.trim()) return
     setSaving(true)
 
-    const payload: Record<string, any> = {
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      activity_type: form.activity_type || null,
-      priority: form.priority,
-      due_date: form.due_date || null,
-      account_id: form.account_id || null,
-    }
-
-    let data: CsmTask | null = null
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
 
     const db = supabase as any
+    let data: CsmTask | null = null
+    let error: any = null
 
     if (isEdit && editTask) {
-      const { data: updated } = await db
+      const payload: Record<string, any> = {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        activity_type: form.activity_type || null,
+        priority: form.priority,
+        due_date: form.due_date || null,
+        account_id: form.account_id || null,
+      }
+      const res = await db
         .from('csm_tasks')
         .update(payload)
         .eq('id', editTask.id)
         .select('*, accounts(name)')
         .single()
-      data = updated as CsmTask
+      data = res.data as CsmTask
+      error = res.error
     } else {
-      payload.source_label = (prefill?.source_label as CsmTaskSourceLabel) ?? 'manual'
-      payload.adoption_id = prefill?.adoption_id ?? null
-      payload.time_entry_id = prefill?.time_entry_id ?? null
-      payload.alert_id = prefill?.alert_id ?? null
-
-      const { data: created } = await db
+      const payload: Record<string, any> = {
+        csm_id: user.id,
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        activity_type: form.activity_type || null,
+        priority: form.priority,
+        due_date: form.due_date || null,
+        account_id: form.account_id || null,
+        source_label: (prefill?.source_label as CsmTaskSourceLabel) ?? 'manual',
+        adoption_id: prefill?.adoption_id ?? null,
+        time_entry_id: prefill?.time_entry_id ?? null,
+        alert_id: prefill?.alert_id ?? null,
+      }
+      const res = await db
         .from('csm_tasks')
         .insert(payload)
         .select('*, accounts(name)')
         .single()
-      data = created as CsmTask
+      data = res.data as CsmTask
+      error = res.error
     }
 
     setSaving(false)
+    if (error) {
+      console.error('[CreateTaskModal] erro ao salvar:', error.message ?? error)
+      return
+    }
     if (data) {
       onSaved(data)
       onOpenChange(false)
