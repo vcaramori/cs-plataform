@@ -60,3 +60,10 @@ scripts/email-sync-loop.mjs
 
 # MCP Local Configuration
 /.mcp.json
+
+# Logs de desenvolvimento
+*.log
+*.txt.log
+dev_output.*
+server.log
+test-execution.log
