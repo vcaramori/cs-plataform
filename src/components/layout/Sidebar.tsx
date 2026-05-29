@@ -232,7 +232,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
       {/* ── Logo Plannera ────────────────────────────────── */}
       <div className={cn(
         "border-b border-border transition-all duration-300 flex items-center",
-        isCollapsed ? "p-3 justify-center" : "px-4 py-3 justify-center"
+        isCollapsed ? "p-3 justify-center min-h-[72px]" : "px-5 py-5 justify-center min-h-[72px]"
       )}>
         <Link href="/" onClick={onMobileClose} className="flex items-center" aria-label="Plannera — Início">
           {isCollapsed ? (
