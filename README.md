@@ -152,9 +152,10 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 
 | Epic | Feature | Backend | UI | Nota |
 |------|---------|---------|-----|------|
-| **19** | Adoption Heatmap | ✅ `GET /api/adoption/heatmap` | ✅ | `/adoption` com seletor de conta + heatmap por feature |
-| **19** | Blocker Detection | ✅ `GET /api/adoption/blockers` | ✅ | Tab Blockers com severity badges no `/adoption` |
-| **19** | Adoption Forecast 90d | ✅ `POST /api/adoption/forecast` | ✅ | Tab Forecast com KPIs + recomendações IA |
+| **19** | Dashboard de Adoção (portfólio) | ✅ `getPortfolioAdoption()` | ✅ | `/adoption` agregado: KPIs, adoção por plano, TOP features adotadas/não-adotadas por plano, barreiras e downgrade risk (sem seletor de conta) |
+| **19** | Adoção por conta | ✅ `GET /api/accounts/[id]/adoption` | ✅ | Análise individual vive na ficha da conta (`/accounts/[id]` → "Adoção Funcional", Score de Adoção Real) — não duplicada no dashboard |
+| **19** | Blocker Detection | ✅ `GET /api/adoption/blockers` | ✅ | Detecção IA de barreiras (consumida por conta + agregada por categoria no dashboard) |
+| **19** | Adoption Forecast 90d | ✅ `POST /api/adoption/forecast` | ✅ | Forecast IA permanece por conta (não misturado no dashboard de portfólio) |
 | **19** | Feature Dependency DAG | ✅ `GET /api/features/dependency-graph` | ❌ **FALTANDO** | Sem visualização de grafo |
 | **21** | CS Ops Dashboard | ✅ `cs-ops-service.ts` completo | ✅ | `/cs-ops` com KPIs de equipe |
 | **21** | Capacity Planning | ✅ `GET /api/cs-ops/capacity` | ✅ | Tab Capacity com cards por CSM e barra de utilização |
@@ -290,7 +291,7 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 * `/playbooks` e `/playbooks/builder` — Builder de Automações ReactFlow
 * `/users` — Gestão de Equipe (IAM) e Atribuição de Roles
 * `/admin`, `/admin/integrations`, `/admin/settings` — Hub Administrativo e Integrações (Webhooks, CRM, Support, BI, Health, SLA)
-* `/adoption` e `/cs-ops` — Métricas de Adoção e Capacity Planning
+* `/adoption` — Dashboard de Adoção de portfólio (adoção por plano, TOP features adotadas/não-adotadas, barreiras, downgrade risk) e `/cs-ops` — Capacity Planning
 * `/settings/roles` — Matriz de Permissões por Módulo (custom roles + `home` e `atividades` incluídos)
 
 **Páginas UI integradas / bypassadas (para melhor UX):**

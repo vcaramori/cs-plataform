@@ -45,7 +45,7 @@ const navItems = [
   { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
   { href: '/nps',               label: 'NPS',            icon: Star },
   { href: '/voc',               label: 'VoC',            icon: SmilePlus },
-  { href: '/adoption',          label: 'Adoption',       icon: Target },
+  { href: '/adoption',          label: 'Adoção',         icon: Target },
   { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
   { href: '/playbooks', label: 'Playbooks',      icon: Workflow },
   { href: '/cs-ops/tasks', label: 'Minhas Tarefas', icon: CheckCircle2 },

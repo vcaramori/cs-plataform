@@ -1,31 +1,26 @@
-import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/ui/page-container'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
-import { AdoptionDashboardClient } from './components/AdoptionDashboardClient'
+import { getPortfolioAdoption } from '@/lib/adoption/portfolio-adoption'
+import { AdoptionPortfolioClient } from './components/AdoptionPortfolioClient'
 
 export default async function AdoptionPage() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: accounts } = await supabase
-    .from('accounts')
-    .select('id, name, health_score')
-    .order('name')
+  const portfolio = await getPortfolioAdoption(supabase)
 
   return (
     <PageContainer>
       <ModuleHeader
-        title="Adoption Intelligence"
-        subtitle="Heatmap de uso, blockers, forecast e análise de adoção por conta"
+        title="Adoção"
+        subtitle="Visão de portfólio: adoção por plano, barreiras e risco de downgrade"
         iconName="BarChart2"
       />
 
-      <Suspense>
-        <AdoptionDashboardClient accounts={accounts ?? []} />
-      </Suspense>
+      <AdoptionPortfolioClient data={portfolio} />
     </PageContainer>
   )
 }
