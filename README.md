@@ -184,6 +184,25 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🧭 Sidebar — Logo Plannera + Navegação por Jornada + PT-BR (2026-05-29)
+
+Reorganização do menu lateral ([Sidebar.tsx](src/components/layout/Sidebar.tsx)):
+
+- **Marca:** "CS-Continuum / Control Tower" → **logo da Plannera** (`/brand/logo.png`) no modo expandido; no recolhido, a **marca (grade 3×3 laranja)** recriada em SVG (`PlanneraMark`, funciona em qualquer tema).
+- **Navegação por jornada:** Início (topo) → **Análise** (Dashboard, Adoção, NPS, Voz do Cliente) → **Operação** (Atividades, Esforço, Suporte, Dashboard Suporte, Playbooks, Perguntar) → **Governança** (config recolhível, por permissão). Cabeçalhos de grupo somem no modo recolhido.
+- **PT-BR:** VoC → "Voz do Cliente"; Governance → "Governança"; Capacity Planning → "Planejamento de Capacidade"; Admin Panel → "Administração"; rodapé "Executive Representative" → cargo em PT (mapa `ROLE_LABELS`). Mantidos "Dashboard", "Playbooks", "NPS".
+- Permissões e o comportamento recolher/expandir preservados.
+
+> Caveat: o wordmark do logo é branco — ideal no tema escuro (atual); em tema claro pode sumir (a marca recolhida não tem esse problema). Variante de logo escuro fica para depois, se necessário.
+
+### 💬 Atividades — Detalhe em Modal + Comentários como Chat (2026-05-29)
+
+O detalhe da tarefa deixou de abrir em painel lateral (`Sheet`) com 3 abas e passou a abrir em **modal central de painel duplo** (`TaskDetailSheet.tsx`, agora via `Dialog`):
+
+- **Esquerda:** Detalhes (descrição, tipo, criada em, mover status) + **Anexos** (upload/lista).
+- **Direita:** **Comentários como chat** — balões com avatar/inicial, autor e data·hora; mensagens próprias alinhadas à direita ("Você"), demais à esquerda; auto-scroll para a última; enviar com Enter (Shift+Enter quebra linha).
+- Sem abas: tudo visível na mesma tela. Interface de props inalterada (sem mudança nos componentes pais).
+
 ### 🏠 Home — Cockpit Diário de Ação (role-aware) (2026-05-29)
 
 A `/home` deixou de ser o "Command Center" (fila pessoal do CSM, filtrada por `csm_owner_id`) e virou o **cockpit diário de ação**, agora a **tela de entrada pós-login**:

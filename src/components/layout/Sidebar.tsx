@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
@@ -38,28 +39,57 @@ import { useModulePermission } from '@/hooks/useModulePermission'
 import { UserRole } from '@/lib/supabase/types'
 import { env } from '@/lib/env'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/esforco',   label: 'Esforço',        icon: Clock },
-  { href: '/suporte',           label: 'Suporte',        icon: TicketCheck },
+// Grupos de navegação "por jornada". Início e Atividades são inseridos
+// dinamicamente conforme permissão (ver render).
+const analiseItems = [
+  { href: '/dashboard',         label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/adoption',          label: 'Adoção',          icon: Target },
+  { href: '/nps',               label: 'NPS',             icon: Star },
+  { href: '/voc',               label: 'Voz do Cliente',  icon: SmilePlus },
+]
+
+const operacaoItems = [
+  { href: '/esforco',           label: 'Esforço',          icon: Clock },
+  { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
   { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
-  { href: '/nps',               label: 'NPS',            icon: Star },
-  { href: '/voc',               label: 'VoC',            icon: SmilePlus },
-  { href: '/adoption',          label: 'Adoção',         icon: Target },
-  { href: '/perguntar', label: 'Perguntar',      icon: MessageSquareText },
-  { href: '/playbooks', label: 'Playbooks',      icon: Workflow },
+  { href: '/playbooks',         label: 'Playbooks',         icon: Workflow },
+  { href: '/perguntar',         label: 'Perguntar',         icon: MessageSquareText },
 ]
 
 const settingsItems = [
   { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/roles',        label: 'Perfis de Acesso', icon: ShieldCheck, minRole: 'csm_senior' as const },
-  { href: '/cs-ops',               label: 'Capacity Planning',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/cs-ops',               label: 'Planejamento de Capacidade',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
   { href: '/settings/sla',           label: 'Política SLA', icon: ShieldCheck },
-  { href: '/admin',                 label: 'Admin Panel',    icon: Settings, minRole: 'admin' as const },
+  { href: '/admin',                 label: 'Administração',    icon: Settings, minRole: 'admin' as const },
 ]
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  csm: 'Customer Success',
+  csm_senior: 'CS Sênior',
+  head_cs: 'Head de CS',
+  admin: 'Administrador',
+  super_admin: 'Administrador',
+}
+
+/** Marca compacta da Plannera (grade 3×3 de pontos laranja, meio-direita ausente). */
+function PlanneraMark({ className }: { className?: string }) {
+  const dots = [
+    [4, 4], [12, 4], [20, 4],
+    [4, 12], [12, 12],
+    [4, 20], [12, 20], [20, 20],
+  ]
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      {dots.map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={2.6} fill="#f7941e" />
+      ))}
+    </svg>
+  )
+}
 
 interface SidebarProps {
   user: User
@@ -126,7 +156,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
       >
         <div className={cn(
           "group flex items-center transition-all relative border border-transparent",
-          isCollapsed ? "justify-center p-2 rounded-xl" : "gap-4 px-4 py-3 rounded-2xl",
+          isCollapsed ? "justify-center p-2 rounded-xl" : "gap-3 px-3 py-2 rounded-xl",
           active
             ? "text-brand-primary bg-muted/40 border-border-divider shadow-sm dark:text-white"
             : "text-content-secondary hover:text-content-primary hover:bg-muted/30 dark:hover:bg-white/5"
@@ -193,69 +223,75 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
         }
       </Button>
 
-      {/* ── Logo ─────────────────────────────────────────── */}
+      {/* ── Logo Plannera ────────────────────────────────── */}
       <div className={cn(
-        "border-b border-border transition-all duration-300",
-        isCollapsed ? "p-4" : "p-6"
+        "border-b border-border transition-all duration-300 flex items-center",
+        isCollapsed ? "p-4 justify-center" : "px-6 py-5 justify-start"
       )}>
-        <div className={cn(
-          "flex items-center gap-4 overflow-hidden",
-          isCollapsed ? "justify-center" : "justify-start"
-        )}>
-          <div className={cn(
-            "rounded-2xl bg-accent flex items-center justify-center flex-shrink-0 shadow-lg border border-accent/20 transition-all duration-300",
-            isCollapsed ? "w-10 h-10" : "w-11 h-11"
-          )}>
-            <Sparkles className={cn(
-              "text-accent-foreground transition-all duration-300",
-              isCollapsed ? "w-4 h-4" : "w-5 h-5"
-            )} />
-          </div>
-
-          {!isCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col whitespace-nowrap"
-            >
-              <p className="text-content-primary font-extrabold text-sm tracking-[0.1em] uppercase leading-none">
-                CS-Continuum
-              </p>
-              <p className="label-premium !text-[9px] opacity-60 mt-1.5">
-                Control Tower
-              </p>
+        <Link href="/" onClick={onMobileClose} className="flex items-center" aria-label="Plannera — Início">
+          {isCollapsed ? (
+            <div className="w-10 h-10 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+              <PlanneraMark className="w-5 h-5" />
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+              <Image
+                src="/brand/logo.png"
+                alt="Plannera"
+                width={180}
+                height={52}
+                priority
+                className="h-9 w-auto object-contain object-left"
+              />
             </motion.div>
           )}
-        </div>
+        </Link>
       </div>
 
       {/* ── Navegação ────────────────────────────────────── */}
       <nav className={cn(
-        "flex-1 space-y-10 mt-4 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
+        "flex-1 space-y-6 mt-2 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
         isCollapsed ? "p-2" : "p-4"
       )}>
-        {/* Main Section */}
-        <div className="space-y-2">
-          {canViewHome && (
+        {/* Início (topo) */}
+        {canViewHome && (
+          <div className="space-y-1">
             <NavLink href="/home" label="Início" icon={Zap} />
+          </div>
+        )}
+
+        {/* Grupo: Análise */}
+        <div className="space-y-1">
+          {!isCollapsed && (
+            <p className="px-4 mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-content-secondary/40">Análise</p>
+          )}
+          {analiseItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+          ))}
+        </div>
+
+        {/* Grupo: Operação */}
+        <div className="space-y-1">
+          {!isCollapsed && (
+            <p className="px-4 mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-content-secondary/40">Operação</p>
           )}
           {canViewAtividades && (
             <NavLink href="/atividades" label="Atividades" icon={CheckCircle2} />
           )}
-          {navItems.map((item) => (
+          {operacaoItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </div>
 
         {/* Settings Section */}
-        <div className={cn("space-y-2", isCollapsed && "pt-6 border-t border-border-divider")}>
+        <div className={cn("space-y-1", isCollapsed && "pt-6 border-t border-border-divider")}>
           {/* Configurações — botão expansível */}
           <button
             type="button"
             onClick={() => { if (!isCollapsed) setSettingsOpen(o => !o) }}
             className={cn(
               "w-full group flex items-center transition-all border border-transparent",
-              isCollapsed ? "justify-center p-3 rounded-xl" : "gap-4 px-4 py-3 rounded-2xl text-[10px] font-extrabold uppercase tracking-[0.15em]",
+              isCollapsed ? "justify-center p-2 rounded-xl" : "gap-3 px-3 py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-[0.15em]",
               settingsOpen && !isCollapsed
                 ? "text-content-primary bg-muted"
                 : "text-content-secondary/50 hover:text-content-primary hover:bg-muted/50"
@@ -267,7 +303,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
             )} />
             {!isCollapsed && (
               <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 text-left whitespace-nowrap opacity-70 dark:opacity-60">
-                Governance
+                Governança
               </motion.span>
             )}
             {!isCollapsed && (
@@ -286,7 +322,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15 }}
-              className={cn("space-y-2", !isCollapsed && "pl-4")}
+              className={cn("space-y-1", !isCollapsed && "pl-4")}
             >
               {visibleSettingsItems.map((item) => (
                 <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
@@ -333,7 +369,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
                 {user.email?.split('@')[0]}
               </p>
               <p className="label-premium !text-[8px] opacity-60 mt-1.5">
-                Executive Representative
+                {role ? ROLE_LABELS[role] : 'Customer Success'}
               </p>
               <p className="label-premium !text-[7px] opacity-40 mt-0.5 truncate">
                 {env.app.instanceName}

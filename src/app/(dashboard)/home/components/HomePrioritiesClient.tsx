@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
+import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, TrendingUp, Target, ArrowRight, CheckCircle2, Clock, CalendarDays, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,110 @@ function actionLabel(actionType?: string | null): string {
   return ACTION_LABELS[actionType] ?? actionType.replace(/_/g, ' ')
 }
 
+interface SectionStyle {
+  label: string
+  subtitle: string
+  icon: React.FC<{ className?: string }>
+  color: string
+  bar: string
+  iconBg: string
+  iconBorder: string
+  chip: string
+  glow: string
+  hoverBorder: string
+  arrow: string
+}
+
+const CATEGORY: Record<'focar_agora' | 'manter_momentum' | 'oportunidade', SectionStyle> = {
+  focar_agora: {
+    label: 'Focar Agora', subtitle: 'Risco e urgência', icon: AlertCircle,
+    color: 'text-red-500', bar: 'bg-red-500', iconBg: 'bg-red-500/10', iconBorder: 'border-red-500/20',
+    chip: 'bg-red-500/15 text-red-500', glow: 'bg-red-500/20', hoverBorder: 'hover:border-red-500/40', arrow: 'group-hover:text-red-500',
+  },
+  manter_momentum: {
+    label: 'Manter Momentum', subtitle: 'Acompanhar de perto', icon: TrendingUp,
+    color: 'text-amber-500', bar: 'bg-amber-500', iconBg: 'bg-amber-500/10', iconBorder: 'border-amber-500/20',
+    chip: 'bg-amber-500/15 text-amber-600', glow: 'bg-amber-500/20', hoverBorder: 'hover:border-amber-500/40', arrow: 'group-hover:text-amber-500',
+  },
+  oportunidade: {
+    label: 'Oportunidade', subtitle: 'Expansão e upsell', icon: Target,
+    color: 'text-emerald-500', bar: 'bg-emerald-500', iconBg: 'bg-emerald-500/10', iconBorder: 'border-emerald-500/20',
+    chip: 'bg-emerald-500/15 text-emerald-600', glow: 'bg-emerald-500/20', hoverBorder: 'hover:border-emerald-500/40', arrow: 'group-hover:text-emerald-500',
+  },
+}
+
+const TASK_OVERDUE: SectionStyle = {
+  label: 'Atividades Atrasadas', subtitle: 'Vencidas — priorize', icon: Clock,
+  color: 'text-red-500', bar: 'bg-red-500', iconBg: 'bg-red-500/10', iconBorder: 'border-red-500/20',
+  chip: 'bg-red-500/15 text-red-500', glow: 'bg-red-500/20', hoverBorder: '', arrow: '',
+}
+const TASK_TODAY: SectionStyle = {
+  label: 'Atividades de Hoje', subtitle: 'Para resolver hoje', icon: CalendarDays,
+  color: 'text-amber-500', bar: 'bg-amber-500', iconBg: 'bg-amber-500/10', iconBorder: 'border-amber-500/20',
+  chip: 'bg-amber-500/15 text-amber-600', glow: 'bg-amber-500/20', hoverBorder: '', arrow: '',
+}
+
+const Chip = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <span className={cn('inline-flex items-center text-[9px] font-black uppercase tracking-tight px-1.5 py-0.5 rounded-md bg-surface-background text-content-secondary border border-border-divider shrink-0', className)}>
+    {children}
+  </span>
+)
+
+function SectionHead({ cfg, count, unit }: { cfg: SectionStyle; count: number; unit: string }) {
+  const Icon = cfg.icon
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center border', cfg.iconBg, cfg.iconBorder)}>
+        <Icon className={cn('w-4 h-4', cfg.color)} />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-sm font-black uppercase tracking-tight text-content-primary leading-none">{cfg.label}</h3>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-content-secondary/50 mt-1">{cfg.subtitle}</p>
+      </div>
+      <span className={cn('ml-auto text-[10px] font-black px-2.5 py-1 rounded-full border', cfg.iconBg, cfg.iconBorder, cfg.color)}>
+        {count} {unit}
+      </span>
+    </div>
+  )
+}
+
+function PriorityCard({ priority, cfg, index }: { priority: any; cfg: SectionStyle; index: number }) {
+  const Icon = cfg.icon
+  const name = priority.accounts?.name || 'Conta'
+  const segment = priority.accounts?.segment
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.04 }}>
+      <Link href={`/accounts/${priority.account_id}`} className="block group">
+        <div className={cn(
+          'relative overflow-hidden rounded-2xl bg-surface-card border border-border-divider shadow-premium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg',
+          cfg.hoverBorder
+        )}>
+          <div className={cn('absolute left-0 top-0 bottom-0 w-1', cfg.bar)} />
+          <div className={cn('absolute -right-12 -top-12 w-36 h-36 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none', cfg.glow)} />
+          <div className="relative flex items-center gap-4 p-4 pl-5">
+            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-105', cfg.iconBg, cfg.iconBorder)}>
+              <Icon className={cn('w-5 h-5', cfg.color)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-content-primary truncate">{name}</p>
+                {segment && <Chip>{segment}</Chip>}
+              </div>
+              <p className="text-sm text-content-secondary mt-0.5 line-clamp-2">{priority.reason}</p>
+              {priority.action_type && (
+                <span className={cn('inline-flex items-center gap-1 mt-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full', cfg.chip)}>
+                  <Icon className="w-2.5 h-2.5" /> {actionLabel(priority.action_type)}
+                </span>
+              )}
+            </div>
+            <ArrowRight className={cn('w-5 h-5 flex-shrink-0 text-content-secondary/30 transition-all group-hover:translate-x-1', cfg.arrow)} />
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
 export function HomePrioritiesClient() {
   const supabase = getSupabaseBrowserClient()
   const [todayTasks, setTodayTasks] = useState<CsmTask[]>([])
@@ -48,7 +152,6 @@ export function HomePrioritiesClient() {
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
-    // Tarefas de hoje (excluindo sugeridas)
     db
       .from('csm_tasks')
       .select('id, title, status, priority, due_date, accounts(name)')
@@ -58,7 +161,6 @@ export function HomePrioritiesClient() {
       .limit(5)
       .then(({ data }: { data: CsmTask[] | null }) => setTodayTasks(data ?? []))
 
-    // Tarefas atrasadas (excluindo sugeridas)
     db
       .from('csm_tasks')
       .select('id, title, status, priority, due_date, accounts(name)')
@@ -75,60 +177,53 @@ export function HomePrioritiesClient() {
     oportunidade: priorities?.filter(p => p.category === 'oportunidade') || [],
   }
 
-  const categoryConfig = {
-    focar_agora: {
-      label: 'Focar Agora',
-      icon: AlertCircle,
-      color: 'text-red-500',
-      bg: 'bg-red-500/10',
-      border: 'border-red-500/20',
-    },
-    manter_momentum: {
-      label: 'Manter Momentum',
-      icon: TrendingUp,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-      border: 'border-warning-500/20',
-    },
-    oportunidade: {
-      label: 'Oportunidade',
-      icon: Target,
-      color: 'text-success',
-      bg: 'bg-success/10',
-      border: 'border-success-500/20',
-    },
-  }
-
-  const TaskRow = ({ task }: { task: CsmTask }) => (
-    <div className="flex items-center justify-between gap-3 py-2 border-b border-border-divider/50 last:border-0">
-      <div className="flex items-center gap-2 min-w-0">
-        <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-content-secondary/50" />
-        <span className="text-sm font-medium text-content-primary truncate">{task.title}</span>
-        {task.accounts?.name && (
-          <span className="text-[10px] text-content-secondary/60 truncate hidden sm:block">— {(task.accounts as any).name}</span>
-        )}
-      </div>
+  const TaskRow = ({ task, accent }: { task: CsmTask; accent: SectionStyle }) => (
+    <div className="flex items-center gap-3 py-2.5 border-b border-border-divider/40 last:border-0 hover:bg-surface-background/40 -mx-2 px-2 rounded-lg transition-colors">
+      <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', accent.bar)} />
+      <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-content-secondary/40" />
+      <span className="text-sm font-medium text-content-primary truncate flex-1">{task.title}</span>
+      {task.accounts?.name && <Chip className="hidden sm:inline-flex">{(task.accounts as any).name}</Chip>}
       {task.due_date && (
-        <span className="text-[10px] font-semibold text-destructive flex-shrink-0">
+        <span className={cn('text-[10px] font-bold whitespace-nowrap', accent.color)}>
           {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
         </span>
       )}
     </div>
   )
 
+  function TaskSection({ cfg, tasks }: { cfg: SectionStyle; tasks: CsmTask[] }) {
+    return (
+      <div>
+        <SectionHead cfg={cfg} count={tasks.length} unit={tasks.length === 1 ? 'tarefa' : 'tarefas'} />
+        <div className="relative overflow-hidden rounded-2xl bg-surface-card border border-border-divider shadow-premium">
+          <div className={cn('absolute left-0 top-0 bottom-0 w-1', cfg.bar)} />
+          <div className="p-4 pl-5">
+            {tasks.map(t => <TaskRow key={t.id} task={t} accent={cfg} />)}
+            <div className="pt-3">
+              <Link href="/atividades" className={cn('text-[10px] font-black uppercase flex items-center gap-1 hover:gap-2 transition-all', cfg.color)}>
+                Ver todas <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const hasPriorities = (priorities?.length ?? 0) > 0
   const hasTasks = overdueTasks.length > 0 || todayTasks.length > 0
   const isEmpty = !isLoading && !hasPriorities && !hasTasks
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
         <h2 className="h2-section">Ações de Hoje</h2>
+        <div className="h-px flex-1 bg-gradient-to-r from-border-divider to-transparent" />
       </div>
 
       {isEmpty && (
-        <div className="flex flex-col items-center justify-center py-16 bg-surface-background/30 border border-dashed border-border-divider rounded-2xl">
-          <div className="w-16 h-16 bg-surface-card rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-20 bg-surface-card border border-dashed border-border-divider rounded-2xl shadow-premium">
+          <div className="w-16 h-16 bg-success/10 border border-success/20 rounded-2xl flex items-center justify-center mb-4">
             <CheckCheck className="w-8 h-8 text-success" />
           </div>
           <p className="text-sm font-bold text-content-primary">Tudo em dia 🎉</p>
@@ -136,98 +231,25 @@ export function HomePrioritiesClient() {
         </div>
       )}
 
-      {/* Atividades: Atrasadas */}
-      {overdueTasks.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-destructive" />
-            <h2 className="text-lg font-bold text-content-primary">Atividades Atrasadas</h2>
-            <span className="ml-auto text-xs font-bold text-content-secondary bg-surface-card px-3 py-1 rounded-full">
-              {overdueTasks.length}
-            </span>
-          </div>
-          <Card className="border-destructive/20 bg-destructive/5">
-            <CardContent className="p-4 space-y-0">
-              {overdueTasks.map(t => <TaskRow key={t.id} task={t} />)}
-              <div className="pt-3">
-                <Link href="/atividades" className="text-[10px] font-black uppercase text-destructive hover:text-destructive/80 flex items-center gap-1">
-                  Ver todas <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Atividades: Hoje */}
-      {todayTasks.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <CalendarDays className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-bold text-content-primary">Atividades de Hoje</h2>
-            <span className="ml-auto text-xs font-bold text-content-secondary bg-surface-card px-3 py-1 rounded-full">
-              {todayTasks.length}
-            </span>
-          </div>
-          <Card className="border-amber-500/20 bg-amber-500/5">
-            <CardContent className="p-4 space-y-0">
-              {todayTasks.map(t => <TaskRow key={t.id} task={t} />)}
-              <div className="pt-3">
-                <Link href="/atividades" className="text-[10px] font-black uppercase text-amber-500 hover:text-amber-400 flex items-center gap-1">
-                  Ver todas <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {overdueTasks.length > 0 && <TaskSection cfg={TASK_OVERDUE} tasks={overdueTasks} />}
+      {todayTasks.length > 0 && <TaskSection cfg={TASK_TODAY} tasks={todayTasks} />}
 
       {Object.entries(categorized).map(([key, items]) => {
-        const config = categoryConfig[key as keyof typeof categoryConfig]
-        const Icon = config.icon
+        const cfg = CATEGORY[key as keyof typeof CATEGORY]
 
-        // Esconde categorias vazias (o alívio global "Tudo em dia" cobre o caso sem nada).
         if (!isLoading && items.length === 0) return null
 
         return (
           <div key={key}>
-            <div className="flex items-center gap-2 mb-4">
-              <Icon className={cn('w-5 h-5', config.color)} />
-              <h2 className="text-lg font-bold text-content-primary">{config.label}</h2>
-              <span className="ml-auto text-xs font-bold text-content-secondary bg-surface-card px-3 py-1 rounded-full">
-                {items.length} {items.length === 1 ? 'conta' : 'contas'}
-              </span>
-            </div>
-
+            <SectionHead cfg={cfg} count={items.length} unit={items.length === 1 ? 'conta' : 'contas'} />
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-4">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-24 rounded-lg" />
-                ))}
+              <div className="grid grid-cols-1 gap-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {items.map(priority => (
-                  <Link key={priority.id} href={`/accounts/${priority.account_id}`}>
-                    <Card className={cn('cursor-pointer transition-all hover:shadow-md', config.border, config.bg)}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-content-primary truncate">
-                              {(priority as any).accounts?.name || 'Conta'}
-                            </p>
-                            <p className="text-sm text-content-secondary mt-1">{priority.reason}</p>
-                            {priority.action_type && (
-                              <p className="text-[10px] font-black text-content-secondary/70 mt-2 uppercase tracking-wide">
-                                Ação: {actionLabel(priority.action_type)}
-                              </p>
-                            )}
-                          </div>
-                          <ArrowRight className={cn('w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-1', config.color)} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+              <div className="grid grid-cols-1 gap-3">
+                {items.map((priority, i) => (
+                  <PriorityCard key={priority.id} priority={priority} cfg={cfg} index={i} />
                 ))}
               </div>
             )}

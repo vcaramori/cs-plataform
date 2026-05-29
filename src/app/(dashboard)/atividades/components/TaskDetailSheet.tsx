@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +9,7 @@ import { cn } from '@/lib/utils'
 import {
   Calendar, Building2, Clock, AlertCircle, CheckCircle2, XCircle,
   Pencil, Send, Paperclip, Trash2, Download, Loader2, File, Image as ImageIcon,
+  MessageSquare,
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { CsmTask, CsmTaskStatus, CsmTaskPriority } from '@/lib/supabase/types'
@@ -60,6 +60,12 @@ const sourceLabelMap: Record<string, string> = {
   manual: 'Manual', adoption: 'Adoção', time_entry: 'Esforço', alert: 'Alerta', playbook: 'Playbook',
 }
 
+function initials(name: string | null | undefined): string {
+  if (!name) return 'U'
+  const parts = name.trim().split(/\s+/)
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || 'U'
+}
+
 export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChange }: Props) {
   const supabase = getSupabaseBrowserClient()
   const db = supabase as any
@@ -69,13 +75,21 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
   const [newComment, setNewComment] = useState('')
   const [sendingComment, setSendingComment] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!task || !open) return
     loadComments()
     loadAttachments()
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null))
   }, [task?.id, open])
+
+  // Rola o chat para o fim quando chegam mensagens
+  useEffect(() => {
+    if (open) messagesEndRef.current?.scrollIntoView({ block: 'end' })
+  }, [comments.length, open])
 
   async function loadComments() {
     if (!task) return
@@ -185,16 +199,19 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
     && new Date(task.due_date) < new Date()
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[480px] sm:max-w-[480px] flex flex-col gap-0 p-0 overflow-hidden">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-w-4xl w-[95vw] p-0 gap-0 overflow-hidden flex flex-col h-[85vh] rounded-2xl"
+      >
         {/* Header */}
-        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border-divider flex-shrink-0">
-          <div className="flex items-start justify-between gap-3">
+        <div className="px-6 pt-6 pb-4 border-b border-border-divider flex-shrink-0">
+          <div className="flex items-start justify-between gap-3 pr-8">
             <div className="flex items-center gap-2 min-w-0">
               <StatusIcon className={cn('w-5 h-5 flex-shrink-0', status.color)} />
-              <SheetTitle className="text-base font-bold leading-tight text-content-primary">
+              <DialogTitle className="text-base font-bold leading-tight text-content-primary truncate">
                 {task.title}
-              </SheetTitle>
+              </DialogTitle>
             </div>
             <Button
               variant="ghost"
@@ -236,22 +253,13 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
               </Badge>
             )}
           </div>
-        </SheetHeader>
+        </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="details" className="flex flex-col flex-1 overflow-hidden">
-          <TabsList className="mx-6 mt-4 flex-shrink-0">
-            <TabsTrigger value="details" className="flex-1 text-xs">Detalhes</TabsTrigger>
-            <TabsTrigger value="comments" className="flex-1 text-xs">
-              Comentários {comments.length > 0 && `(${comments.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="attachments" className="flex-1 text-xs">
-              Anexos {attachments.length > 0 && `(${attachments.length})`}
-            </TabsTrigger>
-          </TabsList>
+        {/* Painel duplo: Detalhes/Anexos | Chat */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[42%_58%] overflow-y-auto lg:overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border-divider">
 
-          {/* DETALHES */}
-          <TabsContent value="details" className="flex-1 overflow-y-auto px-6 pb-6 mt-4 space-y-4">
+          {/* COLUNA ESQUERDA — Detalhes + Anexos */}
+          <div className="lg:overflow-y-auto px-6 py-5 space-y-6">
             {task.description && (
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary mb-1">Descrição</p>
@@ -298,137 +306,158 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
                   })}
               </div>
             </div>
-          </TabsContent>
 
-          {/* COMENTÁRIOS */}
-          <TabsContent value="comments" className="flex-1 flex flex-col overflow-hidden mt-4">
-            <div className="flex-1 overflow-y-auto px-6 space-y-3 pb-2">
-              {comments.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-content-secondary/50">
-                  <p className="text-sm font-semibold">Nenhum comentário ainda</p>
-                  <p className="text-xs mt-1">Registre o que foi feito e o resultado.</p>
+            {/* Anexos */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
+                Anexos {attachments.length > 0 && `(${attachments.length})`}
+              </p>
+              <div
+                className="border-2 border-dashed border-border-divider rounded-xl p-3 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); handleFileUpload(e.dataTransfer.files) }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={e => handleFileUpload(e.target.files)}
+                />
+                <div className="flex items-center justify-center gap-2">
+                  {uploadingFile
+                    ? <Loader2 className="w-4 h-4 text-accent animate-spin" />
+                    : <Paperclip className="w-4 h-4 text-content-secondary/50" />
+                  }
+                  <p className="text-xs font-semibold text-content-primary">
+                    {uploadingFile ? 'Enviando...' : 'Clique ou arraste arquivos'}
+                  </p>
                 </div>
-              )}
-              {comments.map(c => (
-                <div key={c.id} className="group bg-muted/40 rounded-xl p-3 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-black text-content-primary">
-                      {c.profiles?.full_name ?? 'Usuário'}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-content-secondary">
-                        {new Date(c.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                        {' '}
-                        {new Date(c.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-5 h-5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteComment(c.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
+              </div>
+
+              {attachments.map(att => (
+                <div key={att.id} className="group flex items-center gap-3 bg-muted/40 rounded-xl px-3 py-2.5">
+                  {getFileIcon(att.file_name)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-content-primary truncate">{att.file_name}</p>
+                    {att.file_size && (
+                      <p className="text-[9px] text-content-secondary">{formatBytes(att.file_size)}</p>
+                    )}
                   </div>
-                  <p className="text-sm text-content-primary leading-relaxed whitespace-pre-wrap">{c.content}</p>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="w-6 h-6" asChild>
+                      <a href={att.file_url} target="_blank" rel="noopener noreferrer" download={att.file_name}>
+                        <Download className="w-3 h-3" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteAttachment(att)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Input de comentário */}
-            <div className="px-6 pb-6 pt-2 flex-shrink-0 border-t border-border-divider mt-2">
+          {/* COLUNA DIREITA — Chat de comentários */}
+          <div className="flex flex-col min-h-0 bg-surface-background/30">
+            <div className="px-5 py-3 border-b border-border-divider flex items-center gap-2 flex-shrink-0">
+              <MessageSquare className="w-4 h-4 text-content-secondary" />
+              <p className="text-[11px] font-black uppercase tracking-widest text-content-primary">
+                Comentários {comments.length > 0 && `(${comments.length})`}
+              </p>
+            </div>
+
+            {/* Mensagens */}
+            <div className="flex-1 lg:overflow-y-auto px-4 py-4 space-y-4 min-h-[240px]">
+              {comments.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full py-12 text-content-secondary/50">
+                  <MessageSquare className="w-8 h-8 mb-2 opacity-40" />
+                  <p className="text-sm font-semibold">Nenhum comentário ainda</p>
+                  <p className="text-xs mt-1">Registre o que foi feito, como num chat.</p>
+                </div>
+              )}
+              {comments.map(c => {
+                const mine = currentUserId != null && c.user_id === currentUserId
+                const when = new Date(c.created_at)
+                return (
+                  <div key={c.id} className={cn('flex gap-2 group', mine ? 'flex-row-reverse' : 'flex-row')}>
+                    <div className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0',
+                      mine ? 'bg-primary text-white' : 'bg-muted text-content-secondary'
+                    )}>
+                      {initials(c.profiles?.full_name)}
+                    </div>
+                    <div className={cn('max-w-[80%] min-w-0', mine ? 'items-end' : 'items-start', 'flex flex-col')}>
+                      <div className={cn(
+                        'flex items-center gap-2 mb-0.5 px-1',
+                        mine ? 'flex-row-reverse' : 'flex-row'
+                      )}>
+                        <span className="text-[10px] font-black text-content-primary truncate">
+                          {mine ? 'Você' : (c.profiles?.full_name ?? 'Usuário')}
+                        </span>
+                        <span className="text-[9px] text-content-secondary whitespace-nowrap">
+                          {when.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                          {' · '}
+                          {when.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className={cn(
+                        'rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words',
+                        mine
+                          ? 'bg-primary text-white rounded-tr-sm'
+                          : 'bg-surface-card border border-border-divider text-content-primary rounded-tl-sm'
+                      )}>
+                        {c.content}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-5 h-5 self-center opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive flex-shrink-0"
+                      onClick={() => handleDeleteComment(c.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Composer */}
+            <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-border-divider">
               <div className="flex gap-2 items-end">
                 <Textarea
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
-                  placeholder="Registre o que foi feito, resultado ou próximos passos..."
-                  rows={3}
-                  className="resize-none text-sm"
+                  placeholder="Escreva uma mensagem..."
+                  rows={2}
+                  className="resize-none text-sm rounded-xl"
                   onKeyDown={e => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSendComment()
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment() }
                   }}
                 />
                 <Button
                   size="icon"
-                  className="h-10 w-10 flex-shrink-0"
+                  className="h-10 w-10 flex-shrink-0 rounded-xl"
                   disabled={!newComment.trim() || sendingComment}
                   onClick={handleSendComment}
                 >
                   {sendingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
-              <p className="text-[9px] text-content-secondary/50 mt-1">Ctrl+Enter para enviar</p>
+              <p className="text-[9px] text-content-secondary/50 mt-1">Enter para enviar · Shift+Enter para quebrar linha</p>
             </div>
-          </TabsContent>
-
-          {/* ANEXOS */}
-          <TabsContent value="attachments" className="flex-1 overflow-y-auto px-6 pb-6 mt-4 space-y-4">
-            {/* Upload */}
-            <div
-              className="border-2 border-dashed border-border-divider rounded-xl p-4 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => { e.preventDefault(); handleFileUpload(e.dataTransfer.files) }}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={e => handleFileUpload(e.target.files)}
-              />
-              <div className="flex items-center justify-center gap-2">
-                {uploadingFile
-                  ? <Loader2 className="w-5 h-5 text-accent animate-spin" />
-                  : <Paperclip className="w-5 h-5 text-content-secondary/50" />
-                }
-                <div className="text-left">
-                  <p className="text-xs font-bold text-content-primary">
-                    {uploadingFile ? 'Enviando...' : 'Clique ou arraste arquivos aqui'}
-                  </p>
-                  <p className="text-[9px] text-content-secondary uppercase tracking-widest mt-0.5">
-                    Qualquer tipo de arquivo
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Lista de anexos */}
-            {attachments.length === 0 && (
-              <div className="text-center py-6 text-content-secondary/50">
-                <p className="text-sm font-semibold">Nenhum anexo</p>
-              </div>
-            )}
-            {attachments.map(att => (
-              <div key={att.id} className="group flex items-center gap-3 bg-muted/40 rounded-xl px-3 py-2.5">
-                {getFileIcon(att.file_name)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-content-primary truncate">{att.file_name}</p>
-                  {att.file_size && (
-                    <p className="text-[9px] text-content-secondary">{formatBytes(att.file_size)}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="w-6 h-6" asChild>
-                    <a href={att.file_url} target="_blank" rel="noopener noreferrer" download={att.file_name}>
-                      <Download className="w-3 h-3" />
-                    </a>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-6 h-6 text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteAttachment(att)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </TabsContent>
-        </Tabs>
-      </SheetContent>
-    </Sheet>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
