@@ -1,4 +1,21 @@
-# Plano de Implementação — Módulo de VOC | Voice of Customer (Revisado)
+# Plano de Implementação — Módulo de VOC | Voz do Cliente (Revisado)
+
+> **Atualização (2026-05-29) — Virada para Dashboard de Portfólio + correção de schema**
+>
+> A tela `/voc` deixou de ser per-CSM (contas do usuário logado) e passou a ser um **dashboard de portfólio de Voz do Cliente**, no mesmo padrão visual do novo `/adoption`.
+>
+> **Correção importante de schema:** os blocos antigos "Top Pains/Praises" e "Feedback Highlights" estavam **quebrados em produção** porque dependiam de objetos que **não existem no banco**: tabela `interaction_themes`, colunas `interactions.description` / `interactions.quotes` e `nps_responses.sentiment_score` (migrations nunca aplicadas). A v1 do dashboard **não depende** desses objetos — usa apenas o que existe.
+>
+> **Fontes unificadas num sinal comum** (`getPortfolioVoc`):
+> - **Interações** — `interactions.sentiment_score` (−1..1) + `title`/`raw_transcript`.
+> - **NPS** — `nps_responses.score` via `getNPSSegment` (promoter/passive/detractor → positivo/neutro/negativo) + `comment` (citação) + `tags` (temas). Exclui `is_test`/`dismissed`.
+> - **Suporte** — `reply_sentiments.sentiment` + `keywords` (temas), ligado à conta via `ticket_id` → `support_tickets.account_id`.
+>
+> **Blocos v1:** KPIs (índice de sentimento −100..100, volume, % positivo/negativo, contas em alerta), Tendência de sentimento, **Sentimento por conta** (piores primeiro + correlação com health + link para `/accounts/[id]`), Distribuição por fonte, Top Dores/Elogios (tags+keywords) e Citações reais.
+>
+> **Temas (Top Dores/Elogios):** determinístico via tags (NPS) + keywords (suporte), separados pela polaridade do sinal — **sem IA ao vivo**.
+>
+> **Arquitetura:** `getPortfolioVoc()` em [`src/lib/voc/portfolio-voc.ts`](../../src/lib/voc/portfolio-voc.ts); API `GET /api/voc/portfolio` (portfolio-wide, params de período); UI [`VocPortfolioClient.tsx`](../../src/app/(dashboard)/voc/components/VocPortfolioClient.tsx) com `DateRangePicker`. Removidos: `VocBoardClient.tsx`, `sentiment-chart.tsx` e as rotas `api/voc/{top-themes,quotes,sentiment-trends}`.
 
 ## 1. Contexto
 

@@ -101,7 +101,7 @@ Branch estável criada para consolidação de features de alta densidade e de in
 | **17** | Renewal Brief PDF | ✅ | ✅ | Botão integrado no cockpit |
 | **17** | Renewal Pipeline Kanban (visão global) | ✅ API | ✅ | `RenewalPipelineKanban` no dashboard |
 | **17** | Negotiation History | ✅ | ✅ | Timeline no cockpit |
-| **20** | VoC Board completo | ✅ | ✅ | `/voc` com sentiment/themes/quotes |
+| **20** | Dashboard de Voz do Cliente (portfólio) | ✅ `getPortfolioVoc()` | ✅ | `/voc` agregado de todo o portfólio: KPIs de sentimento, tendência, **sentimento por conta** (piores primeiro + health), distribuição por fonte (interações/NPS/suporte), Top Dores/Elogios (tags+keywords) e citações reais. Detalhe por conta linka para `/accounts/[id]` |
 | **23** | Playbook Management | ✅ | ✅ | `/playbooks` CRUD completo |
 | **23** | Playbook Builder drag-drop | ✅ API | ✅ | `/playbooks/builder` com ReactFlow — drag, connect, salvar via API |
 | **18** | RAG `/perguntar` | ✅ | ✅ | Chat + RAG funcionando |
@@ -285,7 +285,7 @@ Correções cirúrgicas para estabilizar as features do release: Dashboard, Clie
 * `/accounts/[id]/success-plan` — Success Plans Compartilhados
 * `/suporte` e `/suporte/dashboard` — Chamados, Fila e Métricas
 * `/nps` e `/nps/programs` — Medidor de Lealdade e Gestão de Campanhas
-* `/voc` — Voz do Cliente (Análise de Sentimentos e Temas)
+* `/voc` — Voz do Cliente (dashboard de portfólio: sentimento unificado de interações + NPS + suporte, sentimento por conta, dores/elogios e citações)
 * `/esforco` — Registro e Auto Check-in de CSM
 * `/perguntar` — Assistente RAG 360° (Multi-Provider)
 * `/playbooks` e `/playbooks/builder` — Builder de Automações ReactFlow

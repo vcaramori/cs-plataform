@@ -1,6 +1,6 @@
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import VocBoardClient from './components/VocBoardClient'
+import VocPortfolioClient from './components/VocPortfolioClient'
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/ui/page-container'
@@ -13,15 +13,15 @@ export default async function VocPage() {
 
   return (
     <PageContainer>
-      <ModuleHeader 
-        title="Voice of Customer" 
-        subtitle="Análise de sentimentos, temas e feedback do cliente"
+      <ModuleHeader
+        title="Voz do Cliente"
+        subtitle="Visão de portfólio: sentimento, clientes em atenção e o que dói/encanta"
         iconName="SmilePlus"
       />
 
       <div className="mt-8">
         <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
-          <VocBoardClient />
+          <VocPortfolioClient />
         </Suspense>
       </div>
     </PageContainer>
