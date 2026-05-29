@@ -5,11 +5,29 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, TrendingUp, Target, ArrowRight, CheckCircle2, Clock, CalendarDays } from 'lucide-react'
+import { AlertCircle, TrendingUp, Target, ArrowRight, CheckCircle2, Clock, CalendarDays, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DailyHomePriority } from '@/lib/supabase/types'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { CsmTask } from '@/lib/supabase/types'
+
+/** Rótulos PT amigáveis para os tipos de ação das prioridades. */
+const ACTION_LABELS: Record<string, string> = {
+  renewal_review: 'Revisar renovação',
+  renewal_negotiation: 'Negociar renovação',
+  health_remediation: 'Recuperar health',
+  csm_intervention: 'Intervir',
+  playbook_execution: 'Executar playbook',
+  expansion_pitch: 'Explorar expansão',
+  adoption_check: 'Checar adoção',
+  engagement_check: 'Checar engajamento',
+  review: 'Revisar',
+}
+
+function actionLabel(actionType?: string | null): string {
+  if (!actionType) return ''
+  return ACTION_LABELS[actionType] ?? actionType.replace(/_/g, ' ')
+}
 
 export function HomePrioritiesClient() {
   const supabase = getSupabaseBrowserClient()
@@ -98,8 +116,26 @@ export function HomePrioritiesClient() {
     </div>
   )
 
+  const hasPriorities = (priorities?.length ?? 0) > 0
+  const hasTasks = overdueTasks.length > 0 || todayTasks.length > 0
+  const isEmpty = !isLoading && !hasPriorities && !hasTasks
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <h2 className="h2-section">Ações de Hoje</h2>
+      </div>
+
+      {isEmpty && (
+        <div className="flex flex-col items-center justify-center py-16 bg-surface-background/30 border border-dashed border-border-divider rounded-2xl">
+          <div className="w-16 h-16 bg-surface-card rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+            <CheckCheck className="w-8 h-8 text-success" />
+          </div>
+          <p className="text-sm font-bold text-content-primary">Tudo em dia 🎉</p>
+          <p className="text-xs text-content-secondary mt-1">Nenhuma ação pendente para hoje.</p>
+        </div>
+      )}
+
       {/* Atividades: Atrasadas */}
       {overdueTasks.length > 0 && (
         <div>
@@ -150,13 +186,16 @@ export function HomePrioritiesClient() {
         const config = categoryConfig[key as keyof typeof categoryConfig]
         const Icon = config.icon
 
+        // Esconde categorias vazias (o alívio global "Tudo em dia" cobre o caso sem nada).
+        if (!isLoading && items.length === 0) return null
+
         return (
           <div key={key}>
             <div className="flex items-center gap-2 mb-4">
               <Icon className={cn('w-5 h-5', config.color)} />
               <h2 className="text-lg font-bold text-content-primary">{config.label}</h2>
               <span className="ml-auto text-xs font-bold text-content-secondary bg-surface-card px-3 py-1 rounded-full">
-                {items.length} conta(s)
+                {items.length} {items.length === 1 ? 'conta' : 'contas'}
               </span>
             </div>
 
@@ -166,8 +205,6 @@ export function HomePrioritiesClient() {
                   <Skeleton key={i} className="h-24 rounded-lg" />
                 ))}
               </div>
-            ) : items.length === 0 ? (
-              <p className="text-content-secondary text-sm">Nenhuma prioridade nesta categoria hoje.</p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {items.map(priority => (
@@ -181,8 +218,8 @@ export function HomePrioritiesClient() {
                             </p>
                             <p className="text-sm text-content-secondary mt-1">{priority.reason}</p>
                             {priority.action_type && (
-                              <p className="text-xs font-mono text-content-secondary/60 mt-2 uppercase tracking-tight">
-                                Ação: {priority.action_type.replace(/_/g, ' ')}
+                              <p className="text-[10px] font-black text-content-secondary/70 mt-2 uppercase tracking-wide">
+                                Ação: {actionLabel(priority.action_type)}
                               </p>
                             )}
                           </div>

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { AlertService } from '@/lib/alerts/alert-service'
+import { isLeadershipRole } from '@/lib/auth/roles'
+import type { UserRole } from '@/lib/supabase/types'
 import { z } from 'zod'
 
 const PrioritySchema = z.object({
@@ -35,8 +37,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Get CSM-owned accounts
-    const { data: accounts } = await supabase
+    // Escopo role-aware: liderança vê o portfólio; CSM vê a própria carteira.
+    const leadership = isLeadershipRole(profile.role as UserRole)
+    let accountsQuery = supabase
       .from('accounts')
       .select(`
         id,
@@ -45,7 +48,9 @@ export async function GET(request: Request) {
         health_score,
         contracts(renewal_date, arr)
       `)
-      .eq('csm_owner_id', profile.id)
+    if (!leadership) accountsQuery = accountsQuery.eq('csm_owner_id', profile.id)
+
+    const { data: accounts } = await accountsQuery
 
     if (!accounts || accounts.length === 0) {
       return NextResponse.json([])
@@ -64,6 +69,7 @@ export async function GET(request: Request) {
 
       if (alerts && alerts.length > 0) {
         for (const alert of alerts) {
+          if (!alert) continue
           let category: 'focar_agora' | 'manter_momentum' | 'oportunidade' = 'manter_momentum'
           let actionType = 'review'
 

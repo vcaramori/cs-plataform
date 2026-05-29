@@ -38,7 +38,8 @@ export default function LoginPage() {
       attempts++
     }
 
-    router.push('/dashboard')
+    // Vai para a raiz, que roteia conforme permissão (/home com home.view, senão /dashboard)
+    router.push('/')
     router.refresh()
   }
 

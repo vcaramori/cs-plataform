@@ -237,7 +237,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
         {/* Main Section */}
         <div className="space-y-2">
           {canViewHome && (
-            <NavLink href="/home" label="Home" icon={Zap} />
+            <NavLink href="/home" label="Início" icon={Zap} />
           )}
           {canViewAtividades && (
             <NavLink href="/atividades" label="Atividades" icon={CheckCircle2} />

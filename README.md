@@ -184,6 +184,16 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🏠 Home — Cockpit Diário de Ação (role-aware) (2026-05-29)
+
+A `/home` deixou de ser o "Command Center" (fila pessoal do CSM, filtrada por `csm_owner_id`) e virou o **cockpit diário de ação**, agora a **tela de entrada pós-login**:
+
+- **Role-aware:** liderança (`csm_senior`/`head_cs`/`admin`/`super_admin` via novo `isLeadershipRole` em `src/lib/auth/roles.ts`) vê o **portfólio inteiro**; CSM vê a própria carteira. Resolve o mismatch de persona (líder via home vazia). Aplicado em `home/page.tsx` e `/api/home-priorities`.
+- **Blocos:** saudação personalizada ("Bom dia, {nome}") + linha de contexto; **pulso de KPIs** reusando `PortfolioHealthCard`; **Ações de Hoje** (tarefas atrasadas/hoje + prioridades Focar Agora/Manter Momentum/Oportunidade) com **empty state "Tudo em dia 🎉"** e ações traduzidas (fim do `health_remediation` cru).
+- **Reuso sem duplicar:** cálculo de KPIs extraído para `src/lib/dashboard/portfolio-kpis.ts` (`computePortfolioKpis` + `computePortfolioNps`), usado por `/home` **e** `/dashboard`.
+- **Landing:** login agora vai para `/` (que roteia para `/home` com permissão, senão `/dashboard`). Menu "Home" → **"Início"**.
+- **Limpeza:** removidos o falso "Daily Briefing por IA" (`DailyBriefingCard`) e a rota `/api/daily-briefing` (usados só pela home). Sem migration.
+
 ### 🎨 NPS — Tradução PT-BR + Refino de Layout (2026-05-29)
 
 A tela `/nps` estava com mistura de idiomas e foi **100% traduzida para português** + refinada:

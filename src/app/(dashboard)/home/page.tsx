@@ -1,32 +1,84 @@
 import { redirect } from 'next/navigation'
-import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import { getSupabaseServerClient, getUserProfile } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { isLeadershipRole } from '@/lib/auth/roles'
+import { computePortfolioKpis, computePortfolioNps } from '@/lib/dashboard/portfolio-kpis'
 import { PageContainer } from '@/components/ui/page-container'
-import { Zap } from 'lucide-react'
+import { PortfolioHealthCard } from '@/app/(dashboard)/dashboard/components/PortfolioHealthCard'
 import { HomePrioritiesClient } from './components/HomePrioritiesClient'
-import { DailyBriefingCard } from './components/DailyBriefingCard'
+
+function greetingForHour(hour: number): string {
+  if (hour < 12) return 'Bom dia'
+  if (hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
 
 export default async function HomePage() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/login')
+
+  const profile = await getUserProfile(user.id)
+  const leadership = isLeadershipRole(profile?.role)
+
+  // Escopo role-aware: liderança vê o portfólio; CSM vê a própria carteira.
+  let query = supabase
+    .from('accounts')
+    .select('*, contracts(*), account_risk_assessments(*)')
+    .order('name')
+  if (!leadership) query = query.eq('csm_owner_id', user.id)
+
+  const { data: accounts } = await query
+  const safeAccounts = accounts ?? []
+
+  const kpis = computePortfolioKpis(safeAccounts)
+  let npsScore: number | null = null
+  try {
+    npsScore = await computePortfolioNps(getSupabaseAdminClient(), safeAccounts.map(a => a.id))
+  } catch (error) {
+    console.error('[home] NPS error:', error)
+  }
+
+  // Saudação + contexto
+  const now = new Date()
+  const firstName = (profile?.full_name?.trim().split(/\s+/)[0]) || user.email?.split('@')[0] || ''
+  const greeting = greetingForHour(now.getHours())
+  const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+
+  const contextParts: string[] = []
+  if (kpis.atRisk > 0) contextParts.push(`${kpis.atRisk} ${kpis.atRisk === 1 ? 'conta em risco' : 'contas em risco'}`)
+  if (kpis.renewalsSoon > 0) contextParts.push(`${kpis.renewalsSoon} ${kpis.renewalsSoon === 1 ? 'renovação' : 'renovações'} em 90d`)
+  const contextLine = contextParts.length > 0
+    ? `${leadership ? 'No portfólio' : 'Na sua carteira'}: ${contextParts.join(' · ')}.`
+    : leadership
+      ? 'Portfólio sob controle — nenhum risco ou renovação iminente.'
+      : 'Sua carteira está sob controle — sem riscos ou renovações iminentes.'
 
   return (
     <PageContainer>
-      <div className="flex flex-col gap-2 relative">
+      {/* Saudação + contexto */}
+      <div className="flex flex-col gap-1 relative">
         <div className="absolute -left-12 top-0 w-24 h-24 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-surface-card border border-border-divider flex items-center justify-center shadow-sm">
-            <Zap className="w-5 h-5 text-content-primary" />
-          </div>
-          <h1 className="h1-page">Command Center</h1>
-        </div>
-        <p className="label-premium flex items-center gap-2">
-          Priorização inteligente da sua carteira com recomendações por IA.
-        </p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-content-secondary/70 capitalize">{dateLabel}</p>
+        <h1 className="h1-page">{greeting}{firstName ? `, ${firstName}` : ''} 👋</h1>
+        <p className="text-sm text-content-secondary">{contextLine}</p>
       </div>
 
-      <DailyBriefingCard />
+      {/* Pulso de KPIs (escopo conforme o papel) */}
+      <Suspense fallback={<div className="h-32 animate-pulse bg-accent/20 rounded-2xl" />}>
+        <PortfolioHealthCard
+          totalAccounts={kpis.totalAccounts}
+          totalActiveContracts={kpis.totalActiveContracts}
+          totalMRR={kpis.totalMRR}
+          avgHealthScore={kpis.avgHealthScore}
+          atRisk={kpis.atRisk}
+          renewalsSoon={kpis.renewalsSoon}
+          npsScore={npsScore}
+        />
+      </Suspense>
+
+      {/* Ações de hoje */}
       <HomePrioritiesClient />
     </PageContainer>
   )
