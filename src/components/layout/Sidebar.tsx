@@ -232,7 +232,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
       {/* ── Logo Plannera ────────────────────────────────── */}
       <div className={cn(
         "border-b border-border transition-all duration-300 flex items-center",
-        isCollapsed ? "p-4 justify-center" : "px-6 py-5 justify-start"
+        isCollapsed ? "p-3 justify-center" : "px-4 py-3 justify-start"
       )}>
         <Link href="/" onClick={onMobileClose} className="flex items-center" aria-label="Plannera — Início">
           {isCollapsed ? (
@@ -242,12 +242,12 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
           ) : (
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
               <Image
-                src="/brand/logo.png"
+                src="/brand/logo-sem-assinatura.png"
                 alt="Plannera"
                 width={200}
                 height={60}
                 priority
-                className="h-12 w-auto object-contain object-left"
+                className="h-10 w-auto object-contain object-left"
               />
             </motion.div>
           )}
@@ -256,8 +256,8 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
 
       {/* ── Navegação ────────────────────────────────────── */}
       <nav className={cn(
-        "flex-1 space-y-6 mt-2 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
-        isCollapsed ? "p-2" : "p-4"
+        "flex-1 space-y-4 mt-1 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
+        isCollapsed ? "p-2" : "p-3"
       )}>
         {/* Pergunte à IA — interface principal, em destaque */}
         <div className="space-y-1">
@@ -341,8 +341,8 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
 
       {/* ── Notificações e Alertas ──────────────────────── */}
       <div className={cn(
-        "py-3 border-t border-border-divider bg-muted/20 transition-all duration-300",
-        isCollapsed ? "px-2" : "px-4"
+        "py-2 border-t border-border-divider bg-muted/20 transition-all duration-300",
+        isCollapsed ? "px-2" : "px-3"
       )}>
         <div className="flex items-center gap-2 justify-center">
           <NotificationCenter isCollapsed={isCollapsed} />
@@ -353,11 +353,11 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
       {/* ── Rodapé do usuário ─────────────────────────────── */}
       <div className={cn(
         "border-t border-border-divider bg-muted/20 transition-all duration-300",
-        isCollapsed ? "p-2" : "p-4"
+        isCollapsed ? "p-2" : "p-3"
       )}>
         <div className={cn(
           "flex items-center transition-all",
-          !isCollapsed ? "gap-4 p-3 rounded-2xl hover:bg-muted/50" : "justify-center p-2 rounded-xl"
+          !isCollapsed ? "gap-3 p-2 rounded-2xl hover:bg-muted/50" : "justify-center p-2 rounded-xl"
         )}>
           <Avatar className="w-9 h-9 border-2 border-border/50 flex-shrink-0 shadow-md">
             <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
