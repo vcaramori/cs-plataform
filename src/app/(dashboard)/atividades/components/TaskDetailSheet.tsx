@@ -93,12 +93,31 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
 
   async function loadComments() {
     if (!task) return
-    const { data } = await db
+    const { data, error } = await db
       .from('csm_task_comments')
-      .select('*, profiles:user_id(full_name, avatar_url)')
+      .select('*')
       .eq('task_id', task.id)
       .order('created_at', { ascending: true })
-    setComments((data as Comment[]) ?? [])
+
+    if (error) { console.error('Erro ao carregar comentários:', error); return }
+
+    const rows = (data as Comment[]) ?? []
+    setComments(await attachProfiles(rows))
+  }
+
+  /** Busca os perfis dos autores em uma query separada (a FK de user_id
+   *  aponta para auth.users, então não dá pra embutir profiles via PostgREST). */
+  async function attachProfiles(rows: Comment[]): Promise<Comment[]> {
+    const ids = Array.from(new Set(rows.map(r => r.user_id)))
+    if (ids.length === 0) return rows
+    const { data: profiles } = await db
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', ids)
+    const map = new Map<string, { full_name: string | null; avatar_url: string | null }>(
+      (profiles ?? []).map((p: any) => [p.id, { full_name: p.full_name, avatar_url: p.avatar_url }])
+    )
+    return rows.map(r => ({ ...r, profiles: map.get(r.user_id) ?? null }))
   }
 
   async function loadAttachments() {
@@ -117,14 +136,22 @@ export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChan
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSendingComment(false); return }
 
-    const { data } = await db
+    const { data, error } = await db
       .from('csm_task_comments')
       .insert({ task_id: task.id, user_id: user.id, content: newComment.trim() })
-      .select('*, profiles:user_id(full_name, avatar_url)')
+      .select('*')
       .single()
 
+    if (error) {
+      console.error('Erro ao enviar comentário:', error)
+      alert('Não foi possível enviar o comentário: ' + (error.message ?? 'erro desconhecido'))
+      setSendingComment(false)
+      return
+    }
+
     if (data) {
-      setComments(prev => [...prev, data as Comment])
+      const [withProfile] = await attachProfiles([data as Comment])
+      setComments(prev => [...prev, withProfile])
       setNewComment('')
     }
     setSendingComment(false)

@@ -45,12 +45,12 @@ const analiseItems = [
   { href: '/adoption',          label: 'Adoção',          icon: Target },
   { href: '/nps',               label: 'NPS',             icon: Star },
   { href: '/voc',               label: 'Voz do Cliente',  icon: SmilePlus },
+  { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
 ]
 
 const operacaoItems = [
   { href: '/esforco',           label: 'Esforço',          icon: Clock },
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
-  { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
   { href: '/playbooks',         label: 'Playbooks',         icon: Workflow },
 ]
 
