@@ -184,6 +184,15 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🎨 NPS — Tradução PT-BR + Refino de Layout (2026-05-29)
+
+A tela `/nps` estava com mistura de idiomas e foi **100% traduzida para português** + refinada:
+
+- Traduções: "NPS Research Control" → "Inteligência de NPS"; "Top Performers" → "Desempenho por Conta"; "NPS SCORE" → "Pontuação NPS"; "GLOBAL PORTFOLIO" → "Portfólio Global"; "NPS Target Benchmark" → "Referência de Satisfação"; badges de segmento (`promoter/passive/detractor`) agora exibem Promotor/Neutro/Detrator via `NPS_SEGMENT_LABELS` em `types.ts`.
+- **Correção de bug**: o filtro de programa usava `onProgramChange` (prop inexistente no `Select` do Radix) e **não funcionava** — corrigido para `onValueChange` (também elimina um dos erros de TS pré-existentes).
+- Layout: densidade ajustada (paddings/gaps menores), toggle do ranking agora tem rótulos legíveis (Promotores/Neutros/Detratores) em vez de quadrados coloridos, e empty state mais suave e informativo.
+- Gestão (`/nps/programs`): traduzidos os resíduos em inglês sem mexer no layout — "NPS 0–10" → "Escala NPS (0–10)", botão "Ok" → "Salvar", badge/botão "Default" → "Padrão".
+
 ### 🛠️ Estabilização Release — Correções TypeScript Features Core (2026-05-12)
 
 Correções cirúrgicas para estabilizar as features do release: Dashboard, Clientes, Playbook, Success Plan, RAG, Chamados, NPS, Perguntas, Suporte.

@@ -24,9 +24,9 @@ export function NPSGauge({ score, goal }: NPSGaugeProps) {
         <span className={isMet ? 'text-success' : 'text-destructive'}>{label}</span>
       </div>
       <div className="label-premium mt-4 flex items-center gap-2">
-        <span>NPS SCORE</span>
+        <span>Pontuação NPS</span>
         <span className="opacity-20">/</span>
-        <span className="text-foreground">META: {g}</span>
+        <span className="text-foreground">Meta: {g}</span>
       </div>
     </div>
   )

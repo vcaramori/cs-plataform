@@ -44,15 +44,15 @@ export function NPSFilters({
     <div className="flex flex-wrap items-center gap-2 bg-surface-card border border-border-divider px-3 py-2 rounded-2xl shadow-sm relative overflow-hidden">
       <div className="absolute top-0 left-0 w-1 h-full bg-plannera-orange/60" />
 
-      <Select value={programFilter} onProgramChange={onProgramChange}>
+      <Select value={programFilter} onValueChange={onProgramChange}>
         <SelectTrigger className="w-60 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-wide">
           <Bookmark className="w-3.5 h-3.5 text-plannera-primary/40 mr-1.5" />
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
-          <SelectItem value="default" className="text-[10px] font-black uppercase tracking-wide">GLOBAL PORTFOLIO</SelectItem>
+          <SelectItem value="default" className="text-[10px] font-black uppercase tracking-wide">PORTFÓLIO GLOBAL</SelectItem>
           {programs.filter(p => p.is_active).map(p => (
-            <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-wide">{p.name || p.accounts?.name || 'PROGRAM'}</SelectItem>
+            <SelectItem key={p.program_key} value={p.program_key} className="text-[10px] font-black uppercase tracking-wide">{p.name || p.accounts?.name || 'PROGRAMA'}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -60,7 +60,7 @@ export function NPSFilters({
       <Select value={accountFilter} onValueChange={onAccountChange}>
         <SelectTrigger className="w-52 text-content-primary text-[10px] font-black h-8 rounded-xl bg-surface-background/50 border-border-divider hover:bg-surface-background transition-all shadow-sm uppercase tracking-wide">
           <Building2 className="w-3.5 h-3.5 text-content-secondary/40 mr-1.5" />
-          <SelectValue placeholder="CONTAS" />
+          <SelectValue placeholder="TODAS AS CONTAS" />
         </SelectTrigger>
         <SelectContent className="bg-surface-card border-border-divider rounded-2xl">
           <SelectItem value="all" className="text-[10px] font-black uppercase tracking-wide">TODAS AS CONTAS</SelectItem>
@@ -90,7 +90,7 @@ export function NPSFilters({
               </div>
               <DialogHeader>
                 <DialogTitle className="text-xl font-black text-white uppercase tracking-tighter">Meta Estratégica</DialogTitle>
-                <p className="text-[9px] font-black text-plannera-orange/60 uppercase tracking-widest">NPS Target Benchmark</p>
+                <p className="text-[9px] font-black text-plannera-orange/60 uppercase tracking-widest">Referência de Satisfação</p>
               </DialogHeader>
             </div>
             <div className="p-10 space-y-8">

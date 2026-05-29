@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { AlignLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getNPSSegment } from '@/lib/supabase/types'
+import { getNPSSegment, NPS_SEGMENT_LABELS } from '@/lib/supabase/types'
 
 interface ResponseDetailDialogProps {
   render: any
@@ -28,7 +28,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
             <p className="label-premium opacity-60">{render.account_name}</p>
           </div>
           <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-2xl shadow-sm ${segColor}`}>
-            {seg || 'N/A'}
+            {seg ? NPS_SEGMENT_LABELS[seg] : 'N/A'}
           </Badge>
         </DialogHeader>
 

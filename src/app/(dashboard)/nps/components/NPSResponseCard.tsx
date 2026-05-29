@@ -25,7 +25,7 @@ export function NPSResponseCard({ response, index, onSelect }: NPSResponseCardPr
       className="flex items-stretch gap-8 p-8 rounded-2xl bg-surface-card border border-border-divider cursor-pointer hover:bg-surface-background hover:border-plannera-primary/30 transition-all group overflow-hidden relative shadow-lg shadow-black/5"
     >
       <div className={cn("flex flex-col items-center justify-center w-20 rounded-2xl border-2 font-black shrink-0 shadow-xl transition-all group-hover:scale-105 group-hover:rotate-2", segColor)}>
-        <span className="text-[8px] opacity-60 uppercase leading-none mb-1.5 font-black tracking-widest">Score</span>
+        <span className="text-[8px] opacity-60 uppercase leading-none mb-1.5 font-black tracking-widest">Nota</span>
         <span className="text-3xl leading-none tracking-tighter tabular-nums">{response.score}</span>
       </div>
 

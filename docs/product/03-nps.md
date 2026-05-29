@@ -1,5 +1,7 @@
 # 3. NPS — Net Promoter Score
 
+> **Atualização (2026-05-29):** a tela `/nps` foi 100% traduzida para PT-BR (não havia mais "salada de idiomas") e teve o layout refinado — densidade ajustada, toggle do ranking "Desempenho por Conta" com rótulos (Promotores/Neutros/Detratores) e empty state mais informativo. Corrigido bug do filtro de programa (`onValueChange`). Rótulos de segmento centralizados em `NPS_SEGMENT_LABELS` (`src/lib/supabase/types.ts`).
+
 ## Visão Geral do Módulo
 
 O módulo **NPS** permite aos CSMs coletar e analisar o Net Promoter Score dos seus clientes. Inclui gestão de programas de pesquisa, widget embedável para coleta de respostas, e dashboard analítico com cálculo de NPS.

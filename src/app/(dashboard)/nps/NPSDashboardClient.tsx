@@ -260,9 +260,9 @@ export function NPSDashboardClient({ accounts }: Props) {
 
   return (
     <PageContainer>
-      <ModuleHeader 
-        title="NPS Research Control" 
-        subtitle="Inteligência de Atendimento, Pesquisas Relacionais e Feedback Estruturado"
+      <ModuleHeader
+        title="Inteligência de NPS"
+        subtitle="Lealdade, pesquisas relacionais e feedback estruturado dos clientes"
         iconName="Star"
       />
 
@@ -295,7 +295,7 @@ export function NPSDashboardClient({ accounts }: Props) {
             <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border-divider">
 
               {/* Section 1: Score Gauge */}
-              <div className="lg:col-span-3 relative p-12 flex flex-col items-center justify-center bg-gradient-to-br from-plannera-primary/[0.05] to-transparent min-h-[300px]">
+              <div className="lg:col-span-3 relative p-8 flex flex-col items-center justify-center bg-gradient-to-br from-plannera-primary/[0.05] to-transparent min-h-[280px]">
                 <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
                   {isMounted && (
                     <ResponsiveContainer width="100%" height="100%">
@@ -309,8 +309,8 @@ export function NPSDashboardClient({ accounts }: Props) {
               </div>
 
               {/* Section 2: Core Metrics */}
-              <div className="lg:col-span-4 p-12 flex flex-col justify-center gap-12">
-                <div className="grid grid-cols-2 gap-y-10">
+              <div className="lg:col-span-4 p-8 flex flex-col justify-center gap-8">
+                <div className="grid grid-cols-2 gap-y-8">
                   <div className="space-y-3">
                     <p className="text-[10px] font-black text-content-secondary uppercase tracking-[0.25em] opacity-60">Volume Amostral</p>
                     <p className="text-5xl font-black text-content-primary tracking-tighter leading-none tabular-nums">{stats.total_responses}</p>
@@ -324,31 +324,41 @@ export function NPSDashboardClient({ accounts }: Props) {
                   </div>
                 </div>
 
-                <div className="space-y-5 pt-10 border-t border-border-divider/50">
+                <div className="space-y-4 pt-8 border-t border-border-divider/50">
                   <ScoreBar label="Promotores" count={stats.promoters} total={stats.total_responses} color="bg-success shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
                   <ScoreBar label="Neutros" count={stats.passives} total={stats.total_responses} color="bg-amber-400 opacity-50" />
                   <ScoreBar label="Detratores" count={stats.detractors} total={stats.total_responses} color="bg-destructive shadow-[0_0_20px_rgba(239,68,68,0.3)]" />
                 </div>
               </div>
 
-              {/* Section 3: Pareto Chart */}
-              <div className="lg:col-span-5 p-12 flex flex-col space-y-10">
-                <div className="flex items-center justify-between">
+              {/* Section 3: Ranking por conta */}
+              <div className="lg:col-span-5 p-8 flex flex-col space-y-6">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-4">
                     <div className="p-2.5 rounded-xl bg-plannera-primary/10 border border-plannera-primary/20">
                       <Building2 className="w-5 h-5 text-plannera-primary" />
                     </div>
-                    <h3 className="text-lg font-black uppercase tracking-tighter text-content-primary">Top Performers</h3>
+                    <div>
+                      <h3 className="text-lg font-black uppercase tracking-tighter text-content-primary leading-none">Desempenho por Conta</h3>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/50 mt-1">Ordenar por segmento</p>
+                    </div>
                   </div>
-                  <div className="flex bg-surface-background/50 p-2 rounded-2xl border border-border-divider shadow-inner">
-                    {(['promoters', 'passives', 'detractors'] as const).map(s => (
-                      <button key={s} onClick={() => setParetoSortBy(s)}
+                  <div className="flex bg-surface-background/50 p-1 rounded-2xl border border-border-divider shadow-inner gap-1">
+                    {([
+                      ['promoters', 'Promotores', 'bg-success'],
+                      ['passives', 'Neutros', 'bg-amber-400'],
+                      ['detractors', 'Detratores', 'bg-destructive'],
+                    ] as const).map(([s, label, dot]) => (
+                      <button key={s} onClick={() => setParetoSortBy(s)} title={`Ordenar por ${label}`}
                         className={cn(
-                          "w-6 h-6 rounded-xl transition-all m-1 flex items-center justify-center",
+                          "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wide",
                           paretoSortBy === s
-                            ? (s === 'promoters' ? 'bg-success shadow-lg shadow-emerald-500/20' : s === 'passives' ? 'bg-amber-400 shadow-lg shadow-amber-400/20' : 'bg-destructive shadow-lg shadow-destructive/20')
-                            : 'bg-transparent hover:bg-surface-card opacity-60 hover:opacity-100'
-                        )} />
+                            ? 'bg-surface-card text-content-primary shadow-sm'
+                            : 'text-content-secondary/60 hover:text-content-primary'
+                        )}>
+                        <span className={cn('w-2 h-2 rounded-full', dot, s === 'passives' && 'opacity-60')} />
+                        {label}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -377,8 +387,8 @@ export function NPSDashboardClient({ accounts }: Props) {
                     </div>
                   ))}
                   {paretoData.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center py-16 border-2 border-dashed border-border-divider rounded-2xl opacity-20">
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aguardando Dados</p>
+                    <div className="h-full flex flex-col items-center justify-center py-16 border-2 border-dashed border-border-divider rounded-2xl opacity-50">
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-content-secondary">Aguardando dados</p>
                     </div>
                   )}
                 </div>
@@ -388,9 +398,9 @@ export function NPSDashboardClient({ accounts }: Props) {
         </Card>
       ) : null}
 
-      {/* Feed Area */}
+      {/* Feed de respostas */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-12">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
           {responses.slice(0, 14).map((r: NPSResponseDetail, i: number) => (
             <NPSResponseCard
               key={r.id}
@@ -404,11 +414,12 @@ export function NPSDashboardClient({ accounts }: Props) {
 
 
       {!loading && responses.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-48 bg-surface-background/30 border-4 border-dashed border-border-divider/50 rounded-2xl opacity-20 grayscale mt-12">
-          <div className="w-28 h-28 bg-surface-card rounded-2xl flex items-center justify-center mb-10 shadow-xl">
-            <AlertTriangle className="w-14 h-14 text-content-secondary" />
+        <div className="flex flex-col items-center justify-center py-32 bg-surface-background/30 border-2 border-dashed border-border-divider/60 rounded-2xl mt-8">
+          <div className="w-20 h-20 bg-surface-card rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+            <AlertTriangle className="w-10 h-10 text-content-secondary/50" />
           </div>
-          <p className="text-[12px] font-black uppercase tracking-[0.5em] text-center max-w-md leading-relaxed">Horizonte sem dados para o período selecionado</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.3em] text-center text-content-secondary">Nenhuma resposta no período</p>
+          <p className="text-[11px] text-content-secondary/60 mt-2 text-center max-w-sm">Ajuste o período acima ou cadastre programas de pesquisa em <span className="font-bold">Gestão</span>.</p>
         </div>
       )}
 

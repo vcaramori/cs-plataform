@@ -22,7 +22,7 @@ export default function ResponseCarousel({ ansList, scoreColor }: ResponseCarous
   if (validAnswers.length === 0) return <p className="label-premium opacity-60 italic">Sem comentários registrados</p>
 
   const ans = validAnswers[idx]
-  const qTitle = ans.is_comment ? 'Feedback Direto' : (ans.nps_questions?.title || 'Resposta')
+  const qTitle = ans.is_comment ? 'Feedback Direto' : (ans.nps_questions?.title || 'Pergunta')
   const val = ans.is_comment ? ans.text_value : (ans.nps_questions?.type === 'multiple_choice'
     ? (ans.selected_options || []).join(', ')
     : ans.text_value)

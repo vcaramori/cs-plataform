@@ -295,6 +295,13 @@ export function getNPSSegment(score: number): NPSSegment {
   return 'detractor'
 }
 
+/** Rótulos em português para exibição dos segmentos de NPS. */
+export const NPS_SEGMENT_LABELS: Record<NPSSegment, string> = {
+  promoter: 'Promotor',
+  passive: 'Neutro',
+  detractor: 'Detrator',
+}
+
 export type NPSStats = {
   total_responses: number
   avg_score: number

@@ -25,7 +25,7 @@ interface Props {
 }
 
 const TYPE_META: Record<NPSQuestionType, { label: string; icon: React.ElementType; color: string }> = {
-  nps_scale:        { label: 'NPS 0–10',        icon: Hash,       color: 'text-orange-400 border-orange-500/20 bg-orange-500/10' },
+  nps_scale:        { label: 'Escala NPS (0–10)', icon: Hash,       color: 'text-orange-400 border-orange-500/20 bg-orange-500/10' },
   multiple_choice:  { label: 'Múltipla Escolha', icon: ListChecks, color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/10'  },
   text:             { label: 'Texto Livre',       icon: AlignLeft,  color: 'text-emerald-400 border-success-500/20 bg-success/10' },
 }
@@ -139,7 +139,7 @@ function QuestionRow({
           {editing ? (
             <Button size="sm" onClick={save} disabled={saving}
               className="bg-orange-500 hover:bg-orange-600 text-white h-7 text-xs px-2.5 ml-1">
-              {saving ? '...' : 'Ok'}
+              {saving ? '...' : 'Salvar'}
             </Button>
           ) : (
             <button onClick={() => setEditing(true)} className="text-content-secondary hover:text-content-primary transition-colors ml-1">
@@ -704,7 +704,7 @@ export function ProgramsClient({ accounts }: Props) {
                       </p>
                       {p.is_default && (
                         <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-[10px] font-extrabold uppercase shrink-0">
-                          Default
+                          Padrão
                         </Badge>
                       )}
                     </div>
@@ -751,7 +751,7 @@ export function ProgramsClient({ accounts }: Props) {
                             : 'border-border-divider text-content-secondary hover:text-indigo-400 hover:border-indigo-500/30'
                         }`}>
                         {p.is_default ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-                        Default
+                        Padrão
                       </Button>
                     )}
 
