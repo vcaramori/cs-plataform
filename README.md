@@ -177,6 +177,13 @@ Em resposta aos problemas de dados vazios e falta de visibilidade reportados no 
 - **Visibilidade de Contas sem CSM**: Adicionada lógica na API do Cockpit (`api/cs-ops/cockpit/route.ts`) para identificar contas vinculadas a usuários inexistentes ou nulos. Estas contas agora aparecem na Fila de Trabalho do `CockpitDashboard` como "Conta sem CSM válido".
 - **Bypass de Tipagem Supabase**: Aplicado cast `as any` nas Server Actions e APIs de CS Ops para contornar erros de compilação do TypeScript com tabelas que não constavam nos tipos gerados.
 
+### 🗑️ Remoção de "Minhas Tarefas" (2026-05-29)
+
+A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redundante com o módulo **Atividades** (`/atividades`). As telas usavam tabelas distintas (`account_playbook_tasks` vs `csm_tasks`), então a remoção **não impacta Atividades**, o Playbooks nem o dashboard principal `/cs-ops` (Capacity Planning).
+
+- Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
+- Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
+
 ### 🛠️ Estabilização Release — Correções TypeScript Features Core (2026-05-12)
 
 Correções cirúrgicas para estabilizar as features do release: Dashboard, Clientes, Playbook, Success Plan, RAG, Chamados, NPS, Perguntas, Suporte.
