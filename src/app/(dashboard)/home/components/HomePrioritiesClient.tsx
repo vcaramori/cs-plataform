@@ -102,30 +102,30 @@ function PriorityCard({ priority, cfg, index }: { priority: any; cfg: SectionSty
   const segment = priority.accounts?.segment
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: index * 0.04 }}>
-      <Link href={`/accounts/${priority.account_id}`} className="block group">
+      <Link href={`/accounts/${priority.account_id}`} className="block group h-full">
         <div className={cn(
-          'relative overflow-hidden rounded-2xl bg-surface-card border border-border-divider shadow-premium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg',
+          'relative overflow-hidden rounded-xl bg-surface-card border border-border-divider shadow-premium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg h-full',
           cfg.hoverBorder
         )}>
           <div className={cn('absolute left-0 top-0 bottom-0 w-1', cfg.bar)} />
-          <div className={cn('absolute -right-12 -top-12 w-36 h-36 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none', cfg.glow)} />
-          <div className="relative flex items-center gap-4 p-4 pl-5">
-            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-105', cfg.iconBg, cfg.iconBorder)}>
-              <Icon className={cn('w-5 h-5', cfg.color)} />
+          <div className={cn('absolute -right-12 -top-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none', cfg.glow)} />
+          <div className="relative flex items-start gap-3 p-3.5 pl-4">
+            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-105', cfg.iconBg, cfg.iconBorder)}>
+              <Icon className={cn('w-4 h-4', cfg.color)} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-content-primary truncate">{name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-bold text-content-primary truncate">{name}</p>
                 {segment && <Chip>{segment}</Chip>}
               </div>
-              <p className="text-sm text-content-secondary mt-0.5 line-clamp-2">{priority.reason}</p>
+              <p className="text-xs text-content-secondary mt-0.5 line-clamp-2 leading-snug">{priority.reason}</p>
               {priority.action_type && (
-                <span className={cn('inline-flex items-center gap-1 mt-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full', cfg.chip)}>
+                <span className={cn('inline-flex items-center gap-1 mt-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full', cfg.chip)}>
                   <Icon className="w-2.5 h-2.5" /> {actionLabel(priority.action_type)}
                 </span>
               )}
             </div>
-            <ArrowRight className={cn('w-5 h-5 flex-shrink-0 text-content-secondary/30 transition-all group-hover:translate-x-1', cfg.arrow)} />
+            <ArrowRight className={cn('w-4 h-4 flex-shrink-0 mt-0.5 text-content-secondary/30 transition-all group-hover:translate-x-1', cfg.arrow)} />
           </div>
         </div>
       </Link>
@@ -195,9 +195,9 @@ export function HomePrioritiesClient() {
     return (
       <div>
         <SectionHead cfg={cfg} count={tasks.length} unit={tasks.length === 1 ? 'tarefa' : 'tarefas'} />
-        <div className="relative overflow-hidden rounded-2xl bg-surface-card border border-border-divider shadow-premium">
+        <div className="relative overflow-hidden rounded-xl bg-surface-card border border-border-divider shadow-premium h-full">
           <div className={cn('absolute left-0 top-0 bottom-0 w-1', cfg.bar)} />
-          <div className="p-4 pl-5">
+          <div className="p-3.5 pl-4">
             {tasks.map(t => <TaskRow key={t.id} task={t} accent={cfg} />)}
             <div className="pt-3">
               <Link href="/atividades" className={cn('text-[10px] font-black uppercase flex items-center gap-1 hover:gap-2 transition-all', cfg.color)}>
@@ -215,7 +215,7 @@ export function HomePrioritiesClient() {
   const isEmpty = !isLoading && !hasPriorities && !hasTasks
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <h2 className="h2-section">Ações de Hoje</h2>
         <div className="h-px flex-1 bg-gradient-to-r from-border-divider to-transparent" />
@@ -231,8 +231,12 @@ export function HomePrioritiesClient() {
         </div>
       )}
 
-      {overdueTasks.length > 0 && <TaskSection cfg={TASK_OVERDUE} tasks={overdueTasks} />}
-      {todayTasks.length > 0 && <TaskSection cfg={TASK_TODAY} tasks={todayTasks} />}
+      {hasTasks && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {overdueTasks.length > 0 && <TaskSection cfg={TASK_OVERDUE} tasks={overdueTasks} />}
+          {todayTasks.length > 0 && <TaskSection cfg={TASK_TODAY} tasks={todayTasks} />}
+        </div>
+      )}
 
       {Object.entries(categorized).map(([key, items]) => {
         const cfg = CATEGORY[key as keyof typeof CATEGORY]
@@ -243,11 +247,11 @@ export function HomePrioritiesClient() {
           <div key={key}>
             <SectionHead cfg={cfg} count={items.length} unit={items.length === 1 ? 'conta' : 'contas'} />
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-3">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3">
                 {items.map((priority, i) => (
                   <PriorityCard key={priority.id} priority={priority} cfg={cfg} index={i} />
                 ))}
