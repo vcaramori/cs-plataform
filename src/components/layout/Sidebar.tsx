@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Clock,
   TicketCheck,
-  MessageSquareText,
   LogOut,
   ChevronRight,
   Users,
@@ -53,13 +52,12 @@ const operacaoItems = [
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
   { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
   { href: '/playbooks',         label: 'Playbooks',         icon: Workflow },
-  { href: '/perguntar',         label: 'Perguntar',         icon: MessageSquareText },
 ]
 
 const settingsItems = [
   { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/roles',        label: 'Perfis de Acesso', icon: ShieldCheck, minRole: 'csm_senior' as const },
-  { href: '/cs-ops',               label: 'Planejamento de Capacidade',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/cs-ops',               label: 'Capacidade',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
@@ -135,7 +133,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
 
   const initials = user.email?.slice(0, 2).toUpperCase() ?? 'CS'
 
-  const NavLink = ({ href, label, icon: Icon }: any) => {
+  const NavLink = ({ href, label, icon: Icon, highlight }: any) => {
     const isActive = () => {
       if (pathname === href) return true
       if (href === '/' || href === '/dashboard') return false
@@ -155,17 +153,21 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
         className="block"
       >
         <div className={cn(
-          "group flex items-center transition-all relative border border-transparent",
+          "group flex items-center transition-all relative border",
           isCollapsed ? "justify-center p-2 rounded-xl" : "gap-3 px-3 py-2 rounded-xl",
           active
             ? "text-brand-primary bg-muted/40 border-border-divider shadow-sm dark:text-white"
-            : "text-content-secondary hover:text-content-primary hover:bg-muted/30 dark:hover:bg-white/5"
+            : highlight
+              ? "text-content-primary bg-accent/[0.07] border-accent/25 hover:bg-accent/15"
+              : "text-content-secondary border-transparent hover:text-content-primary hover:bg-muted/30 dark:hover:bg-white/5"
         )}>
           <Icon className={cn(
             "w-5 h-5 flex-shrink-0 transition-all duration-300",
             active
               ? "text-accent scale-110 drop-shadow-[0_0_8px_rgba(var(--accent),0.4)]"
-              : "text-content-secondary/40 group-hover:text-brand-primary group-hover:scale-110"
+              : highlight
+                ? "text-accent group-hover:scale-110"
+                : "text-content-secondary/40 group-hover:text-brand-primary group-hover:scale-110"
           )} />
 
           {!isCollapsed && (
@@ -176,6 +178,10 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
             >
               {label}
             </motion.span>
+          )}
+
+          {highlight && !isCollapsed && !active && (
+            <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-accent/20 text-accent">IA</span>
           )}
 
           {active && !isCollapsed && (
@@ -238,10 +244,10 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
               <Image
                 src="/brand/logo.png"
                 alt="Plannera"
-                width={180}
-                height={52}
+                width={200}
+                height={60}
                 priority
-                className="h-9 w-auto object-contain object-left"
+                className="h-12 w-auto object-contain object-left"
               />
             </motion.div>
           )}
@@ -253,12 +259,13 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
         "flex-1 space-y-6 mt-2 overflow-y-auto overflow-x-hidden scrollbar-none hover:scrollbar-thin transition-all",
         isCollapsed ? "p-2" : "p-4"
       )}>
-        {/* Início (topo) */}
-        {canViewHome && (
-          <div className="space-y-1">
+        {/* Pergunte à IA — interface principal, em destaque */}
+        <div className="space-y-1">
+          <NavLink href="/perguntar" label="Pergunte à IA" icon={Sparkles} highlight />
+          {canViewHome && (
             <NavLink href="/home" label="Início" icon={Zap} />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Grupo: Análise */}
         <div className="space-y-1">

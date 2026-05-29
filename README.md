@@ -189,8 +189,8 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 Reorganização do menu lateral ([Sidebar.tsx](src/components/layout/Sidebar.tsx)):
 
 - **Marca:** "CS-Continuum / Control Tower" → **logo da Plannera** (`/brand/logo.png`) no modo expandido; no recolhido, a **marca (grade 3×3 laranja)** recriada em SVG (`PlanneraMark`, funciona em qualquer tema).
-- **Navegação por jornada:** Início (topo) → **Análise** (Dashboard, Adoção, NPS, Voz do Cliente) → **Operação** (Atividades, Esforço, Suporte, Dashboard Suporte, Playbooks, Perguntar) → **Governança** (config recolhível, por permissão). Cabeçalhos de grupo somem no modo recolhido.
-- **PT-BR:** VoC → "Voz do Cliente"; Governance → "Governança"; Capacity Planning → "Planejamento de Capacidade"; Admin Panel → "Administração"; rodapé "Executive Representative" → cargo em PT (mapa `ROLE_LABELS`). Mantidos "Dashboard", "Playbooks", "NPS".
+- **Navegação por jornada:** **Pergunte à IA** (topo, em destaque — interface principal/mobile) → Início → **Análise** (Dashboard, Adoção, NPS, Voz do Cliente) → **Operação** (Atividades, Esforço, Suporte, Dashboard Suporte, Playbooks) → **Governança** (config recolhível, por permissão). Cabeçalhos de grupo somem no modo recolhido.
+- **PT-BR:** VoC → "Voz do Cliente"; "Perguntar" → "Pergunte à IA" (item de destaque com badge IA); Governance → "Governança"; Capacity Planning → "Capacidade"; Admin Panel → "Administração"; rodapé "Executive Representative" → cargo em PT (mapa `ROLE_LABELS`). Mantidos "Dashboard", "Playbooks", "NPS".
 - Permissões e o comportamento recolher/expandir preservados.
 
 > Caveat: o wordmark do logo é branco — ideal no tema escuro (atual); em tema claro pode sumir (a marca recolhida não tem esse problema). Variante de logo escuro fica para depois, se necessário.
