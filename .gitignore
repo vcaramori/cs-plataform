@@ -67,3 +67,6 @@ scripts/email-sync-loop.mjs
 dev_output.*
 server.log
 test-execution.log
+
+# Logos-fonte (originais) — as versões usadas ficam em public/brand
+Logotipos/
