@@ -15,6 +15,7 @@ export const PLATFORM_MODULES = [
   { module: 'esforco',       label: 'Esforço & Capacity' },
   { module: 'ask',           label: 'Perguntar (Ask AI)' },
   { module: 'playbooks',     label: 'Automação & Playbooks' },
+  { module: 'wishlist',      label: 'Wishlist & Pedidos' },
   { module: 'contracts',     label: 'Contratos & Faturamento' },
   { module: 'accounts',      label: 'Gestão de Contas' },
   { module: 'governance',    label: 'Governança & Auditoria' },

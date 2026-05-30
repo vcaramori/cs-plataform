@@ -4,6 +4,16 @@ import { env } from '@/lib/env'
 import { encode, decode } from 'gpt-tokenizer'
 import type { EmbeddingSearchResult } from '@/lib/supabase/types'
 
+/**
+ * Tipos de origem aceitos pela tabela `embeddings`.
+ * Mantido em sincronia com a constraint embeddings_source_type_check.
+ */
+export type EmbeddingSourceType =
+  | 'interaction'
+  | 'support_ticket'
+  | 'nps_response'
+  | 'wishlist_signal'
+
 // ---------------------------------------------------------------------------
 // Chunking
 // ---------------------------------------------------------------------------
@@ -45,7 +55,7 @@ export async function generateEmbedding(
 
 export async function storeEmbeddings(
   accountId: string,
-  sourceType: 'interaction' | 'support_ticket',
+  sourceType: EmbeddingSourceType,
   sourceId: string,
   text: string
 ): Promise<number> {
@@ -103,7 +113,7 @@ export async function searchEmbeddings(
   queryText: string,
   options: {
     accountId?: string
-    sourceType?: 'interaction' | 'support_ticket'
+    sourceType?: EmbeddingSourceType
     limit?: number
     threshold?: number
   } = {}
@@ -119,7 +129,7 @@ export async function searchEmbeddingsWithVector(
   queryEmbedding: number[],
   options: {
     accountId?: string
-    sourceType?: 'interaction' | 'support_ticket'
+    sourceType?: EmbeddingSourceType
     limit?: number
     threshold?: number
   } = {}

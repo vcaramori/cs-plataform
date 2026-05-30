@@ -26,6 +26,7 @@ import {
   Workflow,
   CheckCircle2,
   Zap,
+  Lightbulb,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -52,6 +53,7 @@ const operacaoItems = [
   { href: '/esforco',           label: 'Esforço',          icon: Clock },
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
   { href: '/fluxos',            label: 'Fluxos',            icon: Workflow },
+  { href: '/wishlist',          label: 'Wishlist',          icon: Lightbulb },
 ]
 
 const settingsItems = [

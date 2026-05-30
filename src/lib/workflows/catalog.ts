@@ -39,6 +39,8 @@ export const TRIGGER_EVENTS = [
   { value: 'silent_customer', label: 'Cliente silencioso' },
   { value: 'ticket_escalated', label: 'Ticket escalado' },
   { value: 'interaction_logged', label: 'Interação registrada' },
+  { value: 'wishlist_item_created', label: 'Item de Wishlist criado' },
+  { value: 'wishlist_item_accepted', label: 'Item de Wishlist aceito' },
 ]
 
 export const NODE_CATALOG: Record<NodeType, NodeDef> = {

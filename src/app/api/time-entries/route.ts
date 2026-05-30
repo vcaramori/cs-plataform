@@ -5,6 +5,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { parseTimeEntry } from '@/lib/gemini/parse-time-entry'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 import { getHealthClassification } from '@/lib/health/utils'
+import { extractWishlistSignals } from '@/lib/wishlist/extractor'
 
 const BodySchema = z.object({
   raw_text: z.string().min(5),
@@ -138,6 +139,15 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const result = data as any
+
+  // WISHLIST: extrai pedidos de produto da nota de esforço (não bloqueia se nada for encontrado)
+  await extractWishlistSignals({
+    text: parsed.data.raw_text,
+    accountId,
+    sourceType: 'time_entry',
+    sourceId: result.id,
+    createdBy: user.id,
+  })
 
   if (needsReview) {
     console.warn(`[TimeEntry] confidence_score=${parsedEntry.confidence_score} — salvo com status pending_review`)

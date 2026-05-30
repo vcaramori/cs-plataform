@@ -184,6 +184,18 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 💡 Wishlist — Coleta, Curadoria e Handoff de Pedidos de Cliente (2026-05-30)
+
+Novo módulo (`/wishlist`) que transforma menções soltas de clientes em **itens de produto curados, deduplicados entre clientes e priorizados por receita**, prontos para handoff ao time de produto. Modelo de **dois níveis**: `wishlist_signals` (menção por cliente/origem) → `wishlist_items` (ideia canônica que agrega a demanda de N clientes com ARR em jogo).
+
+- **Schema** (`supabase/migrations/…_wishlist_module_foundation.sql`): `wishlist_items`, `wishlist_signals`, `wishlist_curation_log`, `wishlist_handoffs` + RLS permissiva `wl_auth_all` + triggers que enfileiram `wishlist_item_created`/`wishlist_item_accepted` no motor de Fluxos. Estendidas as constraints `embeddings.source_type` (+`nps_response`,`wishlist_signal`) e `csm_tasks.source_label` (+`wishlist`).
+- **Captura por IA** (`src/lib/wishlist/extractor.ts`, `generateText` em JSON mode): extrai pedidos de produto de **reuniões** (gancho no `/api/interactions/[id]/ingest`), **esforço** (`/api/time-entries`), **NPS detratores** (`/api/nps/response`) e **suporte** (`/api/wishlist/backfill`, idempotente). Captura **manual** sempre disponível. Cada sinal é embedado (`wishlist_signal`) para dedup.
+- **Curadoria** (`/wishlist`): triagem com 4 desfechos (`já existe` → liga ao catálogo `product_features`; `insuficiente` → melhoria; `não temos` → novo; `descartado`), sugestão de catálogo via LLM e **itens semelhantes cross-customer** (busca vetorial em `wishlist_signals` mapeada para `item_id`). Demanda recalculada (contas distintas + ARR de contratos ativos) em cada vínculo.
+- **Handoff** (`src/lib/wishlist/handoff.ts`): gera **brief de produto** (problema, demanda, ARR, evidências, narrativa via LLM) e envia por **export** ou **webhook configurável** (reusa `runHttp` dos Fluxos — https-only/allowlist/timeout). Endpoint guardado em `app_settings.wishlist_settings`.
+- **Reuso:** vetorial `storeEmbeddings`/`searchEmbeddings`, LLM gateway, `product_features`/`feature_adoption`, motor de Fluxos (`enqueue_workflow_event`), padrão de UI (ModuleHeader/Card/Tabs/Dialog).
+
+**Follow-up (anotado):** seção Wishlist na página da conta; embutir `product_features` no vetor para match semântico; score RICE; loop de retorno (`delivered` notifica quem pediu); integração real da ferramenta de produto.
+
 ### ⚙️ Fluxos & Playbooks — Orquestrador de Processos de CS (2026-05-29 → em construção)
 
 Substitui o Playbooks mockado por um **orquestrador de processos** (construtor visual estilo N8N) com motor durável e humano-no-loop. **MVP entregue (engine + builder):**

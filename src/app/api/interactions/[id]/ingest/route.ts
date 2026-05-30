@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
+import { extractWishlistSignals } from '@/lib/wishlist/extractor'
 
 async function analyzeSentiment(text: string): Promise<number> {
   try {
@@ -34,7 +35,7 @@ export async function POST(
   // Busca a interaction e valida ownership via csm_id
   const { data: interaction, error: fetchError } = await supabase
     .from('interactions')
-    .select('id, account_id, raw_transcript, csm_id')
+    .select('id, account_id, raw_transcript, csm_id, source')
     .eq('id', id)
     .eq('csm_id', user.id)
     .single()
@@ -67,6 +68,18 @@ export async function POST(
         alert_triggered: alertTriggered,
       })
       .eq('id', id)
+
+    // WISHLIST: extrai pedidos de produto da transcrição.
+    // Pula interações vindas de effort_sync (já capturadas no registro de esforço).
+    if ((interaction as any).source !== 'effort_sync') {
+      await extractWishlistSignals({
+        text: interaction.raw_transcript,
+        accountId: interaction.account_id,
+        sourceType: 'interaction',
+        sourceId: interaction.id,
+        createdBy: user.id,
+      })
+    }
 
     return NextResponse.json({
       success: true,
