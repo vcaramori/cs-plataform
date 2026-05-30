@@ -193,8 +193,10 @@ Substitui o Playbooks mockado por um **orquestrador de processos** (construtor v
 - **Crons:** `/api/cron/workflow-event-processor` (instancia) + `/api/cron/workflow-executor` (avança + SLA).
 - **UI** (`/fluxos`): lista + **inbox de pendências** (aprovações/tarefas) + biblioteca de Playbooks (templates ongoing) + **editor React Flow** (canvas, paleta, painel de config por nó, testar, publicar, histórico de execução).
 - **Templates ongoing:** Recuperação de Health, Renovação D-90 (com aprovação + loop), Recuperação de Adoção.
+- **Nó de Código (sandbox `node:vm`)** entregue — fecha "scripts externos: HTTP + código".
+- **Legado descartado:** removidos UI `/playbooks`, componentes da conta, rotas `api/(account-)playbooks` e **drop das tabelas `playbook_*`**; consumidores (alert-service, cs-ops cockpit, RAG) migrados para não referenciá-las.
 
-**Follow-up:** wiring de email (SMTP), nó de código em sandbox, registro dos crons no scheduler, e **descarte do legado** `/playbooks` (hoje deslinkado mas ainda presente, pois a ficha da conta o referencia) + drop das tabelas `playbook_*`.
+**Follow-up restante:** wiring real de **email (SMTP)** (hoje a ação `send_email` enfileira/loga) e **registrar os 2 crons** (`workflow-event-processor` ~5min, `workflow-executor` ~1min) no mesmo scheduler externo que dispara os demais crons (POST com `x-api-secret`).
 
 ### 🧭 Sidebar — Logo Plannera + Navegação por Jornada + PT-BR (2026-05-29)
 
