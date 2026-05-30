@@ -51,7 +51,7 @@ const analiseItems = [
 const operacaoItems = [
   { href: '/esforco',           label: 'Esforço',          icon: Clock },
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
-  { href: '/playbooks',         label: 'Playbooks',         icon: Workflow },
+  { href: '/fluxos',            label: 'Fluxos',            icon: Workflow },
 ]
 
 const settingsItems = [

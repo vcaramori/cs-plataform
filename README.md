@@ -184,6 +184,18 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### ⚙️ Fluxos & Playbooks — Orquestrador de Processos de CS (2026-05-29 → em construção)
+
+Substitui o Playbooks mockado por um **orquestrador de processos** (construtor visual estilo N8N) com motor durável e humano-no-loop. **MVP entregue (engine + builder):**
+
+- **Schema** (`supabase/migrations/20260529120000_workflows_module_foundation.sql`): `workflow_definitions/nodes/edges`, `workflow_runs/run_steps`, `workflow_approvals`, `workflow_event_queue/triggers/dedup` + RLS + triggers no Postgres (health, regressão de adoção, conclusão de tarefa→retoma) + `csm_tasks.workflow_run_step_id`.
+- **Motor** (`src/lib/workflows/`): `engine` durável (gatilho/condição/validação/branch/switch/loop/wait/**tarefa humana**/**aprovação**/ação/HTTP) com estados `waiting`/resume, loops com `max_iterations`, retry/on_error e **execução configurável por nó**; `triggers` (fila/dedup/agendados/SLA); `actions` (tarefa/alerta/campo/interação/email/HTTP); `catalog` + `templates`.
+- **Crons:** `/api/cron/workflow-event-processor` (instancia) + `/api/cron/workflow-executor` (avança + SLA).
+- **UI** (`/fluxos`): lista + **inbox de pendências** (aprovações/tarefas) + biblioteca de Playbooks (templates ongoing) + **editor React Flow** (canvas, paleta, painel de config por nó, testar, publicar, histórico de execução).
+- **Templates ongoing:** Recuperação de Health, Renovação D-90 (com aprovação + loop), Recuperação de Adoção.
+
+**Follow-up:** wiring de email (SMTP), nó de código em sandbox, registro dos crons no scheduler, e **descarte do legado** `/playbooks` (hoje deslinkado mas ainda presente, pois a ficha da conta o referencia) + drop das tabelas `playbook_*`.
+
 ### 🧭 Sidebar — Logo Plannera + Navegação por Jornada + PT-BR (2026-05-29)
 
 Reorganização do menu lateral ([Sidebar.tsx](src/components/layout/Sidebar.tsx)):
