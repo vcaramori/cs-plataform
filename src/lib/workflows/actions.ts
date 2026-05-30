@@ -1,3 +1,4 @@
+import vm from 'node:vm'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { renderTemplate } from './context'
 import type { NodeConfig, RunContext } from './types'
@@ -119,6 +120,26 @@ export async function runHttp(cfg: NodeConfig, ctx: RunContext): Promise<Record<
   } finally {
     clearTimeout(timeout)
   }
+}
+
+/**
+ * Nó de código: executa um script curto num contexto isolado (node:vm).
+ * O script recebe `context` (clone) e deve setar `result`. Sem acesso a
+ * require/process/rede (não expostos no sandbox). Timeout de 2s.
+ * Obs.: vm não é um isolamento de segurança forte — uso restrito a fluxos
+ * autorados internamente; evolução: isolated-vm/worker dedicado.
+ */
+export function runCode(cfg: NodeConfig, ctx: RunContext): Record<string, any> {
+  const source = String(cfg.code_source ?? '').trim()
+  if (!source) return { result: null }
+  const sandbox: Record<string, any> = {
+    context: JSON.parse(JSON.stringify(ctx ?? {})),
+    result: undefined,
+    JSON, Math,
+  }
+  vm.createContext(sandbox)
+  vm.runInContext(`"use strict";\n${source}`, sandbox, { timeout: 2000 })
+  return { result: sandbox.result ?? null }
 }
 
 export { addHoursISO }

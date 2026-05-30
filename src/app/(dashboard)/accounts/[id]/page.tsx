@@ -6,7 +6,7 @@ import { AccountDetailPageClient } from './components/AccountDetailPageClient'
 import type {
   Contract, Interaction, SupportTicket, TimeEntry, Contact,
   SuccessPlanGoal, AdoptionMetrics, NPSResponse, CommercialGovernance,
-  AccountPlaybook, HealthScore,
+  HealthScore,
 } from '@/lib/supabase/types'
 
 import { PageContainer } from '@/components/ui/page-container'
@@ -38,14 +38,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
           *,
           nps_questions (*)
         )
-      ),
-      account_playbooks (
-        *,
-        template:playbook_templates (*),
-        tasks:account_playbook_tasks (
-          *,
-          task:playbook_tasks (*)
-        )
       )
     `)
     .eq('id', id)
@@ -72,13 +64,9 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
   const successGoals     = norm(account.success_goals)    as SuccessPlanGoal[]
   const adoptionMetrics  = norm(account.adoption_metrics) as AdoptionMetrics[]
   const adoptionRecords  = norm(account.feature_adoption)
-  const playbooks        = norm(account.account_playbooks)      as AccountPlaybook[]
   const riskAssessments  = norm(account.account_risk_assessments)
   const npsResponses     = norm(account.nps_responses)    as NPSResponse[]
   const commercialGovernance = norm(account.commercial_governance) as CommercialGovernance[]
-
-  // Identificar o playbook ativo (em progresso)
-  const activePlaybook = playbooks.find((pb: any) => pb.status === 'in_progress')
 
   // Identificar o último risk assessment da IA
   const latestRiskAssessment = riskAssessments.sort((a: any, b: any) => new Date(b.analyzed_at).getTime() - new Date(a.analyzed_at).getTime())[0] ?? null
@@ -135,8 +123,6 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         portalInvites={portalInvites ?? []}
         successGoals={successGoals}
         adoptionMetrics={adoptionMetrics}
-        activePlaybook={activePlaybook}
-        playbooks={playbooks}
         latestRiskAssessment={latestRiskAssessment}
         npsResponses={npsResponses}
         commercialGovernance={commercialGovernance}

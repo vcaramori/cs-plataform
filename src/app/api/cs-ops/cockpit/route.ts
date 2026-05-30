@@ -20,19 +20,8 @@ export async function GET() {
     return NextResponse.json({ error: healthError.message }, { status: 500 })
   }
 
-  // 2. Playbooks em atraso
-  // Assuming a view or table `playbook_planned_vs_realized` or checking `account_playbooks`
-  const { data: delayedPlaybooks, error: playbookError } = await supabase
-    .from('account_playbooks')
-    .select('id, account_id, template_id, due_date, status, accounts(name)')
-    .eq('status', 'in_progress')
-    .lt('due_date', new Date().toISOString())
-    .order('due_date', { ascending: true })
-
-  if (playbookError) {
-    console.error('Error fetching delayed playbooks:', playbookError)
-    return NextResponse.json({ error: playbookError.message }, { status: 500 })
-  }
+  // 2. Playbooks em atraso — legado removido (módulo migrado para Fluxos)
+  const delayedPlaybooks: any[] = []
 
   // 3. Riscos Críticos / Altos não mitigados
   const { data: openRisks, error: risksError } = await supabase

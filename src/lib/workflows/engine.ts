@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { evalConditions, renderTemplate } from './context'
-import { runAction, runHttp } from './actions'
+import { runAction, runHttp, runCode } from './actions'
 import type { NodeConfig, RunContext, WorkflowEdge, WorkflowNode } from './types'
 
 /**
@@ -228,8 +228,10 @@ export async function processStep(admin: SupabaseClient, stepId: string): Promis
         const out = await runHttp(cfg, ctx)
         await done(out); break
       }
-      case 'code':
-        throw new Error('nó de código (sandbox) ainda não habilitado (fast-follow)')
+      case 'code': {
+        const out = runCode(cfg, ctx)
+        await done(out); break
+      }
 
       default:
         await done({ skipped: true }, 'default')

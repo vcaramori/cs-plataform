@@ -129,15 +129,8 @@ export async function runRAGPipeline(
           .order('renewal_date', { ascending: false })
           .limit(1)
       : Promise.resolve({ data: [] as any[] }),
-    // [11] Playbooks — em andamento e concluídos recentemente
-    accountId
-      ? db
-          .from('account_playbooks')
-          .select('id, status, started_at, completed_at, expected_end_date, objective, success_criteria, playbook_templates(name, description)')
-          .eq('account_id', accountId)
-          .order('started_at', { ascending: false })
-          .limit(5)
-      : Promise.resolve({ data: [] as any[] }),
+    // [11] Playbooks — legado removido (módulo migrado para Fluxos); slot mantido p/ estabilidade dos índices
+    Promise.resolve({ data: [] as any[] }),
     // [12] SLA violations — tickets da conta com breaches
     accountId
       ? db

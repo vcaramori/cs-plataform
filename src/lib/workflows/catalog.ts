@@ -181,10 +181,10 @@ export const NODE_CATALOG: Record<NodeType, NodeDef> = {
     defaults: { http_method: 'POST', execution: {} },
   },
   code: {
-    type: 'code', label: 'Código (em breve)', group: 'Integração', icon: 'Code',
-    color: 'text-content-secondary', accent: 'bg-content-secondary',
+    type: 'code', label: 'Código (sandbox)', group: 'Integração', icon: 'Code',
+    color: 'text-plannera-ds', accent: 'bg-plannera-ds',
     outputs: [{ id: 'default', label: '' }],
-    fields: [{ key: 'code_source', label: 'Código', type: 'textarea', help: 'Sandbox — disponível em breve' }],
+    fields: [{ key: 'code_source', label: 'Código JS', type: 'textarea', help: 'Recebe `context` e deve setar `result`. Ex.: result = context.account.health_score * 2' }],
     defaults: { execution: {} },
   },
 }

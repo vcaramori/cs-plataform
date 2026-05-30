@@ -10,10 +10,8 @@ import { AccountChat } from './AccountChat'
 import { AccountActivitiesWidget } from './AccountActivitiesWidget'
 import { EditContractDialog } from './EditContractDialog'
 import { AdoptionChart } from './AdoptionChart'
-import { PlaybookWidget } from './PlaybookWidget'
 import { calculateNetMRR, calculateCurrentDiscount } from '@/lib/utils/contract-utils'
 import Link from 'next/link'
-import { StartPlaybookDialog } from './StartPlaybookDialog'
 import {
   History,
   TrendingUp,
@@ -28,7 +26,6 @@ import {
   Settings2,
   BrainCircuit,
   AlertTriangle,
-  PlayCircle,
   CheckSquare,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -43,10 +40,9 @@ import type {
   Contact, 
   SuccessPlanGoal, 
   AdoptionMetrics,
-  NPSResponse, 
-  CommercialGovernance, 
+  NPSResponse,
+  CommercialGovernance,
   HealthScore,
-  AccountPlaybook,
   TimeEntry
 } from '@/lib/supabase/types'
 import type { Database } from '@/lib/supabase/database.types'
@@ -64,11 +60,10 @@ interface Props {
   efforts: TimeEntry[]
   contacts: Contact[]
   portalInvites?: any[]
+  successGoals?: SuccessPlanGoal[]
   adoptionMetrics: AdoptionMetrics[]
-  activePlaybook?: AccountPlaybook
   latestRiskAssessment?: RiskAssessmentRow
   npsResponses: NPSResponse[]
-  playbooks?: AccountPlaybook[]
   commercialGovernance: CommercialGovernance[]
   healthScores?: HealthScore[]
 }
@@ -211,10 +206,8 @@ export function AccountDetailPageClient({
   portalInvites = [],
   successGoals,
   adoptionMetrics,
-  activePlaybook,
   latestRiskAssessment,
   npsResponses,
-  playbooks = [],
   commercialGovernance,
   healthScores = []
 }: Props) {
@@ -242,7 +235,6 @@ export function AccountDetailPageClient({
               efforts={efforts}
               tickets={tickets}
               npsResponses={npsResponses}
-              playbooks={playbooks}
               contracts={contracts}
               healthScores={healthScores}
               accounts={[{ id, name: accountName }]}
@@ -280,23 +272,6 @@ export function AccountDetailPageClient({
                   </div>
                 </div>
               </div>
-            </section>
-          )}
-
-          {/* Active Playbook (Se houver) */}
-          {activePlaybook ? (
-            <section className="space-y-6">
-              <PlaybookWidget playbook={activePlaybook} />
-            </section>
-          ) : (
-            <section className="space-y-6">
-              <div className="flex items-center gap-4 px-1 h-12">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
-                  <PlayCircle className="w-5 h-5" />
-                </div>
-                <Text variant="secondary" className="!text-[10px] font-black uppercase tracking-wider select-none">Playbooks</Text>
-              </div>
-              <StartPlaybookDialog accountId={id} accountName={accountName} />
             </section>
           )}
 

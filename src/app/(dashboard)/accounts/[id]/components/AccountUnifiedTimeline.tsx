@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { NPSDetailModal } from './NPSDetailModal'
-import { ModalSkeleton } from '@/components/LazyLoader'
 
-const PlaybookHistoryModal = lazy(() => import('./PlaybookHistoryModal').then(m => ({ default: m.PlaybookHistoryModal })))
 import { InteractionDetailModal } from './InteractionDetailModal'
 import { ContractDetailModal } from './ContractDetailModal'
 import { HealthEventDetailModal } from './HealthEventDetailModal'
@@ -19,7 +17,6 @@ interface Props {
   efforts: any[]
   tickets: any[]
   npsResponses: any[]
-  playbooks: any[]
   contracts?: any[]
   healthScores?: any[]
   accounts: any[]
@@ -31,7 +28,6 @@ export function AccountUnifiedTimeline({
   efforts,
   tickets,
   npsResponses,
-  playbooks,
   contracts = [],
   healthScores = [],
   accounts,
@@ -42,7 +38,6 @@ export function AccountUnifiedTimeline({
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEffort, setSelectedEffort] = useState<any>(null)
-  const [selectedPlaybook, setSelectedPlaybook] = useState<any>(null)
   const [selectedNPS, setSelectedNPS] = useState<any>(null)
   const [selectedInteraction, setSelectedInteraction] = useState<any>(null)
   const [selectedContract, setSelectedContract] = useState<any>(null)
@@ -83,9 +78,9 @@ export function AccountUnifiedTimeline({
       .filter(i => !i.deleted_at && !i.is_archived)
       .map(i => ({
         ...i,
-        itemType: i.type === 'playbook' ? 'playbook' : 'interaction',
+        itemType: 'interaction',
         date: i.date || i.created_at,
-        isStrategic: i.type !== 'playbook'
+        isStrategic: true
       })),
     ...efforts
       .filter(e => !e.deleted_at && !e.is_archived)
@@ -171,15 +166,6 @@ export function AccountUnifiedTimeline({
       case 'nps':
         setSelectedNPS({ ...item, account_name: accountName || accounts[0]?.name || 'Conta Cliente' })
         break
-      case 'playbook': {
-        const fullPlaybook = playbooks.find(p =>
-          p.id === item.id ||
-          (item.metadata && p.id === item.metadata.playbook_id) ||
-          p.template?.name === item.title
-        )
-        setSelectedPlaybook(fullPlaybook || item)
-        break
-      }
       case 'interaction':
         setSelectedInteraction(item)
         break
@@ -266,13 +252,6 @@ export function AccountUnifiedTimeline({
         render={selectedNPS}
         onOpenChange={(open) => !open && setSelectedNPS(null)}
       />
-
-      <Suspense fallback={<ModalSkeleton />}>
-        <PlaybookHistoryModal
-          playbook={selectedPlaybook}
-          onOpenChange={(open) => !open && setSelectedPlaybook(null)}
-        />
-      </Suspense>
 
       <InteractionDetailModal
         interaction={selectedInteraction}

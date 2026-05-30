@@ -415,19 +415,8 @@ export class AlertService {
       return null
     }
 
-    // Idempotency check 1: no active playbook
-    const { data: activePlaybook } = await this.supabase
-      .from('account_playbooks')
-      .select('id')
-      .eq('account_id', accountId)
-      .eq('status', 'in_progress')
-      .limit(1)
-
-    if (activePlaybook && activePlaybook.length > 0) {
-      return null
-    }
-
-    // Idempotency check 2: no existing unresolved playbook_trigger alert
+    // Idempotency: no existing unresolved playbook_trigger alert
+    // (legacy account_playbooks check removido — módulo migrado para Fluxos)
     const { data: existingAlert } = await this.supabase
       .from('proactive_alerts')
       .select('id')
