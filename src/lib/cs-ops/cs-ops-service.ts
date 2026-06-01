@@ -187,34 +187,51 @@ export class CSOperationsService {
 
     // Get recent customer satisfaction scores
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    const { data: npsScores } = await this.supabase
-      .from('nps_responses')
-      .select('score, sentiment')
-      .eq('csm_id', csmId)
-      .gte('created_at', thirtyDaysAgo.toISOString())
+    const thirtyDaysAgoIso = thirtyDaysAgo.toISOString()
 
-    const avgNps = npsScores && npsScores.length > 0
-      ? npsScores.reduce((sum: number, n: any) => sum + (n.score || 0), 0) / npsScores.length
-      : 0
-
-    const { data: csatScores } = await this.supabase
-      .from('support_tickets')
-      .select('csat_score')
-      .eq('csm_assigned_id', csmId)
-      .gte('resolved_at', thirtyDaysAgo.toISOString())
-      .not('csat_score', 'is', null)
-
-    const avgCsat = csatScores && csatScores.length > 0
-      ? csatScores.reduce((sum: number, c: any) => sum + (c.csat_score || 0), 0) / csatScores.length
-      : 0
-
-    // Get escalations
-    const { data: escalations } = await this.supabase
-      .from('support_tickets')
+    // NPS — nps_responses não tem csm_id; junta pelas contas do CSM
+    const { data: ownedAccounts } = await this.supabase
+      .from('accounts')
       .select('id')
-      .eq('csm_assigned_id', csmId)
-      .eq('escalated', true)
-      .gte('created_at', thirtyDaysAgo.toISOString())
+      .eq('csm_owner_id', csmId)
+    const ownedAccountIds = (ownedAccounts || []).map((a: any) => a.id)
+
+    let avgNps = 0
+    if (ownedAccountIds.length > 0) {
+      const { data: npsScores } = await this.supabase
+        .from('nps_responses')
+        .select('score')
+        .in('account_id', ownedAccountIds)
+        .not('score', 'is', null)
+        .gte('responded_at', thirtyDaysAgoIso)
+      avgNps = npsScores && npsScores.length > 0
+        ? npsScores.reduce((sum: number, n: any) => sum + (n.score || 0), 0) / npsScores.length
+        : 0
+    }
+
+    // Tickets resolvidos pelo agente nos últimos 30 dias (assigned_to)
+    const { data: agentTickets } = await this.supabase
+      .from('support_tickets')
+      .select('id, sla_breach_resolution')
+      .eq('assigned_to', csmId)
+      .gte('resolved_at', thirtyDaysAgoIso.split('T')[0])
+
+    const agentTicketIds = (agentTickets || []).map((t: any) => t.id)
+
+    // CSAT via csat_responses dos tickets do agente
+    let avgCsat = 0
+    if (agentTicketIds.length > 0) {
+      const { data: csatScores } = await this.supabase
+        .from('csat_responses')
+        .select('score')
+        .in('ticket_id', agentTicketIds)
+      avgCsat = csatScores && csatScores.length > 0
+        ? csatScores.reduce((sum: number, c: any) => sum + (c.score || 0), 0) / csatScores.length
+        : 0
+    }
+
+    // "Escalações" como proxy: tickets do agente com quebra de SLA de resolução
+    const escalations = (agentTickets || []).filter((t: any) => t.sla_breach_resolution)
 
     // Calculate burnout risk score
     let burnoutRiskScore = 0

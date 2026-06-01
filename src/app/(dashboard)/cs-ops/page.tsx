@@ -33,8 +33,8 @@ export default async function CSOpsPage() {
   return (
     <PageContainer>
       <ModuleHeader
-        title="CS Operations"
-        subtitle="Scorecard de CSMs, capacity planning e rebalanceamento de portfólio"
+        title="Capacidade & Produtividade"
+        subtitle="Produtividade da equipe de CS, capacity planning e rebalanceamento de portfólio"
         iconName="Users"
       />
 

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CockpitDashboard } from './CockpitDashboard'
+import { ProductivityDashboard } from './ProductivityDashboard'
 
 interface CSM { id: string; role: string }
 
@@ -71,7 +72,7 @@ interface CockpitData {
 }
 
 export function CSOpsClient({ csms }: { csms: CSM[] }) {
-  const [tab, setTab] = useState('cockpit')
+  const [tab, setTab] = useState('productivity')
   const [capacities, setCapacities] = useState<CapacityData[]>([])
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [suggestions, setSuggestions] = useState<RebalanceSuggestion[]>([])
@@ -163,6 +164,7 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-surface-card border border-border-divider rounded-2xl p-1 h-auto gap-1">
           {[
+            { value: 'productivity', label: 'Produtividade da Equipe' },
             { value: 'cockpit', label: 'Atenção Necessária' },
             { value: 'capacity', label: 'Capacity Planning' },
             { value: 'rebalancer', label: `Rebalancer${suggestions.length ? ` (${suggestions.length})` : ''}` },
@@ -176,6 +178,10 @@ export function CSOpsClient({ csms }: { csms: CSM[] }) {
             </TabsTrigger>
           ))}
         </TabsList>
+
+        <TabsContent value="productivity" className="mt-6">
+          <ProductivityDashboard />
+        </TabsContent>
 
         <TabsContent value="cockpit" className="mt-6">
           {loading ? (
