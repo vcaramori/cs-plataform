@@ -57,7 +57,7 @@ export async function PATCH(
 
   // de→para Funcionalidade → Épico: substitui o conjunto quando enviado
   if (epic_ids) {
-    const db = supabase as any
+    const db = supabase
     await db.from('feature_epics').delete().eq('feature_id', id)
     if (epic_ids.length > 0) {
       await db.from('feature_epics').insert(epic_ids.map((epic_id: string) => ({ feature_id: id, epic_id })))

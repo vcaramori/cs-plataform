@@ -7,7 +7,7 @@ export default async function FlowEditorPage({ params }: { params: Promise<{ id:
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const db = supabase as any
+  const db = supabase
 
   const { data: def } = await db.from('workflow_definitions').select('*').eq('id', id).maybeSingle()
   if (!def) notFound()

@@ -16,7 +16,7 @@ export async function calcSLAScore(accountId: string): Promise<number> {
   const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -57,7 +57,7 @@ export async function calcNPSScore(accountId: string): Promise<number> {
   const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -89,7 +89,7 @@ export async function calcAdoptionScore(accountId: string): Promise<number> {
   const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   const { data, error } = await db
     .from('adoption_metrics')
@@ -129,7 +129,7 @@ export async function calcRelationshipScore(accountId: string): Promise<number> 
   const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 

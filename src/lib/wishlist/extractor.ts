@@ -74,7 +74,7 @@ export async function extractWishlistSignals(input: ExtractInput): Promise<numbe
     if (extracted.length === 0) return 0
 
     const supabase = getSupabaseAdminClient()
-    const db = supabase as any
+    const db = supabase
 
     // Re-ingestão segura: remove sinais IA anteriores desta mesma origem
     if (sourceId) {

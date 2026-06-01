@@ -148,7 +148,7 @@ export function HomePrioritiesClient() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
-  const db = supabase as any
+  const db = supabase
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -159,7 +159,7 @@ export function HomePrioritiesClient() {
       .in('status', ['todo', 'in_progress'])
       .order('priority', { ascending: false })
       .limit(5)
-      .then(({ data }: { data: CsmTask[] | null }) => setTodayTasks(data ?? []))
+      .then(({ data }) => setTodayTasks((data as CsmTask[] | null) ?? []))
 
     db
       .from('csm_tasks')
@@ -168,7 +168,7 @@ export function HomePrioritiesClient() {
       .in('status', ['todo', 'in_progress'])
       .order('due_date', { ascending: true })
       .limit(5)
-      .then(({ data }: { data: CsmTask[] | null }) => setOverdueTasks(data ?? []))
+      .then(({ data }) => setOverdueTasks((data as CsmTask[] | null) ?? []))
   }, [db])
 
   const categorized = {

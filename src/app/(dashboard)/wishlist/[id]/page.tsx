@@ -10,7 +10,7 @@ export default async function WishlistItemPage({ params }: { params: Promise<{ i
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const db = supabase as any
+  const db = supabase
 
   const { data: item } = await db.from('wishlist_items').select('*').eq('id', id).single()
   if (!item) notFound()

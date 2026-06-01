@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const dateFrom = searchParams.get('date_from') ? new Date(searchParams.get('date_from')!) : defaultFrom
     const dateTo   = searchParams.get('date_to')   ? new Date(searchParams.get('date_to')!)   : now
 
-    const db = supabase as any
+    const db = supabase
 
     const { data: myAccounts } = await supabase.from('accounts').select('id, name').eq('csm_owner_id', user.id)
     const accountNamesMap = new Map((myAccounts || []).map(a => [a.id, a.name]))

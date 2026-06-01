@@ -20,7 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { feature_ids, ...planData } = parsed.data
-  const db = supabase as any
+  const db = supabase
 
   if (Object.keys(planData).length > 0) {
     const { error } = await db.from('subscription_plans').update(planData).eq('id', id)
