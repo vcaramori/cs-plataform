@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,6 +59,7 @@ Focus on accuracy. If unsure, lower the confidence score.`
 
   try {
     const response = await generateText(prompt, {
+      systemInstruction: await buildSystemInstruction('support_categorization'),
       maxOutputTokens: 200,
       temperature: 0.3
     })

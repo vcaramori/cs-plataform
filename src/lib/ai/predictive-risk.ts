@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 export interface PredictiveRiskResult {
   risk_score: number
@@ -75,7 +76,7 @@ Seja rígido na análise. Reclamações repetidas, bugs críticos e tons agressi
   // 5. Call LLM
   try {
     const response = await generateText(payload, {
-      systemInstruction,
+      systemInstruction: await buildSystemInstruction('predictive_risk', systemInstruction),
       temperature: 0.1
     })
 

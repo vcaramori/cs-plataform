@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateText } from '@/lib/llm/gateway'
 import { loadInstruction } from '@/lib/ai/load-instruction'
+import { getAIContextRules } from '@/lib/ai/ai-context'
 
 export const maxDuration = 300 // 5 minutes
 
-// Silence thresholds by account segment (in days)
+// Fallback de thresholds de silêncio por segmento (sobrescrito por ai_context_rules)
 const SILENCE_THRESHOLDS: Record<string, number> = {
   'Indústria': 14,
   'MRO': 14,
@@ -21,6 +22,8 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient() as any
+  const rules = await getAIContextRules()
+  const silenceThresholds: Record<string, number> = { ...SILENCE_THRESHOLDS, ...(rules.silence_by_segment ?? {}) }
   let generated = 0
   let skipped = 0
   let errors: string[] = []
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
 
     for (const account of accounts) {
       try {
-        const thresholdDays = SILENCE_THRESHOLDS[account.segment] || 30
+        const thresholdDays = silenceThresholds[account.segment] ?? silenceThresholds.default ?? 30
         const silenceDateThreshold = new Date()
         silenceDateThreshold.setDate(silenceDateThreshold.getDate() - thresholdDays)
 

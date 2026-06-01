@@ -1,6 +1,7 @@
 import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import type { ExtractedSignal, WishlistKind, WishlistSignalSource } from './types'
 
 const MIN_TEXT_LENGTH = 40
@@ -63,7 +64,7 @@ export async function extractWishlistSignals(input: ExtractInput): Promise<numbe
   try {
     const prompt = `${contextHint ? contextHint + '\n\n' : ''}Texto:\n${text.slice(0, 8000)}`
     const { result } = await generateText(prompt, {
-      systemInstruction: SYSTEM_INSTRUCTION,
+      systemInstruction: await buildSystemInstruction('wishlist_extractor', SYSTEM_INSTRUCTION),
       responseMimeType: 'application/json',
       temperature: 0,
       allowFallback: true,

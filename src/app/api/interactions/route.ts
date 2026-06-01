@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 
@@ -24,7 +25,7 @@ async function extractHoursFromTranscript(transcript: string): Promise<number> {
       Retorne APENAS o número, sem texto adicional.
 
       Transcrição: ${transcript.slice(0, 3000)}`,
-      { temperature: 0 }
+      { systemInstruction: await buildSystemInstruction('interaction_hours'), temperature: 0 }
     )
     const hours = parseFloat(result.trim())
     return isNaN(hours) || hours <= 0 ? 1.0 : Math.min(hours, 8.0)

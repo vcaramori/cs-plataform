@@ -184,6 +184,18 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🧠 Governança de IA — Contexto Global + Instruções por Tarefa + Skills (MD) + Regras (2026-06-01)
+
+Centraliza e torna configurável **toda** a direção das IAs (antes: só 5 instruções; ~19 prompts hardcoded). Arquitetura híbrida, com **defaults = comportamento atual** (migração segura).
+
+- **Núcleo** (`src/lib/ai/`): `instructions-catalog.ts` (registro de ~24 tarefas: key/label/domínio/gatilho), `ai-context.ts` (`buildSystemInstruction(taskKey, fallback)` = **contexto global** + **skills aplicáveis** + override/default; cache 60s + `invalidateAIContextCache`), `getGlobalContext`/`getAIContextRules`/`getApplicableSkills`. `load-instruction.ts` agora delega (os 5 já-configuráveis ganham contexto/skills sem tocar nos call sites).
+- **Migration** `ai_governance_foundation`: tabela `ai_skills` (name/description/when_to_use/body/`applies_to[]`/is_active) + RLS; seeds `ai_context_rules` (defaults atuais) e `ai_global_context` (vazio = sem mudança).
+- **Migração dos call sites (~20):** todos os prompts passam por `buildSystemInstruction('<key>', textoAtual)` — wishlist, suporte (urgência/resumo/categoria/intenção/sugestão/análise/sentimento/ingest/pdf), interações (sentimento/horas), parse de esforço, risco preditivo, adoção (forecast/bloqueios), meeting-prep.
+- **Regras numéricas configuráveis** (`ai_context_rules`): silêncio por segmento (auto-checkin) e renovação/discrepância/fallback do RAG já lêem a config. (Segmentos de NPS ficam em `getNPSSegment` (sync) — threading async anotado como follow-up.)
+- **Admin UI:** nova aba **"IA — Contexto & Regras"** em `/admin/settings` (`AIContextSettingsTab`): contexto global (+ "aplicar recomendado"), regras numéricas, instruções por tarefa (agrupadas por domínio, override por textarea) e **biblioteca de Skills** (`SkillDialog`, `applies_to` por tarefa/global). APIs: `/api/admin/settings` (módulo `ai_context`) + `/api/admin/ai-skills[/id]`.
+
+**Follow-up:** threading das faixas de NPS (`getNPSSegment`) via config (refactor async); seleção de skills assistida por IA (hoje é explícita por `applies_to`).
+
 ### 🧩 Modelo de Produto + de→para RICE + Contratos/Adoção por Produto (2026-05-31)
 
 Introduz a entidade **Produto** (=Squad: ABAST, S&OE, S&OP…) com **Épicos por produto**, um **de→para Funcionalidade→Épico**, e amarra Planos/Contratos/Adoção a Produto — base para o handoff do Wishlist no formato da ferramenta de produto (RICE).

@@ -1,5 +1,6 @@
 import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { runHttp } from '@/lib/workflows/actions'
 import type { NodeConfig, RunContext } from '@/lib/workflows/types'
 import { computeItemDemand } from './demand'
@@ -82,7 +83,7 @@ export async function buildProductBrief(itemId: string): Promise<ProductBrief> {
       related_feature ? `Funcionalidade relacionada: ${related_feature.name}` : '',
       evidence.length ? `Evidências:\n${evidence.map((e: { account_name: string; verbatim: string }) => `- ${e.account_name}: "${e.verbatim}"`).join('\n')}` : '',
     ].filter(Boolean).join('\n')
-    const { result } = await generateText(facts, { systemInstruction: NARRATIVE_SYSTEM, temperature: 0.2, allowFallback: true })
+    const { result } = await generateText(facts, { systemInstruction: await buildSystemInstruction('wishlist_narrative', NARRATIVE_SYSTEM), temperature: 0.2, allowFallback: true })
     if (result && result.trim()) narrative = result.trim()
   } catch (e) {
     console.error('[wishlist/handoff] narrative failed:', e instanceof Error ? e.message : e)

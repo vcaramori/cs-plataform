@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -208,6 +209,7 @@ ${ragContext}
 Gere uma resposta profissional e amigável para este ticket:`
 
     const response = await generateText(prompt, {
+      systemInstruction: await buildSystemInstruction('support_reply_suggestion'),
       maxOutputTokens: 500,
       temperature: 0.7
     })

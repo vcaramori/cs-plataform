@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 // workaround for CJS/ESM interop in TS
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
       """
     `
 
-    const { result: rawJson } = await generateText(prompt, { allowFallback: true })
+    const { result: rawJson } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('support_ticket_pdf'), allowFallback: true })
     let jsonStr = rawJson
     
     // Remove markdown code blocks se o Gemini inseri-los

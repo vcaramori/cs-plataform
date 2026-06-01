@@ -1,6 +1,7 @@
 import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { searchEmbeddings } from '@/lib/supabase/vector-search'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import type { CatalogMatch } from './types'
 
 export interface SignalMatch {
@@ -134,7 +135,7 @@ export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | 
   try {
     const { result } = await generateText(
       `Funcionalidades existentes:\n${catalog}\n\nPedido do cliente:\n${text.slice(0, 1500)}`,
-      { systemInstruction: CATALOG_SYSTEM, responseMimeType: 'application/json', temperature: 0, allowFallback: true }
+      { systemInstruction: await buildSystemInstruction('wishlist_catalog_match', CATALOG_SYSTEM), responseMimeType: 'application/json', temperature: 0, allowFallback: true }
     )
     let txt = result.trim()
     if (txt.startsWith('```')) txt = txt.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()

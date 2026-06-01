@@ -1,4 +1,5 @@
 import { generateText } from '@/lib/llm/gateway';
+import { buildSystemInstruction } from '@/lib/ai/ai-context';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -43,6 +44,7 @@ ${text}`;
 
     const response = await Promise.race([
       generateText(prompt, {
+        systemInstruction: await buildSystemInstruction('support_sentiment'),
         temperature: 0.3,
         maxOutputTokens: 200,
         responseMimeType: 'application/json',

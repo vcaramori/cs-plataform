@@ -1,4 +1,5 @@
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import type { ActivityType } from '@/lib/supabase/types'
 
 export type ActionItem = {
@@ -81,7 +82,8 @@ Instruções para os outros campos:
 - account_name_hint: nome da empresa/conta se mencionado, senão null
 - date: use ${today} se nenhuma data for mencionada; interprete "ontem", "segunda", etc. relativos à data de hoje`
 
-  const { result: raw } = await generateText(prompt, { 
+  const { result: raw } = await generateText(prompt, {
+    systemInstruction: await buildSystemInstruction('time_entry_parse'),
     allowFallback: true,
     disableThinking: true,
     responseMimeType: 'application/json'

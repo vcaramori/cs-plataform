@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 const BodySchema = z.object({
   content: z.string().min(10),
@@ -74,7 +75,7 @@ ${content.substring(0, 20000)}
   }>
 
   try {
-    const { result: rawJson, provider } = await generateText(prompt, { allowFallback: true })
+    const { result: rawJson, provider } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('support_ticket_ingest'), allowFallback: true })
     console.log(`[IngestAI] Resposta da IA via ${provider}:`, rawJson)
     const jsonStr = rawJson.replace(/```json/g, '').replace(/```/g, '').trim()
     tickets = JSON.parse(jsonStr)

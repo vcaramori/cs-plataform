@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -70,6 +71,7 @@ ${replyContext}
 Forneça APENAS o resumo, sem explicações adicionais. Máximo 150 caracteres.`
 
     const response = await generateText(prompt, {
+      systemInstruction: await buildSystemInstruction('support_summary'),
       maxOutputTokens: 100,
       temperature: 0.3,
       disableThinking: true

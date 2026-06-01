@@ -5,6 +5,7 @@ import { getLLMSettings } from '@/lib/llm/settings'
 import { getAccountPlanSummary, getPortfolioSummary, type PortfolioSummary } from '@/lib/adoption/risk-engine'
 import { getNPSSegment } from '@/lib/supabase/types'
 import { loadInstruction } from '@/lib/ai/load-instruction'
+import { getAIContextRules } from '@/lib/ai/ai-context'
 
 export type RAGSource = {
   type: 'interaction' | 'support_ticket'
@@ -30,9 +31,12 @@ export async function runRAGPipeline(
 
   // 0. Carrega settings do banco (cache 60s)
   const settings = await getLLMSettings()
+  const aiRules = await getAIContextRules()               // regras numéricas configuráveis
   const topK = settings.ragTopK                           // configurável na UI (padrão: 5)
   const threshold = settings.ragConfidenceThreshold       // configurável na UI (padrão: 0.7)
-  const fallbackThreshold = Math.max(threshold * 0.5, 0.2) // fallback = metade, mínimo 0.2
+  const fallbackThreshold = aiRules.rag_fallback?.enable === false
+    ? threshold
+    : Math.max(threshold * (aiRules.rag_fallback?.factor ?? 0.5), aiRules.rag_fallback?.min ?? 0.2)
 
   // 1. Gera embedding da pergunta UMA ÚNICA VEZ (reutilizado se threshold for relaxado)
   const { result: queryEmbedding } = await generateEmbedding(question, { allowFallback: true })
@@ -403,7 +407,7 @@ ${effortLines}`
   let healthComparisonContext = ''
   if (healthScores && healthScores.length > 0) {
     const latest = healthScores[0]
-    const discAlert = latest.discrepancy_alert || (latest.discrepancy != null && Math.abs(latest.discrepancy) > 20)
+    const discAlert = latest.discrepancy_alert || (latest.discrepancy != null && Math.abs(latest.discrepancy) > aiRules.financial.health_discrepancy_alert)
     healthComparisonContext = `\n\n## HEALTH SCORE: MANUAL vs SHADOW IA
 Última avaliação: ${latest.evaluated_at ?? 'N/A'}
 Score Manual (CSM): ${latest.manual_score ?? '—'} | Score Shadow (IA): ${latest.shadow_score ?? '—'} | Discrepância: ${latest.discrepancy != null ? `${latest.discrepancy} pts` : '—'}${discAlert ? ' ⚠️ ALERTA: discrepância > 20 pontos' : ''}
@@ -429,7 +433,7 @@ Classificação: ${latest.classification ?? '—'}${latest.manual_notes ? `\nNot
       if (diffDays < 0) {
         renewalInfo = `${c.renewal_date} ⚠️ VENCIDO HÁ ${Math.abs(diffDays)} DIAS`
         churnSignal = '\n⚠️ ALERTA CRÍTICO DE CHURN: Renovação não realizada — contrato vencido há ' + Math.abs(diffDays) + ' dias.'
-      } else if (diffDays <= 90) {
+      } else if (diffDays <= aiRules.financial.renewal_urgent_days) {
         renewalInfo = `${c.renewal_date} (vence em ${diffDays} dias — ATENÇÃO)`
       } else {
         renewalInfo = `${c.renewal_date} (${diffDays} dias restantes)`

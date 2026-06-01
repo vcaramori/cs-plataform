@@ -3,6 +3,8 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { encrypt, maskApiKey } from '@/lib/crypto/encryption'
 import { invalidateLLMSettingsCache } from '@/lib/llm/settings'
+import { invalidateAIContextCache } from '@/lib/ai/ai-context'
+import { AI_INSTRUCTIONS } from '@/lib/ai/instructions-catalog'
 import type { LLMProvider } from '@/lib/llm/providers/types'
 
 const INSTRUCTION_KEYS = [
@@ -38,7 +40,7 @@ export async function GET() {
   const { data, error } = await (admin as any)
     .from('app_settings')
     .select('key, value')
-    .in('key', ['rag_ai_settings', 'llm_provider_keys', ...INSTRUCTION_KEYS])
+    .in('key', ['rag_ai_settings', 'llm_provider_keys', 'ai_global_context', 'ai_context_rules', ...INSTRUCTION_KEYS, ...AI_INSTRUCTIONS.map((i) => i.key)])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -69,12 +71,40 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { module, settings } = body as { module: string; settings: Record<string, unknown> }
 
+    const admin = getSupabaseAdminClient()
+    const db = admin as any
+
+    // ── Governança de IA: contexto global + regras + instruções por tarefa ──
+    if (module === 'ai_context') {
+      const globalContext = settings.ai_global_context
+      const rules = settings.ai_context_rules
+      const instructions = (settings.instructions ?? {}) as Record<string, string>
+
+      const ctxUpserts: any[] = []
+      if (typeof globalContext === 'string') {
+        ctxUpserts.push({ key: 'ai_global_context', value: globalContext, description: 'Contexto global das IAs', updated_by: user.id })
+      }
+      if (rules && typeof rules === 'object') {
+        ctxUpserts.push({ key: 'ai_context_rules', value: rules, description: 'Regras numéricas das IAs', updated_by: user.id })
+      }
+      const validKeys = new Set(AI_INSTRUCTIONS.map((i) => i.key))
+      for (const [k, v] of Object.entries(instructions)) {
+        if (validKeys.has(k) && typeof v === 'string') {
+          ctxUpserts.push({ key: k, value: v, description: `Instrução: ${k}`, updated_by: user.id })
+        }
+      }
+
+      if (ctxUpserts.length > 0) {
+        const { error } = await db.from('app_settings').upsert(ctxUpserts, { onConflict: 'key' })
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      invalidateAIContextCache()
+      return NextResponse.json({ ok: true })
+    }
+
     if (module !== 'ai') {
       return NextResponse.json({ error: 'Module not supported' }, { status: 400 })
     }
-
-    const admin = getSupabaseAdminClient()
-    const db = admin as any
 
     const {
       rag_system_instruction, instruction_chat, instruction_review_reply,

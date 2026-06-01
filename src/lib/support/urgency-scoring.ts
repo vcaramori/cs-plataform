@@ -1,4 +1,5 @@
 import { generateText } from '../llm/gateway'
+import { buildSystemInstruction } from '../ai/ai-context'
 import { getSupabaseAdminClient as createAdminClient } from '../supabase/admin'
 
 export interface UrgencyResult {
@@ -60,7 +61,7 @@ Responda estritamente em JSON no seguinte formato:
   try {
     // 3. Call LLM Gateway
     const response = await generateText(prompt, {
-      systemInstruction,
+      systemInstruction: await buildSystemInstruction('support_urgency', systemInstruction),
       disableThinking: true,
       temperature: 0,
       maxOutputTokens: 500

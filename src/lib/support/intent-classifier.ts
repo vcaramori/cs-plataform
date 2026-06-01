@@ -1,4 +1,5 @@
 import { generateText } from '../llm/gateway'
+import { buildSystemInstruction } from '../ai/ai-context'
 
 export type TicketIntent = 'new_issue' | 'gratitude' | 'follow_up'
 
@@ -36,7 +37,7 @@ Responda APENAS com uma das palavras-chave: gratitude, new_issue ou follow_up.
 `
 
   try {
-    const { result } = await generateText(prompt, { temperature: 0 })
+    const { result } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('support_intent'), temperature: 0 })
     const intent = result.toLowerCase().trim() as TicketIntent
     
     if (['gratitude', 'new_issue', 'follow_up'].includes(intent)) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { extractWishlistSignals } from '@/lib/wishlist/extractor'
 
 async function analyzeSentiment(text: string): Promise<number> {
@@ -13,7 +14,7 @@ async function analyzeSentiment(text: string): Promise<number> {
 
       Transcrição: ${text.slice(0, 4000)}`
 
-    const { result: raw, provider } = await generateText(prompt, { allowFallback: true })
+    const { result: raw, provider } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('interaction_sentiment'), allowFallback: true })
     console.log(`[Sentiment] Analisado via ${provider}`)
     const score = parseFloat(raw.trim())
     return isNaN(score) ? 0.0 : Math.max(-1.0, Math.min(1.0, score))

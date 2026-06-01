@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { z } from 'zod'
 
 const MeetingPrepSchema = z.object({
@@ -100,6 +101,7 @@ Generate ONLY a JSON array of talking points, no markdown:
 Each point should be 1-2 sentences, specific to the account context, and actionable.`
 
     const { result: talkingPointsText } = await generateText(prompt, {
+      systemInstruction: await buildSystemInstruction('meeting_prep'),
       temperature: 0.1,
       maxOutputTokens: 500,
     })

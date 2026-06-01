@@ -1,4 +1,5 @@
 import { generateText } from '../llm/gateway'
+import { buildSystemInstruction } from '../ai/ai-context'
 
 export interface ReplyAnalysis {
   suggested_outcome: 'solution' | 'pending_client' | 'pending_product' | 'none'
@@ -52,6 +53,7 @@ RESPOSTA FORMATADA (JSON APENAS):
 
   try {
     const { result } = await generateText(prompt, {
+      systemInstruction: await buildSystemInstruction('support_reply_analysis'),
       temperature: 0,
       allowFallback: true,
     })

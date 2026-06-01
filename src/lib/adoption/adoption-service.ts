@@ -1,4 +1,5 @@
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface AdoptionTrendData {
@@ -162,6 +163,7 @@ Also estimate:
 Provide JSON response: {forecastedAdoptionPct, confidence, trend, recommendations}`
 
       const response = await generateText(prompt, {
+        systemInstruction: await buildSystemInstruction('adoption_forecast'),
         maxOutputTokens: 500,
         responseMimeType: 'application/json',
         disableThinking: true,
@@ -270,6 +272,7 @@ Analyze what might be blocking adoption. Provide JSON:
 {type: 'technical'|'training'|'organizational'|'business', factors: [], recommendations: []}`
 
         const blockerResponse = await generateText(blockerPrompt, {
+          systemInstruction: await buildSystemInstruction('adoption_blockers'),
           maxOutputTokens: 300,
           responseMimeType: 'application/json',
           disableThinking: true,
