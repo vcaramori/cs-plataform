@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { ProductivityService, type ProductivityPeriod } from '@/lib/cs-ops/productivity-service'
+
+const TEAM_ROLES = ['csm_senior', 'head_cs', 'admin']
 
 export async function GET(
   request: Request,
@@ -7,53 +10,34 @@ export async function GET(
 ) {
   try {
     const { csm_id } = await params
-    const supabase = (await getSupabaseServerClient()) as any;
+    const supabase = (await getSupabaseServerClient()) as any
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get CSM profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('id, name')
-      .eq('id', csm_id)
+      .select('id, role')
+      .eq('id', user.id)
       .single()
+    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    if (!profile) {
-      return NextResponse.json({ error: 'CSM not found' }, { status: 404 })
+    // RBAC: o próprio CSM ou gestor
+    const isSelf = profile.id === csm_id
+    if (!isSelf && !TEAM_ROLES.includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get accounts managed by CSM
-    const { data: accounts } = await supabase
-      .from('accounts')
-      .select('id, health_score')
-      .eq('csm_owner_id', csm_id)
+    const period = ((new URL(request.url)).searchParams.get('period') ?? 'month') as ProductivityPeriod
+    const { start, end } = ProductivityService.resolvePeriod(
+      ['week', 'month', 'quarter'].includes(period) ? period : 'month',
+    )
 
-    const accountsManaged = accounts?.length || 0
-    const avgHealth = accounts && accounts.length > 0
-      ? Math.round(accounts.reduce((sum, a) => sum + (a.health_score || 0), 0) / accounts.length)
-      : 0
+    const service = new ProductivityService(supabase)
+    const scorecard = await service.getPersonProductivity(csm_id, start, end)
 
-    // Dummy data for Wave 6 implementation
-    return NextResponse.json({
-      csm_id,
-      csm_name: profile.name,
-      accounts_managed: accountsManaged,
-      avg_health: avgHealth / 100,
-      avg_nps: 7.2,
-      capacity_utilization: 0.85,
-      health_escalations_resolved_pct: 0.92,
-      avg_csat: 0.88,
-      avg_trt_hours: 4.5,
-      interactions_per_account: 2.3,
-    })
+    return NextResponse.json({ periodStart: start, periodEnd: end, scorecard })
   } catch (error) {
     console.error('[cs-ops/scorecard] Error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

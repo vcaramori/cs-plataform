@@ -14,48 +14,19 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Dummy adoption intelligence data for Wave 5 stub
-    // Wave 6 will populate with real data from tracking
-    const adoptionData = {
-      adoption_score: 0.65,
-      trend: 'stable',
-      features_at_risk: [
-        {
-          feature: 'Advanced Reporting',
-          adoption_pct: 30,
-          drop_pct: -15,
-          risk_level: 'high',
-        },
-        {
-          feature: 'API Integration',
-          adoption_pct: 45,
-          drop_pct: -5,
-          risk_level: 'medium',
-        },
-      ],
-      heatmap_data: [
-        { feature: 'Basic Features', week: '2026-W19', adoption_pct: 95 },
-        { feature: 'Advanced Reporting', week: '2026-W19', adoption_pct: 30 },
-        { feature: 'API Integration', week: '2026-W19', adoption_pct: 45 },
-        { feature: 'Basic Features', week: '2026-W20', adoption_pct: 97 },
-        { feature: 'Advanced Reporting', week: '2026-W20', adoption_pct: 28 },
-        { feature: 'API Integration', week: '2026-W20', adoption_pct: 47 },
-      ],
-      blockers: [
-        {
-          blocker: 'Lack of training',
-          count: 3,
-          affected_features: ['Advanced Reporting'],
-        },
-        {
-          blocker: 'Resource constraints',
-          count: 2,
-          affected_features: ['API Integration'],
-        },
-      ],
-    }
-
-    return NextResponse.json(adoptionData)
+    // NOTA: ainda não há fonte real de "adoption intelligence" agregada por conta.
+    // Em vez de devolver dados fabricados (que enganam quem consome), retornamos
+    // estrutura vazia + available:false, para o cliente exibir estado honesto de
+    // "indisponível". Dados reais de adoção por feature vivem em /api/adoption/*.
+    void accountId
+    return NextResponse.json({
+      available: false,
+      adoption_score: null,
+      trend: null,
+      features_at_risk: [],
+      heatmap_data: [],
+      blockers: [],
+    })
   } catch (error) {
     console.error('[adoption-intelligence] Error:', error)
     return NextResponse.json(

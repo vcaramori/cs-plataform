@@ -212,11 +212,20 @@ export class CSOperationsService {
     // Tickets resolvidos pelo agente nos últimos 30 dias (assigned_to)
     const { data: agentTickets } = await this.supabase
       .from('support_tickets')
-      .select('id, sla_breach_resolution')
+      .select('id, sla_breach_resolution, created_at, first_response_at')
       .eq('assigned_to', csmId)
       .gte('resolved_at', thirtyDaysAgoIso.split('T')[0])
 
     const agentTicketIds = (agentTickets || []).map((t: any) => t.id)
+
+    // Tempo médio até 1ª resposta (horas) — real, a partir dos tickets do agente
+    const responseHours = (agentTickets || [])
+      .filter((t: any) => t.first_response_at && t.created_at)
+      .map((t: any) => (new Date(t.first_response_at).getTime() - new Date(t.created_at).getTime()) / 3600000)
+      .filter((h: number) => h >= 0)
+    const avgResponseTimeHours = responseHours.length > 0
+      ? Math.round((responseHours.reduce((s: number, h: number) => s + h, 0) / responseHours.length) * 10) / 10
+      : 0
 
     // CSAT via csat_responses dos tickets do agente
     let avgCsat = 0
@@ -268,7 +277,7 @@ export class CSOperationsService {
       csmName: profile?.full_name || 'Unknown',
       snapshotDate: new Date().toISOString().split('T')[0],
       utilizationPct: capacity.capacityUtilizationPct,
-      avgResponseTimeHours: 4.5, // Placeholder
+      avgResponseTimeHours,
       escalationsOwned: escalations?.length || 0,
       avgCsatScore: Math.round(avgCsat * 100) / 100,
       avgNpsTeam: Math.round(avgNps * 10) / 10,
@@ -288,16 +297,36 @@ export class CSOperationsService {
   async calculateScorecard(csmId: string, periodStart: string, periodEnd: string) {
     const capacity = await this.calculateCapacity(csmId)
 
-    // Get escalations resolved
-    const { data: escalations } = await this.supabase
+    // Tickets do agente resolvidos no período (assigned_to — coluna real)
+    const { data: agentTickets } = await this.supabase
       .from('support_tickets')
-      .select('id, resolved_at')
-      .eq('csm_assigned_id', csmId)
-      .eq('escalated', true)
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .select('id, resolved_at, created_at, first_response_at, sla_breach_resolution')
+      .eq('assigned_to', csmId)
+      .gte('resolved_at', periodStart)
+      .lte('resolved_at', periodEnd)
 
-    const escalationsResolved = (escalations || []).filter((e: any) => e.resolved_at).length
+    // "Escalações" como proxy: quebra de SLA de resolução
+    const escalations = (agentTickets || []).filter((t: any) => t.sla_breach_resolution)
+    const escalationsResolved = escalations.filter((e: any) => e.resolved_at).length
+
+    // Tempo médio até 1ª resposta (h) — real
+    const respHours = (agentTickets || [])
+      .filter((t: any) => t.first_response_at && t.created_at)
+      .map((t: any) => (new Date(t.first_response_at).getTime() - new Date(t.created_at).getTime()) / 3600000)
+      .filter((h: number) => h >= 0)
+    const avgResponseTimeHours = respHours.length > 0
+      ? Math.round((respHours.reduce((s: number, h: number) => s + h, 0) / respHours.length) * 10) / 10
+      : 0
+
+    // CSAT real (csat_responses dos tickets do agente)
+    const agentTicketIds = (agentTickets || []).map((t: any) => t.id)
+    let avgCsat = 0, csatCount = 0
+    if (agentTicketIds.length > 0) {
+      const { data: csat } = await this.supabase
+        .from('csat_responses').select('score').in('ticket_id', agentTicketIds)
+      csatCount = (csat || []).length
+      avgCsat = csatCount > 0 ? (csat || []).reduce((s: number, c: any) => s + (c.score || 0), 0) / csatCount : 0
+    }
 
     // Get expansion deals
     const { data: expansions } = await this.supabase
@@ -340,6 +369,29 @@ export class CSOperationsService {
       .eq('id', csmId)
       .single()
 
+    // NPS real (nps_responses não tem csm_id; junta pelas contas do CSM)
+    const accountIds = (accounts || []).map((a: any) => a.id)
+    let avgNps = 0, npsCount = 0
+    if (accountIds.length > 0) {
+      const { data: nps } = await this.supabase
+        .from('nps_responses').select('score')
+        .in('account_id', accountIds).not('score', 'is', null)
+        .gte('responded_at', periodStart).lte('responded_at', periodEnd)
+      npsCount = (nps || []).length
+      avgNps = npsCount > 0 ? (nps || []).reduce((s: number, n: any) => s + (n.score || 0), 0) / npsCount : 0
+    }
+
+    // Interações por conta no período (engajamento real)
+    let interactionsCount = 0
+    {
+      const { count } = await this.supabase
+        .from('interactions').select('id', { count: 'exact', head: true })
+        .eq('csm_id', csmId).gte('date', periodStart).lte('date', periodEnd)
+      interactionsCount = count || 0
+    }
+    const interactionsPerAccount = capacity.accountsManaged > 0
+      ? Math.round((interactionsCount / capacity.accountsManaged) * 10) / 10 : 0
+
     return {
       csmId,
       csmName: profile?.full_name || 'Unknown',
@@ -356,17 +408,17 @@ export class CSOperationsService {
         avgHealthManagedAccounts: capacity.avgHealthScore,
       },
       customerSatisfaction: {
-        avgNps: 7.2,
-        npsCount: 5,
-        avgCsat: 4.2,
-        csatCount: 12,
+        avgNps: Math.round(avgNps * 10) / 10,
+        npsCount,
+        avgCsat: Math.round(avgCsat * 100) / 100,
+        csatCount,
       },
       ticketPerformance: {
-        avgResponseTimeHours: 4.5,
-        totalTicketsHandled: escalations?.length || 0,
+        avgResponseTimeHours,
+        totalTicketsHandled: (agentTickets || []).length,
       },
       engagement: {
-        interactionsPerAccount: 2.3,
+        interactionsPerAccount,
         expansionDeals: expansions?.length || 0,
         expansionValue: Math.round(expansionValue),
         renewalsClosed: renewals?.length || 0,
@@ -377,10 +429,39 @@ export class CSOperationsService {
           ? Math.round(((churned?.length || 0) / accounts.length) * 100)
           : 0,
       },
-      overallScore: 72,
-      topPerformance: ['High CSAT', 'Expansion Growth', 'Renewal Rate'],
-      areasForImprovement: ['Escalation Resolution', 'NPS Score'],
+      ...this.composeScorecardScore({
+        avgHealth: capacity.avgHealthScore,
+        avgCsat,
+        csatCount,
+        avgNps,
+        npsCount,
+        renewals: renewals?.length || 0,
+        churned: churned?.length || 0,
+        escalationsResolvedPct: escalations && escalations.length > 0
+          ? Math.round((escalationsResolved / escalations.length) * 100) : 100,
+      }),
     }
+  }
+
+  /** Score composto do scorecard (0-100) + destaques/atenção, a partir de sinais reais. */
+  private composeScorecardScore(s: {
+    avgHealth: number; avgCsat: number; csatCount: number; avgNps: number; npsCount: number
+    renewals: number; churned: number; escalationsResolvedPct: number
+  }) {
+    const comps: { key: string; label: string; value: number }[] = []
+    comps.push({ key: 'health', label: 'Saúde da carteira', value: s.avgHealth })
+    if (s.csatCount > 0) comps.push({ key: 'csat', label: 'CSAT', value: (s.avgCsat / 5) * 100 })
+    if (s.npsCount > 0) comps.push({ key: 'nps', label: 'NPS', value: (s.avgNps / 10) * 100 })
+    comps.push({ key: 'escal', label: 'Resolução de escalações', value: s.escalationsResolvedPct })
+
+    const overallScore = comps.length > 0
+      ? Math.round(comps.reduce((a, c) => a + c.value, 0) / comps.length) : 0
+
+    const sorted = [...comps].sort((a, b) => b.value - a.value)
+    const topPerformance = sorted.filter(c => c.value >= 70).slice(0, 3).map(c => c.label)
+    const areasForImprovement = sorted.filter(c => c.value < 60).reverse().slice(0, 3).map(c => c.label)
+
+    return { overallScore, topPerformance, areasForImprovement }
   }
 
   /**
@@ -427,6 +508,48 @@ export class CSOperationsService {
 
     const expansionValue = (expansions || []).reduce((sum: number, e: any) => sum + (e.mrr || 0), 0)
 
+    // Tickets resolvidos no período + tempo médio de resolução (real)
+    const { data: resolvedTickets } = await this.supabase
+      .from('support_tickets')
+      .select('created_at, resolved_at')
+      .not('resolved_at', 'is', null)
+      .gte('resolved_at', periodStart)
+      .lte('resolved_at', periodEnd)
+    const resHrs = (resolvedTickets || [])
+      .filter((t: any) => t.created_at && t.resolved_at)
+      .map((t: any) => (new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime()) / 3600000)
+      .filter((h: number) => h >= 0)
+    const avgResolutionTimeHours = resHrs.length > 0
+      ? Math.round((resHrs.reduce((a: number, h: number) => a + h, 0) / resHrs.length) * 10) / 10 : 0
+
+    // Tendência de saúde no período (melhorias vs regressões por conta)
+    let healthImprovements = 0, healthRegressions = 0
+    {
+      const { data: hist } = await this.supabase
+        .from('health_scores')
+        .select('account_id, manual_score, shadow_score')
+        .gte('evaluated_at', periodStart).lte('evaluated_at', periodEnd)
+        .order('evaluated_at', { ascending: true })
+      const byAcc = new Map<string, { first: number; last: number }>()
+      for (const h of hist || []) {
+        const score = h.manual_score ?? h.shadow_score
+        if (score == null) continue
+        const cur = byAcc.get(h.account_id)
+        if (!cur) byAcc.set(h.account_id, { first: score, last: score })
+        else cur.last = score
+      }
+      for (const { first, last } of byAcc.values()) {
+        if (last > first) healthImprovements++
+        else if (last < first) healthRegressions++
+      }
+    }
+
+    // Utilização média do time + flags de sobrecarga (real)
+    const caps = await Promise.all((csms || []).map((c: any) => this.calculateCapacity(c.id)))
+    const utilizationPct = caps.length > 0
+      ? Math.round(caps.reduce((a, c) => a + c.capacityUtilizationPct, 0) / caps.length) : 0
+    const burnoutFlaggedCount = caps.filter(c => c.capacityUtilizationPct > 120).length
+
     return {
       periodStart,
       periodEnd,
@@ -436,23 +559,23 @@ export class CSOperationsService {
         accountsOnboarded: onboarded?.length || 0,
         accountsRenewed: renewals?.length || 0,
         accountsChurned: churned?.length || 0,
-        avgTtvDays: 14,
+        avgTtvDays: 0, // sem fonte confiável de time-to-value ainda
       },
       expansion: {
         deals: expansions?.length || 0,
         totalValue: Math.round(expansionValue),
       },
       health: {
-        healthImprovements: 12,
-        healthRegressions: 3,
+        healthImprovements,
+        healthRegressions,
       },
       support: {
-        ticketsResolved: 45,
-        avgResolutionTimeHours: 6.2,
+        ticketsResolved: (resolvedTickets || []).length,
+        avgResolutionTimeHours,
       },
       teamUtilization: {
-        utilizationPct: 88,
-        burnoutFlaggedCount: 2,
+        utilizationPct,
+        burnoutFlaggedCount,
       },
       trend: 'stable',
     }
