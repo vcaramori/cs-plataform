@@ -20,11 +20,7 @@ export function PortalSetupClient() {
   const [account, setAccount] = useState<{ name: string; logoUrl: string | null } | null>(null)
 
   useEffect(() => {
-    console.log('PORTAL SETUP SUPABASE KEY:', supabase.supabaseKey === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy' ? 'DUMMY_KEY' : 'REAL_KEY');
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('PORTAL SETUP AUTH EVENT:', event, session ? 'SESSION OK' : 'SESSION NULL');
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {})
 
     async function loadAccount() {
       try {

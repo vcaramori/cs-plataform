@@ -20,6 +20,23 @@ const numeric = (key: string, fallback: number): number => {
 const DUMMY_URL = 'https://placeholder-project.supabase.co'
 const DUMMY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy'
 
+const isProd = process.env.NODE_ENV === 'production'
+// Escape hatch para etapas de build sem env (ex.: análise estática): defina
+// SKIP_ENV_VALIDATION=true. No runtime de produção, mantenha desligado.
+const skipEnvValidation = process.env.SKIP_ENV_VALIDATION === 'true'
+
+/** Credencial obrigatória: em produção (servidor) falha alto se ausente,
+ *  evitando o app subir silenciosamente apontando para um Supabase fake. */
+const requiredStrict = (key: string, dummy: string): string => {
+  const value = process.env[key]
+  if (value) return value
+  if (isServer && isProd && !skipEnvValidation) {
+    throw new Error(`[ENV] Variável obrigatória ausente em produção: ${key}`)
+  }
+  if (isServer) console.warn(`[ENV] ${key} ausente — usando fallback de desenvolvimento`)
+  return dummy
+}
+
 export const env = {
   gemini: {
     apiKey: required('GEMINI_API_KEY'),
@@ -40,8 +57,8 @@ export const env = {
     maxTokens: parseInt(process.env.CLAUDE_MAX_TOKENS ?? '1024'),
   },
   supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? required('SUPABASE_URL', DUMMY_URL),
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? required('SUPABASE_ANON_KEY', DUMMY_KEY),
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? requiredStrict('SUPABASE_URL', DUMMY_URL),
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? requiredStrict('SUPABASE_ANON_KEY', DUMMY_KEY),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   },
   chunking: {

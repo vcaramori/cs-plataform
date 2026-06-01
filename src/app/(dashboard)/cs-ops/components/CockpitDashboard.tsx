@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { RiskManagementPanel } from './RiskManagementPanel'
 
-interface CockpitData {
+export interface CockpitData {
   accountsHealth: any[]
   delayedPlaybooks: any[]
   openRisks: any[]
