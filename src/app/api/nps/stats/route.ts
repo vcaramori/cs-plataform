@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getNPSSegment } from '@/lib/supabase/types'
 
 export async function GET(request: Request) {
@@ -18,9 +19,22 @@ export async function GET(request: Request) {
     const dateFrom = searchParams.get('date_from') ? new Date(searchParams.get('date_from')!) : defaultFrom
     const dateTo   = searchParams.get('date_to')   ? new Date(searchParams.get('date_to')!)   : now
 
-    const db = supabase
+    const admin = getSupabaseAdminClient()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = admin as any
 
-    const { data: myAccounts } = await supabase.from('accounts').select('id, name').eq('csm_owner_id', user.id)
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role)
+
+    let myAccounts: any[] = []
+    if (isAdmin) {
+      const { data: allAccounts } = await supabase.from('accounts').select('id, name')
+      myAccounts = allAccounts || []
+    } else {
+      const { data: csmAccounts } = await supabase.from('accounts').select('id, name').eq('csm_owner_id', user.id)
+      myAccounts = csmAccounts || []
+    }
+
     const accountNamesMap = new Map((myAccounts || []).map(a => [a.id, a.name]))
     const targetAccountIds = accountId && accountId !== 'all' ? [accountId] : (myAccounts || []).map(a => a.id)
 
@@ -28,8 +42,12 @@ export async function GET(request: Request) {
     if (programKey && programKey !== 'default') {
       targetProgramKeys = [programKey]
     } else {
-      const { data: defaults } = await supabase.from('nps_programs').select('program_key').eq('is_active', true).eq('is_default', true)
-      targetProgramKeys = (defaults || []).map(p => p.program_key)
+      let defaultsQuery = db.from('nps_programs').select('program_key').eq('is_active', true).eq('is_default', true)
+      if (!isAdmin) {
+        defaultsQuery = defaultsQuery.eq('csm_owner_id', user.id)
+      }
+      const { data: defaults } = await defaultsQuery
+      targetProgramKeys = (defaults || []).map((p: any) => p.program_key)
     }
 
     let query = db.from('nps_responses').select('*, nps_answers(*, nps_questions(*))').in('account_id', targetAccountIds).gte('responded_at', dateFrom.toISOString()).lte('responded_at', dateTo.toISOString())
@@ -64,6 +82,8 @@ export async function GET(request: Request) {
 
     console.log('[API/NPS/STATS] returning stats:', {
       total: stats.total_responses,
+      targetAccountIds,
+      targetProgramKeys,
       from: dateFrom.toISOString(),
       to: dateTo.toISOString()
     });

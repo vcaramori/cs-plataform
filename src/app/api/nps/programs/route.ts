@@ -43,16 +43,21 @@ export async function GET(request: Request) {
   let query = db
     .from('nps_programs')
     .select('*, accounts(name), nps_questions(id, order_index, type, title, options, required)')
-    .eq('csm_owner_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (accountId) {
-    query = db
-      .from('nps_programs')
-      .select('*, accounts(name), nps_questions(id, order_index, type, title, options, required)')
-      .eq('csm_owner_id', user.id)
-      .or(`account_id.eq.${accountId},account_id.is.null`)
-      .order('created_at', { ascending: false })
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role)
+
+  if (!isAdmin) {
+    if (accountId) {
+      query = query.or(`csm_owner_id.eq.${user.id},account_id.eq.${accountId}`)
+    } else {
+      query = query.eq('csm_owner_id', user.id)
+    }
+  } else {
+    if (accountId) {
+      query = query.eq('account_id', accountId)
+    }
   }
 
   const { data, error } = await query
