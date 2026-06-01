@@ -103,7 +103,6 @@ export async function POST(request: Request) {
 
   // Disparo de e-mails via SMTP locais comentados temporariamente para evitar falhas de autenticação de MFA corporativo.
   // O fluxo de convites prosseguirá normalmente pelo banco e pelo Supabase Auth.
-  console.log('[PortalInvite] E-mail SMTP comentado temporariamente. Convite gerado com sucesso.');
 
   return NextResponse.json(invite, { status: 201 })
 }

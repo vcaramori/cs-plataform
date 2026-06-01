@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 500 })
     }
 
-    console.log(`[Adoption Analysis Cron] Processing ${accounts.length} accounts`)
 
     const service = new AdoptionService(supabase)
 

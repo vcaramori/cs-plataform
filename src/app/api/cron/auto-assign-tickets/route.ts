@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[Cron: Auto-Assign] Starting automatic ticket assignment job");
 
     const result = await autoAssignTickets();
 

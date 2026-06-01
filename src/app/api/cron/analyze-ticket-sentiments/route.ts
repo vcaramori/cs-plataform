@@ -50,7 +50,6 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log('Sentiment analysis cron completed:', telemetry);
 
     return new Response(
       JSON.stringify({

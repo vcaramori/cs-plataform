@@ -19,7 +19,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: ticketId } = await params
-  console.log('[API Reply] Processing for ticket:', ticketId)
 
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,7 +36,6 @@ export async function POST(
 
   if (!ticket) return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
 
-  console.log('[API Reply] Validated ticket:', ticket.id)
 
   // 0. Update Classification if provided
   const ticketUpdates: any = {}

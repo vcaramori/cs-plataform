@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 500 })
     }
 
-    console.log(`[CS Ops Daily Cron] Processing ${csms.length} CSMs`)
 
     const service = new CSOperationsService(supabase)
     const today = new Date().toISOString().split('T')[0]
@@ -117,7 +116,6 @@ export async function POST(request: Request) {
           ])
 
         processedCount++
-        console.log(`[CS Ops Daily Cron] Processed CSM: ${csm.full_name}`)
       } catch (error: any) {
         errorCount++
         const errorMsg = `CSM ${csm.id}: ${error.message}`

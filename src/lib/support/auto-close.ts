@@ -36,7 +36,6 @@ export async function runAutoClose(): Promise<{ closedCount: number }> {
     const elapsedMs = now.getTime() - resolvedAt.getTime()
 
     if (elapsedMs >= timeoutMs) {
-      console.log(`[Auto-Close] Closing ticket ${ticket.id} due to inactivity (${policyHours}h threshold).`)
       
       // Update status to closed
       await closeTicket(ticket.id, 'auto_timeout')

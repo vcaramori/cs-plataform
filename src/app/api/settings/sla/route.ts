@@ -26,7 +26,6 @@ export async function GET() {
 
     // 2. Self-healing: if no global policy exists in database, seed it dynamically
     if (!data) {
-      console.log('[API SLA Settings] Seeding default global SLA policy...')
       const { data: newPolicy, error: insertError } = await adminClient
         .from('sla_policies')
         .insert({

@@ -32,7 +32,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
 
-    console.log(`[Health Score Cron] Processing ${accounts.length} active accounts`)
 
     // Process accounts in batches of 100
     const batchSize = 100

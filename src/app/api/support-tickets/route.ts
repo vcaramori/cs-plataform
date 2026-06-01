@@ -65,24 +65,19 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  console.log('[API POST] Received ticket creation request')
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    console.log('[API POST] Unauthorized user')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const body = await request.json()
-  console.log('[API POST] Parsing request body:', body)
   const parsed = TicketSchema.safeParse(body)
   if (!parsed.success) {
-    console.log('[API POST] Schema validation failed:', parsed.error.flatten())
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
   // 1. Validação flexível baseada em privilégios (CSM comum vs Admin/Head)
-  console.log('[API POST] Checking user profile role for user:', user.id)
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -90,7 +85,6 @@ export async function POST(request: Request) {
     .single()
 
   const isAdminOrHead = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'head_cs'
-  console.log('[API POST] Profile role:', profile?.role, 'isAdminOrHead:', isAdminOrHead)
 
   let accountQuery = supabase
     .from('accounts')
@@ -103,7 +97,6 @@ export async function POST(request: Request) {
 
   const { data: account } = await accountQuery.single()
   if (!account) {
-    console.log('[API POST] Account not found or no permission for ID:', parsed.data.account_id)
     return NextResponse.json({ error: 'Conta não encontrada ou sem permissão.' }, { status: 404 })
   }
 
@@ -114,12 +107,9 @@ export async function POST(request: Request) {
     ...ticketData,
     opened_at: openedAtStr
   }
-  console.log('[API POST] Enriching ticket with SLA policies...')
   const enrichedPayload = await enrichTicketWithSLA({ ...fullTicketData, source: 'manual' })
-  console.log('[API POST] Ticket enriched with SLA. Insert payload:', enrichedPayload)
 
   // 3. Salvar chamado no Banco de Dados
-  console.log('[API POST] Saving support ticket in the DB...')
   const { data, error } = await supabase
     .from('support_tickets')
     .insert(enrichedPayload)
@@ -127,10 +117,8 @@ export async function POST(request: Request) {
     .single()
 
   if (error) {
-    console.log('[API POST] Save error:', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  console.log('[API POST] Ticket saved successfully. Data:', data)
 
   // 4. Se external_ticket_id não fornecido, gera um com o prefixo curto do UUID e atualiza
   let finalExternalId = data.external_ticket_id

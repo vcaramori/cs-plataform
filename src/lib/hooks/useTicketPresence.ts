@@ -49,10 +49,8 @@ export function useTicketPresence(ticketId: string | null, userId: string | null
         setOtherViewers(activeUsers)
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('Join:', key, newPresences)
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('Leave:', key, leftPresences)
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

@@ -360,7 +360,6 @@ export async function recalculateSLAForAccount(accountId: string): Promise<numbe
     if (!updateError) updated++
   }
 
-  console.log(`[Lifecycle] Recalculated SLA for ${updated}/${openTickets.length} tickets in account ${accountId}`)
   return updated
 }
 

@@ -589,7 +589,6 @@ ${question}`
     systemInstruction: RAG_SYSTEM_INSTRUCTION,
     allowFallback: true,
   })
-  console.log(`[RAG] Resposta gerada via: ${provider}`)
 
   // 5. Monta lista de fontes
   const sources: RAGSource[] = finalChunks.map((chunk) => {

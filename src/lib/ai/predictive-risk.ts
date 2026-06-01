@@ -23,7 +23,6 @@ export async function runPredictiveRiskAnalysis(accountId: string): Promise<Pred
     console.error('[Predictive Risk] Error fetching interactions:', intError)
     return null
   }
-  console.log(`[Predictive Risk] Found ${interactions?.length || 0} interactions for account ${accountId}`)
 
   // 2. Fetch recent support tickets
   const { data: tickets, error: tckError } = await supabase
@@ -37,10 +36,8 @@ export async function runPredictiveRiskAnalysis(accountId: string): Promise<Pred
     console.error('[Predictive Risk] Error fetching tickets:', tckError)
     return null
   }
-  console.log(`[Predictive Risk] Found ${tickets?.length || 0} tickets for account ${accountId}`)
 
   if ((!interactions || interactions.length === 0) && (!tickets || tickets.length === 0)) {
-    console.log(`[Predictive Risk] No data to analyze for account ${accountId}`)
     return null
   }
 
@@ -81,7 +78,6 @@ Seja rígido na análise. Reclamações repetidas, bugs críticos e tons agressi
     })
 
     const cleanJsonText = response.result.replace(/```json/g, '').replace(/```/g, '').trim()
-    console.log('[Predictive Risk] LLM Result:', cleanJsonText)
     const result = JSON.parse(cleanJsonText) as PredictiveRiskResult
 
     // 6. Save to database

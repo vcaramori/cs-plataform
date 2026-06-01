@@ -62,7 +62,6 @@ export async function sendTicketAcknowledgment(ticket: any, emailSettings: Email
       subject,
       html: htmlBody
     })
-    console.log(`[EmailSender] Auto-reply sent to ${recipient} for ticket #${ticketCode}`)
     return true
   } catch (error) {
     console.error(`[EmailSender] Error sending auto-reply for ticket #${ticketCode}:`, error)

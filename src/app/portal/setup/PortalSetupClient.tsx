@@ -82,7 +82,6 @@ export function PortalSetupClient() {
     setLoading(true)
     try {
       const sessionRes = await supabase.auth.getSession();
-      console.log('PORTAL SETUP SUBMIT SESSION:', sessionRes.data.session ? 'ACTIVE' : 'NULL', sessionRes.error?.message || 'NO ERR');
 
       // Atualiza senha e nome utilizando a instância do Supabase carregada na montagem do componente
       const { error: pwErr } = await supabase.auth.updateUser({ password })

@@ -30,7 +30,6 @@ export async function POST(request: Request) {
 
   try {
     // Story 23.1 — Playbook Governance
-    console.log('📝 Running: Story 23.1 — Playbook Governance')
     const migration23_1 = `
 -- Story 23.1: Playbook Governance Foundation
 ALTER TABLE public.playbook_tasks ADD COLUMN IF NOT EXISTS assigned_role VARCHAR(50);
@@ -58,10 +57,8 @@ ALTER TABLE public.account_playbooks ADD COLUMN IF NOT EXISTS success_criteria T
       }).throwOnError()
     }
     results.push({ story: '23.1', status: 'executed' })
-    console.log('✅ Story 23.1 completed')
 
     // Story 14.2 — Playbook Trigger Alert
-    console.log('📝 Running: Story 14.2 — Playbook Trigger Alert')
     const migration14_2 = `
 -- Story 14.2: Playbook Trigger Alert
 DO $$
@@ -82,10 +79,8 @@ END $$;
     }
 
     results.push({ story: '14.2', status: 'executed' })
-    console.log('✅ Story 14.2 completed')
 
     // Story 15.1 — Auto Check-in
-    console.log('📝 Running: Story 15.1 — Auto Check-in Queue')
     const migration15_1 = `
 -- Story 15.1: Auto Check-in Queue
 ALTER TABLE public.accounts ADD COLUMN IF NOT EXISTS opt_out_auto_checkin BOOLEAN DEFAULT false;
@@ -150,7 +145,6 @@ EXECUTE FUNCTION public.fn_update_auto_checkin_updated_at();
     }
 
     results.push({ story: '15.1', status: 'executed' })
-    console.log('✅ Story 15.1 completed')
 
     return NextResponse.json({
       success: true,

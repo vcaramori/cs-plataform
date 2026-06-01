@@ -189,7 +189,6 @@ export async function POST(request: Request) {
       console.error('[TimeEntry] Interaction Insert Error:', intError)
     } else {
       // Trigger AI Analysis and WAIT for them to ensure they complete in this request cycle
-      console.log(`[TimeEntry] Triggering AI analysis for account ${accountId}`)
       
       try {
         // Aciona análise unificada (Risco + Saúde) usando o Admin Client interno do módulo
@@ -218,7 +217,6 @@ export async function POST(request: Request) {
     if (taskError) {
       console.error('[TimeEntry] Error creating suggested tasks:', taskError)
     } else {
-      console.log(`[TimeEntry] ${taskInserts.length} tarefas sugeridas criadas`)
     }
   }
 

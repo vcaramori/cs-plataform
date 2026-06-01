@@ -135,7 +135,6 @@ export async function sendCSATEmail(ticketId: string, retryCount = 0): Promise<b
       html: htmlContent,
     })
 
-    console.log(`[CSAT Service] Email sent to ${finalTo} for ticket ${ticketId} (Original: ${recipientEmail})`)
     return true
   } catch (err) {
     console.error(`[CSAT Service] Failed to send email for ticket ${ticketId} (Attempt ${retryCount + 1}):`, err)
