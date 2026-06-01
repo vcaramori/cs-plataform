@@ -691,6 +691,45 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
 
 ## Módulos
 
+> **Mapa de módulos — atualizado 2026-06-01.** Reflete as rotas e o menu atuais.
+> Use esta tabela como referência canônica; as seções detalhadas abaixo podem
+> conter notas históricas. (Itens marcados ⚙️ ficam em Governança/Configurações.)
+
+| Módulo (menu) | Rota | Para que serve |
+|---|---|---|
+| Pergunte à IA | `/perguntar` | Cérebro do CS — Q&A com RAG sobre a base de conhecimento e dados do portfólio |
+| Início | `/home` | Cockpit diário de ação, role-aware (prioridades do dia) |
+| Dashboard | `/dashboard` | Painel executivo com KPIs do portfólio |
+| Adoção | `/adoption` | Adoção de features por conta (heatmap, blockers, forecast) |
+| NPS | `/nps` | Programas e respostas de NPS, metas e RAG |
+| Voz do Cliente | `/voc` | Agregação de sinais qualitativos (sentimento, temas, quotes) |
+| Dashboard Suporte | `/suporte/dashboard` | Métricas operacionais de suporte (por agente, cliente, período) |
+| Atividades | `/atividades` | Tarefas do CSM (kanban + comentários estilo chat + anexos) |
+| Esforço | `/esforco` | Registro de horas por linguagem natural (IA) + auto check-in |
+| Suporte | `/suporte` | Tickets, SLA, sugestão de resposta por IA, ingestão por e-mail |
+| Fluxos | `/fluxos` | Orquestrador de processos/playbooks de CS |
+| Capacidade & Produtividade | `/cs-ops` | Produtividade da equipe (por pessoa e time), capacity planning e rebalanceamento |
+| Logos / Contas | `/accounts` | Cadastro e detalhe de contas, contratos, interações, health |
+| Wishlist | `/wishlist` | Coleta, curadoria e handoff de pedidos de cliente |
+| Usuários ⚙️ | `/users` | Usuários internos × externos (abas) + foto do integrante |
+| Perfis de Acesso ⚙️ | `/settings/roles` | Custom roles e permissões por módulo |
+| Produtos ⚙️ | `/settings/products` | Catálogo de produtos, epics e de→para RICE |
+| Funcionalidades ⚙️ | `/settings/features` | Gestão de features/flags |
+| Planos ⚙️ | `/settings/plans` | Planos comerciais |
+| Horário SLA ⚙️ | `/settings/business-hours` | Janela de atendimento para cálculo de SLA |
+| Política SLA ⚙️ | `/settings/sla` | Níveis e regras de SLA |
+| Administração ⚙️ | `/admin` | Integrações, webhooks, configurações administrativas |
+| Design System | `/design-system` | Referência interna de componentes/tokens |
+
+> **Nota — Capacidade (`/cs-ops`):** desde 2026-06-01 a aba padrão é
+> **Produtividade da Equipe**, que mede por pessoa e agregado do time (período
+> semana/mês/trimestre) 4 pilares com dados reais: Esforço & Engajamento,
+> Atividades & Throughput, Suporte & SLA, Resultados & Outcomes — além de
+> utilização (carga), score composto e flag de burnout. As abas Atenção
+> Necessária (cockpit de contas), Capacity Planning e Rebalancer continuam.
+
+---
+
 ### Dashboard Principal (`/dashboard`)
 
 Painel executivo com 6 KPIs em tempo real:
@@ -894,7 +933,11 @@ Todas as ações são snapshot-backed: ao executar, o sistema captura o estado a
 
 ---
 
-### Adoção de Produto (`/product`)
+### Adoção de Produto (`/adoption`)
+
+> Nota: a rota canônica é **`/adoption`** (item "Adoção" no menu). O catálogo de
+> produtos/epics e o de→para RICE ficam em **`/settings/products`**. A antiga
+> rota `/product` foi descontinuada.
 
 Matriz de adoção de features por conta. Cada linha é uma feature do produto.
 

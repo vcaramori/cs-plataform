@@ -33,7 +33,7 @@ Levantamento inicial em 2026-06-01. Marque `[x]` ao resolver. Severidade:
 - [ ] **#14 — Pasta-fonte `Logotipos/` na raiz.** Já no `.gitignore`; remover do disco quando conveniente (cópias usadas estão em `public/brand`).
 - [ ] **#15 — TODO real:** `TicketPreviewPanel.tsx:41` — collision detection via Supabase Presence (edição concorrente de tickets sem proteção).
 - [ ] **#16 — ~42 `eslint-disable`** (muitos `no-img-element`: `<img>` em vez de `next/image`). _Ação:_ revisar caso a caso.
-- [ ] **#17 — Documentação divergente.** `README.md` desatualizado vs. módulos reais (Fluxos, Workflows, Product, Wishlist). _Ação:_ reconciliar.
+- [~] **#17 — Documentação divergente.** _Parcial:_ adicionado "Mapa de Módulos" canônico e atualizado no `README.md` (todas as rotas/menu atuais) + corrigida a rota stale `/product` → `/adoption`/`/settings/products`. Resta enxugar o changelog/roadmap histórico longo. Ver "Resolvido — Rodada 3".
 
 ## Nota positiva
 Os 16 crons estão autenticados via header `x-api-secret` contra `API_SECRET` — não são endpoints abertos.
@@ -41,6 +41,12 @@ Os 16 crons estão autenticados via header `x-api-secret` contra `API_SECRET` �
 ---
 
 ## Resolvido
+
+### Rodada 3 — docs/readme-reconcile (2026-06-01)
+- **#17 (parcial):** `README.md` ganhou tabela "Mapa de Módulos" canônica (todas as
+  rotas e itens de menu atuais, incl. Capacidade & Produtividade) + nota sobre a
+  nova aba de Produtividade; corrigida a seção que apontava para a rota inexistente
+  `/product`. Verificado que o menu não tem mais link quebrado de Playbooks (aponta `/fluxos`).
 
 ### Rodada 2 — chore/tech-debt-round2 (2026-06-01)
 - **#2 — exec_sql:** `migrations/apply-all` e `migrations/wave4` agora exigem `ENABLE_MIGRATION_ENDPOINT=true` (desligado por padrão → 404) e validam `API_SECRET` presente. Recomendação: usar `supabase db push`.
