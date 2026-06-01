@@ -16,14 +16,14 @@ export default async function CSOpsPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile || !profile.role || !['csm_senior', 'head_cs', 'admin'].includes(profile.role)) {
+  if (!profile || !profile.role || !['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
     redirect('/dashboard')
   }
 
   const { data: rawCsms } = await supabase
     .from('profiles')
     .select('id, role')
-    .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
+    .in('role', ['csm', 'csm_senior', 'head_cs', 'account_manager', 'admin', 'super_admin'])
     .order('role')
 
   const csms = (rawCsms ?? [])
