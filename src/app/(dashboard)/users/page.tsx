@@ -58,7 +58,7 @@ export default async function UsersPage() {
       />
       <UsersClient
         initialUsers={users}
-        roles={roles || []}
+        roles={(roles || []) as any}
         currentUserRole={profile.role}
         currentUserId={user.id}
       />

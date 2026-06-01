@@ -61,8 +61,8 @@ export async function getPolicyForAccount(accountId: string, contractId?: string
     return null
   }
 
-  // Fallback to global standard SLA policy if no custom policy exists for contract/account OR if it is set to use global standard
-  if (!policy || policy.use_global_standard === true) {
+  // Fallback to global standard SLA policy if no custom policy exists for contract/account
+  if (!policy) {
     console.log('[SLA Policies] Custom policy is null or use_global_standard is true. Querying global standard SLA...')
     const globalResult = await supabase
       .from('sla_policies')

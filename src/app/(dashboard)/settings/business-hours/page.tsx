@@ -19,7 +19,7 @@ export default async function GlobalBusinessHoursPage() {
         iconName="Clock"
       />
 
-      <BusinessHoursEditor initialHours={hours || []} />
+      <BusinessHoursEditor initialHours={(hours || []) as any} />
     </PageContainer>
   )
 }

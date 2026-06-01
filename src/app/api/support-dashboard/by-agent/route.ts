@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
   const { data: csatData } = await supabase
     .from('csat_responses')
-    .select('score, agent_id')
+    .select('score, ticket_id')
     .gte('answered_at', dateFrom)
     .lte('answered_at', dateTo)
 
@@ -32,8 +32,11 @@ export async function GET(request: Request) {
     frWithSLA: number; resWithSLA: number; csatScores: number[]
   }>()
 
+  const ticketAgentMap = new Map<string, string>()
+
   for (const t of tickets ?? []) {
     const agentId = t.assigned_to!
+    ticketAgentMap.set(t.id, agentId)
     if (!agentMap.has(agentId)) {
       agentMap.set(agentId, {
         received: 0, resolved: 0, frTotal: 0, frCount: 0,
@@ -63,8 +66,9 @@ export async function GET(request: Request) {
   }
 
   for (const c of csatData ?? []) {
-    if (c.agent_id && agentMap.has(c.agent_id)) {
-      agentMap.get(c.agent_id)!.csatScores.push(c.score)
+    const agentId = ticketAgentMap.get(c.ticket_id)
+    if (agentId && agentMap.has(agentId)) {
+      agentMap.get(agentId)!.csatScores.push(c.score)
     }
   }
 

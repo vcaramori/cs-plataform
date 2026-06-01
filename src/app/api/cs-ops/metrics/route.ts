@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 
     // Calculate capacity for all CSMs
     const capacities = await Promise.all(
-      (csms || []).map((csm) => service.calculateCapacity(csm.id))
+      (csms || []).map((csm: any) => service.calculateCapacity(csm.id))
     )
 
     const capacityUtilizations = capacities.map((c) => c.capacityUtilizationPct)

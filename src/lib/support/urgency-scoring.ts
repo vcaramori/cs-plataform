@@ -17,7 +17,7 @@ export async function scoreTicketUrgency(ticketId: string): Promise<UrgencyResul
   // 1. Fetch ticket and conversation history
   const { data: ticket, error: ticketError } = await supabase
     .from('support_tickets')
-    .select('title, body, account_id')
+    .select('title, description, account_id')
     .eq('id', ticketId)
     .single()
 
@@ -39,7 +39,7 @@ export async function scoreTicketUrgency(ticketId: string): Promise<UrgencyResul
 
   const prompt = `
 Título do Ticket: ${ticket.title}
-Descrição Inicial: ${ticket.body}
+Descrição Inicial: ${ticket.description}
 
 Histórico da Conversa:
 ${history}

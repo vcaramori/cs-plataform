@@ -49,7 +49,7 @@ export async function POST(
 
     if (forcedCsmId) {
       // Use forced CSM (ignoring capacity check for testing)
-      const { data: csmData, error: csmError } = await supabase
+      const { data: csmData, error: csmError } = await (supabase as any)
         .from("csm_queue_stats")
         .select("csm_id, csm_name, assigned_count, max_capacity")
         .eq("csm_id", forcedCsmId)
@@ -65,7 +65,7 @@ export async function POST(
       targetCSM = csmData;
     } else {
       // Find CSM with lowest queue and available capacity
-      const { data: csmsData, error: csmsError } = await supabase
+      const { data: csmsData, error: csmsError } = await (supabase as any)
         .from("csm_queue_stats")
         .select("csm_id, csm_name, assigned_count, max_capacity")
         .eq("status", "active")

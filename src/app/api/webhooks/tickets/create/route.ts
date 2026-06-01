@@ -40,7 +40,7 @@ async function storeWebhookDelivery(delivery: WebhookDelivery) {
   const admin = getSupabaseAdminClient()
 
   try {
-    await admin.from('webhook_deliveries').insert({
+    await (admin as any).from('webhook_deliveries').insert({
       account_id: delivery.account_id,
       payload: delivery.payload,
       response_status: delivery.response_status,
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     const { data: account, error: accountErr } = await admin
       .from('accounts')
       .select('id')
-      .eq('external_id', account_key)
+      .eq('client_id', account_key)
       .single()
 
     if (accountErr || !account) {
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         status: 'open',
         opened_at: new Date().toISOString(),
         source: 'webhook',
-        external_id: payload.external_id // Store external ticket ID if provided
+        external_ticket_id: payload.external_id // Store external ticket ID if provided
       })
       .select('id')
       .single()

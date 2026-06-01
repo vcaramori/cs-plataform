@@ -27,11 +27,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const accountId = params.data.accountId || '';
+
     // RLS check
     const { data: account } = await supabase
       .from('accounts')
-      .select('csm_owner_id')
-      .eq('id', params.data.accountId)
+      .select('id, csm_owner_id, name')
+      .eq('id', accountId)
       .single()
 
     const { data: profile } = await supabase
@@ -45,14 +47,14 @@ export async function GET(request: Request) {
     }
 
     const isOwner = account.csm_owner_id === profile.id
-    const canViewAll = ['csm_senior', 'admin'].includes(profile.role)
+    const canViewAll = ['csm_senior', 'admin'].includes(profile.role || '')
 
     if (!isOwner && !canViewAll) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const service = new AdoptionService(supabase)
-    const heatmap = await service.getAdoptionHeatmap(params.data.accountId, params.data.daysBack)
+    const service = new AdoptionService(supabase as any)
+    const heatmap = await service.getAdoptionHeatmap(accountId, params.data.daysBack)
 
     return NextResponse.json(heatmap)
   } catch (error) {

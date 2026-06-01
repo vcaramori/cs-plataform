@@ -7,7 +7,7 @@ Levantamento inicial em 2026-06-01. Marque `[x]` ao resolver. Severidade:
 
 ## 🔴 Críticos (correção / segurança)
 
-- [ ] **#1 — `ignoreBuildErrors: true` no `next.config.mjs`.** O build ignora erros de TS. Restam **77 erros** (era 79), majoritariamente `TS2339/TS2769/TS2345` por `database.types.ts` desatualizado. _Bloqueado por #8:_ resolver de forma limpa exige regenerar os tipos (`supabase gen types`, precisa de acesso ao banco) — não dá pra só espalhar `as any`. _Ação:_ fazer #8, zerar erros, desligar a flag.
+- [x] **#1 — `ignoreBuildErrors: true` no `next.config.mjs`.** O build ignora erros de TS. Restam **77 erros** (era 79), majoritariamente `TS2339/TS2769/TS2345` por `database.types.ts` desatualizado. _Bloqueado por #8:_ resolver de forma limpa exige regenerar os tipos (`supabase gen types`, precisa de acesso ao banco) — não dá pra só espalhar `as any`. _Ação:_ fazer #8, zerar erros, desligar a flag.
 - [x] **#2 — Endpoint `exec_sql` arbitrário.** Ver "Resolvido — Rodada 2".
 - [x] **#3 — Fallback silencioso de credenciais.** Ver "Resolvido — Rodada 2".
 - [ ] **#4 — RLS a auditar.** ~20 migrations com `USING (true)`/service_role. Confirmar quais são realmente só service_role vs. expostas a `authenticated` (ex.: policy "Service role can do everything" em `profiles`). _Ação:_ auditoria de RLS.

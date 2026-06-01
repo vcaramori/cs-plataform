@@ -2,7 +2,7 @@
 const nextConfig = {
   serverExternalPackages: ['pdf-parse', '@google/genai'],
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [

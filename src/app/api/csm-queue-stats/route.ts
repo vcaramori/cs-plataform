@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getSupabaseAdminClient()
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('csm_queue_stats')
       .select('csm_id, csm_name, csm_email, max_capacity, assigned_count, available_slots, load_percentage, status')
       .order('csm_name', { ascending: true })

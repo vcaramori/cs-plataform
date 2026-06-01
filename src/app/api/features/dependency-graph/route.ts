@@ -26,12 +26,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // RLS check if accountId provided
-    if (params.data.accountId) {
+    const accountId = params.data.accountId || '';
+
+    // RLS check if not fetching for all accounts
+    if (accountId) {
       const { data: account } = await supabase
         .from('accounts')
         .select('csm_owner_id')
-        .eq('id', params.data.accountId)
+        .eq('id', accountId)
         .single()
 
       const { data: profile } = await supabase
@@ -45,15 +47,15 @@ export async function GET(request: Request) {
       }
 
       const isOwner = account.csm_owner_id === profile.id
-      const canViewAll = ['csm_senior', 'admin'].includes(profile.role)
+      const canViewAll = ['csm_senior', 'admin'].includes(profile.role || '')
 
       if (!isOwner && !canViewAll) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
 
-    const service = new AdoptionService(supabase)
-    const graph = await service.getFeatureDependencies(params.data.accountId)
+    const service = new AdoptionService(supabase as any)
+    const graph = await service.getFeatureDependencies(accountId)
 
     const validated = FeatureDependencyGraphResponseSchema.safeParse(graph)
     if (!validated.success) {

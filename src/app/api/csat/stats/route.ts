@@ -14,12 +14,12 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('csat_responses')
-    .select('score, answered_at, account_id, agent_id')
+    .select('score, answered_at, account_id, support_tickets!inner(assigned_to)')
 
   if (dateFrom) query = query.gte('answered_at', dateFrom)
   if (dateTo) query = query.lte('answered_at', dateTo)
   if (accountId) query = query.eq('account_id', accountId)
-  if (agentId) query = query.eq('agent_id', agentId)
+  if (agentId) query = query.eq('support_tickets.assigned_to', agentId)
 
   const { data: responses, error } = await query
 
@@ -39,12 +39,12 @@ export async function GET(request: Request) {
   const totalAnswered = answered.length
   const totalWithoutResponse = (totalResolved ?? 0) - totalAnswered
   const avgScore = totalAnswered > 0
-    ? answered.reduce((sum, r) => sum + r.score, 0) / totalAnswered
+    ? answered.reduce((sum, r) => sum + (r as any).score, 0) / totalAnswered
     : null
 
   const distribution = [1, 2, 3, 4, 5].map(score => ({
     score,
-    count: answered.filter(r => r.score === score).length
+    count: answered.filter(r => (r as any).score === score).length
   }))
 
   return NextResponse.json({

@@ -133,9 +133,8 @@ export default async function AccountSLASettings({ params }: { params: Promise<{
                 if (currentPolicy.mappings && currentPolicy.mappings.length > 0) {
                   const mappingsToInsert = currentPolicy.mappings.map((mp: any) => ({
                     policy_id: newPolicy.id,
-                    csm_role: mp.csm_role,
-                    ticket_priority: mp.ticket_priority,
-                    sla_level: mp.sla_level
+                    external_label: mp.external_label,
+                    internal_level: mp.internal_level
                   }))
                   await adminClient.from('sla_level_mappings').insert(mappingsToInsert)
                 }

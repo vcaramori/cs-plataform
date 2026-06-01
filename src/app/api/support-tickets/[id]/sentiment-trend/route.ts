@@ -52,7 +52,7 @@ export async function GET(
       const isValid = cacheAge < 24 * 60 * 60 * 1000; // 24 hours in ms
 
       if (isValid) {
-        trend = ticket.sentiment_trend_cache;
+        trend = ticket.sentiment_trend_cache as unknown as SentimentTrendData[];
         cacheGeneratedAt = ticket.sentiment_trend_cache_generated_at;
       }
     }
@@ -73,7 +73,7 @@ export async function GET(
         `
         )
         .eq('ticket_id', ticketId)
-        .eq('message_type', 'reply')
+        .eq('type', 'reply')
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -82,13 +82,16 @@ export async function GET(
         console.error('Error fetching sentiment trend:', sentimentError);
       } else if (sentiments) {
         trend = sentiments
-          .filter((msg) => msg.reply_sentiments && msg.reply_sentiments.length > 0)
-          .map((msg) => ({
-            timestamp: msg.created_at,
-            sentiment: msg.reply_sentiments[0].sentiment,
-            score: msg.reply_sentiments[0].score,
-            keywords: msg.reply_sentiments[0].keywords,
-          }));
+          .filter((msg) => msg.reply_sentiments)
+          .map((msg) => {
+            const rs = msg.reply_sentiments as any;
+            return {
+              timestamp: msg.created_at,
+              sentiment: rs.sentiment,
+              score: rs.score,
+              keywords: rs.keywords,
+            };
+          });
       }
 
       // Update cache
@@ -97,7 +100,7 @@ export async function GET(
         const { error: updateError } = await supabase
           .from('support_tickets')
           .update({
-            sentiment_trend_cache: trend,
+            sentiment_trend_cache: trend as any,
             sentiment_trend_cache_generated_at: cacheGeneratedAt,
           })
           .eq('id', ticketId);

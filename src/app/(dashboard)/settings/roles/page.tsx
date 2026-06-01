@@ -21,7 +21,7 @@ export default async function RolesPage() {
         iconName="ShieldCheck"
       />
       <RolesClient
-        initialRoles={roles || []}
+        initialRoles={(roles || []) as any}
         currentUserRole={profile.role}
       />
     </PageContainer>

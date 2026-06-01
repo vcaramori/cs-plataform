@@ -11,7 +11,7 @@ export async function GET() {
 
   // 1. Busca Scores Desatualizados (> 30 dias)
   // Nota: Precisamos buscar o último manual_score de cada conta do usuário
-  const { data: staleScores, error: errorStale } = await supabase.rpc('get_stale_health_checks', {
+  const { data: staleScores, error: errorStale } = await (supabase as any).rpc('get_stale_health_checks', {
     csm_id: user.id,
     days_limit: 30
   })
@@ -51,7 +51,7 @@ export async function GET() {
         }
     }
   } else {
-    notifications = staleScores.map((s: any) => ({
+    notifications = (staleScores as any[]).map((s: any) => ({
       id: `stale-${s.account_id}`,
       type: 'stale_score',
       title: 'Health Score Desatualizado',

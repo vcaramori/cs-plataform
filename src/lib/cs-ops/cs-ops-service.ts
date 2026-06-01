@@ -101,7 +101,7 @@ export class CSOperationsService {
     }
 
     const capacityMetrics = await Promise.all(
-      profiles.map((p) => this.calculateCapacity(p.id))
+      profiles.map((p: any) => this.calculateCapacity(p.id))
     )
 
     // Find overloaded CSMs with accounts to move

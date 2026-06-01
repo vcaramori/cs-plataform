@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     await admin
       .from('accounts')
       .update({ 
-        health_score: vigente, 
+        health_score: (vigente === null ? undefined : vigente), 
         health_trend: trend 
       })
       .eq('id', account_id)
