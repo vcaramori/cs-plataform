@@ -33,8 +33,8 @@ export async function GET(
         ticket_b_id,
         similarity_score,
         status,
-        dismissed_by,
-        dismissed_at
+        reviewed_by,
+        reviewed_at
       `)
       .or(`ticket_a_id.eq.${id},ticket_b_id.eq.${id}`)
       .eq('status', 'pending_review')
@@ -115,8 +115,8 @@ export async function POST(
       .from('ticket_similarity_candidates')
       .update({
         status: 'dismissed',
-        dismissed_by: user.id,
-        dismissed_at: new Date().toISOString()
+        reviewed_by: user.id,
+        reviewed_at: new Date().toISOString()
       })
       .eq('id', candidate_id)
 

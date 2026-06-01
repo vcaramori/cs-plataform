@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     const duration = Date.now() - startTime;
 
     // Log the test delivery
-    await supabase.from('webhook_deliveries').insert({
+    await (supabase as any).from('webhook_deliveries').insert({
       webhook_id,
       event_type: 'test.webhook',
       payload: testPayload,

@@ -282,6 +282,7 @@ ${contentToProcess.substring(0, 25000)}
               .from('support_ticket_messages')
               .insert({
                 ticket_id: existingTicket.id,
+                author_id: user.id,
                 author_email: sender,
                 type: 'reply',
                 body: originalEmailBody,
@@ -315,6 +316,7 @@ ${contentToProcess.substring(0, 25000)}
             .from('support_ticket_messages')
             .insert({
               ticket_id: existingTicket.id,
+              author_id: user.id,
               author_email: sender,
               type: 'reply',
               body: originalEmailBody,
