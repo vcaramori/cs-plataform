@@ -136,28 +136,13 @@ export const TeamVelocityResponseSchema = z.object({
   trend: z.enum(['accelerating', 'stable', 'declining']).optional(),
 })
 
-// CS Ops metrics (overview)
+// CS Ops metrics (overview) — shape "flat" consumido pelos cards de resumo
 export const CSOpsMetricsResponseSchema = z.object({
   snapshotDate: z.string().date(),
-  capacity: z.object({
-    totalTeamCapacity: z.number().nonnegative(),
-    utilizationAvg: z.number().min(0).max(200),
-    overloadedCsmCount: z.number().nonnegative(),
-    underutilizedCsmCount: z.number().nonnegative(),
-  }),
-  health: z.object({
-    burnoutRiskCsmCount: z.number().nonnegative(),
-    avgBurnoutScore: z.number().min(0).max(1),
-  }),
-  velocity: z.object({
-    accountsOnboardedThisWeek: z.number().nonnegative(),
-    renewalRateLastQuarter: z.number().min(0).max(100),
-    churnRateLastQuarter: z.number().min(0).max(100),
-    expansionValue: z.number().nonnegative(),
-  }),
-  performance: z.object({
-    avgTeamNps: z.number().min(-100).max(100),
-    avgTeamCsat: z.number().min(0).max(5),
-    avgHealthScore: z.number().min(0).max(100),
-  }),
+  teamSize: z.number().nonnegative(),
+  avgCapacityUtilization: z.number().min(0).max(200),
+  overloadedCount: z.number().nonnegative(),
+  underutilizedCount: z.number().nonnegative(),
+  avgNps: z.number().min(-100).max(100),
+  avgCsat: z.number().min(0).max(5),
 })

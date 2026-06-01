@@ -70,3 +70,5 @@ test-execution.log
 
 # Logos-fonte (originais) — as versões usadas ficam em public/brand
 Logotipos/
+
+supabase/.temp/

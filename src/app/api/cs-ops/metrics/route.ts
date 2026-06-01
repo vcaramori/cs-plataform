@@ -63,29 +63,16 @@ export async function GET(request: Request) {
     const avgNps = Math.round(totalNps / count * 10) / 10
     const avgCsat = Math.round(totalCsat / count * 100) / 100
 
+    // Shape "flat" consumido pelo CSOpsClient (cards de resumo do topo).
+    // Todos os valores derivam de cálculo real — sem placeholders.
     const metrics = {
       snapshotDate: new Date().toISOString().split('T')[0],
-      capacity: {
-        totalTeamCapacity: capacities.reduce((sum, c) => sum + c.hoursAllocatedWeekly, 0),
-        utilizationAvg: avgUtilization,
-        overloadedCsmCount: overloadedCount,
-        underutilizedCsmCount: underutilizedCount,
-      },
-      health: {
-        burnoutRiskCsmCount: Math.floor(count * 0.15), // Placeholder
-        avgBurnoutScore: 0.35,
-      },
-      velocity: {
-        accountsOnboardedThisWeek: 3,
-        renewalRateLastQuarter: 92,
-        churnRateLastQuarter: 5,
-        expansionValue: 125000,
-      },
-      performance: {
-        avgTeamNps: avgNps,
-        avgTeamCsat: avgCsat,
-        avgHealthScore: Math.round(totalHealth / count),
-      },
+      teamSize: csms?.length ?? 0,
+      avgCapacityUtilization: avgUtilization,
+      overloadedCount,
+      underutilizedCount,
+      avgNps,
+      avgCsat,
     }
 
     const validated = CSOpsMetricsResponseSchema.safeParse(metrics)
