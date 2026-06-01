@@ -157,6 +157,30 @@ export async function updateItem(itemId: string, patch: {
   revalidatePath('/wishlist')
 }
 
+export interface RiceFields {
+  product_id?: string | null
+  epic_id?: string | null
+  activity_type?: string | null
+  criticality?: string | null
+  areas?: string[]
+  reach_pct?: number | null
+  impact_differentiation?: number | null
+  impact_commercial_opportunity?: number | null
+  impact_satisfaction?: number | null
+  impact_churn_prevention?: number | null
+  commercial_commitment?: boolean
+  confidence_competitor_has?: boolean | null
+  confidence_wishlist_clients?: boolean
+  confidence_wishlist_leads?: boolean | null
+}
+
+export async function updateItemRice(itemId: string, fields: RiceFields) {
+  await requireUser()
+  await db().from('wishlist_items').update(fields).eq('id', itemId)
+  revalidatePath(`/wishlist/${itemId}`)
+  revalidatePath('/wishlist')
+}
+
 export async function setItemStatus(itemId: string, status: WishlistItemStatus) {
   const { user } = await requireUser()
   const { data: cur } = await db().from('wishlist_items').select('status').eq('id', itemId).single()

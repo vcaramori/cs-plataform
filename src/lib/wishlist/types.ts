@@ -93,8 +93,17 @@ export interface CatalogMatch {
   rationale: string
 }
 
-/** Pacote refinado enviado ao time de produto. */
+/** Pacote refinado enviado ao time de produto — formato do intake RICE. */
 export interface ProductBrief {
+  // Identificação RICE
+  squad: string | null          // Produto/Squad (nome)
+  epico: string | null          // Épico (nome)
+  titulo: string
+  descricao: string | null
+  tipo: string | null           // activity_type
+  criticidade: string | null
+  areas: string[]
+  // legado/auxiliar
   title: string
   kind: WishlistKind
   category: string | null
@@ -102,11 +111,28 @@ export interface ProductBrief {
   problem: string | null
   desired_outcome: string | null
   narrative: string
+  clientes: { account_id: string; nome: string; arr: number; segmento: string | null }[]
   demand: {
     accounts: number
     arr: number
     segments: string[]
     accounts_list: { account_id: string; account_name: string; arr: number; segment: string | null }[]
+  }
+  rice: {
+    alcance_pct: number | null
+    impacto: {
+      diferencial: number | null
+      oportunidade_comercial: number | null
+      satisfacao: number | null
+      evita_churn: number | null
+      compromisso_comercial: boolean
+    }
+    confianca: {
+      concorrente_tem: boolean | null
+      wishlist_clientes: boolean
+      wishlist_leads: boolean | null
+    }
+    // prototipo / detalhamento_tecnico / esforco: preenchidos pelo gestor RICE
   }
   related_feature: { id: string; name: string } | null
   evidence: { account_name: string; verbatim: string; source_type: WishlistSignalSource; date: string }[]

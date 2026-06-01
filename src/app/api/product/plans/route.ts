@@ -6,6 +6,7 @@ const PlanSchema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
   description: z.string().optional(),
   is_active: z.boolean().default(true),
+  product_id: z.string().uuid().optional().nullable(),
   feature_ids: z.array(z.string().uuid()).optional(),
 })
 
@@ -15,10 +16,11 @@ export async function GET() {
   if (authError || !data?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const user = data.user
 
-  const { data: plansData, error } = await supabase
+  const { data: plansData, error } = await (supabase as any)
     .from('subscription_plans')
     .select(`
       *,
+      products ( id, name, color ),
       plan_features (
         feature_id,
         product_features (*)

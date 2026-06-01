@@ -65,6 +65,14 @@ export async function POST(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Produto do plano (denormaliza em feature_adoption → adoção product-aware)
+  const { data: planRow } = await (supabase as any)
+    .from('subscription_plans')
+    .select('product_id')
+    .eq('id', parsed.data.plan_id)
+    .maybeSingle()
+  const planProductId = planRow?.product_id ?? null
+
   // Initialize adoption records for features in this plan
   const { data: planFeatures } = await supabase
     .from('plan_features')
@@ -75,7 +83,8 @@ export async function POST(
     const adoptionInserts = planFeatures.map(f => ({
       account_id: accountId,
       feature_id: f.feature_id,
-      status: 'not_started'
+      status: 'not_started',
+      product_id: planProductId,
     }))
 
     // Use upsert on conflict (account_id, feature_id) to avoid duplicates but ensure them exist

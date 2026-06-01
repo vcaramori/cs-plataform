@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { syncContractLinks } from '@/lib/contracts/links'
 
 const ContractSchema = z.object({
   account_id: z.string().uuid(),
@@ -43,5 +44,9 @@ export async function POST(request: Request) {
     console.error('Supabase Error (POST contracts):', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Migração service_type → FKs: sincroniza contract_plans / contract_products
+  await syncContractLinks(data.id, data.service_type)
+
   return NextResponse.json(data, { status: 201 })
 }

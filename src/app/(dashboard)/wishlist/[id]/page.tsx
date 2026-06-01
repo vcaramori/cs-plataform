@@ -40,6 +40,29 @@ export default async function WishlistItemPage({ params }: { params: Promise<{ i
     .eq('item_id', id)
     .order('created_at', { ascending: false })
 
+  // Produtos + épicos para os selects RICE
+  const { data: products } = await db
+    .from('products')
+    .select('id, name, color, product_epics(id, name)')
+    .order('sort_order')
+
+  // total de contas (para prefill do Alcance %)
+  const { count: totalAccounts } = await db
+    .from('accounts')
+    .select('id', { count: 'exact', head: true })
+
+  // de→para: deriva produto/épico sugeridos a partir da feature casada
+  let suggested: { product_id: string | null; epic_id: string | null } = { product_id: null, epic_id: null }
+  if (item.matched_feature_id) {
+    const { data: fe } = await db
+      .from('feature_epics')
+      .select('epic_id, product_epics(id, product_id)')
+      .eq('feature_id', item.matched_feature_id)
+      .limit(1)
+    const first = (fe ?? [])[0]
+    if (first) suggested = { product_id: first.product_epics?.product_id ?? null, epic_id: first.epic_id }
+  }
+
   return (
     <PageContainer>
       <WishlistItemDetail
@@ -48,6 +71,9 @@ export default async function WishlistItemPage({ params }: { params: Promise<{ i
         matchedFeature={matchedFeature}
         log={log ?? []}
         handoffs={handoffs ?? []}
+        products={products ?? []}
+        totalAccounts={totalAccounts ?? 0}
+        suggested={suggested}
       />
     </PageContainer>
   )

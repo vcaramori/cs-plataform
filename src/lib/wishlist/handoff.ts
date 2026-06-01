@@ -41,7 +41,7 @@ export async function buildProductBrief(itemId: string): Promise<ProductBrief> {
 
   const { data: item, error } = await db
     .from('wishlist_items')
-    .select('id, title, kind, category, priority, problem, desired_outcome, matched_feature_id')
+    .select('id, title, kind, category, priority, problem, desired_outcome, matched_feature_id, product_id, epic_id, activity_type, criticality, areas, reach_pct, impact_differentiation, impact_commercial_opportunity, impact_satisfaction, impact_churn_prevention, commercial_commitment, confidence_competitor_has, confidence_wishlist_clients, confidence_wishlist_leads, products(name), product_epics(name)')
     .eq('id', itemId)
     .single()
   if (error || !item) throw new Error('Item não encontrado')
@@ -89,6 +89,13 @@ export async function buildProductBrief(itemId: string): Promise<ProductBrief> {
   }
 
   const brief: ProductBrief = {
+    squad: item.products?.name ?? null,
+    epico: item.product_epics?.name ?? null,
+    titulo: item.title,
+    descricao: item.problem ?? item.desired_outcome ?? null,
+    tipo: item.activity_type ?? null,
+    criticidade: item.criticality ?? null,
+    areas: item.areas ?? [],
     title: item.title,
     kind: item.kind,
     category: item.category ?? null,
@@ -96,11 +103,27 @@ export async function buildProductBrief(itemId: string): Promise<ProductBrief> {
     problem: item.problem ?? null,
     desired_outcome: item.desired_outcome ?? null,
     narrative,
+    clientes: demand.accounts_list.map((a) => ({ account_id: a.account_id, nome: a.account_name, arr: a.arr, segmento: a.segment })),
     demand: {
       accounts: demand.accounts,
       arr: demand.arr,
       segments: demand.segments,
       accounts_list: demand.accounts_list,
+    },
+    rice: {
+      alcance_pct: item.reach_pct ?? null,
+      impacto: {
+        diferencial: item.impact_differentiation ?? null,
+        oportunidade_comercial: item.impact_commercial_opportunity ?? null,
+        satisfacao: item.impact_satisfaction ?? null,
+        evita_churn: item.impact_churn_prevention ?? null,
+        compromisso_comercial: !!item.commercial_commitment,
+      },
+      confianca: {
+        concorrente_tem: item.confidence_competitor_has ?? null,
+        wishlist_clientes: item.confidence_wishlist_clients ?? true,
+        wishlist_leads: item.confidence_wishlist_leads ?? null,
+      },
     },
     related_feature,
     evidence,

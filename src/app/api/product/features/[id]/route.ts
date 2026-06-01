@@ -7,6 +7,7 @@ const UpdateFeatureSchema = z.object({
   module: z.string().optional(),
   description: z.string().optional(),
   is_active: z.boolean().optional(),
+  epic_ids: z.array(z.string().uuid()).optional(),
 })
 
 export async function DELETE(
@@ -44,13 +45,24 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
+  const { epic_ids, ...featureData } = parsed.data
   const { data: updatedData, error } = await supabase
     .from('product_features')
-    .update(parsed.data)
+    .update(featureData)
     .eq('id', id)
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // de→para Funcionalidade → Épico: substitui o conjunto quando enviado
+  if (epic_ids) {
+    const db = supabase as any
+    await db.from('feature_epics').delete().eq('feature_id', id)
+    if (epic_ids.length > 0) {
+      await db.from('feature_epics').insert(epic_ids.map((epic_id: string) => ({ feature_id: id, epic_id })))
+    }
+  }
+
   return NextResponse.json(updatedData)
 }

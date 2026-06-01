@@ -184,6 +184,20 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🧩 Modelo de Produto + de→para RICE + Contratos/Adoção por Produto (2026-05-31)
+
+Introduz a entidade **Produto** (=Squad: ABAST, S&OE, S&OP…) com **Épicos por produto**, um **de→para Funcionalidade→Épico**, e amarra Planos/Contratos/Adoção a Produto — base para o handoff do Wishlist no formato da ferramenta de produto (RICE).
+
+- **Schema** (`supabase/migrations/…_product_model_foundation.sql`): tabelas `products`, `product_epics`, `feature_epics` (de→para N:N), `contract_products`, `contract_plans` (junctions); colunas `subscription_plans.product_id`, `feature_adoption.product_id`, e campos RICE em `wishlist_items` (+`product_id`/`epic_id`) e `wishlist_signals.area`. Seed: 3 produtos + 25 épicos (dos prints da RICE). Backfill: `contract_plans` a partir do `service_type`.
+- **CRUD de Produtos/Épicos** (`/settings/products` + `/api/product/products[/id]`, `/api/product/epics[/id]`): cadastra produtos (squads) e gerencia épicos inline.
+- **de→para**: em Funcionalidades (`FeatureDialog`), seleção múltipla de épicos por produto grava `feature_epics` (`/api/product/features` aceita `epic_ids`).
+- **Planos por Produto**: `PlanDialog` ganha Select de Produto; criado `PATCH/DELETE` em `/api/product/plans/[id]` (gap anterior).
+- **Contratos → Produtos+Planos**: `src/lib/contracts/links.ts` (`syncContractLinks`) mantém `contract_plans`/`contract_products` em sincronia a cada save (migração `service_type`→FKs sem regressão; service_type mantido como entrada).
+- **Adoção product-aware**: o sync self-healing (`accounts/[id]/adoption`, `accounts/[id]/plan`) denormaliza `feature_adoption.product_id` a partir do plano. (Visualização/filtro por produto nos dashboards: dados prontos; UI é follow-up.)
+- **Handoff RICE do Wishlist**: o item ganha seção **"Avaliação de produto (RICE)"** (Produto/Épico pré-preenchidos pelo de→para da feature casada, Tipo/Criticidade, Áreas, Alcance %, Impacto, Confiança) e o `buildProductBrief` emite o payload no formato do intake RICE (protótipo/técnico/esforço ficam para o gestor RICE).
+
+**Follow-up:** filtro/agrupamento por Produto nos dashboards de adoção; confirmar listas de Tipo/Criticidade; UI dedicada de seleção de planos múltiplos no contrato (hoje deriva do plano/service_type).
+
 ### 💡 Wishlist — Coleta, Curadoria e Handoff de Pedidos de Cliente (2026-05-30)
 
 Novo módulo (`/wishlist`) que transforma menções soltas de clientes em **itens de produto curados, deduplicados entre clientes e priorizados por receita**, prontos para handoff ao time de produto. Modelo de **dois níveis**: `wishlist_signals` (menção por cliente/origem) → `wishlist_items` (ideia canônica que agrega a demanda de N clientes com ARR em jogo).

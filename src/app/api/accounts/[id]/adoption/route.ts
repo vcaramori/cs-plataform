@@ -40,15 +40,16 @@ export async function GET(
   let planFeatures: any[] = []
 
   if (activePlanNames.length > 0) {
-    const { data: fetchedPlans } = await supabase
+    const { data: fetchedPlans } = await (supabase as any)
       .from('subscription_plans')
-      .select('id, name, tier_rank')
+      .select('id, name, tier_rank, product_id')
       .in('name', activePlanNames)
 
     plans = fetchedPlans || []
 
     if (plans.length > 0) {
       const planIds = plans.map(p => p.id)
+      const planProduct = new Map<string, string | null>(plans.map((p: any) => [p.id, p.product_id ?? null]))
       const { data: fetchedFeatures } = await supabase
         .from('plan_features')
         .select('plan_id, feature_id')
@@ -57,6 +58,11 @@ export async function GET(
       planFeatures = fetchedFeatures || []
 
       if (planFeatures.length > 0) {
+        // mapa feature → produto (denormalização product-aware)
+        const featureProduct = new Map<string, string | null>()
+        for (const pf of planFeatures) {
+          if (!featureProduct.has(pf.feature_id)) featureProduct.set(pf.feature_id, planProduct.get(pf.plan_id) ?? null)
+        }
         const featureIds = planFeatures.map(f => f.feature_id)
 
         const { data: existingAdoption } = await supabase
@@ -71,10 +77,11 @@ export async function GET(
           const newInserts = missingFeatures.map(featureId => ({
             account_id: accountId,
             feature_id: featureId,
-            status: 'not_started'
+            status: 'not_started',
+            product_id: featureProduct.get(featureId) ?? null,
           }))
 
-          await supabase
+          await (supabase as any)
             .from('feature_adoption')
             .insert(newInserts)
         }

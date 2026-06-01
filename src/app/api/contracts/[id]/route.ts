@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { syncContractLinks } from '@/lib/contracts/links'
 
 const UpdateSchema = z.object({
   mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
@@ -50,6 +51,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     console.error('Supabase Error (PATCH contracts):', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Re-sincroniza os vínculos FK a partir do service_type final do contrato
+  await syncContractLinks(id, (data as any).service_type)
+
   return NextResponse.json(data)
 }
 

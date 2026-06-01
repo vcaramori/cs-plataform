@@ -52,6 +52,12 @@ export function WishlistClient({
 
   return (
     <div className="space-y-8">
+      {/* Como funciona */}
+      <div className="rounded-xl border border-plannera-primary/20 bg-plannera-primary/[0.04] px-4 py-3 text-sm text-content-secondary">
+        <strong className="text-content-primary">Sinal</strong> = um pedido de <strong>um cliente</strong> (captado por IA em reuniões/esforço/NPS/suporte, ou manual).
+        Agrupe sinais semelhantes num <strong className="text-content-primary">Item</strong> (pedido canônico de vários clientes) e encaminhe ao <strong className="text-content-primary">Produto</strong> (avaliação RICE).
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi icon={<Inbox className="w-4 h-4" />} label="Sinais na triagem" value={String(pendingSignals.length)} />
@@ -74,18 +80,20 @@ export function WishlistClient({
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsContent value="triage" className="mt-0">
+        <TabsContent value="triage" className="mt-0 space-y-3">
+          <p className="text-xs text-content-secondary">Cada sinal é um pedido de um cliente. Decida o desfecho: já existe, vira melhoria, vira item novo, ou descarte.</p>
           <TriageInbox signals={pendingSignals} />
         </TabsContent>
 
-        <TabsContent value="items" className="mt-0">
+        <TabsContent value="items" className="mt-0 space-y-3">
+          <p className="text-xs text-content-secondary">Itens reúnem pedidos semelhantes de vários clientes, priorizados por demanda/ARR. Clique para curar e encaminhar ao produto.</p>
           {items.length === 0 ? (
             <EmptyState text="Nenhum item ainda. Promova sinais da triagem para criar itens curados." />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {items.map((it) => (
                 <Link key={it.id} href={`/wishlist/${it.id}`}>
-                  <Card className="hover:border-plannera-primary/40 transition-colors h-full">
+                  <Card className="cursor-pointer hover:border-plannera-primary/40 transition-colors h-full">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-bold leading-snug line-clamp-2">{it.title}</p>
@@ -101,6 +109,9 @@ export function WishlistClient({
                       <div className="flex items-center justify-between text-[11px] text-content-secondary pt-1">
                         <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {it.demand_accounts} conta(s)</span>
                         <span className="inline-flex items-center gap-1"><DollarSign className="w-3 h-3" /> {formatBRL(Number(it.demand_arr || 0))}</span>
+                      </div>
+                      <div className="flex items-center justify-end gap-1 text-[11px] font-semibold text-plannera-primary pt-1 border-t border-border-divider">
+                        Abrir item <ArrowRight className="w-3 h-3" />
                       </div>
                     </CardContent>
                   </Card>
@@ -169,7 +180,7 @@ function ManualCaptureDialog({ accounts, onDone }: { accounts: { id: string; nam
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Registrar pedido manualmente</DialogTitle>
-          <DialogDescription>Capture um pedido de cliente que surgiu numa conversa ou reunião.</DialogDescription>
+          <DialogDescription>Registre um pedido que surgiu numa conversa; ele entra na Triagem como um sinal manual, pronto para curar.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>

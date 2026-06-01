@@ -21,6 +21,8 @@ interface Plan {
   name: string
   description: string | null
   is_active: boolean
+  product_id?: string | null
+  products?: { id: string; name: string; color: string | null } | null
   plan_features: {
     feature_id: string
     product_features: Feature
@@ -86,7 +88,12 @@ export function PlansSettingsClient() {
                   <Card className="shadow-xl hover:opacity-90 transition-all group overflow-hidden h-full flex flex-col">
                     <CardHeader className="pb-4 border-b border-plannera-sop/10 bg-plannera-sop/[0.02]">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-md font-bold uppercase font-heading group-hover:text-primary transition-colors">{plan.name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-md font-bold uppercase font-heading group-hover:text-primary transition-colors">{plan.name}</CardTitle>
+                          {plan.products?.name && (
+                            <Badge className="bg-plannera-orange/10 text-plannera-orange border-none text-[8px] font-bold uppercase">{plan.products.name}</Badge>
+                          )}
+                        </div>
                         <PlanDialog plan={plan} onSuccess={fetchPlans} />
                       </div>
                       <p className="text-content-secondary text-[10px] font-medium uppercase tracking-tight mt-1">{plan.description || 'Sem descricao comercial.'}</p>

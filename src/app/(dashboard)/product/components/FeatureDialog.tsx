@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -18,8 +18,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Settings2, Loader2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+
+interface EpicOpt { id: string; name: string }
+interface ProductOpt { id: string; name: string; color: string | null; product_epics: EpicOpt[] }
 
 const featureSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -36,18 +40,39 @@ interface Feature {
   module: string
   description: string | null
   is_active: boolean
+  epic_ids?: string[]
 }
 
-export function FeatureDialog({ 
-  feature, 
-  onSuccess 
-}: { 
+export function FeatureDialog({
+  feature,
+  onSuccess
+}: {
   feature?: Feature
-  onSuccess?: () => void 
+  onSuccess?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState<ProductOpt[]>([])
+  const [selectedEpics, setSelectedEpics] = useState<Set<string>>(new Set(feature?.epic_ids ?? []))
   const router = useRouter()
+
+  // Carrega produtos/épicos para o de→para quando o diálogo abre
+  useEffect(() => {
+    if (!open) return
+    fetch('/api/product/products')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setProducts(data))
+      .catch(() => {})
+    setSelectedEpics(new Set(feature?.epic_ids ?? []))
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleEpic(id: string) {
+    setSelectedEpics((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<FeatureFormData>({
     resolver: zodResolver(featureSchema) as any,
@@ -68,7 +93,7 @@ export function FeatureDialog({
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, epic_ids: Array.from(selectedEpics) }),
       })
 
       if (!res.ok) {
@@ -145,6 +170,32 @@ export function FeatureDialog({
                 placeholder="Descreva o valor desta funcionalidade..."
                 className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 min-h-[100px] rounded-xl focus:border-plannera-orange"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">De→para: Épicos da RICE</Label>
+              <p className="text-content-secondary/50 text-[10px] ml-1 -mt-1">Mapeie esta funcionalidade aos épicos (por produto). Usado no handoff do Wishlist para a RICE.</p>
+              <div className="max-h-56 overflow-y-auto space-y-3 rounded-xl border border-border-divider bg-surface-background/50 p-3">
+                {products.length === 0 ? (
+                  <p className="text-[10px] text-content-secondary/50">Cadastre produtos/épicos em Configurações → Produtos.</p>
+                ) : products.map((p) => (
+                  <div key={p.id} className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color ?? '#94a3b8' }} />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">{p.name}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pl-3">
+                      {(p.product_epics ?? []).map((e) => (
+                        <label key={e.id} className="inline-flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                          <Checkbox checked={selectedEpics.has(e.id)} onCheckedChange={() => toggleEpic(e.id)} />
+                          {e.name}
+                        </label>
+                      ))}
+                      {(p.product_epics?.length ?? 0) === 0 && <span className="text-[10px] text-content-secondary/40">sem épicos</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-xl bg-surface-background/50 border border-border-divider">

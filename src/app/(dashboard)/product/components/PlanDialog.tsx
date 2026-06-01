@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Plus, Settings2, Loader2, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -25,6 +26,7 @@ const planSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   description: z.string().optional(),
   is_active: z.boolean().default(true),
+  product_id: z.string().optional(),
   feature_ids: z.array(z.string().uuid()).default([]),
 })
 
@@ -37,11 +39,14 @@ interface Feature {
   is_active: boolean
 }
 
+interface ProductOpt { id: string; name: string }
+
 interface Plan {
   id: string
   name: string
   description: string | null
   is_active: boolean
+  product_id?: string | null
   plan_features?: { feature_id: string }[]
 }
 
@@ -55,6 +60,7 @@ export function PlanDialog({
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [features, setFeatures] = useState<Feature[]>([])
+  const [products, setProducts] = useState<ProductOpt[]>([])
   const [fetchingFeatures, setFetchingFeatures] = useState(false)
   const router = useRouter()
 
@@ -64,6 +70,7 @@ export function PlanDialog({
       name: plan?.name || '',
       description: plan?.description || '',
       is_active: plan?.is_active ?? true,
+      product_id: plan?.product_id || '',
       feature_ids: plan?.plan_features?.map(pf => pf.feature_id) || [],
     },
   })
@@ -71,6 +78,7 @@ export function PlanDialog({
   useEffect(() => {
     if (open) {
       fetchFeatures()
+      fetch('/api/product/products').then(r => r.ok ? r.json() : []).then(setProducts).catch(() => {})
     }
   }, [open])
 
@@ -95,10 +103,11 @@ export function PlanDialog({
       const url = plan ? `/api/product/plans/${plan.id}` : '/api/product/plans'
       const method = plan ? 'PATCH' : 'POST'
 
+      const payload = { ...data, product_id: data.product_id ? data.product_id : null }
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -167,6 +176,16 @@ export function PlanDialog({
                   className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-sop"
                 />
                 {errors.name && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Produto</Label>
+                <Select value={watch('product_id') || ''} onValueChange={(v) => setValue('product_id', v)}>
+                  <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

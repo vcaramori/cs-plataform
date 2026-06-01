@@ -54,6 +54,10 @@ Triggers Postgres enfileiram `wishlist_item_created` (na criação) e `wishlist_
 5. Handoff: brief gerado; export registra; webwook (httpbin) → `wishlist_handoffs(sent)`, item `handed_off`.
 6. Build `next build` ✅ (rotas `/wishlist` e `/wishlist/[id]`).
 
+## Atualização (2026-05-31) — Handoff no formato RICE
+
+O handoff passou a produzir o **intake da ferramenta de produto (RICE)**. O item ganhou a seção **"Avaliação de produto (RICE)"** com **Produto/Squad** e **Épico** (pré-preenchidos pelo de→para `feature_epics` da funcionalidade casada — ver [product-model-plan.md](product-model-plan.md)), **Tipo**, **Criticidade**, **Áreas solicitantes**, e a pontuação **R** (Alcance %), **I** (4 sliders + compromisso comercial) e **C** (concorrente tem? / wishlist clientes? / wishlist leads?). O `buildProductBrief` ([handoff.ts](../../src/lib/wishlist/handoff.ts)) monta o payload `{ squad, epico, titulo, descricao, tipo, criticidade, clientes[], areas[], rice:{ alcance_pct, impacto, confianca } }`; protótipo/detalhamento técnico/esforço ficam para o gestor RICE.
+
 ## Follow-up
 
-Seção Wishlist na página da conta; embutir `product_features` no vetor (match semântico); score RICE; loop de retorno (`delivered` notifica CSMs/contas que pediram); integração real da ferramenta de produto.
+Seção Wishlist na página da conta; embutir `product_features` no vetor (match semântico); loop de retorno (`delivered` notifica CSMs/contas que pediram); integração real (push) da ferramenta de produto; confirmar listas de Tipo/Criticidade.

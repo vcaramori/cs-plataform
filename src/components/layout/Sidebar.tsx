@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   Zap,
   Lightbulb,
+  Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -60,6 +61,7 @@ const settingsItems = [
   { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const },
   { href: '/settings/roles',        label: 'Perfis de Acesso', icon: ShieldCheck, minRole: 'csm_senior' as const },
   { href: '/cs-ops',               label: 'Capacidade',  icon: Users, minRole: 'csm_senior' as const },
+  { href: '/settings/products',     label: 'Produtos', icon: Package },
   { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
   { href: '/settings/plans',        label: 'Planos',         icon: Layers },
   { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },

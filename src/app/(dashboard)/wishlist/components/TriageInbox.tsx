@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import {
   Sparkles, Loader2, CheckCircle2, XCircle, GitMerge, Plus, Lightbulb, Link2, Inbox,
 } from 'lucide-react'
@@ -40,6 +41,7 @@ export function TriageInbox({ signals }: { signals: any[] }) {
   }
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       {Array.from(byAccount.entries()).map(([account, list]) => (
         <div key={account} className="space-y-2">
@@ -50,6 +52,7 @@ export function TriageInbox({ signals }: { signals: any[] }) {
         </div>
       ))}
     </div>
+    </TooltipProvider>
   )
 }
 
@@ -86,9 +89,11 @@ function SignalCard({ signal }: { signal: any }) {
 
         {/* Insights da IA */}
         {!insights && (
-          <Button variant="secondary" size="sm" onClick={analyze} disabled={analyzing}>
-            {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Analisar (catálogo + duplicatas)
-          </Button>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="secondary" size="sm" onClick={analyze} disabled={analyzing}>
+              {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Analisar com IA (opcional)
+            </Button>
+          </TooltipTrigger><TooltipContent>Pergunta à IA se o pedido já existe no catálogo e busca pedidos parecidos de outros clientes.</TooltipContent></Tooltip>
         )}
 
         {insights && (
@@ -113,10 +118,12 @@ function SignalCard({ signal }: { signal: any }) {
                 {insights.matches.items.map((it) => (
                   <div key={it.item_id} className="flex items-center justify-between gap-2 text-xs bg-surface-card rounded-md px-2 py-1.5 border border-border-divider">
                     <span className="truncate">{it.title} <span className="text-content-secondary">· {it.demand_accounts} conta(s) · {Math.round(it.similarity * 100)}%</span></span>
-                    <Button size="sm" variant="ghost" className="h-7 px-2"
-                      onClick={() => act(() => promoteToExistingItem(signal.id, it.item_id, (signal.kind ?? 'new')))}>
-                      <Link2 className="w-3.5 h-3.5" /> Vincular
-                    </Button>
+                    <Tooltip><TooltipTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-7 px-2"
+                        onClick={() => act(() => promoteToExistingItem(signal.id, it.item_id, (signal.kind ?? 'new')))}>
+                        <Link2 className="w-3.5 h-3.5" /> Vincular
+                      </Button>
+                    </TooltipTrigger><TooltipContent>Agrupa este sinal ao item existente (soma a demanda).</TooltipContent></Tooltip>
                   </div>
                 ))}
               </div>
@@ -153,20 +160,28 @@ function SignalCard({ signal }: { signal: any }) {
 
         {/* Desfechos */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="outline" disabled={pending}
-            onClick={() => act(() => triageResolvedExisting(signal.id, insights?.catalog?.feature_id ?? null, null))}>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Já existe
-          </Button>
-          <Button size="sm" variant="outline" disabled={pending} onClick={() => { setPromoteKind('enhancement'); }}>
-            Existe, insuficiente → melhoria
-          </Button>
-          <Button size="sm" variant="outline" disabled={pending} onClick={() => { setPromoteKind('new'); }}>
-            Não temos → novo
-          </Button>
-          <Button size="sm" variant="ghost" className="text-content-secondary" disabled={pending}
-            onClick={() => act(() => dismissSignal(signal.id, null))}>
-            <XCircle className="w-4 h-4" /> Descartar
-          </Button>
+          <Tooltip><TooltipTrigger asChild>
+            <Button size="sm" variant="outline" disabled={pending}
+              onClick={() => act(() => triageResolvedExisting(signal.id, insights?.catalog?.feature_id ?? null, null))}>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Já existe
+            </Button>
+          </TooltipTrigger><TooltipContent>Marca como resolvido e liga à funcionalidade do catálogo. Não cria item.</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild>
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => { setPromoteKind('enhancement'); }}>
+              Existe, insuficiente → melhoria
+            </Button>
+          </TooltipTrigger><TooltipContent>Existe mas não atende: cria/vincula um item de melhoria.</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild>
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => { setPromoteKind('new'); }}>
+              Não temos → novo
+            </Button>
+          </TooltipTrigger><TooltipContent>Cria um item novo (ou vincula a um existente) a partir deste sinal.</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild>
+            <Button size="sm" variant="ghost" className="text-content-secondary" disabled={pending}
+              onClick={() => act(() => dismissSignal(signal.id, null))}>
+              <XCircle className="w-4 h-4" /> Descartar
+            </Button>
+          </TooltipTrigger><TooltipContent>Descarta o sinal (não vira item nem fica pendente).</TooltipContent></Tooltip>
         </div>
       </CardContent>
     </Card>
