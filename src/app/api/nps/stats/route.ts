@@ -62,6 +62,12 @@ export async function GET(request: Request) {
       stats.avg_score = Number((sum / responses.length).toFixed(1))
     }
 
+    console.log('[API/NPS/STATS] returning stats:', {
+      total: stats.total_responses,
+      from: dateFrom.toISOString(),
+      to: dateTo.toISOString()
+    });
+
     return NextResponse.json(stats)
   } catch (err: any) {
     console.error('[API/NPS/STATS] Error:', err)

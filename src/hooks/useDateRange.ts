@@ -99,7 +99,7 @@ function calculateDateRange(period: DateRangePeriod, customFrom?: Date, customTo
   }
 }
 
-export function useDateRange(defaultPeriod: DateRangePeriod = 'mtd') {
+export function useDateRange(defaultPeriod: DateRangePeriod = '30d') {
   const searchParams = useSearchParams()
   const router = useRouter()
 

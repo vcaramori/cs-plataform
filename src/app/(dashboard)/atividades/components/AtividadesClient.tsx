@@ -50,12 +50,15 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
       .order('due_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
 
-    // Tarefas excluídas (lixeira)
-    const { data: deleted } = await db
+    // Tarefas excluídas (lixeira) — na visão de time, sem filtro de dono
+    let deletedQuery = db
       .from('csm_tasks')
       .select('*, accounts(name)')
       .not('deleted_at', 'is', null)
-      .eq(teamFilter === 'mine' ? 'csm_id' : 'id', teamFilter === 'mine' ? userId : db.rpc)
+    if (teamFilter === 'mine') {
+      deletedQuery = deletedQuery.eq('csm_id', userId)
+    }
+    const { data: deleted } = await deletedQuery
       .order('deleted_at', { ascending: false })
       .limit(50)
 
