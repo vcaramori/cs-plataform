@@ -62,7 +62,7 @@ export async function runRAGPipeline(
     .map((c) => c.source_id)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase
 
   const results = await Promise.all([
     interactionIds.length > 0

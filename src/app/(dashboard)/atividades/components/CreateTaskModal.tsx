@@ -89,7 +89,7 @@ export function CreateTaskModal({ open, onOpenChange, onSaved, prefill, editTask
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
 
-    const db = supabase as any
+    const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
     let data: CsmTask | null = null
     let error: any = null
 

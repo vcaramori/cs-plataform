@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   let processedCount = 0
   let errorCount = 0

@@ -31,7 +31,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
   const [detailTask, setDetailTask] = useState<CsmTask | null>(null)
 
-  const db = supabase as any
+  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
   const loadTasks = useCallback(async () => {
     setLoading(true)

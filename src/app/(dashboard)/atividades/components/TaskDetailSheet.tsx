@@ -68,7 +68,7 @@ function initials(name: string | null | undefined): string {
 
 export function TaskDetailSheet({ task, open, onOpenChange, onEdit, onStatusChange }: Props) {
   const supabase = getSupabaseBrowserClient()
-  const db = supabase as any
+  const db = supabase
 
   const [comments, setComments] = useState<Comment[]>([])
   const [attachments, setAttachments] = useState<Attachment[]>([])

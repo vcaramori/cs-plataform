@@ -17,7 +17,7 @@ async function requireUser() {
 
 export async function createWorkflow(name: string) {
   const { supabase, user } = await requireUser()
-  const db = supabase as any
+  const db = supabase
   const { data, error } = await db.from('workflow_definitions')
     .insert({ name: name?.trim() || 'Novo fluxo', created_by: user.id }).select('id').single()
   if (error) throw new Error(error.message)
@@ -34,7 +34,7 @@ export async function createFromTemplate(templateKey: string) {
   const { supabase, user } = await requireUser()
   const tpl = WORKFLOW_TEMPLATES.find(t => t.key === templateKey)
   if (!tpl) throw new Error('Template não encontrado')
-  const db = supabase as any
+  const db = supabase
   const { data: def, error } = await db.from('workflow_definitions')
     .insert({ name: tpl.name, description: tpl.description, category: tpl.category, created_by: user.id })
     .select('id').single()
@@ -56,7 +56,7 @@ export async function saveGraph(workflowId: string, payload: {
   edges: { source_node_id: string; target_node_id: string; edge_label?: string | null }[]
 }) {
   const { supabase } = await requireUser()
-  const db = supabase as any
+  const db = supabase
   if (payload.name !== undefined || payload.description !== undefined) {
     await db.from('workflow_definitions').update({
       ...(payload.name !== undefined ? { name: payload.name } : {}),
@@ -96,7 +96,7 @@ async function syncTriggers(db: any, workflowId: string, isEnabled: boolean) {
 
 export async function publishWorkflow(workflowId: string) {
   const { supabase } = await requireUser()
-  const db = supabase as any
+  const db = supabase
   await db.from('workflow_definitions').update({ status: 'published', is_enabled: true, published_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', workflowId)
   await syncTriggers(db, workflowId, true)
   revalidatePath('/fluxos'); revalidatePath(`/fluxos/${workflowId}`)
@@ -105,7 +105,7 @@ export async function publishWorkflow(workflowId: string) {
 
 export async function setEnabled(workflowId: string, enabled: boolean) {
   const { supabase } = await requireUser()
-  const db = supabase as any
+  const db = supabase
   await db.from('workflow_definitions').update({ is_enabled: enabled, updated_at: new Date().toISOString() }).eq('id', workflowId)
   await db.from('workflow_triggers').update({ is_enabled: enabled }).eq('workflow_id', workflowId)
   revalidatePath('/fluxos')
@@ -136,7 +136,7 @@ export async function runManual(workflowId: string, accountId: string | null) {
 
 export async function decideApproval(approvalId: string, decision: 'approved' | 'rejected', comment?: string) {
   const { supabase, user } = await requireUser()
-  const db = supabase as any
+  const db = supabase
   const { data: appr } = await db.from('workflow_approvals').select('run_step_id, status').eq('id', approvalId).maybeSingle()
   if (!appr || appr.status !== 'pending') return { ok: false }
   await db.from('workflow_approvals').update({ status: decision, decided_by: user.id, decided_at: new Date().toISOString(), comment: comment ?? null }).eq('id', approvalId)

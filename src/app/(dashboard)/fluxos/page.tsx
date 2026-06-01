@@ -8,7 +8,7 @@ export default async function FluxosPage() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const db = supabase as any
+  const db = supabase
 
   const { data: workflows } = await db
     .from('workflow_definitions')

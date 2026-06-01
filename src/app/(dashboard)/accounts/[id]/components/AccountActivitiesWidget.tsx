@@ -31,7 +31,7 @@ export function AccountActivitiesWidget({ accountId, accountName }: Props) {
   const [tasks, setTasks] = useState<CsmTask[]>([])
   const [modalOpen, setModalOpen] = useState(false)
 
-  const db = supabase as any
+  const db = supabase
 
   useEffect(() => {
     db
@@ -41,7 +41,7 @@ export function AccountActivitiesWidget({ accountId, accountName }: Props) {
       .in('status', ['todo', 'in_progress', 'suggested'])
       .order('due_date', { ascending: true, nullsFirst: false })
       .limit(5)
-      .then(({ data }: { data: CsmTask[] | null }) => setTasks(data ?? []))
+      .then(({ data }) => setTasks((data as CsmTask[] | null) ?? []))
   }, [db, accountId])
 
   function handleSaved(task: CsmTask) {

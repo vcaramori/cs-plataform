@@ -14,7 +14,7 @@ export async function generateShadowScore(accountId: string): Promise<ShadowScor
   const supabase = getSupabaseAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any
+  const db = supabase
 
   // Busca contexto: últimas 10 interações + últimos 10 tickets
   const [{ data: interactions }, { data: tickets }] = await Promise.all([
