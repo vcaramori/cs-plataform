@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
     // RLS: CSM can see own, csm_senior/admin can see all
     const isSelf = profile.id === params.data.csmId
-    const canViewAll = ['csm_senior', 'admin'].includes(profile.role)
+    const canViewAll = ['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)
 
     if (!isSelf && !canViewAll) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

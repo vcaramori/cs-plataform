@@ -8,7 +8,7 @@ const QuerySchema = z.object({
   csmId: z.string().uuid().optional(),
 })
 
-const TEAM_ROLES = ['csm_senior', 'head_cs', 'admin']
+const TEAM_ROLES = ['csm_senior', 'head_cs', 'admin', 'super_admin']
 
 export async function GET(request: Request) {
   try {

@@ -35,7 +35,7 @@ export async function GET() {
   const { data: validCsms } = await supabase
     .from('profiles')
     .select('id')
-    .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
+    .in('role', ['csm', 'csm_senior', 'head_cs', 'account_manager', 'admin', 'super_admin'])
 
   const validCsmIds = new Set((validCsms || []).map(c => c.id))
 

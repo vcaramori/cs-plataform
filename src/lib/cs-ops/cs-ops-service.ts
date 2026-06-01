@@ -94,7 +94,7 @@ export class CSOperationsService {
     const { data: profiles } = await this.supabase
       .from('profiles')
       .select('id, full_name')
-      .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
+      .in('role', ['csm', 'csm_senior', 'head_cs', 'account_manager', 'admin', 'super_admin'])
 
     if (!profiles || profiles.length === 0) {
       return { suggestions: [], summary: { totalSuggestions: 0, potentialCapacityImprovement: 0 } }

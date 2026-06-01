@@ -13,7 +13,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * Indicador sem fonte de dado no período fica `null` (oculto na UI), nunca chumbado.
  */
 
-const TEAM_ROLES = ['csm', 'csm_senior', 'account_manager', 'admin']
+const TEAM_ROLES = ['csm', 'csm_senior', 'head_cs', 'account_manager', 'admin', 'super_admin']
 const INTERNAL_ACTIVITY = ['preparation', 'internal-meeting', 'strategy']
 const WEEKLY_HOURS = 40
 

@@ -22,8 +22,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Only csm_senior and admin can see rebalancing suggestions
-    if (!['csm_senior', 'admin'].includes(profile.role)) {
+    // Gestores podem ver sugestões de rebalanceamento
+    if (!['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (!profile || !['csm_senior', 'admin'].includes(profile.role)) {
+    if (!profile || !['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

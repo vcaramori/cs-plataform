@@ -22,8 +22,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Only csm_senior and admin can see team metrics
-    if (!['csm_senior', 'admin'].includes(profile.role)) {
+    // Gestores podem ver métricas do time
+    if (!['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const { data: csms } = await supabase
       .from('profiles')
       .select('id, role')
-      .in('role', ['csm', 'csm_senior', 'account_manager', 'admin'])
+      .in('role', ['csm', 'csm_senior', 'head_cs', 'account_manager', 'admin', 'super_admin'])
 
     // Calculate capacity for all CSMs
     const capacities = await Promise.all(
