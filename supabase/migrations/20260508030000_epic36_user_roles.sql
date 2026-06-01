@@ -72,11 +72,17 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trigger_sync_role_to_jwt ON public.profiles;
-CREATE TRIGGER trigger_sync_role_to_jwt
-  AFTER INSERT OR UPDATE ON public.profiles
+DROP TRIGGER IF EXISTS trigger_sync_role_to_jwt_insert ON public.profiles;
+CREATE TRIGGER trigger_sync_role_to_jwt_insert
+  AFTER INSERT ON public.profiles
   FOR EACH ROW
-  WHEN (OLD.role IS DISTINCT FROM NEW.role OR OLD IS NULL)
+  EXECUTE FUNCTION public.fn_sync_role_to_jwt();
+
+DROP TRIGGER IF EXISTS trigger_sync_role_to_jwt_update ON public.profiles;
+CREATE TRIGGER trigger_sync_role_to_jwt_update
+  AFTER UPDATE ON public.profiles
+  FOR EACH ROW
+  WHEN (OLD.role IS DISTINCT FROM NEW.role)
   EXECUTE FUNCTION public.fn_sync_role_to_jwt();
 
 -- Update critical RLS policies to respect role hierarchy
