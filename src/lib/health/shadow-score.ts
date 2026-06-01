@@ -110,7 +110,6 @@ escalation_risk, insufficient_data, sla_breached
     disableThinking: true,
     maxOutputTokens: 2048
   })
-  console.log(`[Shadow Score] Resposta bruta do ${provider}: ${raw}`)
 
   try {
     // Extração robusta de JSON: busca o primeiro '{' e o último '}'

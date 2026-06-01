@@ -12,7 +12,6 @@ export async function runAutomatedAccountAnalysis(
   userId?: string,
   sourceType: string = 'effort_sync_auto'
 ) {
-  console.log(`[AI Analysis] Iniciando análise unificada para a conta ${accountId}`)
   
   const supabase = getSupabaseAdminClient()
   const today = new Date().toISOString().slice(0, 10)
@@ -21,11 +20,9 @@ export async function runAutomatedAccountAnalysis(
     // 1. Risco Preditivo (Banner Laranja)
     // Nota: runPredictiveRiskAnalysis já persiste seu próprio resultado
     const riskResult = await runPredictiveRiskAnalysis(accountId)
-    console.log(`[AI Analysis] Risco Preditivo concluído:`, riskResult?.risk_score)
 
     // 2. Shadow Score (Gauge do Header)
     const healthResult = await generateShadowScore(accountId)
-    console.log(`[AI Analysis] Shadow Score gerado:`, healthResult.score)
 
     // 3. Persistência do Health Score
     const { error: healthError } = await supabase
@@ -48,7 +45,6 @@ export async function runAutomatedAccountAnalysis(
       throw healthError
     }
     
-    console.log(`[AI Analysis] Análise unificada finalizada com sucesso para ${accountId}`)
     return { riskResult, healthResult }
   } catch (error: any) {
     console.error(`[AI Analysis] Falha crítica na análise da conta ${accountId}:`, error.message)

@@ -131,7 +131,6 @@ Você receberá atualizações por email conforme seu ticket for processado.
     `
 
     if (!transporter) {
-      console.log('[Email] SMTP not configured. Logging email instead:')
       console.log({
         to: finalTo,
         subject: `${subjectPrefix}Seu ticket de suporte #${ticketNumber} foi criado`,
@@ -148,7 +147,6 @@ Você receberá atualizações por email conforme seu ticket for processado.
       html: htmlContent
     })
 
-    console.log(`[Email] Confirmation email sent to ${finalTo} for ticket ${ticket_id} (Original: ${email}):`, result.messageId)
     return result
   } catch (err) {
     console.error('[Email] Error sending confirmation email:', err)

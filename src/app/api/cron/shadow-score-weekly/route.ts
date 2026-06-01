@@ -33,7 +33,6 @@ export async function POST(request: Request) {
     )
   }
 
-  console.log(`[Shadow Score Weekly] Processing ${accounts.length} accounts`)
 
   let processed = 0
   let errors = 0
@@ -63,7 +62,6 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log(`[Shadow Score Weekly] Batch ${Math.ceil((i + 1) / BATCH_SIZE)}: ${processed} ok, ${errors} errors`)
   }
 
   return NextResponse.json({

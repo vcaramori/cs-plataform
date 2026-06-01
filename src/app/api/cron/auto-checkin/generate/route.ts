@@ -40,7 +40,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ generated: 0, skipped: 0 })
     }
 
-    console.log(`[Auto-Checkin Generate] Processing ${accounts.length} accounts`)
 
     for (const account of accounts) {
       try {
@@ -185,7 +184,6 @@ Retorne EXATAMENTE neste formato JSON:
         }
 
         generated++
-        console.log(`[Auto-Checkin] Generated check-in for account ${account.id}`)
       } catch (err: any) {
         errors.push(`Account ${account.id}: ${err.message}`)
       }

@@ -15,12 +15,9 @@ export type FullSLAPolicy = SLAPolicy & {
  * Primary choice is contract_id if provided.
  */
 export async function getPolicyForAccount(accountId: string, contractId?: string | null): Promise<FullSLAPolicy | null> {
-  console.log('[SLA Policies] Entering getPolicyForAccount. Account:', accountId, 'Contract:', contractId)
   let supabase;
   try {
-    console.log('[SLA Policies] Creating admin client...')
     supabase = createAdminClient()
-    console.log('[SLA Policies] Admin client created successfully')
   } catch (err) {
     console.error('[SLA Policies] Exception during createAdminClient:', err)
     throw err
@@ -36,18 +33,14 @@ export async function getPolicyForAccount(accountId: string, contractId?: string
     .eq('is_active', true)
 
   if (contractId) {
-    console.log('[SLA Policies] Querying by contract_id:', contractId)
     query = query.eq('contract_id', contractId)
   } else {
-    console.log('[SLA Policies] Querying by account_id:', accountId)
     query = query.eq('account_id', accountId)
   }
 
-  console.log('[SLA Policies] Executing query...')
   let result;
   try {
     result = await query.maybeSingle()
-    console.log('[SLA Policies] Query execution returned successfully. Data:', result.data, 'Error:', result.error)
   } catch (err) {
     console.error('[SLA Policies] Query execution threw an error:', err)
     throw err
@@ -63,7 +56,6 @@ export async function getPolicyForAccount(accountId: string, contractId?: string
 
   // Fallback to global standard SLA policy if no custom policy exists for contract/account
   if (!policy) {
-    console.log('[SLA Policies] Custom policy is null or use_global_standard is true. Querying global standard SLA...')
     const globalResult = await supabase
       .from('sla_policies')
       .select(`
@@ -143,7 +135,6 @@ export async function getBusinessHoursForAccount(accountId: string | null): Prom
 
   // Self-healing: Seed global default business hours (Mon-Fri, 09:00 - 18:00) if table is empty
   if (hours.length === 0) {
-    console.log('[SLA Policies] No business hours found in database. Seeding default global business hours (Mon-Fri, 09:00 - 18:00)...')
     const defaults = [
       { scope: 'global', dow: 1, start_time: '09:00', end_time: '18:00', is_active: true },
       { scope: 'global', dow: 2, start_time: '09:00', end_time: '18:00', is_active: true },

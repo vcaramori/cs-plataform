@@ -17,16 +17,13 @@ export async function POST(request: Request) {
   const errors: string[] = []
 
   try {
-    console.log('[Alert Analysis Cron] Starting alert analysis')
 
     const service = new AdvancedAlertsService(supabase)
 
     // Run all alert checks
     try {
-      console.log('[Alert Analysis Cron] Checking predictive churn...')
       const churnAlerts = await service.checkPredictiveChurn()
       alertsCreated += churnAlerts.length
-      console.log(`[Alert Analysis Cron] Created ${churnAlerts.length} churn alerts`)
     } catch (error: any) {
       errorCount++
       errors.push(`Churn check failed: ${error.message}`)
@@ -34,10 +31,8 @@ export async function POST(request: Request) {
     }
 
     try {
-      console.log('[Alert Analysis Cron] Detecting anomalies...')
       const anomalyAlerts = await service.detectAnomalies()
       alertsCreated += anomalyAlerts.length
-      console.log(`[Alert Analysis Cron] Created ${anomalyAlerts.length} anomaly alerts`)
     } catch (error: any) {
       errorCount++
       errors.push(`Anomaly detection failed: ${error.message}`)
@@ -45,10 +40,8 @@ export async function POST(request: Request) {
     }
 
     try {
-      console.log('[Alert Analysis Cron] Detecting sentiment triggers...')
       const sentimentAlerts = await service.detectSentimentTriggers()
       alertsCreated += sentimentAlerts.length
-      console.log(`[Alert Analysis Cron] Created ${sentimentAlerts.length} sentiment alerts`)
     } catch (error: any) {
       errorCount++
       errors.push(`Sentiment detection failed: ${error.message}`)
@@ -56,10 +49,8 @@ export async function POST(request: Request) {
     }
 
     try {
-      console.log('[Alert Analysis Cron] Detecting contract risks...')
       const contractAlerts = await service.detectContractRisk()
       alertsCreated += contractAlerts.length
-      console.log(`[Alert Analysis Cron] Created ${contractAlerts.length} contract alerts`)
     } catch (error: any) {
       errorCount++
       errors.push(`Contract risk detection failed: ${error.message}`)
@@ -67,10 +58,8 @@ export async function POST(request: Request) {
     }
 
     try {
-      console.log('[Alert Analysis Cron] Detecting adoption cliffs...')
       const cliffAlerts = await service.detectAdoptionCliffs()
       alertsCreated += cliffAlerts.length
-      console.log(`[Alert Analysis Cron] Created ${cliffAlerts.length} adoption cliff alerts`)
     } catch (error: any) {
       errorCount++
       errors.push(`Adoption cliff detection failed: ${error.message}`)

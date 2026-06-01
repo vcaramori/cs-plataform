@@ -54,7 +54,6 @@ export async function POST(req: Request) {
     const imapUser = emailSettings.imap_user || 'suporte@plannera.com.br'
 
     // 3. Disparar Sincronização IMAP Nativa
-    console.log(`[EmailSync] Buscando e-mails via IMAP na pasta: ${imapFolder}...`)
     
     let emails = []
     try {
@@ -71,7 +70,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Nenhum e-mail novo encontrado pelo IMAP.', created: 0 })
     }
 
-    console.log(`[EmailSync] ${emails.length} e-mails recebidos. Processando com IA...`)
 
     // 4. Preparar conteúdo para a IA
     const contentToProcess = emails.map((email: any, idx: number) => {
@@ -343,7 +341,6 @@ ${contentToProcess.substring(0, 25000)}
         // Criar Novo Ticket
         if (isAgentReply) {
           // Não cria novos tickets se for uma resposta órfã de agente
-          console.log(`[EmailSync] Ignorando e-mail de agente sem ticket correspondente: ${t.title}`)
           continue
         }
 

@@ -256,11 +256,9 @@ async function recordEscalation(
 
 export async function escalateSLAViolations() {
   try {
-    console.log("[SLA Escalation] Starting SLA escalation job...");
 
     const criticalTickets = await getCriticalTickets();
     if (criticalTickets.length === 0) {
-      console.log("[SLA Escalation] No critical tickets found");
       return { success: true, escalated: 0 };
     }
 

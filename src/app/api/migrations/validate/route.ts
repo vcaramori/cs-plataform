@@ -27,7 +27,6 @@ export async function GET(request: Request) {
     const results: any = {}
 
     // Check Story 23.1
-    console.log('Checking Story 23.1 — Playbook Governance...')
     const { data: playbook_tasks_info, error: pb_error } = await supabase
       .from('information_schema.columns')
       .select('column_name')
@@ -50,7 +49,6 @@ export async function GET(request: Request) {
     }
 
     // Check Story 14.2 — Check if alert_type enum has playbook_trigger
-    console.log('Checking Story 14.2 — Playbook Trigger Alert...')
     const { data: enum_data, error: enum_error } = await supabase
       .from('pg_enum')
       .select('enumlabel')
@@ -70,7 +68,6 @@ export async function GET(request: Request) {
     }
 
     // Check Story 15.1
-    console.log('Checking Story 15.1 — Auto Check-in Queue...')
     const { data: auto_checkin_info, error: ac_error } = await supabase
       .from('information_schema.tables')
       .select('table_name')

@@ -112,7 +112,6 @@ export async function POST(
   const contactName = contactRow?.name ?? invite.email
 
   // Disparo de e-mails via SMTP locais comentados temporariamente para evitar falhas de autenticação de MFA corporativo.
-  console.log('[PortalApprove] E-mail SMTP comentado temporariamente. Aprovado/Rejeitado com sucesso.');
 
   return NextResponse.json({ ok: true, action })
 }

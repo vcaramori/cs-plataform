@@ -44,7 +44,6 @@ export async function POST(request: Request) {
       .filter(f => f.endsWith('.sql'))
       .sort()
 
-    console.log(`Found ${migrationFiles.length} migration files`)
 
     // Get already applied migrations
     const { data: appliedMigrations } = await supabase
@@ -60,7 +59,6 @@ export async function POST(request: Request) {
       // Skip if already applied
       if (appliedSet.has(name)) {
         results.push({ name, status: 'skipped', reason: 'already_applied' })
-        console.log(`⏭️  ${name}`)
         continue
       }
 
@@ -68,7 +66,6 @@ export async function POST(request: Request) {
         const sqlPath = path.join(migrationsPath, file)
         const sql = fs.readFileSync(sqlPath, 'utf-8')
 
-        console.log(`📝 Applying ${name}...`)
 
         // Execute via admin client RPC
         const { error } = await supabase.rpc('exec_sql', { sql_text: sql })
@@ -105,7 +102,6 @@ export async function POST(request: Request) {
         await supabase.from('_migrations').insert({ name, sql })
 
         results.push({ name, status: 'applied' })
-        console.log(`✅ ${name}`)
       } catch (err: any) {
         const errMsg = err.message || 'Unknown error'
         results.push({ name, status: 'error', error: errMsg })

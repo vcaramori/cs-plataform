@@ -66,7 +66,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ sent: 0, skipped: 0 })
     }
 
-    console.log(`[Auto-Checkin Send] Processing ${queueItems.length} items`)
 
     for (const item of queueItems) {
       try {
@@ -143,10 +142,7 @@ export async function POST(request: Request) {
             text: body
           })
 
-          console.log(`[Auto-Checkin] Sent check-in email for account ${item.account_id} to ${finalTo} (Original: ${recipientEmail})`)
         } else {
-          console.log(`[Auto-Checkin] SMTP not configured, logging email instead`)
-          console.log(`To: ${finalTo}, Subject: ${subjectPrefix}${subject}`)
         }
 
         // Update queue item status

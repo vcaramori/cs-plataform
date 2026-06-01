@@ -39,11 +39,9 @@ async function send(to: string, subject: string, html: string, text: string) {
     const finalSubject = testRecipient ? `[TESTE → ${to}] ${subject}` : subject
 
     if (!transporter) {
-      console.log('[PortalEmail] SMTP não configurado. Log:', { to: finalTo, subject: finalSubject })
       return
     }
     const result = await transporter.sendMail({ from: EMAIL_FROM, to: finalTo, subject: finalSubject, html, text })
-    console.log(`[PortalEmail] Enviado para ${finalTo}: ${result.messageId}`)
     return result
   } catch (err) {
     console.error('[PortalEmail] Erro ao enviar:', err)

@@ -28,7 +28,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
 
-    console.log(`[Proactive Alerts Cron] Processing ${accounts.length} active accounts`)
 
     const alertService = new AlertService(supabase)
     const batchSize = 100

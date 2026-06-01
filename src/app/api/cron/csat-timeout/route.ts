@@ -22,7 +22,6 @@ export async function POST(request: Request) {
 
   const expired = expiredTokens?.length ?? 0
 
-  console.log(`[CSAT Timeout] ${expired} tokens expired without response as of ${new Date().toISOString()}`)
 
   return NextResponse.json({ expired, ran_at: new Date().toISOString() })
 }

@@ -152,23 +152,19 @@ async function assignTicket(
     );
   }
 
-  console.log(`[Auto-Assign] Assigned ticket ${ticketId} to ${csmName}`);
   return true;
 }
 
 export async function autoAssignTickets() {
   try {
-    console.log("[Auto-Assign] Starting auto-assignment job...");
 
     const availableCSMs = await getAvailableCSMs();
     if (availableCSMs.length === 0) {
-      console.log("[Auto-Assign] No CSMs available for assignment");
       return { success: true, assigned: 0 };
     }
 
     const unassignedTickets = await getUnassignedTickets();
     if (unassignedTickets.length === 0) {
-      console.log("[Auto-Assign] No unassigned tickets found");
       return { success: true, assigned: 0 };
     }
 

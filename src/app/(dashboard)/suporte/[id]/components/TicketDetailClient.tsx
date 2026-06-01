@@ -657,7 +657,6 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         }
         : { body: currentBody }
 
-      console.log(`[UI Reply] Sending to ticket ${ticket.id} with outcome: ${outcomeForApi}`)
       const res = await fetch(`/api/support-tickets/${ticket.id}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
