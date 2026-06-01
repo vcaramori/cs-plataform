@@ -80,38 +80,29 @@ export async function calcNPSScore(accountId: string): Promise<number> {
 }
 
 /**
- * Calculate Adoption Score: % of active features out of total features
- * Fetches latest adoption_metrics JSONB
- * Returns: (active_features / total_features) * 100
- * Default: 50 if no adoption data
+ * Calcula o Adoption Score: % de features adotadas sobre o total acompanhado.
+ * Fonte real: account_feature_adoption (adoption_status). A tabela
+ * adoption_metrics é genérica (metric_name/value) e NÃO guarda esse JSONB —
+ * o código antigo lia um shape inexistente e caía sempre no default 50.
+ * Retorna 50 quando não há dados de adoção para a conta.
  */
 export async function calcAdoptionScore(accountId: string): Promise<number> {
   const supabase = getSupabaseAdminClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
-
-  const { data, error } = await db
-    .from('adoption_metrics')
-    .select('adoption_metrics')
+  // cast: account_feature_adoption ainda não consta em database.types (ver TECH_DEBT #8)
+  const { data, error } = await (supabase as any)
+    .from('account_feature_adoption')
+    .select('adoption_status')
     .eq('account_id', accountId)
-    .order('created_at', { ascending: false })
-    .limit(1)
 
   if (error || !data || data.length === 0) {
-    console.warn(`[Adoption Score] No data for account ${accountId}`)
+    console.warn(`[Adoption Score] Sem dados de adoção para a conta ${accountId}`)
     return 50.0
   }
 
-  const metricsJson = data[0]?.adoption_metrics
-  if (!metricsJson) return 50.0
-
-  const activeFeatures = Number(metricsJson.active_features) || 0
-  const totalFeatures = Number(metricsJson.total_features) || 1
-
-  if (totalFeatures === 0) return 50.0
-
-  const score = (activeFeatures / totalFeatures) * 100
+  const total = data.length
+  const active = data.filter((r: any) => r.adoption_status === 'adopted').length
+  const score = (active / total) * 100
   return Math.round(Math.max(0, Math.min(100, score)) * 100) / 100
 }
 

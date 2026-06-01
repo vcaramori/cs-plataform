@@ -20,11 +20,12 @@ export async function POST(request: Request) {
   const errors: string[] = []
 
   try {
-    // Fetch all active accounts
+    // Busca todas as contas. (Antes filtrava por accounts.contract_status='active',
+    // coluna inexistente — o Postgres rejeitava a query e o cron falhava. O conceito
+    // de "ativo" mora em contracts.status; processar todas as contas é seguro aqui.)
     const { data: accounts, error: accountsError } = await db
       .from('accounts')
       .select('id, name, health_score')
-      .eq('contract_status', 'active')
 
     if (accountsError || !accounts) {
       const errorMsg = accountsError?.message || 'Failed to fetch accounts'
