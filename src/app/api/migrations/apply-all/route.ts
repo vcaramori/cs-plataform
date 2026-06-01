@@ -6,10 +6,17 @@ import path from 'path'
 export const maxDuration = 120
 
 export async function POST(request: Request) {
+  // Endpoint executa SQL arbitrário (exec_sql) — desligado por padrão.
+  // Habilite intencionalmente com ENABLE_MIGRATION_ENDPOINT=true só quando for
+  // aplicar migrations; prefira o Supabase CLI (`supabase db push`).
+  if (process.env.ENABLE_MIGRATION_ENDPOINT !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const authHeader = request.headers.get('authorization')
   const expectedAuth = `Bearer ${process.env.API_SECRET}`
 
-  if (!authHeader || authHeader !== expectedAuth) {
+  if (!process.env.API_SECRET || !authHeader || authHeader !== expectedAuth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

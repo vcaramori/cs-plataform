@@ -4,9 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 export const maxDuration = 60
 
 export async function POST(request: Request) {
+  // Executa SQL arbitrário (exec) — desligado por padrão. Ver apply-all.
+  if (process.env.ENABLE_MIGRATION_ENDPOINT !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   // Check authorization header
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.API_SECRET}`) {
+  if (!process.env.API_SECRET || authHeader !== `Bearer ${process.env.API_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

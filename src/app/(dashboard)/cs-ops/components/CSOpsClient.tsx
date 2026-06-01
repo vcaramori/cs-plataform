@@ -13,7 +13,7 @@ import {
   ArrowRightLeft, Loader2, TrendingUp, Clock, Star
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { CockpitDashboard } from './CockpitDashboard'
+import { CockpitDashboard, type CockpitData } from './CockpitDashboard'
 import { ProductivityDashboard } from './ProductivityDashboard'
 
 interface CSM { id: string; role: string }
@@ -62,13 +62,6 @@ const WORKLOAD_LABELS = {
   balanced: 'Balanceado',
   at_capacity: 'No Limite',
   overloaded: 'Sobrecarregado',
-}
-
-interface CockpitData {
-  accountsHealth: any[]
-  delayedPlaybooks: any[]
-  openRisks: any[]
-  unassignedAccounts: any[]
 }
 
 export function CSOpsClient({ csms }: { csms: CSM[] }) {

@@ -169,9 +169,32 @@ export async function GET(request: Request) {
     })
   }
 
+  // Filtro de adoção: média de adoption_pct por conta (account_feature_adoption)
   if (parsed.data.adoption_min !== undefined || parsed.data.adoption_max !== undefined) {
-    // adoption filtering would require joining with adoption table
-    // Placeholder for future implementation
+    const ids = filtered.map((a: any) => a.id)
+    if (ids.length > 0) {
+      // cast: account_feature_adoption ainda não está em database.types (ver TECH_DEBT #8)
+      const { data: adoptionRows } = await (supabase as any)
+        .from('account_feature_adoption')
+        .select('account_id, adoption_pct')
+        .in('account_id', ids)
+
+      const agg = new Map<string, { sum: number; n: number }>()
+      for (const r of (adoptionRows as any[]) || []) {
+        const cur = agg.get(r.account_id) ?? { sum: 0, n: 0 }
+        cur.sum += Number(r.adoption_pct) || 0
+        cur.n += 1
+        agg.set(r.account_id, cur)
+      }
+
+      filtered = filtered.filter((a: any) => {
+        const e = agg.get(a.id)
+        const avg = e && e.n > 0 ? e.sum / e.n : 0
+        if (parsed.data.adoption_min !== undefined && avg < parsed.data.adoption_min) return false
+        if (parsed.data.adoption_max !== undefined && avg > parsed.data.adoption_max) return false
+        return true
+      })
+    }
   }
 
   return NextResponse.json(filtered)
