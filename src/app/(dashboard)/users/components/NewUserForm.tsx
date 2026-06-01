@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SearchableSelect } from '@/components/ui/searchable-select'
+import { ImageUpload } from '@/components/ui/image-upload'
 import { Loader2, Plus, UserPlus, Key } from 'lucide-react'
 import { toast } from 'sonner'
 import type { UserRole } from '@/lib/supabase/types'
@@ -27,6 +28,7 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [selectedRole, setSelectedRole] = useState(
     roles.find(r => r.name.toLowerCase() === 'csm')?.name || roles[0]?.name || ''
   )
@@ -45,7 +47,7 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName, role: selectedRole }),
+        body: JSON.stringify({ email, password, full_name: fullName, role: selectedRole, avatar_url: avatarUrl || null }),
       })
 
       if (!res.ok) {
@@ -54,10 +56,11 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
       }
 
       const newUser = await res.json()
-      onUserCreated({ ...newUser, user_type: 'internal', last_sign_in_at: null, created_at: new Date().toISOString() })
+      onUserCreated({ ...newUser, user_type: 'internal', avatar_url: avatarUrl || null, last_sign_in_at: null, created_at: new Date().toISOString() })
       setFullName('')
       setEmail('')
       setPassword('')
+      setAvatarUrl('')
       toast.success('Membro cadastrado com sucesso!')
     } catch (e: any) {
       toast.error(e.message)
@@ -80,6 +83,11 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold text-content-primary ml-1 uppercase tracking-widest">Foto do Integrante</Label>
+            <ImageUpload value={avatarUrl} onChange={setAvatarUrl} bucket="avatars" disabled={creating} />
+          </div>
+
           <div className="space-y-1.5">
             <Label className="text-[10px] font-bold text-content-primary ml-1 uppercase tracking-widest">Nome Completo *</Label>
             <Input

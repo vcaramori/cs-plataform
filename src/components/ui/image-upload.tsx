@@ -18,9 +18,11 @@ interface ImageUploadProps {
   value?: string
   onChange: (url: string) => void
   disabled?: boolean
+  /** Bucket de destino no Storage. Default: 'client-logos'. */
+  bucket?: string
 }
 
-export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, disabled, bucket = 'client-logos' }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,7 +46,7 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
 
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('bucket', 'client-logos')
+      formData.append('bucket', bucket)
 
       const res = await fetch('/api/storage/upload', {
         method: 'POST',

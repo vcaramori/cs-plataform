@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   try {
     const admin = getSupabaseAdminClient()
     const body = await request.json()
-    const { email, password, full_name, role } = body
+    const { email, password, full_name, role, avatar_url } = body
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email e senha sao obrigatorios' }, { status: 400 })
@@ -86,6 +86,8 @@ export async function POST(request: Request) {
         full_name: full_name || email.split('@')[0],
         role: role || 'CSM',
         is_active: true,
+        user_type: 'internal',
+        avatar_url: avatar_url || null,
       })
       .eq('id', userId)
 
@@ -99,6 +101,8 @@ export async function POST(request: Request) {
       full_name: full_name || email.split('@')[0],
       role: role || 'CSM',
       is_active: true,
+      user_type: 'internal',
+      avatar_url: avatar_url || null,
     }, { status: 201 })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

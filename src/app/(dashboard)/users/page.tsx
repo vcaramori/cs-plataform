@@ -45,6 +45,7 @@ export default async function UsersPage() {
       role: p?.role || 'CSM',
       is_active: p?.is_active !== false,
       user_type: (p as any)?.user_type || 'internal',
+      avatar_url: (p as any)?.avatar_url || null,
     }
   })
 

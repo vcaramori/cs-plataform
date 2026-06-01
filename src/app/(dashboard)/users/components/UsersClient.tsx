@@ -22,6 +22,7 @@ type User = {
   role: string
   is_active: boolean
   user_type: string
+  avatar_url?: string | null
 }
 
 type CustomRole = {
@@ -41,20 +42,29 @@ interface UsersClientProps {
 export function UsersClient({ initialUsers, roles, currentUserRole, currentUserId }: UsersClientProps) {
   const [users, setUsers] = useState<User[]>(initialUsers)
   const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<'internal' | 'external'>('internal')
   const [editedRoles, setEditedRoles] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
   const canManage = hasPermission(currentUserRole, 'manage:users')
 
+  const counts = useMemo(() => ({
+    internal: users.filter(u => u.user_type !== 'external').length,
+    external: users.filter(u => u.user_type === 'external').length,
+  }), [users])
+
   const filteredUsers = useMemo(() => {
-    if (!search.trim()) return users
+    const byType = users.filter(u =>
+      tab === 'external' ? u.user_type === 'external' : u.user_type !== 'external'
+    )
+    if (!search.trim()) return byType
     const q = search.toLowerCase()
-    return users.filter(u =>
+    return byType.filter(u =>
       u.full_name.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.role.toLowerCase().includes(q)
     )
-  }, [users, search])
+  }, [users, search, tab])
 
   const hasChanges = Object.keys(editedRoles).length > 0
 
@@ -132,10 +142,36 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
       {/* User List */}
       <div className={cn(canManage ? 'lg:col-span-2' : 'lg:col-span-3')}>
         <Card className="border border-border-divider shadow-md bg-surface-card">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 space-y-4">
+            {/* Abas: Internos x Externos */}
+            <div className="flex items-center gap-1 p-1 bg-surface-background rounded-xl w-fit">
+              {([
+                { key: 'internal' as const, label: 'Internos', count: counts.internal },
+                { key: 'external' as const, label: 'Externos', count: counts.external },
+              ]).map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 h-9 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all',
+                    tab === t.key
+                      ? 'bg-surface-card text-content-primary shadow-sm'
+                      : 'text-content-secondary/60 hover:text-content-primary'
+                  )}
+                >
+                  {t.label}
+                  <span className={cn(
+                    'px-1.5 py-0.5 rounded-full text-[9px]',
+                    tab === t.key ? 'bg-primary/10 text-primary' : 'bg-content-secondary/10 text-content-secondary/60'
+                  )}>
+                    {t.count}
+                  </span>
+                </button>
+              ))}
+            </div>
             <div className="flex items-center justify-between gap-4">
               <CardTitle className="text-sm font-bold uppercase tracking-widest text-content-primary">
-                Membros da Equipe
+                {tab === 'external' ? 'Usuários Externos' : 'Membros da Equipe'}
               </CardTitle>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />

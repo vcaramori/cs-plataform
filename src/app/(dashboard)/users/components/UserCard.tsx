@@ -21,6 +21,7 @@ type User = {
   role: string
   is_active: boolean
   user_type: string
+  avatar_url?: string | null
 }
 
 interface UserCardProps {
@@ -62,14 +63,26 @@ export function UserCard({
     >
       {/* Left: Avatar + Info */}
       <div className="flex items-center gap-4 min-w-0">
-        <div className={cn(
-          'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0',
-          isSuperAdmin
-            ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
-            : 'bg-primary/10 border border-primary/20 text-primary'
-        )}>
-          {initials}
-        </div>
+        {user.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={user.avatar_url}
+            alt={user.full_name}
+            className={cn(
+              'w-10 h-10 rounded-xl object-cover shrink-0 border',
+              isSuperAdmin ? 'border-amber-500/30' : 'border-primary/20'
+            )}
+          />
+        ) : (
+          <div className={cn(
+            'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0',
+            isSuperAdmin
+              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
+              : 'bg-primary/10 border border-primary/20 text-primary'
+          )}>
+            {initials}
+          </div>
+        )}
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-content-primary text-sm font-bold tracking-tight uppercase truncate">
