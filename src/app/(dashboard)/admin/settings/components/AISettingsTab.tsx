@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 
 // ─── Provider Definitions ───────────────────────────────────────────────────
 
-type LLMProvider = 'gemini' | 'claude' | 'openai' | 'groq'
+type LLMProvider = 'gemini' | 'claude' | 'openai' | 'groq' | 'openrouter'
 
 interface ProviderDef {
   id: LLMProvider
@@ -74,6 +74,20 @@ const PROVIDERS: ProviderDef[] = [
       { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant (Ultra-rápido, free tier)' },
       { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B (32K contexto)' },
       { id: 'gemma2-9b-it', label: 'Gemma 2 9B (Google)' },
+    ],
+    embeddingModels: [],
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    supportsEmbeddings: false,
+    textModels: [
+      { id: 'google/gemini-2.5-flash:free', label: 'Gemini 2.5 Flash (Free)' },
+      { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B Instruct (Free)' },
+      { id: 'qwen/qwen-2.5-72b-instruct:free', label: 'Qwen 2.5 72B Instruct (Free)' },
+      { id: 'deepseek/deepseek-chat:free', label: 'DeepSeek Chat (Free)' },
+      { id: 'nvidia/nemotron-3-nano-30b-a3b:free', label: 'Nemotron Nano 30B (Free)' },
+      { id: 'openrouter/auto', label: 'OpenRouter Auto (Best Free/Cheap)' },
     ],
     embeddingModels: [],
   },
@@ -233,14 +247,14 @@ const DEFAULT_AI: AIValues = {
 export function AISettingsTab() {
   const [aiValues, setAiValues] = useState<AIValues>(DEFAULT_AI)
   const [apiKeys, setApiKeys] = useState<Record<LLMProvider, string>>({
-    gemini: '', claude: '', openai: '', groq: '',
+    gemini: '', claude: '', openai: '', groq: '', openrouter: '',
   })
   const [savedKeys, setSavedKeys] = useState<Record<LLMProvider, boolean>>({
-    gemini: false, claude: false, openai: false, groq: false,
+    gemini: false, claude: false, openai: false, groq: false, openrouter: false,
   })
   const [testingProvider, setTestingProvider] = useState<LLMProvider | null>(null)
   const [testResults, setTestResults] = useState<Record<LLMProvider, 'ok' | 'fail' | null>>({
-    gemini: null, claude: null, openai: null, groq: null,
+    gemini: null, claude: null, openai: null, groq: null, openrouter: null,
   })
   const [instructions, setInstructions] = useState<Record<string, string>>(() =>
     Object.fromEntries(INSTRUCTION_CONFIGS.map(c => [c.key, '']))
@@ -271,6 +285,7 @@ export function AISettingsTab() {
           setSavedKeys({
             gemini: !!keys.gemini, claude: !!keys.claude,
             openai: !!keys.openai, groq: !!keys.groq,
+            openrouter: !!keys.openrouter,
           })
         }
         const loaded: Record<string, string> = {}
@@ -371,7 +386,7 @@ export function AISettingsTab() {
     setSaving(true)
     try {
       const llmKeys: Record<string, string> = {}
-      for (const p of ['gemini', 'claude', 'openai', 'groq'] as LLMProvider[]) {
+      for (const p of ['gemini', 'claude', 'openai', 'groq', 'openrouter'] as LLMProvider[]) {
         if (apiKeys[p].trim()) llmKeys[p] = apiKeys[p]
       }
 
@@ -391,7 +406,7 @@ export function AISettingsTab() {
       if (!res.ok) throw new Error(data.error)
 
       // Update saved keys state
-      for (const p of ['gemini', 'claude', 'openai', 'groq'] as LLMProvider[]) {
+      for (const p of ['gemini', 'claude', 'openai', 'groq', 'openrouter'] as LLMProvider[]) {
         if (apiKeys[p].trim()) {
           setSavedKeys(v => ({ ...v, [p]: true }))
           setApiKeys(v => ({ ...v, [p]: '' }))
