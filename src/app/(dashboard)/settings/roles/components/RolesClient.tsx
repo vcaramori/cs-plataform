@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PLATFORM_MODULES } from '@/lib/auth/modules'
+import { PLATFORM_MODULES, applyPermissionToggle } from '@/lib/auth/modules'
 import type { PermissionRow } from '@/lib/auth/modules'
 import type { UserRole } from '@/lib/supabase/types'
 import { RolesList } from './RolesList'
@@ -97,7 +97,7 @@ export function RolesClient({ initialRoles, currentUserRole }: RolesClientProps)
   function onPermissionChange(module: string, action: keyof Omit<PermissionRow, 'module' | 'label'>, checked: boolean) {
     if (!selectedRole) return
     const updatedPerms = selectedRole.permissions.map(p =>
-      p.module === module ? { ...p, [action]: checked } : p
+      p.module === module ? applyPermissionToggle(p, action, checked) : p
     )
     setSelectedRole({ ...selectedRole, permissions: updatedPerms })
   }

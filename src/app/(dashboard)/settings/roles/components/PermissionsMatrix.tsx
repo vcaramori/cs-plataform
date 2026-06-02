@@ -70,12 +70,13 @@ export function PermissionsMatrix({ selectedRole, onPermissionChange, onSaved }:
     )
   }
 
-  const actions: { key: keyof Omit<PermissionRow, 'module' | 'label'>; label: string }[] = [
+  const actions: { key: keyof Omit<PermissionRow, 'module' | 'label'>; label: string; title?: string }[] = [
     { key: 'view', label: 'Visualizar' },
     { key: 'create', label: 'Criar' },
     { key: 'edit', label: 'Editar' },
     { key: 'delete', label: 'Excluir' },
     { key: 'export', label: 'Exportar' },
+    { key: 'view_team', label: 'Escopo Geral', title: 'Ligado: vê dados de todos. Desligado: vê apenas os próprios (contas onde é CSM).' },
   ]
 
   return (
@@ -118,19 +119,19 @@ export function PermissionsMatrix({ selectedRole, onPermissionChange, onSaved }:
 
         <div className="border border-border-divider rounded-2xl overflow-hidden shadow-sm bg-surface-card">
           <div className="overflow-x-auto scrollbar-thin">
-            <div className="min-w-[768px]">
+            <div className="min-w-[860px]">
               {/* Header */}
-              <div className="grid grid-cols-7 bg-surface-background/70 border-b border-border-divider px-5 py-2.5 text-[9px] font-black uppercase tracking-widest text-content-secondary">
+              <div className="grid grid-cols-8 bg-surface-background/70 border-b border-border-divider px-5 py-2.5 text-[9px] font-black uppercase tracking-widest text-content-secondary">
                 <div className="col-span-2">Modulo / Tela</div>
                 {actions.map(a => (
-                  <div key={a.key} className="text-center">{a.label}</div>
+                  <div key={a.key} className="text-center" title={a.title}>{a.label}</div>
                 ))}
               </div>
 
               {/* Rows */}
               <div className="divide-y divide-border-divider">
                 {selectedRole.permissions.map(p => (
-                  <div key={p.module} className="grid grid-cols-7 px-5 py-2.5 items-center gap-2 hover:bg-surface-background/20 transition-colors">
+                  <div key={p.module} className="grid grid-cols-8 px-5 py-2.5 items-center gap-2 hover:bg-surface-background/20 transition-colors">
                     <div className="col-span-2 space-y-0.5">
                       <p className="text-xs font-extrabold text-content-primary leading-tight">{p.label}</p>
                       <p className="text-[8px] text-content-secondary font-mono tracking-tight opacity-40">module:{p.module}</p>
