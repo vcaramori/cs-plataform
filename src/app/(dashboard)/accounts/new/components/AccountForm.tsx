@@ -169,8 +169,16 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   const cepValue = watch('cep')
 
   useEffect(() => {
-    fetch('/api/users').then(r => r.json()).then(setUsers).catch(console.error)
-    fetch('/api/product/plans').then(r => r.json()).then(setPlans).catch(console.error)
+    // Garante arrays: rotas podem retornar { error } (ex.: CSM sem permissão em
+    // /api/users), o que quebraria os .map() abaixo e derrubaria a página.
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(data => setUsers(Array.isArray(data) ? data : []))
+      .catch(console.error)
+    fetch('/api/product/plans')
+      .then(r => r.json())
+      .then(data => setPlans(Array.isArray(data) ? data : []))
+      .catch(console.error)
   }, [])
 
   useEffect(() => {

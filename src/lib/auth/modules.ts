@@ -48,3 +48,25 @@ export function makeDefaultPermissions(): PermissionRow[] {
     view_team: false,
   }))
 }
+
+export type PermissionAction = keyof Omit<PermissionRow, 'module' | 'label'>
+
+/**
+ * Aplica um toggle de permissão a uma linha, com as regras de UX do cadastro de perfil:
+ * - desligar "view" (Visualizar) → limpa TUDO (sem view não há acesso, e some do sidebar).
+ * - ligar "create" (Criar) → marca TUDO true (inclui Escopo Geral) p/ facilitar o cadastro.
+ * - caso contrário → apenas alterna o campo.
+ */
+export function applyPermissionToggle(
+  row: PermissionRow,
+  action: PermissionAction,
+  checked: boolean
+): PermissionRow {
+  if (action === 'view' && !checked) {
+    return { ...row, view: false, create: false, edit: false, delete: false, export: false, view_team: false }
+  }
+  if (action === 'create' && checked) {
+    return { ...row, view: true, create: true, edit: true, delete: true, export: true, view_team: true }
+  }
+  return { ...row, [action]: checked }
+}
