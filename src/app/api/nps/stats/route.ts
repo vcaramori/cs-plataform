@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     const db = admin as any
 
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role)
+    const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
 
     let myAccounts: any[] = []
     if (isAdmin) {

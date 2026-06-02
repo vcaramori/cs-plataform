@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role)
+  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
 
   if (!isAdmin) {
     if (accountId) {

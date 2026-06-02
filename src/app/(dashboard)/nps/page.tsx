@@ -15,7 +15,7 @@ export default async function NPSPage() {
   }
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role)
+  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
 
   let accountsQuery = supabase.from('accounts').select('id, name').order('name')
   if (!isAdmin) {
