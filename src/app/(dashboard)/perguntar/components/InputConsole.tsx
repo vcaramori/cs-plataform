@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Send } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useRef, useEffect } from 'react'
 
 interface InputConsoleProps {
   input: string
@@ -10,6 +12,7 @@ interface InputConsoleProps {
   handleSend: () => void
   handleKeyDown: (e: React.KeyboardEvent) => void
   isLoading: boolean
+  emptyMode?: boolean
 }
 
 export function InputConsole({
@@ -18,9 +21,23 @@ export function InputConsole({
   handleSend,
   handleKeyDown,
   isLoading,
+  emptyMode = false,
 }: InputConsoleProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (!isLoading && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [isLoading])
+
   return (
-    <div className="px-4 pb-3 pt-6 z-30 bg-gradient-to-t from-surface-background via-surface-background to-transparent">
+    <div className={cn(
+      "px-4 z-30 transition-all duration-500",
+      emptyMode 
+        ? "pt-2 pb-2" 
+        : "pb-3 pt-6 bg-gradient-to-t from-surface-background via-surface-background to-transparent"
+    )}>
       <div className="max-w-4xl mx-auto relative">
         <div className="relative group transition-all duration-500">
           <div className="absolute -inset-3 bg-gradient-to-r from-plannera-orange/10 via-plannera-sop/10 to-plannera-orange/10 rounded-2xl blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
@@ -28,6 +45,7 @@ export function InputConsole({
           <div className="relative flex items-end gap-2 bg-surface-card border border-border-divider rounded-2xl p-3 shadow-[0_10px_30px_rgba(0,0,0,0.1)] focus-within:shadow-[0_10px_40px_rgba(var(--plannera-orange-rgb),0.08)] focus-within:border-plannera-orange/40 transition-all duration-300">
             <div className="flex-1 flex flex-col gap-1 min-w-0">
               <Textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
