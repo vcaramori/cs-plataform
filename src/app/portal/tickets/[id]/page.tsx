@@ -10,7 +10,7 @@ export default async function PortalTicketDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { account } = await requirePortalAuth()
+  const { account, accounts } = await requirePortalAuth()
   const db = getSupabaseAdminClient() as any
 
   const { data: ticket } = await db
@@ -22,14 +22,14 @@ export default async function PortalTicketDetailPage({
       sla_events(id, event_type, occurred_at)
     `)
     .eq('id', id)
-    .eq('account_id', account.id)   // garante que só vê tickets da sua conta
+    .in('account_id', accounts.map((a) => a.id))   // só tickets das contas onde é stakeholder
     .single()
 
   if (!ticket) notFound()
 
   return (
     <div className="min-h-screen bg-surface-background">
-      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} />
+      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} accounts={accounts} currentAccountId={account.id} />
       <main className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
         <PortalTicketDetailClient ticket={ticket} />
       </main>

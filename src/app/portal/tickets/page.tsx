@@ -4,7 +4,7 @@ import { PortalHeader } from '../_components/PortalHeader'
 import { PortalTicketsClient } from './PortalTicketsClient'
 
 export default async function PortalTicketsPage() {
-  const { account } = await requirePortalAuth()
+  const { account, accounts } = await requirePortalAuth()
   const db = getSupabaseAdminClient() as any
 
   const { data: tickets } = await db
@@ -15,7 +15,7 @@ export default async function PortalTicketsPage() {
 
   return (
     <div className="min-h-screen bg-surface-background">
-      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} />
+      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} accounts={accounts} currentAccountId={account.id} />
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
         <PortalTicketsClient tickets={tickets ?? []} accountName={account.name} />
       </main>

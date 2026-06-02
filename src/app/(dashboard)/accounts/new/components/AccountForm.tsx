@@ -178,7 +178,8 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
       .then(r => r.json())
       .then(async data => {
         if (Array.isArray(data) && data.length > 0) {
-          setUsers(data)
+          // Apenas usuários internos podem ser CSM/Vendedor (exclui externos do portal)
+          setUsers(data.filter((u: any) => u.user_type !== 'external'))
           return
         }
         const { data: { user } } = await getSupabaseBrowserClient().auth.getUser()

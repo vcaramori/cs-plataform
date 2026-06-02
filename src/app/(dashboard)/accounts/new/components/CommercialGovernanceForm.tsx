@@ -134,7 +134,7 @@ export function CommercialGovernanceForm({ rules, contracts, onChange }: Commerc
               </div>
 
               <div className="col-span-12 md:col-span-4 space-y-2">
-                <Label className={LABEL}>Contexto</Label>
+                <Label className={LABEL}>Contrato</Label>
                 <Select
                   value={rule.contract_id || 'global'}
                   onValueChange={(v) => updateRule(rule.id, { contract_id: v === 'global' || v.startsWith('draft-contract-') ? null : v })}

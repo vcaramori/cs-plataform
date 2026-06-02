@@ -4,7 +4,7 @@ import { PortalHeader } from '../_components/PortalHeader'
 import { PortalDashboardClient } from './PortalDashboardClient'
 
 export default async function PortalDashboardPage() {
-  const { account, profile } = await requirePortalAuth()
+  const { account, accounts, profile } = await requirePortalAuth()
   const db = getSupabaseAdminClient() as any
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -22,7 +22,7 @@ export default async function PortalDashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-background">
-      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} />
+      <PortalHeader accountName={account.name} accountLogoUrl={account.logo_url} accounts={accounts} currentAccountId={account.id} />
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
         <PortalDashboardClient
           accountName={account.name}

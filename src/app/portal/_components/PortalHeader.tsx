@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 interface PortalHeaderProps {
   accountName: string
   accountLogoUrl: string | null
+  accounts?: { id: string; name: string; logo_url: string | null }[]
+  currentAccountId?: string
 }
 
 const NAV = [
@@ -18,7 +20,7 @@ const NAV = [
   { href: '/portal/tickets',   label: 'Chamados',    icon: Ticket },
 ]
 
-export function PortalHeader({ accountName, accountLogoUrl }: PortalHeaderProps) {
+export function PortalHeader({ accountName, accountLogoUrl, accounts = [], currentAccountId }: PortalHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -27,6 +29,11 @@ export function PortalHeader({ accountName, accountLogoUrl }: PortalHeaderProps)
     await supabase.auth.signOut()
     toast.success('Sessão encerrada')
     router.push('/portal/login')
+  }
+
+  function switchAccount(id: string) {
+    document.cookie = `portal_account=${id}; path=/; max-age=31536000`
+    router.refresh()
   }
 
   return (
@@ -55,9 +62,22 @@ export function PortalHeader({ accountName, accountLogoUrl }: PortalHeaderProps)
             />
           )}
           <div className="hidden sm:block h-5 w-px bg-border-divider" />
-          <span className="hidden sm:block text-xs font-bold text-content-secondary uppercase tracking-widest truncate max-w-[160px]">
-            {accountName}
-          </span>
+          {accounts.length > 1 ? (
+            <select
+              value={currentAccountId}
+              onChange={(e) => switchAccount(e.target.value)}
+              className="hidden sm:block text-xs font-bold text-content-secondary uppercase tracking-widest bg-transparent border border-border-divider rounded-lg px-2 py-1 max-w-[200px] cursor-pointer focus:outline-none focus:border-plannera-orange"
+              aria-label="Selecionar cliente"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="hidden sm:block text-xs font-bold text-content-secondary uppercase tracking-widest truncate max-w-[160px]">
+              {accountName}
+            </span>
+          )}
         </div>
 
         {/* Nav */}
