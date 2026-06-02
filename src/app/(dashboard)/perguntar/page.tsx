@@ -21,14 +21,16 @@ export default async function PerguntarPage() {
   const { data: accounts } = await accountsQuery
 
   return (
-    <PageContainer noPadding className="flex flex-col h-full min-h-0 overflow-hidden px-4 pt-4 pb-3 md:px-8">
-      <ModuleHeader
-        title="Plannera Assistant"
-        subtitle="Inteligência de Portfólio, Análise Preditiva e RAG em Tempo Real"
-        iconName="Sparkles"
-        className="mb-4"
-      />
-      <div className="flex-1 mt-3 min-h-0 overflow-hidden">
+    <PageContainer noPadding className="flex flex-col h-full min-h-0 overflow-hidden pt-4 pb-0">
+      <div className="px-4 md:px-8">
+        <ModuleHeader
+          title="Plannera Assistant"
+          subtitle="Inteligência de Portfólio, Análise Preditiva e RAG em Tempo Real"
+          iconName="Sparkles"
+          className="mb-2"
+        />
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden relative">
         <PerguntarClient accounts={accounts ?? []} />
       </div>
     </PageContainer>

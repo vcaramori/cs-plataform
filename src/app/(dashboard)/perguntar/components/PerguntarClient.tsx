@@ -114,26 +114,27 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
   }
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden bg-surface-background/30 rounded-2xl border border-border-divider/50 shadow-2xl">
-      {/* Scope Selector Bar */}
-      <ScopeSelectorBar
-        accounts={accounts}
-        selectedAccountId={selectedAccountId}
-        setSelectedAccountId={setSelectedAccountId}
-        selectedAccount={selectedAccount}
-        ragMode={ragMode}
-        setRagMode={setRagMode}
-        onExport={handleExport}
-        hasMessages={messages.length > 0}
-      />
+    <div className="flex flex-col h-full relative w-full">
+      <div className="px-4 md:px-8 flex-none z-10 relative">
+        <ScopeSelectorBar
+          accounts={accounts}
+          selectedAccountId={selectedAccountId}
+          setSelectedAccountId={setSelectedAccountId}
+          selectedAccount={selectedAccount}
+          ragMode={ragMode}
+          setRagMode={setRagMode}
+          onExport={handleExport}
+          hasMessages={messages.length > 0}
+        />
+      </div>
 
       {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto flex flex-col px-4 md:px-8 lg:px-12 py-4 scroll-smooth min-h-0">
+      <div className="flex-1 overflow-y-auto flex flex-col px-4 md:px-8 py-4 scroll-smooth min-h-0 w-full relative">
         <AnimatePresence mode="popLayout">
           {messages.length === 0 ? (
             <EmptyState setInput={setInput} exampleQuestions={exampleQuestions} />
           ) : (
-            <div className="max-w-6xl mx-auto w-full space-y-6">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
               {messages.map((msg, idx) => (
                 <MessageItem key={idx} msg={msg} idx={idx} />
               ))}
@@ -142,7 +143,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
         </AnimatePresence>
 
         {isLoading && (
-          <div className="max-w-6xl mx-auto w-full flex gap-4 md:gap-8 justify-start py-4">
+          <div className="max-w-4xl mx-auto w-full flex gap-4 md:gap-8 justify-start py-4">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-surface-card border border-border-divider flex items-center justify-center flex-shrink-0 shadow-lg animate-pulse">
               <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-plannera-orange" />
             </div>
@@ -156,17 +157,19 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
             </div>
           </div>
         )}
-        <div ref={bottomRef} className="h-4" />
+        <div ref={bottomRef} className="h-40 flex-shrink-0" />
       </div>
 
       {/* Input Console */}
-      <InputConsole
+      <div className="absolute bottom-0 left-0 w-full z-20">
+        <InputConsole
         input={input}
         setInput={setInput}
         handleSend={handleSend}
         handleKeyDown={handleKeyDown}
         isLoading={isLoading}
-      />
+        />
+      </div>
     </div>
   )
 }

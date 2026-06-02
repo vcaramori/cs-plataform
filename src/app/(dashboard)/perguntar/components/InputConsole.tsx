@@ -20,8 +20,8 @@ export function InputConsole({
   isLoading,
 }: InputConsoleProps) {
   return (
-    <div className="px-4 pb-3 pt-2 z-30 bg-gradient-to-t from-surface-background via-surface-background/80 to-transparent">
-      <div className="max-w-5xl mx-auto relative">
+    <div className="px-4 pb-3 pt-6 z-30 bg-gradient-to-t from-surface-background via-surface-background to-transparent">
+      <div className="max-w-4xl mx-auto relative">
         <div className="relative group transition-all duration-500">
           <div className="absolute -inset-3 bg-gradient-to-r from-plannera-orange/10 via-plannera-sop/10 to-plannera-orange/10 rounded-2xl blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
 
