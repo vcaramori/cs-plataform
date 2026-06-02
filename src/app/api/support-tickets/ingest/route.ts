@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 
 // ---------------------------------------------------------------------------
@@ -130,11 +131,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Nenhum ticket detectado no conteúdo enviado' }, { status: 422 })
   }
 
-  // Carrega todas as contas do CSM para resolver nomes
-  const { data: allAccounts } = await supabase
-    .from('accounts')
-    .select('id, name')
-    .eq('csm_owner_id', user.id)
+  // Carrega contas no escopo do usuário para resolver nomes (global = todas)
+  const ingestScope = await getUserAccessScope(user.id, 'suporte')
+  let allAccountsQuery = supabase.from('accounts').select('id, name')
+  if (ingestScope !== 'global') allAccountsQuery = allAccountsQuery.eq('csm_owner_id', user.id)
+  const { data: allAccounts } = await allAccountsQuery
 
   const accountMap = new Map<string, string>()
   for (const a of allAccounts ?? []) {

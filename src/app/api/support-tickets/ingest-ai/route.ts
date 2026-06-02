@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 
 const BodySchema = z.object({
   content: z.string().min(10),
@@ -96,10 +97,10 @@ ${content.substring(0, 20000)}
   // -------------------------------------------------------------------------
   // Pré-carrega todas as contas do CSM para resolver nomes localmente (sem N+1)
   // -------------------------------------------------------------------------
-  const { data: allAccounts } = await supabase
-    .from('accounts')
-    .select('id, name')
-    .eq('csm_owner_id', user.id)
+  const ingestAiScope = await getUserAccessScope(user.id, 'suporte')
+  let allAccountsQuery = supabase.from('accounts').select('id, name')
+  if (ingestAiScope !== 'global') allAccountsQuery = allAccountsQuery.eq('csm_owner_id', user.id)
+  const { data: allAccounts } = await allAccountsQuery
 
   // Helper para normalizar texto (remove acentos + lowercase)
   const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')

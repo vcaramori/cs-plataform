@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { redirect } from 'next/navigation'
 import { ProgramsClient } from './ProgramsClient'
 
@@ -10,11 +11,10 @@ export default async function ProgramsPage() {
     redirect('/login')
   }
 
-  const { data: accounts } = await supabase
-    .from('accounts')
-    .select('id, name')
-    .eq('csm_owner_id', user.id)
-    .order('name')
+  const scope = await getUserAccessScope(user.id, 'nps')
+  let accountsQuery = supabase.from('accounts').select('id, name').order('name')
+  if (scope !== 'global') accountsQuery = accountsQuery.eq('csm_owner_id', user.id)
+  const { data: accounts } = await accountsQuery
 
   return <ProgramsClient accounts={accounts ?? []} />
 }

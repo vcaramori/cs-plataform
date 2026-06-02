@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 
 export async function POST(request: Request) {
@@ -11,10 +12,12 @@ export async function POST(request: Request) {
   try {
     const admin = getSupabaseAdminClient()
 
-    const { data: tickets, error: ticketError } = await supabase
+    const scope = await getUserAccessScope(user.id, 'suporte')
+    let ticketsQuery = supabase
       .from('support_tickets')
       .select('id, account_id, title, description, accounts!inner(csm_owner_id)')
-      .eq('accounts.csm_owner_id', user.id)
+    if (scope !== 'global') ticketsQuery = ticketsQuery.eq('accounts.csm_owner_id', user.id)
+    const { data: tickets, error: ticketError } = await ticketsQuery
 
     if (ticketError) {
       return NextResponse.json({ error: ticketError.message }, { status: 500 })

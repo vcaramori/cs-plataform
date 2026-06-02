@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 
 export async function POST(request: Request) {
@@ -10,8 +11,9 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient()
 
-  // Fetch resolved/closed tickets with CSAT responses not yet vectorized
-  const { data: tickets, error } = await admin
+  // Fetch resolved/closed tickets with CSAT responses not yet vectorized (escopo dinâmico)
+  const scope = await getUserAccessScope(user.id, 'suporte')
+  let ragQuery = admin
     .from('support_tickets')
     .select(`
       id,
@@ -25,9 +27,10 @@ export async function POST(request: Request) {
     `)
     .in('status', ['resolved', 'closed'])
     .eq('is_vectorized', false)
-    .eq('accounts.csm_owner_id', user.id)
     .not('csat_responses', 'is', null)
     .limit(50)
+  if (scope !== 'global') ragQuery = ragQuery.eq('accounts.csm_owner_id', user.id)
+  const { data: tickets, error } = await ragQuery
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

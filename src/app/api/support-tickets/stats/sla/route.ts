@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 
 export async function GET() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Base query: only tickets for accounts owned by this CSM
-  const { data: tickets, error } = await supabase
+  const scope = await getUserAccessScope(user.id, 'suporte')
+
+  // Base query: tickets no escopo (global = todos; own = das próprias contas)
+  let ticketsQuery = supabase
     .from('support_tickets')
     .select(`
       id,
@@ -22,15 +25,17 @@ export async function GET() {
       internal_level,
       accounts!inner(csm_owner_id)
     `)
-    .eq('accounts.csm_owner_id', user.id)
+  if (scope !== 'global') ticketsQuery = ticketsQuery.eq('accounts.csm_owner_id', user.id)
+  const { data: tickets, error } = await ticketsQuery
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // CSAT Stats
-  const { data: csatData } = await supabase
+  let csatQuery = supabase
     .from('csat_responses')
     .select('score, account_id, accounts!inner(csm_owner_id)')
-    .eq('accounts.csm_owner_id', user.id)
+  if (scope !== 'global') csatQuery = csatQuery.eq('accounts.csm_owner_id', user.id)
+  const { data: csatData } = await csatQuery
 
   const totalTickets = tickets.length
   const resolvedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length
