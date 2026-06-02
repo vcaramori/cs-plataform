@@ -57,7 +57,7 @@ export default function LoginPage() {
              <Sparkles className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-3xl font-heading font-black text-white tracking-tight uppercase text-glow">CS-Continuum</h1>
-          <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-[0.34em] mt-2">Control Tower — Plannera DS</p>
+          <p className="text-slate-400 text-[10px] font-extrabold uppercase tracking-[0.34em] mt-2">Control Tower — Plannera</p>
         </div>
 
         {/* Premium Dark Glassmorphic Card Container */}
