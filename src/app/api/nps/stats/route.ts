@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { getNPSSegment } from '@/lib/supabase/types'
 
 export async function GET(request: Request) {
@@ -23,8 +24,8 @@ export async function GET(request: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = admin as any
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
+    const scope = await getUserAccessScope(user.id, 'nps')
+    const isAdmin = scope === 'global'
 
     let myAccounts: any[] = []
     if (isAdmin) {

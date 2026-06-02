@@ -34,6 +34,9 @@ export async function getModulePermission(
 
   if (error || !data) return false
 
+  // super_admin: acesso global irrestrito a qualquer módulo/ação.
+  if (data.role === 'super_admin') return true
+
   // Query 2: resolve custom role permissions only when FK is present.
   const customRoleId = data.custom_role_id ?? null
   if (customRoleId) {
@@ -55,4 +58,39 @@ export async function getModulePermission(
   }
 
   return legacyFallback(data.role as UserRole, module, action)
+}
+
+export type AccessScope = 'global' | 'own' | 'none'
+
+/**
+ * Escopo de acesso de um usuário a um módulo:
+ *  - 'global': vê todos os registros (super_admin, ou permissão view_team / role gestora)
+ *  - 'own':    vê apenas os próprios (filtra por csm_owner_id)
+ *  - 'none':   sem acesso
+ *
+ * Custom roles têm precedência (view_team → global, view → own). Sem custom role,
+ * cai no mapa de roles legadas: gestores (csm_senior+) → global; csm → own.
+ */
+export async function getUserAccessScope(userId: string, module: string): Promise<AccessScope> {
+  const supabase = getSupabaseAdminClient() as any
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role, custom_role_id')
+    .eq('id', userId)
+    .single()
+
+  if (error || !data) return 'none'
+  if (data.role === 'super_admin') return 'global'
+
+  if (data.custom_role_id) {
+    if (await getModulePermission(userId, module, 'view_team')) return 'global'
+    if (await getModulePermission(userId, module, 'view')) return 'own'
+    return 'none'
+  }
+
+  // Fallback legado por hierarquia de role.
+  const level = ROLE_HIERARCHY[data.role as UserRole] ?? -1
+  if (level >= ROLE_HIERARCHY.csm_senior) return 'global'
+  if (level >= ROLE_HIERARCHY.csm) return 'own'
+  return 'none'
 }

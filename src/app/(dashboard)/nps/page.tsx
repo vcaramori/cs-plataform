@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { NPSDashboardClient } from './NPSDashboardClient'
 
 export default async function NPSPage() {
@@ -14,11 +15,10 @@ export default async function NPSPage() {
     )
   }
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
+  const scope = await getUserAccessScope(user.id, 'nps')
 
   let accountsQuery = supabase.from('accounts').select('id, name').order('name')
-  if (!isAdmin) {
+  if (scope !== 'global') {
     accountsQuery = accountsQuery.eq('csm_owner_id', user.id)
   }
   const { data: accounts } = await accountsQuery

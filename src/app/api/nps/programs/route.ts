@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 
 const CreateProgramSchema = z.object({
   account_id: z.string().uuid().nullable().optional(),
@@ -45,8 +46,7 @@ export async function GET(request: Request) {
     .select('*, accounts(name), nps_questions(id, order_index, type, title, options, required)')
     .order('created_at', { ascending: false })
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = ['admin', 'super_admin', 'head_cs'].includes(profile?.role ?? '')
+  const isAdmin = (await getUserAccessScope(user.id, 'nps')) === 'global'
 
   if (!isAdmin) {
     if (accountId) {
