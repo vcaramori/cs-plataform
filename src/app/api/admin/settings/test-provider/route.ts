@@ -18,14 +18,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { provider, apiKey, model } = await request.json() as {
+  const { provider, apiKey: providedApiKey, model } = await request.json() as {
     provider: LLMProvider
     apiKey: string
     model?: string
   }
 
-  if (!provider || !apiKey) {
+  if (!provider || !providedApiKey) {
     return NextResponse.json({ error: 'provider and apiKey are required' }, { status: 400 })
+  }
+
+  let apiKey = providedApiKey
+
+  if (apiKey === 'USE_SAVED') {
+    const { getSupabaseAdminClient } = await import('@/lib/supabase/admin')
+    const { decrypt } = await import('@/lib/crypto/encryption')
+    const admin = getSupabaseAdminClient()
+    const { data: row } = await (admin as any)
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'llm_provider_keys')
+      .single()
+
+    if (row && row.value && (row.value as Record<string, string>)[provider]) {
+      try {
+        apiKey = decrypt((row.value as Record<string, string>)[provider])
+      } catch {
+        return NextResponse.json({ error: 'Failed to decrypt saved key' }, { status: 500 })
+      }
+    } else {
+      return NextResponse.json({ error: 'No saved key found' }, { status: 400 })
+    }
   }
 
   try {

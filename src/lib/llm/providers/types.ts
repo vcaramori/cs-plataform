@@ -1,4 +1,4 @@
-export type LLMProvider = 'gemini' | 'claude' | 'openai' | 'groq' | 'openrouter'
+export type LLMProvider = 'gemini' | 'claude' | 'openai' | 'groq' | 'openrouter' | 'nvidia'
 
 export interface TextGenerationConfig {
   systemInstruction?: string

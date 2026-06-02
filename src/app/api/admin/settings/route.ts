@@ -15,7 +15,7 @@ const INSTRUCTION_KEYS = [
   'instruction_auto_checkin',
 ] as const
 
-const LLM_PROVIDERS: LLMProvider[] = ['gemini', 'claude', 'openai', 'groq']
+const LLM_PROVIDERS: LLMProvider[] = ['gemini', 'claude', 'openai', 'groq', 'openrouter', 'nvidia']
 
 async function requireAdmin() {
   const supabase = await getSupabaseServerClient()

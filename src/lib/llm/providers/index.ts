@@ -4,6 +4,7 @@ import { claudeAdapter } from './claude-adapter'
 import { openaiAdapter } from './openai-adapter'
 import { groqAdapter } from './groq-adapter'
 import { openrouterAdapter } from './openrouter-adapter'
+import { nvidiaAdapter } from './nvidia-adapter'
 
 const adapters: Record<LLMProvider, LLMProviderAdapter> = {
   gemini: geminiAdapter,
@@ -11,6 +12,7 @@ const adapters: Record<LLMProvider, LLMProviderAdapter> = {
   openai: openaiAdapter,
   groq: groqAdapter,
   openrouter: openrouterAdapter,
+  nvidia: nvidiaAdapter,
 }
 
 export function getAdapter(provider: LLMProvider): LLMProviderAdapter {

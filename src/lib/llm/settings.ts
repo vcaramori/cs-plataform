@@ -77,7 +77,7 @@ export async function getLLMSettings(): Promise<LLMSettings> {
     const apiKeys: Partial<Record<LLMProvider, string>> = {}
     const { decrypt } = await import('@/lib/crypto/encryption')
 
-    for (const provider of ['gemini', 'claude', 'openai', 'groq', 'openrouter'] as LLMProvider[]) {
+    for (const provider of ['gemini', 'claude', 'openai', 'groq', 'openrouter', 'nvidia'] as LLMProvider[]) {
       const encrypted = encryptedKeys[provider]
       if (encrypted && typeof encrypted === 'string' && encrypted.includes(':')) {
         try {
