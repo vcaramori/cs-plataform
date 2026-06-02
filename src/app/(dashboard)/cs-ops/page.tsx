@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { PageContainer } from '@/components/ui/page-container'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import { CSOpsClient } from './components/CSOpsClient'
@@ -10,13 +11,8 @@ export default async function CSOpsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !profile.role || !['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
+  // Acesso de gestor (view_team dinâmico; super_admin sempre)
+  if (!(await getModulePermission(user.id, 'esforco', 'view_team'))) {
     redirect('/dashboard')
   }
 

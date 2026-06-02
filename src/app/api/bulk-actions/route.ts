@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { BulkActionSchema, BulkActionResponse } from '@/lib/schemas/bulkAction.schema'
 
 export async function POST(request: Request) {
@@ -12,12 +13,14 @@ export async function POST(request: Request) {
   try {
     const validated = BulkActionSchema.parse(body)
 
-    // Verify ownership: all ticket_ids must belong to user's accounts
-    const { data: tickets, error: ticketError } = await supabase
+    // Verifica acesso: tickets devem estar no escopo do usuário (global ignora dono)
+    const scope = await getUserAccessScope(user.id, 'suporte')
+    let ticketsQuery = supabase
       .from('support_tickets')
       .select('id, status, assigned_to, accounts!inner(csm_owner_id)')
       .in('id', validated.ticket_ids)
-      .eq('accounts.csm_owner_id', user.id)
+    if (scope !== 'global') ticketsQuery = ticketsQuery.eq('accounts.csm_owner_id', user.id)
+    const { data: tickets, error: ticketError } = await ticketsQuery
 
     if (ticketError) {
       return NextResponse.json({ error: ticketError.message }, { status: 500 })

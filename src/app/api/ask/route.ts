@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { runRAGPipeline } from '@/lib/rag/rag-pipeline'
 
 const BodySchema = z.object({
@@ -17,14 +18,12 @@ export async function POST(request: Request) {
   const parsed = BodySchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  // Se account_id foi passado, valida ownership
+  // Se account_id foi passado, valida acesso (global vê qualquer conta; own só as próprias)
   if (parsed.data.account_id) {
-    const { data: account } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('id', parsed.data.account_id)
-      .eq('csm_owner_id', user.id)
-      .single()
+    const scope = await getUserAccessScope(user.id, 'ask')
+    let accQuery = supabase.from('accounts').select('id').eq('id', parsed.data.account_id)
+    if (scope !== 'global') accQuery = accQuery.eq('csm_owner_id', user.id)
+    const { data: account } = await accQuery.single()
     if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
   }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { z } from 'zod'
 
 const defaultLevels = [
@@ -88,14 +89,8 @@ export async function PUT(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Check permissions - only admin/super_admin/head_cs can configure global SLA settings
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const isAuthorized = ['admin', 'super_admin', 'head_cs'].includes(profile?.role || '')
+    // Apenas quem pode editar configuração de SLA (view_team dinâmico; super_admin sempre)
+    const isAuthorized = await getModulePermission(user.id, 'sla_config', 'view_team')
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Forbidden: Insufficient permissions.' }, { status: 403 })
     }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { generateEmbedding } from '@/lib/llm/gateway'
 import { getNPSSegment } from '@/lib/supabase/types'
 
@@ -23,11 +24,11 @@ export async function POST(request: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = admin as any
 
-  // Busca contas do CSM
-  const { data: myAccounts } = await supabase
-    .from('accounts')
-    .select('id, name')
-    .eq('csm_owner_id', user.id)
+  // Busca contas no escopo do usuário (global vê todas; own só as próprias)
+  const scope = await getUserAccessScope(user.id, 'nps')
+  let myAccountsQuery = supabase.from('accounts').select('id, name')
+  if (scope !== 'global') myAccountsQuery = myAccountsQuery.eq('csm_owner_id', user.id)
+  const { data: myAccounts } = await myAccountsQuery
 
   const targetIds = parsed.data.account_id
     ? [parsed.data.account_id]
