@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { CSMCapacityResponseSchema } from '@/lib/schemas/csOps.schema'
 import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
 
     // RLS: CSM can see own, csm_senior/admin can see all
     const isSelf = profile.id === params.data.csmId
-    const canViewAll = ['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)
+    const canViewAll = await getModulePermission(user.id, 'esforco', 'view_team')
 
     if (!isSelf && !canViewAll) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

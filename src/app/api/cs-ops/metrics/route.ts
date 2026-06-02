@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { CSOpsMetricsResponseSchema } from '@/lib/schemas/csOps.schema'
 import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
@@ -22,8 +23,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Gestores podem ver métricas do time
-    if (!['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
+    // Gestores podem ver métricas do time (view_team dinâmico)
+    if (!(await getModulePermission(user.id, 'esforco', 'view_team'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

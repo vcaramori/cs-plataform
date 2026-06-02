@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { ProductivityService, type ProductivityPeriod } from '@/lib/cs-ops/productivity-service'
 
 const QuerySchema = z.object({
   period: z.enum(['week', 'month', 'quarter']).default('month'),
   csmId: z.string().uuid().optional(),
 })
-
-const TEAM_ROLES = ['csm_senior', 'head_cs', 'admin', 'super_admin']
 
 export async function GET(request: Request) {
   try {
@@ -36,7 +35,7 @@ export async function GET(request: Request) {
     const { start, end } = ProductivityService.resolvePeriod(period)
     const service = new ProductivityService(supabase)
 
-    const canViewTeam = TEAM_ROLES.includes(profile.role)
+    const canViewTeam = await getModulePermission(user.id, 'esforco', 'view_team')
 
     // Pedido de uma pessoa específica
     if (parsed.data.csmId) {

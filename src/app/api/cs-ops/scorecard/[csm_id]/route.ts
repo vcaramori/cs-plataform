@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { ProductivityService, type ProductivityPeriod } from '@/lib/cs-ops/productivity-service'
-
-const TEAM_ROLES = ['csm_senior', 'head_cs', 'admin', 'super_admin']
 
 export async function GET(
   request: Request,
@@ -23,7 +22,7 @@ export async function GET(
 
     // RBAC: o próprio CSM ou gestor
     const isSelf = profile.id === csm_id
-    if (!isSelf && !TEAM_ROLES.includes(profile.role)) {
+    if (!isSelf && !(await getModulePermission(user.id, 'esforco', 'view_team'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

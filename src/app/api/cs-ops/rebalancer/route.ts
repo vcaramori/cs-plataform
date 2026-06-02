@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { TerritoryRebalancerResponseSchema, ExecuteRebalancingRequestSchema } from '@/lib/schemas/csOps.schema'
 import { CSOperationsService } from '@/lib/cs-ops/cs-ops-service'
 
@@ -22,8 +23,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Gestores podem ver sugestões de rebalanceamento
-    if (!['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
+    // Gestores podem ver sugestões de rebalanceamento (view_team dinâmico)
+    if (!(await getModulePermission(user.id, 'esforco', 'view_team'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if (!profile || !['csm_senior', 'head_cs', 'admin', 'super_admin'].includes(profile.role)) {
+    if (!profile || !(await getModulePermission(user.id, 'esforco', 'view_team'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
