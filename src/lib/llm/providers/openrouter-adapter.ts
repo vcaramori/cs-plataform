@@ -26,6 +26,7 @@ export const openrouterAdapter: LLMProviderAdapter = {
   availableTextModels: [
     { id: 'google/gemini-2.5-flash:free', label: 'Gemini 2.5 Flash (Free)' },
     { id: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B Instruct (Free)' },
+    { id: 'moonshotai/kimi-k2.6:free', label: 'Kimi 2.6 (Free)' },
     { id: 'qwen/qwen-2.5-72b-instruct:free', label: 'Qwen 2.5 72B Instruct (Free)' },
     { id: 'deepseek/deepseek-chat:free', label: 'DeepSeek Chat (Free)' },
     { id: 'nvidia/nemotron-3-nano-30b-a3b:free', label: 'Nemotron Nano 30B (Free)' },
