@@ -35,6 +35,9 @@ export function useModulePermission(module: string, action: ModuleAction = 'view
   const ctx = useContext(UserContext)
   if (!ctx) return false
 
+  // super_admin: acesso irrestrito a qualquer módulo/ação (ignora perfil)
+  if (ctx.role === 'super_admin') return true
+
   // Custom role está disponível → governa
   if (ctx.modulePermissions) {
     const perm = ctx.modulePermissions.find(p => p.module === module)
@@ -44,4 +47,21 @@ export function useModulePermission(module: string, action: ModuleAction = 'view
 
   // Sem custom role → fallback para sistema built-in
   return legacyFallback(ctx.role, module, action)
+}
+
+/**
+ * Versão "checker" para uso em loops (ex.: filtrar itens do sidebar) sem violar
+ * as regras de hooks — chama o contexto uma vez e devolve uma função pura.
+ */
+export function useModulePermissionChecker(): (module: string, action?: ModuleAction) => boolean {
+  const ctx = useContext(UserContext)
+  return (module: string, action: ModuleAction = 'view') => {
+    if (!ctx) return false
+    if (ctx.role === 'super_admin') return true
+    if (ctx.modulePermissions) {
+      const perm = ctx.modulePermissions.find(p => p.module === module)
+      return perm ? perm[action] === true : false
+    }
+    return legacyFallback(ctx.role, module, action)
+  }
 }

@@ -42,6 +42,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Account, Contract, CommercialGovernance } from '@/lib/supabase/types'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { CommercialGovernanceForm } from './CommercialGovernanceForm'
 
 const SLALevelSchema = z.object({

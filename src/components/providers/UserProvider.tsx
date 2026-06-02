@@ -8,6 +8,8 @@ export interface UserContextType {
   role: UserRole | null
   profile: Profile | null
   modulePermissions: ModulePermission[] | null
+  userType: string | null
+  isSuperAdmin: boolean
 }
 
 export const UserContext = createContext<UserContextType | null>(null)
@@ -22,6 +24,8 @@ export function UserProvider({ profile, children }: UserProviderProps) {
     role: profile?.role || null,
     profile,
     modulePermissions: profile?.custom_role_permissions ?? null,
+    userType: (profile as any)?.user_type ?? null,
+    isSuperAdmin: profile?.role === 'super_admin',
   }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

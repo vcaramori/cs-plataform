@@ -35,7 +35,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { AlertCenter } from '@/components/alerts/AlertCenter'
-import { useModulePermission } from '@/hooks/useModulePermission'
+import { useModulePermission, useModulePermissionChecker } from '@/hooks/useModulePermission'
 
 import { UserRole } from '@/lib/supabase/types'
 import { env } from '@/lib/env'
@@ -43,30 +43,30 @@ import { env } from '@/lib/env'
 // Grupos de navegação "por jornada". Início e Atividades são inseridos
 // dinamicamente conforme permissão (ver render).
 const analiseItems = [
-  { href: '/dashboard',         label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/adoption',          label: 'Adoção',          icon: Target },
-  { href: '/nps',               label: 'NPS',             icon: Star },
-  { href: '/voc',               label: 'Voz do Cliente',  icon: SmilePlus },
-  { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2 },
+  { href: '/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, module: 'dashboard' },
+  { href: '/adoption',          label: 'Adoção',          icon: Target,          module: 'adoption' },
+  { href: '/nps',               label: 'NPS',             icon: Star,            module: 'nps' },
+  { href: '/voc',               label: 'Voz do Cliente',  icon: SmilePlus,       module: 'voc' },
+  { href: '/suporte/dashboard', label: 'Dashboard Suporte', icon: BarChart2,     module: 'suporte' },
 ]
 
 const operacaoItems = [
-  { href: '/esforco',           label: 'Esforço',          icon: Clock },
-  { href: '/suporte',           label: 'Suporte',          icon: TicketCheck },
-  { href: '/fluxos',            label: 'Fluxos',            icon: Workflow },
-  { href: '/wishlist',          label: 'Wishlist',          icon: Lightbulb },
+  { href: '/esforco',           label: 'Esforço',          icon: Clock,          module: 'esforco' },
+  { href: '/suporte',           label: 'Suporte',          icon: TicketCheck,    module: 'suporte' },
+  { href: '/fluxos',            label: 'Fluxos',            icon: Workflow,       module: 'playbooks' },
+  { href: '/wishlist',          label: 'Wishlist',          icon: Lightbulb,      module: 'wishlist' },
 ]
 
 const settingsItems = [
-  { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const },
-  { href: '/settings/roles',        label: 'Perfis de Acesso', icon: ShieldCheck, minRole: 'csm_senior' as const },
-  { href: '/cs-ops',               label: 'Capacidade',  icon: Users, minRole: 'csm_senior' as const },
-  { href: '/settings/products',     label: 'Produtos', icon: Package },
-  { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles },
-  { href: '/settings/plans',        label: 'Planos',         icon: Layers },
-  { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock },
-  { href: '/settings/sla',           label: 'Política SLA', icon: ShieldCheck },
-  { href: '/admin',                 label: 'Administração',    icon: Settings, minRole: 'admin' as const },
+  { href: '/users',                 label: 'Usuários',  icon: Users, minRole: 'csm_senior' as const, module: 'governance' },
+  { href: '/settings/roles',        label: 'Perfis de Acesso', icon: ShieldCheck, minRole: 'csm_senior' as const, module: 'governance' },
+  { href: '/cs-ops',               label: 'Capacidade',  icon: Users, minRole: 'csm_senior' as const, module: 'governance' },
+  { href: '/settings/products',     label: 'Produtos', icon: Package, module: 'product_config' },
+  { href: '/settings/features',     label: 'Funcionalidades', icon: Sparkles, module: 'product_config' },
+  { href: '/settings/plans',        label: 'Planos',         icon: Layers, module: 'product_config' },
+  { href: '/settings/business-hours', label: 'Horário SLA',  icon: Clock, module: 'sla_config' },
+  { href: '/settings/sla',           label: 'Política SLA', icon: ShieldCheck, module: 'sla_config' },
+  { href: '/admin',                 label: 'Administração',    icon: Settings, minRole: 'admin' as const, module: 'governance' },
 ]
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -107,6 +107,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
 
   const canViewHome       = useModulePermission('home', 'view')
   const canViewAtividades = useModulePermission('atividades', 'view')
+  const can               = useModulePermissionChecker()
 
   const roleHierarchy: Record<UserRole, number> = {
     'csm': 0,
@@ -122,7 +123,9 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
     return roleHierarchy[role] >= roleHierarchy[minRole as UserRole]
   }
 
-  const visibleSettingsItems = settingsItems.filter(item => canViewItem(item.minRole))
+  const visibleSettingsItems = settingsItems.filter(item => canViewItem(item.minRole) && can(item.module))
+  const visibleAnaliseItems = analiseItems.filter(item => can(item.module))
+  const visibleOperacaoItems = operacaoItems.filter(item => can(item.module))
 
   const [settingsOpen, setSettingsOpen] = useState(
     visibleSettingsItems.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))
@@ -276,7 +279,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
           {!isCollapsed && (
             <p className="px-4 mb-1 text-[9px] font-black uppercase tracking-[0.2em] text-content-secondary/40">Análise</p>
           )}
-          {analiseItems.map((item) => (
+          {visibleAnaliseItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </div>
@@ -289,7 +292,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
           {canViewAtividades && (
             <NavLink href="/atividades" label="Atividades" icon={CheckCircle2} />
           )}
-          {operacaoItems.map((item) => (
+          {visibleOperacaoItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
         </div>
