@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { z } from 'zod'
 
 const RenewalCardSchema = z.object({
@@ -51,15 +52,11 @@ export async function GET(request: Request) {
         nps_responses(score)
       `)
 
-    // Apply RLS filtering
-    if (profile.role === 'csm') {
-      query = query.eq('csm_owner_id', profile.id)
-    } else if (profile.role === 'csm_senior') {
-      // CSM Senior sees their team - would need a team mapping table
-      // For now, treat like regular CSM
+    // Escopo dinâmico: global vê todo o pipeline; own apenas as próprias contas
+    const scope = await getUserAccessScope(user.id, 'accounts')
+    if (scope !== 'global') {
       query = query.eq('csm_owner_id', profile.id)
     }
-    // admin sees all (no filtering)
 
     const { data: accounts } = await query
 

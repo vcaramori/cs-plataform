@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 
 export async function GET(request: Request) {
   const supabase = await getSupabaseServerClient()
@@ -12,11 +13,11 @@ export async function GET(request: Request) {
   const resolved = url.searchParams.get('resolved') === 'true'
   const limit = parseInt(url.searchParams.get('limit') || '50')
 
-  // RLS: buscar contas do CSM
-  const { data: accountIds } = await supabase
-    .from('accounts')
-    .select('id')
-    .eq('csm_owner_id', user.id)
+  // Escopo dinâmico: global vê alertas de todas as contas; own só das próprias
+  const scope = await getUserAccessScope(user.id, 'accounts')
+  let accountsScopeQuery = supabase.from('accounts').select('id')
+  if (scope !== 'global') accountsScopeQuery = accountsScopeQuery.eq('csm_owner_id', user.id)
+  const { data: accountIds } = await accountsScopeQuery
 
   const ids = accountIds?.map(a => a.id) || []
 
