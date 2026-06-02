@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { enrichTicketWithSLA, logSLAEvent, openTicket } from '@/lib/support/lifecycle'
 import { sendTicketAcknowledgment } from '@/lib/support/email-sender'
 import { runPredictiveRiskAnalysis } from '@/lib/ai/predictive-risk'
@@ -35,13 +36,16 @@ export async function GET(request: Request) {
   const priority = searchParams.get('priority')
   const filtersParam = searchParams.get('filters')
 
-  // Busca apenas tickets de contas do CSM logado
+  // Escopo dinâmico: global vê todos os tickets; own apenas das próprias contas
+  const scope = await getUserAccessScope(user.id, 'suporte')
   let query = supabase
     .from('support_tickets')
     .select('*, accounts!inner(name, csm_owner_id)')
-    .eq('accounts.csm_owner_id', user.id)
     .order('opened_at', { ascending: false })
     .limit(100)
+  if (scope !== 'global') {
+    query = query.eq('accounts.csm_owner_id', user.id)
+  }
 
   // Legacy filters (F1-01 backward compat)
   if (accountId) query = query.eq('account_id', accountId)
@@ -77,14 +81,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  // 1. Validação flexível baseada em privilégios (CSM comum vs Admin/Head)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  const isAdminOrHead = profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'head_cs'
+  // 1. Validação flexível baseada em privilégios (escopo dinâmico do módulo Suporte)
+  const isAdminOrHead = (await getUserAccessScope(user.id, 'suporte')) === 'global'
 
   let accountQuery = supabase
     .from('accounts')

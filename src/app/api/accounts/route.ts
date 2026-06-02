@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getUserAccessScope } from '@/lib/auth/get-module-permission'
 import { AccountFilterSchema } from '@/lib/filters/account-filters.schema'
 
 const ContractItemSchema = z.object({
@@ -106,16 +107,9 @@ export async function GET(request: Request) {
   if (parsed.data.csm_id) {
     query = query.eq('csm_owner_id', parsed.data.csm_id)
   } else {
-    // If no CSM filter specified, default to current user's accounts (unless admin or super_admin)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
-
-    if (!isAdmin) {
+    // Sem filtro de CSM: escopo dinâmico (global vê tudo; own vê apenas os próprios)
+    const scope = await getUserAccessScope(user.id, 'accounts')
+    if (scope !== 'global') {
       query = query.eq('csm_owner_id', user.id)
     }
   }
