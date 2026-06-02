@@ -172,9 +172,23 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
   useEffect(() => {
     // Garante arrays: rotas podem retornar { error } (ex.: CSM sem permissão em
     // /api/users), o que quebraria os .map() abaixo e derrubaria a página.
+    // Fallback: quem pode criar conta mas não pode listar usuários (ex.: CSM com
+    // permissão em "Gestão de Contas") ainda consegue se atribuir como responsável.
     fetch('/api/users')
       .then(r => r.json())
-      .then(data => setUsers(Array.isArray(data) ? data : []))
+      .then(async data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setUsers(data)
+          return
+        }
+        const { data: { user } } = await getSupabaseBrowserClient().auth.getUser()
+        if (user) {
+          setUsers([{ id: user.id, email: user.email ?? 'Você' }])
+          if (!isEdit && !watch('csm_owner_id')) setValue('csm_owner_id', user.id)
+        } else {
+          setUsers([])
+        }
+      })
       .catch(console.error)
     fetch('/api/product/plans')
       .then(r => r.json())

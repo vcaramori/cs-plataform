@@ -134,6 +134,9 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
               placeholder="Escolha um Perfil..."
               size="sm"
             />
+            {selectedRole === 'super_admin' && (
+              <p className="text-[10px] text-amber-600 ml-1">⚠ Super Admin vê e edita tudo de todos, sem restrição de perfil ou escopo.</p>
+            )}
           </div>
 
           <Button
