@@ -4,8 +4,12 @@ import type { LLMProvider } from './providers/types'
 export interface LLMSettings {
   textProvider: LLMProvider
   textModel: string
+  fallbackTextProvider: LLMProvider | 'none'
+  fallbackTextModel: string
   embeddingProvider: LLMProvider
   embeddingModel: string
+  fallbackEmbeddingProvider: LLMProvider | 'none'
+  fallbackEmbeddingModel: string
   embeddingDimensions: number
   temperature: number
   maxTokens: number
@@ -23,8 +27,12 @@ function buildFallbackSettings(): LLMSettings {
   return {
     textProvider: 'gemini',
     textModel: env.gemini.flashModel,
+    fallbackTextProvider: 'none',
+    fallbackTextModel: '',
     embeddingProvider: 'gemini',
     embeddingModel: env.gemini.embeddingModel,
+    fallbackEmbeddingProvider: 'none',
+    fallbackEmbeddingModel: '',
     embeddingDimensions: env.gemini.embeddingDimensions,
     temperature: 0,
     maxTokens: 2048,
@@ -86,8 +94,12 @@ export async function getLLMSettings(): Promise<LLMSettings> {
     const settings: LLMSettings = {
       textProvider: (aiSettings.text_provider as LLMProvider) ?? 'gemini',
       textModel: aiSettings.text_model ?? env.gemini.flashModel,
+      fallbackTextProvider: (aiSettings.fallback_text_provider as LLMProvider | 'none') ?? 'none',
+      fallbackTextModel: aiSettings.fallback_text_model ?? '',
       embeddingProvider: (aiSettings.embedding_provider as LLMProvider) ?? 'gemini',
       embeddingModel: aiSettings.embedding_model ?? env.gemini.embeddingModel,
+      fallbackEmbeddingProvider: (aiSettings.fallback_embedding_provider as LLMProvider | 'none') ?? 'none',
+      fallbackEmbeddingModel: aiSettings.fallback_embedding_model ?? '',
       embeddingDimensions: aiSettings.embedding_dimensions ?? env.gemini.embeddingDimensions,
       temperature: aiSettings.temperature ?? 0,
       maxTokens: aiSettings.max_tokens_response ?? 2048,

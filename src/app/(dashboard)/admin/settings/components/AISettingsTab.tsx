@@ -197,8 +197,12 @@ const INSTRUCTION_CONFIGS: InstructionConfig[] = [
 interface AIValues {
   text_provider: LLMProvider
   text_model: string
+  fallback_text_provider: LLMProvider | 'none'
+  fallback_text_model: string
   embedding_provider: LLMProvider
   embedding_model: string
+  fallback_embedding_provider: LLMProvider | 'none'
+  fallback_embedding_model: string
   embedding_dimensions: number
   rag_top_k: number
   rag_confidence_threshold: number
@@ -210,8 +214,12 @@ interface AIValues {
 const DEFAULT_AI: AIValues = {
   text_provider: 'gemini',
   text_model: 'gemini-2.5-flash',
+  fallback_text_provider: 'none',
+  fallback_text_model: '',
   embedding_provider: 'gemini',
   embedding_model: 'gemini-embedding-001',
+  fallback_embedding_provider: 'none',
+  fallback_embedding_model: '',
   embedding_dimensions: 1536,
   rag_top_k: 5,
   rag_confidence_threshold: 0.7,
@@ -295,6 +303,24 @@ export function AISettingsTab() {
         const p = EMBEDDING_PROVIDERS.find(p => p.id === next.embedding_provider)
         const model = p?.embeddingModels.find(m => m.id === val)
         if (model) next.embedding_dimensions = model.dimensions
+      }
+      if (key === 'fallback_text_provider') {
+        if (val !== 'none') {
+          const p = PROVIDERS.find(p => p.id === val)
+          if (p) next.fallback_text_model = p.textModels[0]?.id ?? ''
+        } else {
+          next.fallback_text_model = ''
+        }
+      }
+      if (key === 'fallback_embedding_provider') {
+        if (val !== 'none') {
+          const p = EMBEDDING_PROVIDERS.find(p => p.id === val)
+          if (p && p.embeddingModels[0]) {
+            next.fallback_embedding_model = p.embeddingModels[0].id
+          }
+        } else {
+          next.fallback_embedding_model = ''
+        }
       }
       return next
     })
@@ -596,6 +622,87 @@ export function AISettingsTab() {
                   </div>
                 ))}
                 </TooltipProvider>
+              </div>
+            </div>
+          </Card>
+
+          {/* ═══ Fallback Configuration ═══ */}
+          <Card className="p-6 space-y-6">
+            <div>
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-indigo-500" />
+                <h3 className="font-bold text-content-primary text-sm uppercase tracking-widest">Configuração de Contingência (Fallback)</h3>
+              </div>
+              <p className="text-[11px] text-content-secondary mt-1">Se o provedor principal falhar, o sistema tentará automaticamente utilizar a contingência.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Fallback Text Provider */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Provider de Texto (Contingência)</Label>
+                  <Select value={aiValues.fallback_text_provider} onValueChange={v => setAi('fallback_text_provider', v as LLMProvider | 'none')}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue placeholder="Nenhum" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id} disabled={p.id === aiValues.text_provider}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {aiValues.fallback_text_provider !== 'none' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Texto (Contingência)</Label>
+                    <Select value={aiValues.fallback_text_model} onValueChange={v => setAi('fallback_text_model', v)}>
+                      <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-surface-card border-border-divider">
+                        {PROVIDERS.find(p => p.id === aiValues.fallback_text_provider)?.textModels.map(m => (
+                          <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* Fallback Embedding Provider */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Provider de Embeddings (Contingência)</Label>
+                  <Select value={aiValues.fallback_embedding_provider} onValueChange={v => setAi('fallback_embedding_provider', v as LLMProvider | 'none')}>
+                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                      <SelectValue placeholder="Nenhum" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-surface-card border-border-divider">
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {EMBEDDING_PROVIDERS.map(p => (
+                        <SelectItem key={p.id} value={p.id} disabled={p.id === aiValues.embedding_provider}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {aiValues.fallback_embedding_provider !== 'none' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Embedding (Contingência)</Label>
+                    <Select value={aiValues.fallback_embedding_model} onValueChange={v => setAi('fallback_embedding_model', v)}>
+                      <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-surface-card border-border-divider">
+                        {EMBEDDING_PROVIDERS.find(p => p.id === aiValues.fallback_embedding_provider)?.embeddingModels.map(m => (
+                          <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

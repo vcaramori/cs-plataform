@@ -62,21 +62,23 @@ export async function generateText(
 
     return { result, provider, durationMs: Date.now() - start }
   } catch (err: any) {
-    if (options.allowFallback !== false && provider !== 'gemini') {
-      const fallbackKey = settings.apiKeys.gemini
+    if (options.allowFallback !== false && settings.fallbackTextProvider !== 'none' && settings.fallbackTextProvider !== provider) {
+      const fallbackProvider = settings.fallbackTextProvider as LLMProvider
+      const fallbackKey = settings.apiKeys[fallbackProvider]
       if (fallbackKey) {
         try {
-          const fallbackAdapter = getAdapter('gemini')
-          const result = await fallbackAdapter.generateText(prompt, fallbackKey, settings.textModel, {
+          const fallbackAdapter = getAdapter(fallbackProvider)
+          const result = await fallbackAdapter.generateText(prompt, fallbackKey, settings.fallbackTextModel, {
             systemInstruction: options.systemInstruction,
             temperature: options.temperature ?? settings.temperature,
             maxOutputTokens: options.maxOutputTokens ?? settings.maxTokens,
             responseMimeType: options.responseMimeType,
             disableThinking: options.disableThinking,
           })
-          return { result, provider: 'gemini', durationMs: Date.now() - start }
-        } catch {
-          // Fallback also failed, throw original error
+          return { result, provider: fallbackProvider, durationMs: Date.now() - start }
+        } catch (fallbackErr: any) {
+          // Fallback also failed
+          console.error(`[LLM Gateway] Fallback error from ${fallbackProvider}: ${fallbackErr.message}`)
         }
       }
     }
@@ -115,6 +117,24 @@ export async function generateEmbedding(
 
     return { result, provider, durationMs: Date.now() - start }
   } catch (err: any) {
+    if (options.allowFallback !== false && settings.fallbackEmbeddingProvider !== 'none' && settings.fallbackEmbeddingProvider !== provider) {
+      const fallbackProvider = settings.fallbackEmbeddingProvider as LLMProvider
+      const fallbackKey = settings.apiKeys[fallbackProvider]
+      if (fallbackKey) {
+        try {
+          const fallbackAdapter = getAdapter(fallbackProvider)
+          if (fallbackAdapter.supportsEmbeddings && fallbackAdapter.generateEmbedding) {
+            const result = await fallbackAdapter.generateEmbedding(text, fallbackKey, settings.fallbackEmbeddingModel, {
+              dimensions: settings.embeddingDimensions,
+            })
+            return { result, provider: fallbackProvider, durationMs: Date.now() - start }
+          }
+        } catch (fallbackErr: any) {
+          console.error(`[LLM Gateway] Fallback embedding error from ${fallbackProvider}: ${fallbackErr.message}`)
+        }
+      }
+    }
+
     console.error(`[LLM Gateway] Embedding error from ${provider}: ${err.message}`)
     throw err
   }
