@@ -184,6 +184,16 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🔐 Permissões Dinâmicas — super_admin global + escopo por módulo + RLS escopada (2026-06-02)
+
+Destrava o build (`ignoreBuildErrors:false`) e substitui permissões engessadas por escopo dinâmico. Ver [docs/product/permissions-plan.md](docs/product/permissions-plan.md).
+
+- **Núcleo** (`src/lib/auth/`): `getModulePermission` (super_admin⇒true), `getUserAccessScope(userId,module)→global|own|none`, `access-scope.ts` (`applyOwnerScope`). Migration `dynamic_permissions_core` estende `has_module_permission` (super_admin/admin + custom_roles + fallback legado view_team).
+- **App-side migrado**: NPS (page/stats/programs), Contas (api/accounts), Suporte (api/support-tickets), Perguntar — filtro `csm_owner_id` só quando `scope!=='global'`.
+- **RLS endurecida** (migration `rls_scope_hardening`): removidas as políticas `*_select_all:true` e criadas políticas escopadas (`dono OU has_module_permission(view_team)`) em `accounts/contacts/contracts/interactions/time_entries`. Portal usa service-role (não afetado). `support_tickets` mantido (modelo de fila — decisão à parte).
+- **Estado seguro**: todos os usuários atuais são super_admin → veem tudo; escopo `own` só passa a valer ao criar perfis com `view`.
+- **Pendente** (não bloqueia super_admin): cs-ops (arrays de role), long-tail com `csm_owner_id`, decisão de escopo do suporte, hardening de writes.
+
 ### 🧠 Governança de IA — Contexto Global + Instruções por Tarefa + Skills (MD) + Regras (2026-06-01)
 
 Centraliza e torna configurável **toda** a direção das IAs (antes: só 5 instruções; ~19 prompts hardcoded). Arquitetura híbrida, com **defaults = comportamento atual** (migração segura).
