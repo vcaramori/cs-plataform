@@ -165,12 +165,12 @@ const doc = new Document({
       bullet("Há um atraso de ~1,5s após o carregamento da página antes de exibir, para não competir com o carregamento inicial."),
 
       H2("4.1. Regras de exibição (lado do CS)"),
+      P("O controle é por usuário (e-mail). Não há limite por conta: todos os usuários de uma mesma instância/conta podem receber a pesquisa, respeitando apenas a recorrência individual."),
       table([4680, 4680], [
         ["Regra", "Comportamento padrão"],
         ["Vigência da pesquisa", "Só exibe dentro do período ativo configurado."],
-        ["Recorrência por usuário", "Não reexibe por 90 dias após responder."],
-        ["Após descarte", "Não reexibe por 30 dias se o usuário fechar sem responder."],
-        ["Limite por conta/cliente", "Máximo de 1 pesquisa por conta a cada 30 dias."],
+        ["Recorrência por usuário (resposta)", "Não reexibe por 90 dias após o usuário responder."],
+        ["Recorrência por usuário (descarte)", "Não reexibe por 30 dias se o usuário fechar sem responder."],
       ]),
 
       H2("4.2. Resposta sem instância cadastrada (órfã)"),

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
-import { resolveAccountByInstance } from '@/lib/nps/instance'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,7 +22,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const programKey = searchParams.get('program_key')
   const email = searchParams.get('email')
-  const instance = searchParams.get('instance')
 
   if (!programKey || !email) {
     return json({ should_show: false, reason: 'missing_params' })
@@ -114,34 +112,11 @@ export async function GET(request: Request) {
     }
   }
 
-  // Regra 3: máx 1 pesquisa por conta a cada account_recurrence_days (padrão 30d)
-  // Conta-alvo: a do programa ("Por Conta") ou, para programa Global, a conta
-  // resolvida pela instância (contracts.instance_url).
-  let targetAccountId: string | null = program.account_id ?? null
-  if (!targetAccountId && instance) {
-    targetAccountId = await resolveAccountByInstance(db, instance)
-  }
-
-  if (targetAccountId) {
-    const { data: lastAccountResponse } = await db
-      .from('nps_responses')
-      .select('created_at')
-      .eq('account_id', targetAccountId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (lastAccountResponse?.created_at) {
-      const diffDays = (now.getTime() - new Date(lastAccountResponse.created_at).getTime()) / 86400000
-      if (diffDays < program.account_recurrence_days) {
-        return json({
-          should_show: false,
-          reason: 'account_rate_limit',
-          next_show_in_days: Math.ceil(program.account_recurrence_days - diffDays),
-        })
-      }
-    }
-  }
+  // Observação: o limite por CONTA (account_recurrence_days) foi removido — a
+  // exibição é controlada POR USUÁRIO (regras 1 e 2 acima, por e-mail). Assim,
+  // todos os usuários de uma mesma instância/conta podem receber a pesquisa,
+  // respeitando apenas a recorrência individual (90d após responder / 30d após
+  // descartar).
 
   return json({ should_show: true, is_test: false, program: programPayload })
 }

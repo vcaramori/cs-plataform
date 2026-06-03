@@ -81,8 +81,11 @@ recorrência (não incomodar a mesma pessoa repetidamente).
 3. O CS decide **se deve exibir** com base em regras de negócio:
    - período de vigência da pesquisa;
    - recorrência por usuário (padrão: 90 dias após responder);
-   - recorrência após descarte (padrão: 30 dias);
-   - limite por conta/cliente (padrão: 30 dias).
+   - recorrência após descarte por usuário (padrão: 30 dias).
+
+   > O controle é **por usuário** (e-mail). Não há limite por conta: todos os
+   > usuários de uma mesma instância/conta podem receber a pesquisa, respeitando
+   > apenas a recorrência individual.
 4. Se **deve exibir**, renderiza um painel lateral com as perguntas configuradas.
 5. Ao enviar, faz `POST {base-url}/api/nps/response` com a resposta + `instance`.
 6. Há um atraso de ~1,5s após o carregamento da página antes de exibir, para não
