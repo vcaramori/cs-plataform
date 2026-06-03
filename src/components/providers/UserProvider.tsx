@@ -25,7 +25,7 @@ export function UserProvider({ profile, children }: UserProviderProps) {
     profile,
     modulePermissions: profile?.custom_role_permissions ?? null,
     userType: (profile as any)?.user_type ?? null,
-    isSuperAdmin: profile?.role === 'super_admin',
+    isSuperAdmin: !!(profile as any)?.is_super_admin || profile?.role === 'super_admin',
   }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

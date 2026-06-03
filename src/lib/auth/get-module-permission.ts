@@ -28,14 +28,14 @@ export async function getModulePermission(
   // Query 1: fetch profile without join — safe even before migration is applied.
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, custom_role_id')
+    .select('role, custom_role_id, is_super_admin')
     .eq('id', userId)
     .single()
 
   if (error || !data) return false
 
-  // super_admin: acesso global irrestrito a qualquer módulo/ação.
-  if (data.role === 'super_admin') return true
+  // Acesso Total (super admin): irrestrito a qualquer módulo/ação.
+  if (data.is_super_admin || data.role === 'super_admin') return true
 
   // Query 2: resolve custom role permissions only when FK is present.
   const customRoleId = data.custom_role_id ?? null
@@ -75,12 +75,12 @@ export async function getUserAccessScope(userId: string, module: string): Promis
   const supabase = getSupabaseAdminClient() as any
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, custom_role_id')
+    .select('role, custom_role_id, is_super_admin')
     .eq('id', userId)
     .single()
 
   if (error || !data) return 'none'
-  if (data.role === 'super_admin') return 'global'
+  if (data.is_super_admin || data.role === 'super_admin') return 'global'
 
   if (data.custom_role_id) {
     if (await getModulePermission(userId, module, 'view_team')) return 'global'

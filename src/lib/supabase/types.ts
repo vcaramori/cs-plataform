@@ -602,6 +602,7 @@ export type Profile = {
   role: UserRole
   avatar_url: string | null
   user_type: string | null
+  is_super_admin: boolean
   custom_role_id: string | null
   custom_role_permissions: import('@/lib/auth/permission-schema').ModulePermission[] | null
   created_at: string

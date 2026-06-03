@@ -35,8 +35,8 @@ export function useModulePermission(module: string, action: ModuleAction = 'view
   const ctx = useContext(UserContext)
   if (!ctx) return false
 
-  // super_admin: acesso irrestrito a qualquer módulo/ação (ignora perfil)
-  if (ctx.role === 'super_admin') return true
+  // Acesso Total (super admin): irrestrito a qualquer módulo/ação (ignora perfil)
+  if (ctx.isSuperAdmin) return true
 
   // Custom role está disponível → governa
   if (ctx.modulePermissions) {
@@ -57,7 +57,7 @@ export function useModulePermissionChecker(): (module: string, action?: ModuleAc
   const ctx = useContext(UserContext)
   return (module: string, action: ModuleAction = 'view') => {
     if (!ctx) return false
-    if (ctx.role === 'super_admin') return true
+    if (ctx.isSuperAdmin) return true
     if (ctx.modulePermissions) {
       const perm = ctx.modulePermissions.find(p => p.module === module)
       return perm ? perm[action] === true : false

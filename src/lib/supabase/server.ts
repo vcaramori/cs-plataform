@@ -93,6 +93,7 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
     role: data.role as UserRole,
     avatar_url: data.avatar_url,
     user_type: (data as any).user_type ?? null,
+    is_super_admin: (data as any).is_super_admin ?? false,
     custom_role_id: customRoleId,
     custom_role_permissions,
     created_at: data.created_at || '',
