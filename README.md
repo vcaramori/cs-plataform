@@ -184,6 +184,15 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 👁️ Visibilidade geral para internos; recorte por CSM só na Home (2026-06-03)
+
+Decisão de produto: **todo usuário interno enxerga todos os dados (leitura)**; a restrição por CSM responsável fica **apenas na tela Home** (que direciona cada CSM para a própria carteira). Resolve o caso "CSM não via contas de outros (ex.: Adimax)". Ver [docs/product/permissions-plan.md](docs/product/permissions-plan.md).
+
+- **Motor**: `getUserAccessScope` ([get-module-permission.ts](src/lib/auth/get-module-permission.ts)) — para interno (`user_type <> 'external'`) o escopo nunca é `'own'` (vira `'global'`); `'none'` (sem `view`) ainda esconde o módulo. Desliga os ~15 filtros `if (scope !== 'global') .eq('csm_owner_id', …)` de uma vez.
+- **RLS**: migration `team_wide_read_visibility` — `is_internal_user()` + policy `SELECT using (is_internal_user())` em `accounts, contacts, contracts, interactions, time_entries, csm_tasks, success_plans, proactive_alerts, nps_programs, nps_responses` (OR com as policies de dono). Escrita e portal externo inalterados.
+- **Home**: inalterada — `isLeadershipRole` + `.eq('csm_owner_id', user.id)`; CSM vê só a carteira, liderança vê o portfólio.
+- Consequência: o toggle "Escopo Geral" (view_team) deixa de afetar a visualização de internos; o `view` por módulo (acesso) continua valendo.
+
 ### 🪪 "Acesso Total" como flag separada do Perfil + foto própria (2026-06-03)
 
 Separa **escopo** (Perfil) de **override** (Acesso Total) e libera a troca da própria foto. Ver [docs/product/08-users.md](docs/product/08-users.md) e [docs/product/permissions-plan.md](docs/product/permissions-plan.md).

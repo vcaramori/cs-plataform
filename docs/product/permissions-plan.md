@@ -1,6 +1,17 @@
 # Permissões Dinâmicas — Acesso Total (flag) global, escopo por módulo, RLS escopada
 
-> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). "Acesso Total" virou flag separada do Perfil (2026-06-03). Sweep dos demais módulos em andamento.
+> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). "Acesso Total" virou flag separada do Perfil (2026-06-03). **Visibilidade de leitura virou geral para internos; recorte por CSM só na Home (2026-06-03).** Sweep dos demais módulos em andamento.
+
+## Modelo de visibilidade: leitura geral para internos; CSM só na Home — 2026-06-03
+
+Decisão de produto: **todo usuário interno enxerga todos os dados (leitura)**. O recorte por CSM responsável (carteira do CSM) fica **apenas na tela Home**, que direciona cada CSM para suas contas. A escrita/edição e o portal externo não mudam.
+
+Implementação em **duas camadas** (ambas necessárias; a Home tem filtro próprio e não depende de nenhuma):
+- **App (motor):** `getUserAccessScope` ([get-module-permission.ts](../../src/lib/auth/get-module-permission.ts)) — para usuário **interno** (`user_type <> 'external'`), nunca retorna `'own'`: onde retornaria `'own'`, retorna `'global'`. Mantém `'none'` (sem `view` esconde o módulo) e `'global'` do super admin. Isso desliga de uma vez os ~15 filtros `if (scope !== 'global') .eq('csm_owner_id', …)`.
+- **Banco (RLS):** migration `team_wide_read_visibility` — helper `is_internal_user()` (SECURITY DEFINER) + policy permissiva de `SELECT` `using (is_internal_user())` em `accounts, contacts, contracts, interactions, time_entries, csm_tasks, success_plans, proactive_alerts, nps_programs, nps_responses`. Soma por OR com as policies de dono. `INSERT/UPDATE/DELETE` inalterados; portal externo (não-interno + service-role) inalterado.
+- **Home** ([home/page.tsx](../../src/app/(dashboard)/home/page.tsx)): inalterada — usa `isLeadershipRole(role legado)` + `.eq('csm_owner_id', user.id)`; CSM vê só a carteira, liderança vê o portfólio.
+
+Consequência: o toggle **"Escopo Geral" (view_team)** da matriz deixa de afetar a **visualização** de internos (todos veem tudo). O `view` por módulo (acesso on/off) continua valendo, e a matriz segue útil para `create/edit/delete/export`. Efeito colateral aceito: 2 ações de suporte atreladas a `scope==='global'` (criar ticket p/ qualquer conta; ação em lote em qualquer ticket) passam a valer para todo interno — coerente com a fila de `support_tickets` já ser compartilhada.
 
 ## Modelo: Perfil (escopo) + Acesso Total (override) — 2026-06-03
 

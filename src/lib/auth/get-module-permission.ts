@@ -64,33 +64,39 @@ export type AccessScope = 'global' | 'own' | 'none'
 
 /**
  * Escopo de acesso de um usuário a um módulo:
- *  - 'global': vê todos os registros (super_admin, ou permissão view_team / role gestora)
+ *  - 'global': vê todos os registros
  *  - 'own':    vê apenas os próprios (filtra por csm_owner_id)
  *  - 'none':   sem acesso
  *
- * Custom roles têm precedência (view_team → global, view → own). Sem custom role,
- * cai no mapa de roles legadas: gestores (csm_senior+) → global; csm → own.
+ * Modelo de visibilidade (decisão de produto, 2026-06-03): TODO usuário INTERNO
+ * tem visão geral (a restrição por CSM responsável vive só na tela Home, que tem
+ * filtro próprio). Logo, para internos o escopo nunca é 'own' — onde haveria 'own'
+ * vira 'global'; 'none' (sem 'view') continua valendo e esconde o módulo.
+ * Usuários externos (portal) mantêm o escopo restrito ao próprio dono.
  */
 export async function getUserAccessScope(userId: string, module: string): Promise<AccessScope> {
   const supabase = getSupabaseAdminClient() as any
   const { data, error } = await supabase
     .from('profiles')
-    .select('role, custom_role_id, is_super_admin')
+    .select('role, custom_role_id, is_super_admin, user_type')
     .eq('id', userId)
     .single()
 
   if (error || !data) return 'none'
   if (data.is_super_admin || data.role === 'super_admin') return 'global'
 
+  // Interno = qualquer usuário que não seja do portal externo.
+  const isInternal = (data.user_type ?? 'internal') !== 'external'
+
   if (data.custom_role_id) {
     if (await getModulePermission(userId, module, 'view_team')) return 'global'
-    if (await getModulePermission(userId, module, 'view')) return 'own'
+    if (await getModulePermission(userId, module, 'view')) return isInternal ? 'global' : 'own'
     return 'none'
   }
 
   // Fallback legado por hierarquia de role.
   const level = ROLE_HIERARCHY[data.role as UserRole] ?? -1
   if (level >= ROLE_HIERARCHY.csm_senior) return 'global'
-  if (level >= ROLE_HIERARCHY.csm) return 'own'
+  if (level >= ROLE_HIERARCHY.csm) return isInternal ? 'global' : 'own'
   return 'none'
 }
