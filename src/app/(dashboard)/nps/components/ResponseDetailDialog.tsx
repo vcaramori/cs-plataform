@@ -25,7 +25,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
         <DialogHeader className="flex flex-row items-center justify-between border-b border-border pb-6">
           <div className="space-y-1">
             <DialogTitle className="h2-section !text-xl !text-foreground">Feedback Detalhado</DialogTitle>
-            <p className="label-premium opacity-60">{render.account_name}</p>
+            <p className="label-premium text-content-secondary">{render.account_name}</p>
           </div>
           <Badge className={`text-[10px] font-extrabold border uppercase px-3 py-1 rounded-2xl shadow-sm ${segColor}`}>
             {seg ? NPS_SEGMENT_LABELS[seg] : 'N/A'}
@@ -42,7 +42,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
               </div>
               <div>
                 <p className="text-content-primary text-sm font-extrabold tracking-tight">{render.user_email || 'Anônimo'}</p>
-                <p className="label-premium !text-[9px] opacity-50 lowercase tracking-tight font-medium">
+                <p className="!text-[11px] text-content-secondary lowercase tracking-tight font-semibold">
                   {render.responded_at ? new Date(render.responded_at).toLocaleString('pt-BR') : 'Sem data'}
                 </p>
               </div>
@@ -63,7 +63,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
             {render.comment && (
               <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-2 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                <p className="label-premium opacity-60 mb-1">Comentário Estruturado</p>
+                <p className="label-premium text-content-secondary mb-1">Comentário Estruturado</p>
                 <p className="text-foreground text-sm italic font-medium leading-relaxed tracking-tight">"{render.comment}"</p>
               </div>
             )}
@@ -76,7 +76,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
               ) : (
                 answers.map((ans: any) => (
                   <div key={ans.id} className="space-y-2 p-5 rounded-2xl bg-surface-card border border-border-divider hover:bg-surface-background transition-all group">
-                    <p className="label-premium !text-[9px] opacity-60 group-hover:opacity-100 transition-opacity">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
+                    <p className="label-premium !text-[11px] text-content-secondary group-hover:text-content-primary transition-colors">{ans.nps_questions?.title || 'Componente do Feedback'}</p>
                     <div className="text-content-primary text-sm font-extrabold tracking-tight leading-relaxed">
                       {ans.nps_questions?.type === 'nps_scale' ? (
                         <div className="flex items-center gap-3">
@@ -94,7 +94,7 @@ export function ResponseDetailDialog({ render, onOpenChange }: ResponseDetailDia
                           ))}
                         </div>
                       ) : (
-                        <p className="whitespace-pre-wrap font-medium text-muted-foreground">{ans.text_value || '—'}</p>
+                        <p className="whitespace-pre-wrap font-medium text-content-primary">{ans.text_value || '—'}</p>
                       )}
                     </div>
                   </div>
