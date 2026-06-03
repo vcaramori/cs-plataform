@@ -119,6 +119,7 @@ export function NPSDashboardClient({ accounts }: Props) {
   const [isUpdatingGoal, setIsUpdatingGoal] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [paretoSortBy, setParetoSortBy] = useState<'promoters' | 'passives' | 'detractors'>('promoters')
+  const [segmentFilter, setSegmentFilter] = useState<'all' | 'promoter' | 'passive' | 'detractor'>('all')
   const [paretoData, setParetoData] = useState<ParetoItem[]>([])
   const [chartData, setChartData] = useState<ChartItem[]>([])
 
@@ -399,18 +400,64 @@ export function NPSDashboardClient({ accounts }: Props) {
       ) : null}
 
       {/* Feed de respostas */}
-      {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-6">
-          {responses.slice(0, 14).map((r: NPSResponseDetail, i: number) => (
-            <NPSResponseCard
-              key={r.id}
-              response={r}
-              index={i}
-              onSelect={() => setSelectedResponse(r)}
-            />
-          ))}
-        </div>
-      )}
+      {!loading && responses.length > 0 && (() => {
+        const filtered = segmentFilter === 'all'
+          ? responses
+          : responses.filter((r: NPSResponseDetail) => r.score !== null && getNPSSegment(r.score) === segmentFilter)
+
+        const segFilters: { key: typeof segmentFilter; label: string; dot: string; active: string }[] = [
+          { key: 'all', label: 'Todos', dot: 'bg-content-secondary', active: 'border-plannera-primary text-content-primary' },
+          { key: 'promoter', label: 'Promotores', dot: 'bg-success', active: 'border-success text-success' },
+          { key: 'passive', label: 'Neutros', dot: 'bg-amber-400', active: 'border-amber-400 text-amber-400' },
+          { key: 'detractor', label: 'Detratores', dot: 'bg-destructive', active: 'border-destructive text-destructive' },
+        ]
+
+        return (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              {segFilters.map(f => {
+                const count = f.key === 'all'
+                  ? responses.length
+                  : responses.filter((r: NPSResponseDetail) => r.score !== null && getNPSSegment(r.score) === f.key).length
+                const isActive = segmentFilter === f.key
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setSegmentFilter(f.key)}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wide transition-all',
+                      isActive
+                        ? `bg-surface-card ${f.active} shadow-sm`
+                        : 'bg-surface-background/40 border-border-divider text-content-secondary hover:text-content-primary hover:border-border-divider'
+                    )}
+                  >
+                    <span className={cn('w-2 h-2 rounded-full', f.dot)} />
+                    {f.label}
+                    <span className="tabular-nums opacity-70">{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {filtered.length > 0 ? (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {filtered.slice(0, 14).map((r: NPSResponseDetail, i: number) => (
+                  <NPSResponseCard
+                    key={r.id}
+                    response={r}
+                    index={i}
+                    onSelect={() => setSelectedResponse(r)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 border-2 border-dashed border-border-divider/60 rounded-2xl flex items-center justify-center">
+                <p className="label-premium text-content-secondary">Nenhuma resposta neste segmento</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
 
       {!loading && responses.length === 0 && (
