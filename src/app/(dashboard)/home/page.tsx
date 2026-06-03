@@ -8,6 +8,8 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PortfolioHealthCard } from '@/app/(dashboard)/dashboard/components/PortfolioHealthCard'
 import { HomePrioritiesClient } from './components/HomePrioritiesClient'
 
+import { Office365CalendarContainer } from './components/Office365CalendarContainer'
+
 function greetingForHour(hour: number): string {
   if (hour < 12) return 'Bom dia'
   if (hour < 18) return 'Boa tarde'
@@ -38,6 +40,18 @@ export default async function HomePage() {
     npsScore = await computePortfolioNps(getSupabaseAdminClient(), safeAccounts.map(a => a.id))
   } catch (error) {
     console.error('[home] NPS error:', error)
+  }
+
+  // Buscar CSMs para o filtro do gestor
+  let csms: { id: string, full_name: string }[] = []
+  if (leadership) {
+    const { data: csmData } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('role', ['csm', 'csm_senior'])
+      .eq('is_active', true)
+      .order('full_name')
+    if (csmData) csms = csmData
   }
 
   // Saudação + contexto
@@ -78,8 +92,17 @@ export default async function HomePage() {
         />
       </Suspense>
 
-      {/* Ações de hoje */}
-      <HomePrioritiesClient />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">
+        {/* Ações de hoje (ocupa 2/3) */}
+        <div className="lg:col-span-2">
+          <HomePrioritiesClient />
+        </div>
+
+        {/* Agenda (ocupa 1/3) */}
+        <div className="flex flex-col gap-4">
+          <Office365CalendarContainer isLeadership={leadership} csms={csms} />
+        </div>
+      </div>
     </PageContainer>
   )
 }
