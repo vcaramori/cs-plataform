@@ -1,6 +1,21 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function json(body: any) {
+  return NextResponse.json(body, { headers: corsHeaders })
+}
+
 // GET /api/nps/check?program_key=X&email=Y
 // Endpoint público chamado pelo embed.js para decidir se exibe a pesquisa
 export async function GET(request: Request) {
@@ -9,7 +24,7 @@ export async function GET(request: Request) {
   const email = searchParams.get('email')
 
   if (!programKey || !email) {
-    return NextResponse.json({ should_show: false, reason: 'missing_params' })
+    return json({ should_show: false, reason: 'missing_params' })
   }
 
   const admin = getSupabaseAdminClient()
@@ -25,7 +40,7 @@ export async function GET(request: Request) {
     .single()
 
   if (!program) {
-    return NextResponse.json({ should_show: false, reason: 'program_not_found' })
+    return json({ should_show: false, reason: 'program_not_found' })
   }
 
   const questions = (program.nps_questions ?? []).sort(
@@ -41,16 +56,16 @@ export async function GET(request: Request) {
 
   // Modo de teste: ignora todas as travas e exibe sempre
   if (program.is_test_mode === true) {
-    return NextResponse.json({ should_show: true, is_test: true, program: programPayload })
+    return json({ should_show: true, is_test: true, program: programPayload })
   }
 
   // Verifica período de vigência da pesquisa
   const now = new Date()
   if (program.active_from && now < new Date(program.active_from)) {
-    return NextResponse.json({ should_show: false, reason: 'not_started_yet' })
+    return json({ should_show: false, reason: 'not_started_yet' })
   }
   if (program.active_until && now > new Date(program.active_until)) {
-    return NextResponse.json({ should_show: false, reason: 'expired' })
+    return json({ should_show: false, reason: 'expired' })
   }
 
   // Regra 1: após responder, não exibir por recurrence_days (padrão 90d)
@@ -67,7 +82,7 @@ export async function GET(request: Request) {
   if (lastResponse?.responded_at) {
     const diffDays = (now.getTime() - new Date(lastResponse.responded_at).getTime()) / 86400000
     if (diffDays < program.recurrence_days) {
-      return NextResponse.json({
+      return json({
         should_show: false,
         reason: 'recently_responded',
         next_show_in_days: Math.ceil(program.recurrence_days - diffDays),
@@ -89,7 +104,7 @@ export async function GET(request: Request) {
   if (lastDismiss?.dismissed_at) {
     const diffDays = (now.getTime() - new Date(lastDismiss.dismissed_at).getTime()) / 86400000
     if (diffDays < program.dismiss_days) {
-      return NextResponse.json({
+      return json({
         should_show: false,
         reason: 'recently_dismissed',
         next_show_in_days: Math.ceil(program.dismiss_days - diffDays),
@@ -110,7 +125,7 @@ export async function GET(request: Request) {
     if (lastAccountResponse?.created_at) {
       const diffDays = (now.getTime() - new Date(lastAccountResponse.created_at).getTime()) / 86400000
       if (diffDays < program.account_recurrence_days) {
-        return NextResponse.json({
+        return json({
           should_show: false,
           reason: 'account_rate_limit',
           next_show_in_days: Math.ceil(program.account_recurrence_days - diffDays),
@@ -119,5 +134,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ should_show: true, is_test: false, program: programPayload })
+  return json({ should_show: true, is_test: false, program: programPayload })
 }
