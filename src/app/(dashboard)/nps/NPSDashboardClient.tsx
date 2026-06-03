@@ -400,7 +400,7 @@ export function NPSDashboardClient({ accounts }: Props) {
 
       {/* Feed de respostas */}
       {!loading && responses.length > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-6">
           {responses.slice(0, 14).map((r: NPSResponseDetail, i: number) => (
             <NPSResponseCard
               key={r.id}
