@@ -37,7 +37,8 @@ export async function GET(request: Request) {
     }
 
     const accountNamesMap = new Map((myAccounts || []).map(a => [a.id, a.name]))
-    const targetAccountIds = accountId && accountId !== 'all' ? [accountId] : (myAccounts || []).map(a => a.id)
+    const isAllAccounts = !accountId || accountId === 'all'
+    const targetAccountIds = !isAllAccounts ? [accountId as string] : (myAccounts || []).map(a => a.id)
 
     let targetProgramKeys: string[] = []
     if (programKey && programKey !== 'default') {
@@ -51,7 +52,20 @@ export async function GET(request: Request) {
       targetProgramKeys = (defaults || []).map((p: any) => p.program_key)
     }
 
-    let query = db.from('nps_responses').select('*, nps_answers(*, nps_questions(*))').in('account_id', targetAccountIds).gte('responded_at', dateFrom.toISOString()).lte('responded_at', dateTo.toISOString())
+    let query = db.from('nps_responses').select('*, nps_answers(*, nps_questions(*))').gte('responded_at', dateFrom.toISOString()).lte('responded_at', dateTo.toISOString())
+
+    // Visão "Todas as contas": inclui respostas órfãs (account_id NULL, instância
+    // ainda não cadastrada) além das contas do usuário. Visão de conta específica:
+    // só aquela conta.
+    if (isAllAccounts) {
+      const idList = targetAccountIds.length > 0
+        ? targetAccountIds.join(',')
+        : '00000000-0000-0000-0000-000000000000'
+      query = query.or(`account_id.is.null,account_id.in.(${idList})`)
+    } else {
+      query = query.in('account_id', targetAccountIds)
+    }
+
     if (targetProgramKeys.length > 0) query = query.in('program_key', targetProgramKeys)
     if (emailFilter) query = query.ilike('user_email', `%${emailFilter}%`)
 

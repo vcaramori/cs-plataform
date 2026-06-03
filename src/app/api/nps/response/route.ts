@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { ingestNPSResponse } from '@/lib/rag/rag-pipeline'
 import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { resolveAccountByInstance } from '@/lib/nps/instance'
 
 const AnswerSchema = z.object({
   question_id: z.string().uuid(),
@@ -13,6 +14,9 @@ const AnswerSchema = z.object({
 const ResponseSchema = z.object({
   program_key: z.string().min(1),
   user_email: z.string().email(),
+  // Instância do sistema (URL) informada pelo embed via data-instance.
+  instance: z.string().optional().nullable(),
+  // DEPRECATED: mantido só por compatibilidade com snippets antigos.
   user_id: z.string().optional(),
   // Campos legados (compatibilidade com embed antigo sem questões)
   score: z.number().int().min(0).max(10).optional(),
@@ -43,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400, headers: corsHeaders })
   }
 
-  const { program_key, user_email, user_id, score, comment, tags, dismissed, answers, is_test } = parsed.data
+  const { program_key, user_email, user_id, instance, score, comment, tags, dismissed, answers, is_test } = parsed.data
 
   const admin = getSupabaseAdminClient()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,14 +89,24 @@ export async function POST(request: Request) {
   // is_test: respeitamos o que o embed envia; se o programa está em test_mode, força true
   const isTestResponse = is_test === true || program.is_test_mode === true
 
+  // Resolve a conta: prioriza a do programa (programa "Por Conta"); senão tenta
+  // pela instância (contracts.instance_url). Se a instância ainda não estiver
+  // cadastrada, account_id fica NULL (resposta órfã) e será religada ao cadastrar
+  // o contrato — mas a instância é sempre persistida.
+  let resolvedAccountId: string | null = program.account_id ?? null
+  if (!resolvedAccountId && instance) {
+    resolvedAccountId = await resolveAccountByInstance(db, instance)
+  }
+
   // Insere resposta principal
   const { data: responseRecord, error: responseError } = await db
     .from('nps_responses')
     .insert({
-      account_id: program.account_id,
+      account_id: resolvedAccountId,
       program_key,
       user_email,
       user_id: user_id ?? null,
+      instance: instance ?? null,
       score: finalScore,
       comment: comment ?? null,
       tags: tags ?? [],
@@ -117,10 +131,10 @@ export async function POST(request: Request) {
   }
 
   // WISHLIST: comentário de detrator (nota ≤ 6) pode conter pedido de produto
-  if (responseRecord.comment && finalScore !== null && finalScore <= 6 && !isTestResponse && program.account_id) {
+  if (responseRecord.comment && finalScore !== null && finalScore <= 6 && !isTestResponse && resolvedAccountId) {
     extractWishlistSignals({
       text: responseRecord.comment,
-      accountId: program.account_id,
+      accountId: resolvedAccountId,
       sourceType: 'nps_response',
       sourceId: responseRecord.id,
       requesterEmail: user_email,

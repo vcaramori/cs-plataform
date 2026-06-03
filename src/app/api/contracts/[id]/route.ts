@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { syncContractLinks } from '@/lib/contracts/links'
+import { backfillResponsesForInstance } from '@/lib/nps/instance'
 
 const UpdateSchema = z.object({
   mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
@@ -54,6 +56,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   // Re-sincroniza os vínculos FK a partir do service_type final do contrato
   await syncContractLinks(id, (data as any).service_type)
+
+  // Vínculo retroativo: religa respostas de NPS órfãs cuja instância bate com a
+  // instance_url do contrato.
+  if ((data as any).instance_url && (data as any).account_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const adminDb = getSupabaseAdminClient() as any
+    const linked = await backfillResponsesForInstance(adminDb, (data as any).instance_url, (data as any).account_id)
+    if (linked > 0) console.log(`[contracts] backfill NPS: ${linked} resposta(s) religada(s) à conta ${(data as any).account_id}`)
+  }
 
   return NextResponse.json(data)
 }

@@ -7,7 +7,9 @@
   })()
 
   var programKey = script.getAttribute('data-program-key')
-  var userId     = script.getAttribute('data-user-id')  || ''
+  // Instância do sistema (registrada no contrato). Aceita data-user-id como
+  // fallback apenas por compatibilidade com snippets antigos.
+  var instance   = script.getAttribute('data-instance') || script.getAttribute('data-user-id') || ''
   var email      = script.getAttribute('data-email')    || ''
   var baseUrl    = script.getAttribute('data-base-url') || 'https://nps.cscontinuum.com'
   var force      = script.getAttribute('data-force') === 'true'
@@ -27,6 +29,7 @@
     }
 
     var url = baseUrl + '/api/nps/check?program_key=' + encodeURIComponent(programKey) + '&email=' + encodeURIComponent(email)
+    if (instance) url += '&instance=' + encodeURIComponent(instance)
     if (force) url += '&force=true'
 
     fetch(url)
@@ -319,7 +322,7 @@
     fetch(baseUrl + '/api/nps/response', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ program_key: programKey, user_email: email, user_id: userId }, payload))
+      body: JSON.stringify(Object.assign({ program_key: programKey, user_email: email, instance: instance }, payload))
     }).catch(function () {})
   }
 
