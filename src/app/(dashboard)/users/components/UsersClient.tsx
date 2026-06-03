@@ -125,6 +125,10 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
     setUsers(prev => [...prev, newUser])
   }
 
+  function handleAvatarChange(userId: string, url: string) {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, avatar_url: url } : u))
+  }
+
   const roleOptions = [
     ...(currentUserRole === 'super_admin' ? [{ label: 'Super Admin', value: 'super_admin' }] : []),
     ...roles.map(r => ({ label: r.name, value: r.name })),
@@ -208,6 +212,7 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
                         editedRole={editedRoles[user.id]}
                         onRoleChange={handleRoleChange}
                         onToggleActive={handleToggleActive}
+                        onAvatarChange={handleAvatarChange}
                       />
                     </motion.div>
                   ))

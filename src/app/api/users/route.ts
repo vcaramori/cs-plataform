@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient, getUserRole } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { hasPermission, canManageUser } from '@/lib/auth/permissions'
+import { resolveRoleAssignment } from '@/lib/auth/resolve-role'
 import type { UserRole } from '@/lib/supabase/types'
 
 async function requireAuth(permission: 'view:users' | 'manage:users') {
@@ -80,11 +81,13 @@ export async function POST(request: Request) {
 
     const userId = data.user.id
 
+    const resolved = await resolveRoleAssignment(admin, role, null)
     const { error: profileError } = await admin
       .from('profiles')
       .update({
         full_name: full_name || email.split('@')[0],
-        role: role || 'CSM',
+        role: resolved.role,
+        custom_role_id: resolved.custom_role_id,
         is_active: true,
         user_type: 'internal',
         avatar_url: avatar_url || null,
@@ -116,7 +119,7 @@ export async function PUT(request: Request) {
   try {
     const admin = getSupabaseAdminClient()
     const body = await request.json()
-    const { id, role, is_active, full_name } = body
+    const { id, role, is_active, full_name, avatar_url } = body
 
     if (!id) {
       return NextResponse.json({ error: 'ID do usuario e obrigatorio' }, { status: 400 })
@@ -134,9 +137,14 @@ export async function PUT(request: Request) {
     }
 
     const updateData: Record<string, any> = {}
-    if (role !== undefined) updateData.role = role
+    if (role !== undefined) {
+      const resolved = await resolveRoleAssignment(admin, role, targetRole)
+      updateData.role = resolved.role
+      updateData.custom_role_id = resolved.custom_role_id
+    }
     if (is_active !== undefined) updateData.is_active = is_active
     if (full_name !== undefined) updateData.full_name = full_name
+    if (avatar_url !== undefined) updateData.avatar_url = avatar_url
 
     const { data, error } = await admin
       .from('profiles')

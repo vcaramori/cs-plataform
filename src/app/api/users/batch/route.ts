@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient, getUserRole } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { hasPermission, canManageUser } from '@/lib/auth/permissions'
+import { resolveRoleAssignment } from '@/lib/auth/resolve-role'
 
 async function requireAuth() {
   const supabase = await getSupabaseServerClient()
@@ -43,9 +44,11 @@ export async function PUT(request: Request) {
         continue
       }
 
+      // Resolve perfil (role legado OU nome de custom_role) sem violar profiles_role_check
+      const resolved = await resolveRoleAssignment(admin, role, targetRole)
       const { data, error } = await admin
         .from('profiles')
-        .update({ role })
+        .update({ role: resolved.role, custom_role_id: resolved.custom_role_id })
         .eq('id', id)
         .select()
         .single()

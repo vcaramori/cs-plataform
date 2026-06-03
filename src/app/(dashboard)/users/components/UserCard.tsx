@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import { Switch } from '@/components/ui/switch'
 import {
   Select,
@@ -8,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Camera, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { canManageUser } from '@/lib/auth/permissions'
 import type { UserRole } from '@/lib/supabase/types'
@@ -33,6 +36,7 @@ interface UserCardProps {
   editedRole?: string
   onRoleChange: (userId: string, newRole: string) => void
   onToggleActive: (userId: string, currentStatus: boolean) => void
+  onAvatarChange?: (userId: string, url: string) => void
 }
 
 export function UserCard({
@@ -44,9 +48,40 @@ export function UserCard({
   editedRole,
   onRoleChange,
   onToggleActive,
+  onAvatarChange,
 }: UserCardProps) {
   const displayRole = editedRole || user.role
   const canEdit = canManageUser(currentUserRole, user.role as UserRole) && user.id !== currentUserId
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+  async function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.includes('image/')) { toast.error('Selecione uma imagem.'); return }
+    if (file.size > 2 * 1024 * 1024) { toast.error('Imagem excede 2MB.'); return }
+    setUploadingPhoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('bucket', 'client-logos')
+      const up = await fetch('/api/storage/upload', { method: 'POST', body: fd })
+      const upData = await up.json()
+      if (!up.ok) throw new Error(upData.error || 'Falha no upload')
+      const res = await fetch('/api/users', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id, avatar_url: upData.url }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Falha ao salvar foto')
+      onAvatarChange?.(user.id, upData.url)
+      toast.success('Foto atualizada!')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setUploadingPhoto(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
   const isSuperAdmin = user.role === 'super_admin'
   const initials = user.full_name !== 'N/A'
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -63,26 +98,42 @@ export function UserCard({
     >
       {/* Left: Avatar + Info */}
       <div className="flex items-center gap-4 min-w-0">
-        {user.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.avatar_url}
-            alt={user.full_name}
-            className={cn(
-              'w-10 h-10 rounded-xl object-cover shrink-0 border',
-              isSuperAdmin ? 'border-amber-500/30' : 'border-primary/20'
-            )}
-          />
-        ) : (
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0',
-            isSuperAdmin
-              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
-              : 'bg-primary/10 border border-primary/20 text-primary'
-          )}>
-            {initials}
-          </div>
-        )}
+        <div className="relative shrink-0 group/avatar">
+          {user.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar_url}
+              alt={user.full_name}
+              className={cn(
+                'w-10 h-10 rounded-xl object-cover border',
+                isSuperAdmin ? 'border-amber-500/30' : 'border-primary/20'
+              )}
+            />
+          ) : (
+            <div className={cn(
+              'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold',
+              isSuperAdmin
+                ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500'
+                : 'bg-primary/10 border border-primary/20 text-primary'
+            )}>
+              {initials}
+            </div>
+          )}
+          {canEdit && (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingPhoto}
+                title="Trocar foto"
+                className="absolute inset-0 rounded-xl bg-black/55 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white"
+              >
+                {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+            </>
+          )}
+        </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-content-primary text-sm font-bold tracking-tight uppercase truncate">
