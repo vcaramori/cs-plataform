@@ -50,6 +50,9 @@ const code = (t) => new Paragraph({
 });
 
 const doc = new Document({
+  creator: "Vinicius Caramori da Silva",
+  title: "Especificação Técnica — Pesquisa de NPS embutida (embed.js)",
+  description: "Guia de implementação do embed de NPS para Produto/Engenharia Plannera",
   styles: {
     default: { document: { run: { font: "Arial", size: 22 } } },
     paragraphStyles: [
@@ -92,9 +95,11 @@ const doc = new Document({
         children: [new TextRun({ text: "Guia de implementação para o time de Produto / Engenharia Plannera", italics: true, size: 24, color: GREY })] }),
       new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 6, color: BLUE, space: 8 } }, children: [] }),
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 240 },
-        children: [new TextRun({ text: "Versão 1.0", bold: true, size: 22 })] }),
+        children: [new TextRun({ text: "Versão Final", bold: true, size: 22 })] }),
       new Paragraph({ alignment: AlignmentType.CENTER,
         children: [new TextRun({ text: "Data: 03/06/2026", size: 22, color: GREY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "Autor: Vinicius Caramori da Silva", bold: true, size: 22 })] }),
       new Paragraph({ alignment: AlignmentType.CENTER,
         children: [new TextRun({ text: "Origem: plataforma cs-plataform (Customer Success)", size: 22, color: GREY })] }),
       new Paragraph({ children: [new PageBreak()] }),
