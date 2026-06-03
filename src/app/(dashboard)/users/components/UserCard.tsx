@@ -51,7 +51,10 @@ export function UserCard({
   onAvatarChange,
 }: UserCardProps) {
   const displayRole = editedRole || user.role
-  const canEdit = canManageUser(currentUserRole, user.role as UserRole) && user.id !== currentUserId
+  const isSelf = user.id === currentUserId
+  const canEdit = canManageUser(currentUserRole, user.role as UserRole) && !isSelf
+  // Foto: qualquer um edita a PRÓPRIA; ou quem pode gerenciar o usuário.
+  const canEditAvatar = isSelf || canEdit
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
@@ -68,10 +71,16 @@ export function UserCard({
       const up = await fetch('/api/storage/upload', { method: 'POST', body: fd })
       const upData = await up.json()
       if (!up.ok) throw new Error(upData.error || 'Falha no upload')
-      const res = await fetch('/api/users', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: user.id, avatar_url: upData.url }),
-      })
+      // Próprio perfil → /api/users/me (não exige manage:users); outros → /api/users (PUT)
+      const res = isSelf
+        ? await fetch('/api/users/me', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ avatar_url: upData.url }),
+          })
+        : await fetch('/api/users', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: user.id, avatar_url: upData.url }),
+          })
       if (!res.ok) throw new Error((await res.json()).error || 'Falha ao salvar foto')
       onAvatarChange?.(user.id, upData.url)
       toast.success('Foto atualizada!')
@@ -119,7 +128,7 @@ export function UserCard({
               {initials}
             </div>
           )}
-          {canEdit && (
+          {canEditAvatar && (
             <>
               <button
                 type="button"
