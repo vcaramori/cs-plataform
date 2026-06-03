@@ -11,6 +11,11 @@ export async function GET() {
     return NextResponse.redirect(url)
   } catch (error) {
     console.error('[Microsoft Auth] Login error:', error)
-    return NextResponse.json({ error: 'Failed to generate authorization URL' }, { status: 500 })
+    // Endpoint autenticado (uso interno) → devolve a causa específica p/ facilitar o setup
+    const detail = error instanceof Error ? error.message : 'erro desconhecido'
+    return NextResponse.json(
+      { error: 'Failed to generate authorization URL', detail },
+      { status: 500 }
+    )
   }
 }
