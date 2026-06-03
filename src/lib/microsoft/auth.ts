@@ -83,7 +83,8 @@ export async function getAccessTokenFromRefreshToken(refreshToken: string) {
 }
 
 export async function getUserAccessToken(userId: string): Promise<string | null> {
-  const supabase = getSupabaseAdminClient()
+  // user_integrations ainda não consta nos tipos gerados do Supabase → cast (padrão do projeto)
+  const supabase = getSupabaseAdminClient() as any
   const { data: integration, error } = await supabase
     .from('user_integrations')
     .select('*')

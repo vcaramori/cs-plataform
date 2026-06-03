@@ -24,7 +24,8 @@ export async function GET(request: Request) {
     const tokens = await exchangeCodeForTokens(code)
     const encryptedRefreshToken = encrypt(tokens.refreshToken)
 
-    const supabase = getSupabaseAdminClient()
+    // user_integrations ainda não consta nos tipos gerados do Supabase → cast (padrão do projeto)
+    const supabase = getSupabaseAdminClient() as any
 
     // Upsert the integration
     const { error } = await supabase

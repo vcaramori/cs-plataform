@@ -51,7 +51,7 @@ export default async function HomePage() {
       .in('role', ['csm', 'csm_senior'])
       .eq('is_active', true)
       .order('full_name')
-    if (csmData) csms = csmData
+    if (csmData) csms = csmData.map(c => ({ id: c.id, full_name: c.full_name ?? '' }))
   }
 
   // Saudação + contexto
