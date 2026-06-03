@@ -193,6 +193,7 @@ Separa **escopo** (Perfil) de **override** (Acesso Total) e libera a troca da pr
 - **Motor**: `getModulePermission`/`getUserAccessScope`, `UserProvider.isSuperAdmin`, `useModulePermission(Checker)` e `getUserProfile` passam a usar a flag (tipo `Profile.is_super_admin`).
 - **Cadastro de usuários**: toggle **Acesso Total** no `UserCard` + checkbox no `NewUserForm` (só quem tem Acesso Total concede, fora do próprio card); GET/SSR/POST/PUT/batch retornam e persistem `is_super_admin`; `canManageUser` considera o Acesso Total do autor.
 - **Foto própria**: `PATCH /api/users/me` (qualquer autenticado, só a própria linha; não altera perfil/status). Overlay de foto liberado no próprio card.
+- **Fix colisão de nome de perfil**: `resolveRoleAssignment` passa a priorizar o custom_role sobre o builtin — um perfil "CSM" (colide com o role legado `csm`) agora grava `custom_role_id` e não some no refresh. Backfill aplicado aos usuários afetados.
 
 ### 🔐 Permissões Dinâmicas — super_admin global + escopo por módulo + RLS escopada (2026-06-02)
 

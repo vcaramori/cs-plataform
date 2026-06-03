@@ -10,6 +10,7 @@ Cada usuário tem **sempre dois eixos independentes**:
 - **Acesso Total** = flag `profiles.is_super_admin` (override por usuário) que **ignora o perfil e libera tudo de todos**, sem restrição de escopo. Gerenciada no cadastro de usuários (toggle no `UserCard` / checkbox no `NewUserForm`), **não** na matriz.
 
 Regras:
+- **`resolveRoleAssignment` prioriza o custom_role sobre o builtin**: um perfil cujo nome colide com um role legado (ex.: custom role **"CSM"** ~ builtin `csm`) é resolvido como custom role (grava `custom_role_id`). Sem isso, o perfil "sumia" no refresh (gravava `role='csm'`, `custom_role_id=null` → GET caía no fallback `'csm'`, que não bate com a opção `'CSM'` do seletor).
 - Só quem **tem Acesso Total** pode conceder/remover Acesso Total de outro (e não no próprio card).
 - `role` legado (`profiles.role`) permanece como base de compatibilidade; durante a transição o override considera `is_super_admin = true OR role = 'super_admin'`. Ao **revogar** Acesso Total de um super_admin legado, o `role` base é rebaixado para `csm` para o compat não reativar o override.
 - Migração: `profiles.is_super_admin boolean not null default false`; backfill `true` para quem era `role='super_admin'`; `has_module_permission` passou a checar `is_super_admin = true OR role = 'admin'`.
