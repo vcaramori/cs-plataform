@@ -30,15 +30,25 @@ export async function GET() {
 
     const { data: profiles } = await admin.from('profiles').select('*')
 
+    // Mapa custom_role_id → nome (o "perfil" exibido/selecionável é o nome do custom role)
+    const { data: customRoles } = await (admin as any).from('custom_roles').select('id, name')
+    const roleNameById = new Map<string, string>((customRoles ?? []).map((r: any) => [r.id, r.name]))
+
     const formattedUsers = users.map(u => {
       const profile = profiles?.find(p => p.id === u.id)
+      const customRoleId = (profile as any)?.custom_role_id ?? null
+      // Usuário com custom role → exibe o NOME do perfil (casa com as opções do seletor);
+      // senão, o role legado (ex.: super_admin).
+      const effectiveRole = customRoleId && roleNameById.has(customRoleId)
+        ? roleNameById.get(customRoleId)!
+        : (profile?.role || 'csm')
       return {
         id: u.id,
         email: u.email,
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
         full_name: profile?.full_name || 'N/A',
-        role: profile?.role || 'CSM',
+        role: effectiveRole,
         is_active: profile?.is_active !== false,
         user_type: (profile as any)?.user_type || 'internal',
       }
