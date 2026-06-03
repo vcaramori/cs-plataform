@@ -21,10 +21,11 @@ type CustomRole = {
 interface NewUserFormProps {
   roles: CustomRole[]
   currentUserRole: UserRole
+  currentUserIsSuperAdmin: boolean
   onUserCreated: (user: any) => void
 }
 
-export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFormProps) {
+export function NewUserForm({ roles, currentUserRole, currentUserIsSuperAdmin, onUserCreated }: NewUserFormProps) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,12 +33,11 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
   const [selectedRole, setSelectedRole] = useState(
     roles.find(r => r.name.toLowerCase() === 'csm')?.name || roles[0]?.name || ''
   )
+  const [grantSuperAdmin, setGrantSuperAdmin] = useState(false)
   const [creating, setCreating] = useState(false)
 
-  const roleOptions = [
-    ...(currentUserRole === 'super_admin' ? [{ label: 'Super Admin', value: 'super_admin' }] : []),
-    ...roles.map(r => ({ label: r.name, value: r.name })),
-  ]
+  // Perfil = somente custom roles. "Acesso Total" é flag separada (checkbox abaixo).
+  const roleOptions = roles.map(r => ({ label: r.name, value: r.name }))
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,7 +47,14 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName, role: selectedRole, avatar_url: avatarUrl || null }),
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName,
+          role: selectedRole,
+          avatar_url: avatarUrl || null,
+          is_super_admin: currentUserIsSuperAdmin ? grantSuperAdmin : false,
+        }),
       })
 
       if (!res.ok) {
@@ -61,6 +68,7 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
       setEmail('')
       setPassword('')
       setAvatarUrl('')
+      setGrantSuperAdmin(false)
       toast.success('Membro cadastrado com sucesso!')
     } catch (e: any) {
       toast.error(e.message)
@@ -134,10 +142,24 @@ export function NewUserForm({ roles, currentUserRole, onUserCreated }: NewUserFo
               placeholder="Escolha um Perfil..."
               size="sm"
             />
-            {selectedRole === 'super_admin' && (
-              <p className="text-[10px] text-amber-600 ml-1">⚠ Super Admin vê e edita tudo de todos, sem restrição de perfil ou escopo.</p>
-            )}
           </div>
+
+          {currentUserIsSuperAdmin && (
+            <label className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={grantSuperAdmin}
+                onChange={e => setGrantSuperAdmin(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-amber-500"
+              />
+              <span className="space-y-0.5">
+                <span className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest">Acesso Total</span>
+                <span className="block text-[10px] text-content-secondary leading-snug">
+                  Ignora o perfil e libera ver/editar tudo de todos, sem restrição de escopo.
+                </span>
+              </span>
+            </label>
+          )}
 
           <Button
             type="submit"

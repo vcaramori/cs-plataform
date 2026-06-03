@@ -25,6 +25,7 @@ type User = {
   is_active: boolean
   user_type: string
   avatar_url?: string | null
+  is_super_admin?: boolean
 }
 
 interface UserCardProps {
@@ -32,10 +33,12 @@ interface UserCardProps {
   roleOptions: { label: string; value: string }[]
   currentUserRole: UserRole
   currentUserId: string
+  currentUserIsSuperAdmin: boolean
   isEdited: boolean
   editedRole?: string
   onRoleChange: (userId: string, newRole: string) => void
   onToggleActive: (userId: string, currentStatus: boolean) => void
+  onToggleSuperAdmin: (userId: string, current: boolean) => void
   onAvatarChange?: (userId: string, url: string) => void
 }
 
@@ -44,15 +47,19 @@ export function UserCard({
   roleOptions,
   currentUserRole,
   currentUserId,
+  currentUserIsSuperAdmin,
   isEdited,
   editedRole,
   onRoleChange,
   onToggleActive,
+  onToggleSuperAdmin,
   onAvatarChange,
 }: UserCardProps) {
   const displayRole = editedRole || user.role
   const isSelf = user.id === currentUserId
-  const canEdit = canManageUser(currentUserRole, user.role as UserRole) && !isSelf
+  const canEdit = canManageUser(currentUserRole, user.role as UserRole, currentUserIsSuperAdmin) && !isSelf
+  // "Acesso Total" só pode ser concedido/removido por quem já tem Acesso Total (e não no próprio card).
+  const canGrantSuperAdmin = currentUserIsSuperAdmin && !isSelf
   // Foto: qualquer um edita a PRÓPRIA; ou quem pode gerenciar o usuário.
   const canEditAvatar = isSelf || canEdit
   const fileRef = useRef<HTMLInputElement>(null)
@@ -91,7 +98,8 @@ export function UserCard({
       if (fileRef.current) fileRef.current.value = ''
     }
   }
-  const isSuperAdmin = user.role === 'super_admin'
+  // Visual "Acesso Total" passa a refletir a flag (override), não o role legado.
+  const isSuperAdmin = !!user.is_super_admin
   const initials = user.full_name !== 'N/A'
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email[0].toUpperCase()
@@ -158,6 +166,11 @@ export function UserCard({
                 Externo
               </span>
             )}
+            {isSuperAdmin && (
+              <span className="text-[8px] font-bold uppercase tracking-widest bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full dark:bg-amber-900/30 dark:text-amber-400">
+                Acesso Total
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {/* Role badge / selector */}
@@ -194,8 +207,23 @@ export function UserCard({
         </div>
       </div>
 
-      {/* Right: Active toggle */}
+      {/* Right: Acesso Total + Active toggle */}
       <div className="flex items-center justify-end gap-4 shrink-0">
+        {canGrantSuperAdmin && (
+          <div className="flex items-center gap-2 border-l border-border-divider/50 pl-4 h-8">
+            <span className={cn(
+              'text-[9px] font-bold uppercase tracking-wider',
+              isSuperAdmin ? 'text-amber-500' : 'text-content-secondary/60'
+            )}>
+              Acesso Total
+            </span>
+            <Switch
+              checked={isSuperAdmin}
+              onCheckedChange={() => onToggleSuperAdmin(user.id, isSuperAdmin)}
+              className="scale-90"
+            />
+          </div>
+        )}
         {canEdit && (
           <div className="flex items-center gap-2 border-l border-border-divider/50 pl-4 h-8">
             <span className={cn(

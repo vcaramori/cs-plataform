@@ -184,6 +184,16 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🪪 "Acesso Total" como flag separada do Perfil + foto própria (2026-06-03)
+
+Separa **escopo** (Perfil) de **override** (Acesso Total) e libera a troca da própria foto. Ver [docs/product/08-users.md](docs/product/08-users.md) e [docs/product/permissions-plan.md](docs/product/permissions-plan.md).
+
+- **Perfil = custom role** (matriz `/settings/roles`): único valor do seletor; define o escopo por módulo. **`super_admin` deixou de ser "perfil"**.
+- **Acesso Total = flag `profiles.is_super_admin`** (migration `profiles_is_super_admin`, backfill dos super_admins legados): override por usuário que ignora o perfil e libera tudo. `has_module_permission` passou a checar `is_super_admin = true OR role = 'admin'`. Compat: override considera `is_super_admin OR role='super_admin'`; ao revogar de um super_admin legado, o `role` base é rebaixado para `csm`.
+- **Motor**: `getModulePermission`/`getUserAccessScope`, `UserProvider.isSuperAdmin`, `useModulePermission(Checker)` e `getUserProfile` passam a usar a flag (tipo `Profile.is_super_admin`).
+- **Cadastro de usuários**: toggle **Acesso Total** no `UserCard` + checkbox no `NewUserForm` (só quem tem Acesso Total concede, fora do próprio card); GET/SSR/POST/PUT/batch retornam e persistem `is_super_admin`; `canManageUser` considera o Acesso Total do autor.
+- **Foto própria**: `PATCH /api/users/me` (qualquer autenticado, só a própria linha; não altera perfil/status). Overlay de foto liberado no próprio card.
+
 ### 🔐 Permissões Dinâmicas — super_admin global + escopo por módulo + RLS escopada (2026-06-02)
 
 Destrava o build (`ignoreBuildErrors:false`) e substitui permissões engessadas por escopo dinâmico. Ver [docs/product/permissions-plan.md](docs/product/permissions-plan.md).

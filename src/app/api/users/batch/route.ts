@@ -9,10 +9,18 @@ async function requireAuth() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const role = await getUserRole(user.id)
-  if (!role || !hasPermission(role, 'manage:users')) return null
+  const admin = getSupabaseAdminClient() as any
+  const { data: prof } = await admin
+    .from('profiles')
+    .select('role, is_super_admin')
+    .eq('id', user.id)
+    .single()
+  const role = (prof?.role ?? null) as any
+  const isSuperAdmin = !!prof?.is_super_admin || role === 'super_admin'
 
-  return { user, role }
+  if (!isSuperAdmin && (!role || !hasPermission(role, 'manage:users'))) return null
+
+  return { user, role, isSuperAdmin }
 }
 
 export async function PUT(request: Request) {
@@ -31,15 +39,9 @@ export async function PUT(request: Request) {
     const results: any[] = []
 
     for (const { id, role } of updates) {
-      // Only super_admin can assign super_admin
-      if (role === 'super_admin' && auth.role !== 'super_admin') {
-        errors.push(`Sem permissao para atribuir super_admin ao usuario ${id}`)
-        continue
-      }
-
       // Check if caller can manage this target user
       const targetRole = await getUserRole(id)
-      if (targetRole && !canManageUser(auth.role, targetRole)) {
+      if (targetRole && !canManageUser(auth.role, targetRole, auth.isSuperAdmin)) {
         errors.push(`Sem permissao para gerenciar usuario ${id}`)
         continue
       }

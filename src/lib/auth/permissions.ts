@@ -65,10 +65,16 @@ export function hasAllPermissions(role: UserRole | null | undefined, permissions
   return permissions.every((p) => hasPermission(role, p))
 }
 
-export function canManageUser(authRole: UserRole | null | undefined, targetRole: UserRole): boolean {
+export function canManageUser(
+  authRole: UserRole | null | undefined,
+  targetRole: UserRole,
+  authIsSuperAdmin = false
+): boolean {
+  // Acesso Total (super admin) gerencia qualquer um
+  if (authIsSuperAdmin) return true
   if (!authRole) return false
 
-  // Super admin can manage anyone, including other super_admins
+  // Super admin legado pode gerenciar qualquer um
   if (authRole === 'super_admin') return true
 
   // Admin can manage anyone except super_admin and other admins

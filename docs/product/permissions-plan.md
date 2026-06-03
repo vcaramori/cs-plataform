@@ -1,6 +1,18 @@
-# Permissões Dinâmicas — super_admin global, escopo por módulo, RLS escopada
+# Permissões Dinâmicas — Acesso Total (flag) global, escopo por módulo, RLS escopada
 
-> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). Sweep dos demais módulos em andamento.
+> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). "Acesso Total" virou flag separada do Perfil (2026-06-03). Sweep dos demais módulos em andamento.
+
+## Modelo: Perfil (escopo) + Acesso Total (override) — 2026-06-03
+
+Cada usuário tem **sempre dois eixos independentes**:
+
+- **Perfil** = um `custom_role` (matriz `/settings/roles`) que define o **escopo** por módulo (`view`/`create`/`edit`/`delete`/`export`/`view_team`). `super_admin` **não é mais um "perfil"** no seletor.
+- **Acesso Total** = flag `profiles.is_super_admin` (override por usuário) que **ignora o perfil e libera tudo de todos**, sem restrição de escopo. Gerenciada no cadastro de usuários (toggle no `UserCard` / checkbox no `NewUserForm`), **não** na matriz.
+
+Regras:
+- Só quem **tem Acesso Total** pode conceder/remover Acesso Total de outro (e não no próprio card).
+- `role` legado (`profiles.role`) permanece como base de compatibilidade; durante a transição o override considera `is_super_admin = true OR role = 'super_admin'`. Ao **revogar** Acesso Total de um super_admin legado, o `role` base é rebaixado para `csm` para o compat não reativar o override.
+- Migração: `profiles.is_super_admin boolean not null default false`; backfill `true` para quem era `role='super_admin'`; `has_module_permission` passou a checar `is_super_admin = true OR role = 'admin'`.
 
 ## Contexto
 

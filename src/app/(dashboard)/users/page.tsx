@@ -53,6 +53,7 @@ export default async function UsersPage() {
       is_active: p?.is_active !== false,
       user_type: (p as any)?.user_type || 'internal',
       avatar_url: (p as any)?.avatar_url || null,
+      is_super_admin: !!(p as any)?.is_super_admin || p?.role === 'super_admin',
     }
   })
 
@@ -68,6 +69,7 @@ export default async function UsersPage() {
         roles={(roles || []) as any}
         currentUserRole={profile.role}
         currentUserId={user.id}
+        currentUserIsSuperAdmin={!!(profile as any).is_super_admin || profile.role === 'super_admin'}
       />
     </PageContainer>
   )

@@ -23,6 +23,7 @@ type User = {
   is_active: boolean
   user_type: string
   avatar_url?: string | null
+  is_super_admin?: boolean
 }
 
 type CustomRole = {
@@ -37,9 +38,10 @@ interface UsersClientProps {
   roles: CustomRole[]
   currentUserRole: UserRole
   currentUserId: string
+  currentUserIsSuperAdmin: boolean
 }
 
-export function UsersClient({ initialUsers, roles, currentUserRole, currentUserId }: UsersClientProps) {
+export function UsersClient({ initialUsers, roles, currentUserRole, currentUserId, currentUserIsSuperAdmin }: UsersClientProps) {
   const [users, setUsers] = useState<User[]>(initialUsers)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<'internal' | 'external'>('internal')
@@ -121,6 +123,22 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
     }
   }
 
+  async function handleToggleSuperAdmin(userId: string, current: boolean) {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_super_admin: !current } : u))
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, is_super_admin: !current }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao alterar Acesso Total')
+      toast.success(current ? 'Acesso Total removido' : 'Acesso Total concedido')
+    } catch (e: any) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_super_admin: current } : u))
+      toast.error(e.message)
+    }
+  }
+
   function handleUserCreated(newUser: User) {
     setUsers(prev => [...prev, newUser])
   }
@@ -129,17 +147,15 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, avatar_url: url } : u))
   }
 
-  const roleOptions = [
-    ...(currentUserRole === 'super_admin' ? [{ label: 'Super Admin', value: 'super_admin' }] : []),
-    ...roles.map(r => ({ label: r.name, value: r.name })),
-  ]
+  // Perfil = somente custom roles (escopo). "Acesso Total" é flag separada (toggle).
+  const roleOptions = roles.map(r => ({ label: r.name, value: r.name }))
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Sidebar: New User Form */}
       {canManage && (
         <div className="lg:col-span-1">
-          <NewUserForm roles={roles} currentUserRole={currentUserRole} onUserCreated={handleUserCreated} />
+          <NewUserForm roles={roles} currentUserRole={currentUserRole} currentUserIsSuperAdmin={currentUserIsSuperAdmin} onUserCreated={handleUserCreated} />
         </div>
       )}
 
@@ -208,10 +224,12 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
                         roleOptions={roleOptions}
                         currentUserRole={currentUserRole}
                         currentUserId={currentUserId}
+                        currentUserIsSuperAdmin={currentUserIsSuperAdmin}
                         isEdited={!!editedRoles[user.id]}
                         editedRole={editedRoles[user.id]}
                         onRoleChange={handleRoleChange}
                         onToggleActive={handleToggleActive}
+                        onToggleSuperAdmin={handleToggleSuperAdmin}
                         onAvatarChange={handleAvatarChange}
                       />
                     </motion.div>

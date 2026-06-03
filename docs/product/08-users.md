@@ -39,20 +39,22 @@ O módulo **Usuários** permite a gestão de membros da equipe de Customer Succe
 | Nome | Text | Sim | Nome completo |
 | Email | Email | Sim | Email único |
 | Senha | Password | Sim (novo) | Senha inicial |
-| Função | Select | Sim | Papel no sistema |
-| Avatar | File | Não | Foto de perfil |
+| Perfil | Select | Sim | Custom role (define o escopo por módulo) |
+| Acesso Total | Checkbox/Toggle | Não | Override que ignora o perfil e libera tudo de todos. Só quem tem Acesso Total concede. |
+| Avatar | File | Não | Foto de perfil (qualquer usuário pode trocar a **própria** foto) |
 
 ---
 
 ## 8.2 Regras de Negócio
 
-### Funções (Roles)
-| Role | Descrição |
-|------|-----------|
-| `admin` | Acesso total ao sistema |
-| `head_cs` | Gestión de CSMs + configurações |
-| `csm` | Gestão de contas分配adas |
-| `viewer` | Apenas visualização |
+### Perfil (escopo) + Acesso Total (override)
+
+Desde Jun/2026 o acesso tem **dois eixos independentes** (ver [permissions-plan.md](permissions-plan.md)):
+
+- **Perfil** = um `custom_role` configurado na matriz `/settings/roles`, que define o **escopo** por módulo (`view`/`create`/`edit`/`delete`/`export`/`view_team`). É o único valor do seletor de "Perfil de Acesso".
+- **Acesso Total** = flag `profiles.is_super_admin` por usuário. Quando ligada, **ignora o perfil** e libera ver/editar tudo de todos, sem restrição de escopo. Gerenciada no cadastro de usuários (toggle no card / checkbox no formulário). Só quem já tem Acesso Total pode conceder/remover (e não no próprio card).
+
+> Roles legados (`csm`, `csm_senior`, `head_cs`, `admin`, `super_admin`) seguem em `profiles.role` como base de compatibilidade, mas `super_admin` **não** aparece mais como opção de perfil — virou a flag Acesso Total.
 
 ### Permissões
 | Ação | Admin | Head CS | CSM | Viewer |
@@ -83,9 +85,10 @@ O módulo **Usuários** permite a gestão de membros da equipe de Customer Succe
 - Filtro por função
 
 ### UserCard
-- Avatar + Nome + Função
-- Status indicator
-- Ações rápidas
+- Avatar (overlay de troca de foto: própria sempre; de terceiros se puder gerenciar) + Nome + badges (Inativo / Externo / **Acesso Total**)
+- Seletor de **Perfil** (custom roles) quando o autor pode gerenciar o usuário
+- Toggle **Acesso Total** (só visível para quem tem Acesso Total, fora do próprio card)
+- Toggle **Ativo/Bloqueado**
 
 ---
 
@@ -130,3 +133,4 @@ O módulo **Usuários** permite a gestão de membros da equipe de Customer Succe
 | Data | Alteração |
 |------|------------|
 | Abr/2026 | Versão initial |
+| Jun/2026 | "Acesso Total" separado do Perfil (flag `is_super_admin`); Perfil = custom roles; troca da própria foto (`PATCH /api/users/me`) |
