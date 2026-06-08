@@ -13,9 +13,54 @@ export type RecomputeResult = {
   completed: boolean
 } | null
 
+/** Soma dias a uma data 'YYYY-MM-DD' e devolve 'YYYY-MM-DD' (UTC, sem fuso). */
+export function addDays(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 /**
- * Cria os milestones de um contrato a partir do catálogo de etapas ativas.
- * Idempotente: usa upsert por (contract_id, stage_key).
+ * Cria os milestones de um contrato a partir de um TEMPLATE, calculando as
+ * datas (planned_date = início + offset_days; planned_end quando duration>0).
+ * Retorna a contagem e o nome do 1º marco (p/ definir a etapa atual).
+ */
+export async function seedMilestonesFromTemplate(
+  admin: Admin,
+  contractId: string,
+  accountId: string,
+  templateId: string,
+  startDate: string
+): Promise<{ count: number; firstName: string | null }> {
+  const { data: items, error } = await admin
+    .from('onboarding_template_items')
+    .select('*')
+    .eq('template_id', templateId)
+    .order('sort_order')
+  if (error) throw new Error(`Erro ao ler itens do template: ${error.message}`)
+
+  const rows = (items ?? []).map((it: any) => ({
+    contract_id: contractId,
+    account_id: accountId,
+    template_item_id: it.id,
+    stage_key: null,
+    name: it.name,
+    milestone_type: it.milestone_type,
+    status: 'pending',
+    planned_date: addDays(startDate, it.offset_days ?? 0),
+    planned_end: (it.duration_days ?? 0) > 0 ? addDays(startDate, (it.offset_days ?? 0) + it.duration_days) : null,
+    sort_order: it.sort_order ?? 0,
+  }))
+  if (rows.length === 0) return { count: 0, firstName: null }
+
+  const { error: insErr } = await admin.from('onboarding_milestones').insert(rows)
+  if (insErr) throw new Error(`Erro ao criar milestones: ${insErr.message}`)
+  return { count: rows.length, firstName: rows[0]?.name ?? null }
+}
+
+/**
+ * (Legado) Cria os milestones a partir do catálogo fixo de etapas.
+ * Mantido para compatibilidade; o fluxo novo usa seedMilestonesFromTemplate.
  */
 export async function seedMilestonesForContract(
   admin: Admin,
@@ -24,7 +69,7 @@ export async function seedMilestonesForContract(
 ): Promise<number> {
   const { data: stages, error } = await admin
     .from('onboarding_stages')
-    .select('key, sort_order')
+    .select('key, label, sort_order')
     .eq('is_active', true)
     .order('sort_order')
   if (error) throw new Error(`Erro ao ler etapas: ${error.message}`)
@@ -33,15 +78,14 @@ export async function seedMilestonesForContract(
     contract_id: contractId,
     account_id: accountId,
     stage_key: s.key,
+    name: s.label ?? s.key,
     status: 'pending',
     sort_order: s.sort_order,
   }))
   if (rows.length === 0) return 0
 
-  const { error: upErr } = await admin
-    .from('onboarding_milestones')
-    .upsert(rows, { onConflict: 'contract_id,stage_key', ignoreDuplicates: true })
-  if (upErr) throw new Error(`Erro ao criar milestones: ${upErr.message}`)
+  const { error: insErr } = await admin.from('onboarding_milestones').insert(rows)
+  if (insErr) throw new Error(`Erro ao criar milestones: ${insErr.message}`)
   return rows.length
 }
 
@@ -55,16 +99,16 @@ export async function recomputeContractOnboarding(
 ): Promise<RecomputeResult> {
   const { data: ms } = await admin
     .from('onboarding_milestones')
-    .select('stage_key, status, sort_order')
+    .select('name, stage_key, status, sort_order')
     .eq('contract_id', contractId)
     .order('sort_order')
 
-  const milestones = (ms ?? []) as { stage_key: string; status: string; sort_order: number }[]
+  const milestones = (ms ?? []) as { name: string | null; stage_key: string | null; status: string; sort_order: number }[]
   if (milestones.length === 0) return null
 
   const pending = milestones.filter((m) => m.status !== 'done' && m.status !== 'skipped')
   const allDone = pending.length === 0
-  const currentStage = allDone ? null : pending[0].stage_key
+  const currentStage = allDone ? null : (pending[0].name ?? pending[0].stage_key)
 
   const { data: contract } = await admin
     .from('contracts')
