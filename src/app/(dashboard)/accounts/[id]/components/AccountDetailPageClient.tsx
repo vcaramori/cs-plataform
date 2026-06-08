@@ -9,6 +9,8 @@ import { QuickDocuments } from './QuickDocuments'
 import { AccountChat } from './AccountChat'
 import { AccountActivitiesWidget } from './AccountActivitiesWidget'
 import { EditContractDialog } from './EditContractDialog'
+import { OnboardingPanel } from './OnboardingPanel'
+import { NegotiationPanel } from './NegotiationPanel'
 import { AdoptionChart } from './AdoptionChart'
 import { calculateNetMRR, calculateCurrentDiscount } from '@/lib/utils/contract-utils'
 import Link from 'next/link'
@@ -190,6 +192,10 @@ function CompactContractCard({ contract, accountId, governanceRules }: { contrac
           <Text variant="primary" className="text-[10px] font-black tracking-tight">{contract.contracted_hours_monthly}h / Mês</Text>
         </div>
       )}
+
+      {/* Implantação (onboarding) e histórico de negociação por contrato */}
+      <OnboardingPanel contractId={contract.id} accountId={accountId} contractLabel={contract.description ?? undefined} />
+      <NegotiationPanel contractId={contract.id} accountId={accountId} />
     </Card>
   )
 }
