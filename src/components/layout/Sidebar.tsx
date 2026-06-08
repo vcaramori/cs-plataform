@@ -28,6 +28,7 @@ import {
   Zap,
   Lightbulb,
   Package,
+  Rocket,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -51,6 +52,7 @@ const analiseItems = [
 ]
 
 const operacaoItems = [
+  { href: '/onboarding',        label: 'Onboarding',       icon: Rocket,         module: 'onboarding' },
   { href: '/esforco',           label: 'Esforço',          icon: Clock,          module: 'esforco' },
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck,    module: 'suporte' },
   { href: '/fluxos',            label: 'Fluxos',            icon: Workflow,       module: 'playbooks' },

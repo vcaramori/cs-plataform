@@ -10,6 +10,7 @@ export const PLATFORM_MODULES = [
   { module: 'dashboard',     label: 'Dashboard & Home' },
   { module: 'suporte',       label: 'Suporte & Tickets' },
   { module: 'nps',           label: 'Pesquisas NPS' },
+  { module: 'onboarding',    label: 'Onboarding & Implantação' },
   { module: 'voc',           label: 'Voz do Cliente (VoC)' },
   { module: 'adoption',      label: 'Adoption & Heatmaps' },
   { module: 'esforco',       label: 'Esforço & Capacity' },
