@@ -35,6 +35,25 @@ Catálogo data-driven em `onboarding_stages` (editável sem deploy). Ordem seeda
 - **OnboardingPanel** (em cada `CompactContractCard`): badge de status + progresso; "Iniciar onboarding" (cria os milestones); checklist das 9 etapas com toggle de status; diário de notas (cada nota alimenta o RAG).
 - **NegotiationPanel**: histórico de negociação + "Registrar negociação" (venda inicial / renovação / renegociação), com desconto ofertado/aceito, objeção, argumento de fechamento, contraparte, resultado e notas. Cada registro alimenta o RAG.
 
+## Como operar + o que cada indicador significa
+
+**Dois lugares:** o painel `/onboarding` (gerencial — acompanha, não edita; clique vai à conta) e o painel *Onboarding* no card do contrato dentro da conta (onde se **opera**).
+
+**Fluxo:** *Iniciar onboarding* cria os 9 marcos → mude o status de cada marco (Pendente/Em andamento/Concluído/Pulado) → o sistema **recalcula** sozinho a *etapa atual* (1º marco não concluído), o *% de progresso* e o *status geral* (vira "Concluído" quando todos terminam). Registre *notas* (diário) e *esforço de implantação* (vai ao PSA) ali mesmo.
+
+**Os 4 KPIs do topo do `/onboarding`:**
+| Indicador | O que conta |
+|---|---|
+| **Em onboarding** | Contratos com onboarding **ativo** (status `Em andamento` ou `Pausado`). Não conta concluídos/cancelados. |
+| **Atrasados (go-live)** | Dos ativos, quantos têm a **data alvo de go-live já vencida** e ainda não concluíram. |
+| **Em risco / travados** | Dos ativos, quantos estão com **saúde** = `Em risco` ou `Travado`. |
+| **Tempo médio (dias)** | Média de dias desde o **início** do onboarding dos ativos. |
+
+- **Board por etapa**: para cada uma das 9 etapas, quantos contratos ativos estão **parados naquela etapa** agora (campo `onboarding_current_stage`). Clicar filtra a tabela.
+- **Tabela**: uma linha por contrato — conta/contrato, etapa atual, responsável (pode ser ≠ do CSM), progresso (marcos feitos/total + %), dias em onboarding, go-live alvo, status (+ saúde se não "no prazo").
+
+> ⚠️ **Hoje** a *saúde* (`onboarding_health`) e a *data alvo de go-live* são **manuais** — sem automação derivando "travado/atrasado". Logo, "Atrasados" e "Em risco/travados" só acendem se esses campos forem preenchidos (ver follow-up).
+
 ## Modelo de dados (migration `20260608120000_onboarding_module.sql`, aditiva)
 
 - **`onboarding_stages`** `(key, label, sort_order, is_active)` — catálogo seedado com as 9 etapas.

@@ -184,6 +184,16 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🤖 MCP da ferramenta (agentes) + correção da foto na sidebar (2026-06-08)
+
+**MCP de negócio** para um agente interagir em todas as frentes (além do Supabase MCP). Ver [docs/product/13-mcp.md](docs/product/13-mcp.md).
+- **Uma fonte da verdade**: registry [src/lib/mcp/registry.ts](src/lib/mcp/registry.ts) servido por **dois transportes** — HTTP [/api/mcp](src/app/api/mcp/route.ts) (JSON-RPC + `Authorization: Bearer MCP_API_TOKEN`) e **stdio** [mcp/stdio.mjs](mcp/stdio.mjs) (ponte fina ao HTTP; `npm run mcp:stdio`, entrada `csplataform` no `.mcp.json`).
+- **Leitura ampla + escrita restrita ao operacional**: `ask` (RAG), `get_account` (360°), `list/get_onboarding`, `get_nps`, `list/get_ticket`, `list_effort`; escrita: `start_onboarding`, `update_onboarding_milestone`, `log_onboarding_effort` (→ PSA), `log_effort`, `add_onboarding_event`, `create_ticket`, `log_interaction`, `register_negotiation`. **Sem** usuários/config/admin/delete.
+- **Service-role + token**; lançamentos do agente atribuídos a `MCP_ACTOR_USER_ID` (usuário real). Refactor: `logEffort()` ([src/lib/effort/log-effort.ts](src/lib/effort/log-effort.ts)) compartilhado entre a rota de esforço e o MCP.
+- Env: `MCP_API_TOKEN`, `MCP_ENABLED`, `MCP_ACTOR_USER_ID`, `MCP_HTTP_URL`.
+
+**Correção**: a foto do usuário (`avatar_url`) agora aparece no **rodapé da sidebar** — antes o avatar era fixo num identicon gerado, ignorando a foto enviada. ([Sidebar.tsx](src/components/layout/Sidebar.tsx) + repasse de `avatar_url` no [ClientDashboardLayout](src/components/layout/ClientDashboardLayout.tsx)).
+
 ### 🚀 Onboarding & Implantação + Histórico de Negociação no RAG (2026-06-08)
 
 Novo módulo **Onboarding** (`/onboarding`) para acompanhar a implantação de cada contrato por etapa, e duas trilhas de **história do cliente** indexadas no RAG (**onboarding** e **negociação**), consultáveis no Perguntar. Ver [docs/product/12-onboarding.md](docs/product/12-onboarding.md).

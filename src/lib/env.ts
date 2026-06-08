@@ -77,6 +77,15 @@ export const env = {
   airtable: {
     token: process.env.AIRTABLE_TOKEN ?? '',
   },
+  // MCP da ferramenta (servidor de tools para agentes). Token = segredo (server-only).
+  // actorUserId: usuário real (auth.users.id) atribuído a lançamentos feitos pelo agente
+  // (time_entries.csm_id / interactions.csm_id são NOT NULL com FK). Pode ser sobrescrito
+  // por argumento acting_user_id na chamada da tool.
+  mcp: {
+    token: process.env.MCP_API_TOKEN ?? '',
+    enabled: process.env.MCP_ENABLED !== 'false',
+    actorUserId: process.env.MCP_ACTOR_USER_ID ?? '',
+  },
   // PSA — apontamento de horas de implantação (Edge Function teams-bot).
   // LIGADO por padrão: todo esforço de onboarding é enviado automaticamente.
   // A URL tem default embutido em src/lib/integrations/psa.ts (server-only);
