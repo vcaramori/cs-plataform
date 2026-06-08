@@ -98,11 +98,13 @@ function PlanneraMark({ className }: { className?: string }) {
 interface SidebarProps {
   user: User
   role?: UserRole | null
+  /** Foto do perfil (avatar_url). Quando ausente, usa identicon gerado + iniciais. */
+  avatarUrl?: string | null
   /** Callback para fechar o drawer mobile ao navegar */
   onMobileClose?: () => void
 }
 
-export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
+export function Sidebar({ user, role, avatarUrl, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -369,7 +371,7 @@ export function Sidebar({ user, role, onMobileClose }: SidebarProps) {
           !isCollapsed ? "gap-3 p-2 rounded-2xl hover:bg-muted/50" : "justify-center p-2 rounded-xl"
         )}>
           <Avatar className="w-9 h-9 border-2 border-border/50 flex-shrink-0 shadow-md">
-            <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
+            <AvatarImage src={avatarUrl || `https://avatar.vercel.sh/${user.email}`} />
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-extrabold">
               {initials}
             </AvatarFallback>

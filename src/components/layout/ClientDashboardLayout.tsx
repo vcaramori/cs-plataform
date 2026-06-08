@@ -41,7 +41,7 @@ export function ClientDashboardLayout({ user, profile, children }: Props) {
             mobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          <Sidebar user={user} role={profile?.role} onMobileClose={() => setMobileOpen(false)} />
+          <Sidebar user={user} role={profile?.role} avatarUrl={profile?.avatar_url ?? null} onMobileClose={() => setMobileOpen(false)} />
         </div>
 
         <main className="flex-1 overflow-y-auto relative min-w-0">
