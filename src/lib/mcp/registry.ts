@@ -29,9 +29,14 @@ export type McpTool = {
 const admin = () => getSupabaseAdminClient() as any
 const RAG_ACTOR = 'mcp-agent' // rótulo p/ o pipeline RAG (não é FK)
 
+// Usuário real (auth.users) atribuído por padrão aos lançamentos do agente.
+// Embutido (server-only) p/ a produção funcionar sem env; sobrescrevível por
+// MCP_ACTOR_USER_ID ou pelo argumento acting_user_id da tool.
+const DEFAULT_ACTOR_USER_ID = 'c1cfbf19-8fbf-4344-8093-3e03135f235f'
+
 /** Usuário real atribuído a lançamentos do agente (csm_id/FK). Override por acting_user_id. */
 function actorUser(a: Record<string, any>): string {
-  const id = (a.acting_user_id as string) || env.mcp.actorUserId
+  const id = (a.acting_user_id as string) || env.mcp.actorUserId || DEFAULT_ACTOR_USER_ID
   if (!id) throw new Error('Defina MCP_ACTOR_USER_ID (ou passe acting_user_id) — necessário para atribuir o lançamento a um usuário real.')
   return id
 }

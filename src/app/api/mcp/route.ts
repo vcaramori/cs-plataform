@@ -10,6 +10,12 @@ import { listToolsForMcp, callMcpTool } from '@/lib/mcp/registry'
 
 const PROTOCOL_VERSION = '2024-11-05'
 
+// Token padrão embutido (módulo SERVER-ONLY — nunca vai para o bundle do navegador),
+// para a produção subir funcional sem configurar env no Vercel. Sobrescrevível por
+// MCP_API_TOKEN (recomendado rotacionar por lá). NÃO usar em repositório público.
+const DEFAULT_MCP_TOKEN = '5d36610a4828a07400456d74abd89e3202bb09d0002c0025a4fd4a2c8a4f2a9f'
+const MCP_TOKEN = () => env.mcp.token || DEFAULT_MCP_TOKEN
+
 function rpcResult(id: any, result: any) {
   return { jsonrpc: '2.0', id, result }
 }
@@ -18,10 +24,11 @@ function rpcError(id: any, code: number, message: string) {
 }
 
 function authorized(req: Request): boolean {
-  if (!env.mcp.token) return false // sem token configurado → nega tudo
+  const expected = MCP_TOKEN()
+  if (!expected) return false // sem token configurado → nega tudo
   const h = req.headers.get('authorization') || ''
   const token = h.toLowerCase().startsWith('bearer ') ? h.slice(7).trim() : h.trim()
-  return token === env.mcp.token
+  return token === expected
 }
 
 async function handleRpc(msg: any): Promise<any | null> {
@@ -89,7 +96,7 @@ export async function GET() {
     server: 'csplataform-mcp',
     transport: 'http-jsonrpc',
     enabled: env.mcp.enabled,
-    tools: env.mcp.token ? listToolsForMcp().map((t) => t.name) : [],
+    tools: MCP_TOKEN() ? listToolsForMcp().map((t) => t.name) : [],
     hint: 'POST JSON-RPC (initialize|tools/list|tools/call) com Authorization: Bearer <MCP_API_TOKEN>.',
   })
 }
