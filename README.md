@@ -197,6 +197,8 @@ Novo módulo **Onboarding** (`/onboarding`) para acompanhar a implantação de c
 - Migration: `supabase/migrations/20260608120000_onboarding_module.sql` (aditiva, aplicada via MCP).
 - **Follow-up**: fundir as trilhas onboarding/negociação na `AccountUnifiedTimeline` (hoje visíveis nos painéis por contrato e no Perguntar).
 
+**Esforço de implantação → PSA**: o `OnboardingPanel` ganhou "Registrar esforço de implantação" — o esforço é herdado do fluxo de `time_entries` (parse IA), marcado `activity_type='onboarding'`, vira `onboarding_event` 'effort' (diário/RAG) e é apontado no sistema **PSA** (Edge Function `teams-bot`) com `{ user_email, project_name=nome da conta, hours, date, notes }`. Best-effort (não bloqueia o lançamento), idempotência via `time_entries.psa_sync_status`/`psa_synced_at`/`psa_message`. Config server-side: `PSA_TEAMS_BOT_URL` (segredo), `PSA_INTEGRATION_TOKEN`, `PSA_SYNC_ENABLED` (default `false`), `PSA_TIMEOUT_MS`. Migration `20260608150000_onboarding_effort_psa.sql`. Cliente: [src/lib/integrations/psa.ts](src/lib/integrations/psa.ts).
+
 ### 👁️ Visibilidade geral para internos; recorte por CSM só na Home (2026-06-03)
 
 Decisão de produto: **todo usuário interno enxerga todos os dados (leitura)**; a restrição por CSM responsável fica **apenas na tela Home** (que direciona cada CSM para a própria carteira). Resolve o caso "CSM não via contas de outros (ex.: Adimax)". Ver [docs/product/permissions-plan.md](docs/product/permissions-plan.md).

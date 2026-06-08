@@ -77,6 +77,14 @@ export const env = {
   airtable: {
     token: process.env.AIRTABLE_TOKEN ?? '',
   },
+  // PSA — apontamento de horas de implantação (Edge Function teams-bot).
+  // A URL é o segredo: usar SOMENTE server-side. enabled OFF por padrão (rollout seguro).
+  psa: {
+    teamsBotUrl: process.env.PSA_TEAMS_BOT_URL ?? '',
+    token: process.env.PSA_INTEGRATION_TOKEN ?? '',
+    enabled: process.env.PSA_SYNC_ENABLED === 'true',
+    timeoutMs: parseInt(process.env.PSA_TIMEOUT_MS ?? '10000'),
+  },
   support: {
     defaultAssigneeId: process.env.SUPPORT_DEFAULT_ASSIGNEE_ID ?? '',
     headUserId: process.env.SUPPORT_HEAD_USER_ID ?? '',

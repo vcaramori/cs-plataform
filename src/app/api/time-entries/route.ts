@@ -6,11 +6,16 @@ import { parseTimeEntry } from '@/lib/gemini/parse-time-entry'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 import { getHealthClassification } from '@/lib/health/utils'
 import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { postEffortToPSA } from '@/lib/integrations/psa'
+import { ingestOnboardingEvent } from '@/lib/rag/rag-pipeline'
 
 const BodySchema = z.object({
   raw_text: z.string().min(5),
   account_id: z.string().uuid().optional(),
   file_urls: z.array(z.string()).optional(),
+  // Contexto de onboarding: quando presente, o esforço é marcado como implantação
+  // (activity_type='onboarding'), entra no diário/RAG e é apontado no PSA.
+  onboarding_contract_id: z.string().uuid().optional(),
 })
 
 export async function GET(request: Request) {
@@ -121,17 +126,23 @@ export async function POST(request: Request) {
   const needsReview = parsedEntry.confidence_score < 0.8
   const fileUrls = parsed.data.file_urls ?? []
 
+  // Contexto de onboarding: força a classificação como implantação.
+  const onboardingContractId = parsed.data.onboarding_contract_id ?? null
+  const isOnboarding = !!onboardingContractId
+  const effectiveActivityType = isOnboarding ? 'onboarding' : parsedEntry.activity_type
+
   const { data, error } = await supabase
     .from('time_entries')
     .insert({
       account_id: accountId,
       csm_id: user.id,
-      activity_type: parsedEntry.activity_type,
+      activity_type: effectiveActivityType,
       natural_language_input: parsed.data.raw_text,
       parsed_hours: parsedEntry.parsed_hours,
       parsed_description: parsedEntry.parsed_description,
       date: parsedEntry.date,
       file_urls: fileUrls,
+      ...(isOnboarding && { psa_sync_status: 'pending' }),
       ...(needsReview && { status: 'pending_review' }),
     })
     .select('*, accounts(name)')
@@ -220,10 +231,62 @@ export async function POST(request: Request) {
     }
   }
 
+  // ONBOARDING: registra no diário (RAG) e aponta as horas no PSA (best-effort).
+  let psaResult: { status: string; message: string } | null = null
+  if (isOnboarding) {
+    const admin = getSupabaseAdminClient() as any
+    const accountName = result.accounts?.name ?? 'Conta'
+
+    // Evento de esforço no diário de onboarding (entra na trilha RAG 'onboarding')
+    try {
+      const { data: ev } = await admin
+        .from('onboarding_events')
+        .insert({
+          contract_id: onboardingContractId,
+          account_id: accountId,
+          time_entry_id: result.id,
+          event_type: 'effort',
+          title: `Esforço de implantação: ${parsedEntry.parsed_hours}h`,
+          description: parsedEntry.parsed_description,
+          date: parsedEntry.date,
+          created_by: user.id,
+        })
+        .select('id')
+        .single()
+      if (ev?.id) { try { await ingestOnboardingEvent(ev.id) } catch { /* RAG best-effort */ } }
+    } catch (evErr) {
+      console.error('[TimeEntry] Onboarding event insert error:', evErr)
+    }
+
+    // Apontamento no PSA (controle de horas de implantação)
+    const psa = await postEffortToPSA({
+      userEmail: user.email ?? '',
+      projectName: accountName,
+      hours: parsedEntry.parsed_hours,
+      date: parsedEntry.date,
+      notes: parsedEntry.parsed_description,
+    })
+    psaResult = { status: psa.status, message: psa.message }
+    const syncStatus = psa.status === 'success' ? 'synced' : psa.status === 'skipped' ? 'skipped' : 'failed'
+    try {
+      await admin
+        .from('time_entries')
+        .update({
+          psa_sync_status: syncStatus,
+          psa_synced_at: syncStatus === 'synced' ? new Date().toISOString() : null,
+          psa_message: psa.message,
+        })
+        .eq('id', result.id)
+    } catch (upErr) {
+      console.error('[TimeEntry] PSA status update error:', upErr)
+    }
+  }
+
   return NextResponse.json({
     ...result,
     confidence_score: parsedEntry.confidence_score,
     needs_review: needsReview,
     suggested_tasks: parsedEntry.action_items?.length ?? 0,
+    psa: psaResult,
   }, { status: 201 })
 }

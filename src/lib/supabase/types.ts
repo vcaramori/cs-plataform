@@ -90,7 +90,7 @@ export type Contract = {
 export type OnboardingStatus = 'not-started' | 'in-progress' | 'on-hold' | 'completed' | 'cancelled'
 export type OnboardingHealth = 'on-track' | 'at-risk' | 'stalled'
 export type OnboardingMilestoneStatus = 'pending' | 'in-progress' | 'done' | 'skipped'
-export type OnboardingEventType = 'note' | 'meeting' | 'blocker' | 'decision' | 'status_change' | 'attachment'
+export type OnboardingEventType = 'note' | 'meeting' | 'blocker' | 'decision' | 'status_change' | 'attachment' | 'effort'
 
 export type OnboardingStage = {
   id: string
@@ -121,6 +121,7 @@ export type OnboardingEvent = {
   contract_id: string
   account_id: string
   milestone_id: string | null
+  time_entry_id?: string | null
   event_type: OnboardingEventType
   title: string | null
   description: string | null
@@ -194,6 +195,8 @@ export type Interaction = {
   created_at: string
 }
 
+export type PsaSyncStatus = 'skipped' | 'pending' | 'synced' | 'failed'
+
 export type TimeEntry = {
   id: string
   account_id: string
@@ -206,6 +209,10 @@ export type TimeEntry = {
   date: string
   logged_at: string
   file_urls?: string[] | null
+  // Integração PSA (apontamento de horas de implantação)
+  psa_sync_status?: PsaSyncStatus | null
+  psa_synced_at?: string | null
+  psa_message?: string | null
 }
 
 export type SupportTicket = {

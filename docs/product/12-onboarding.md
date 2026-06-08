@@ -56,6 +56,17 @@ Catálogo data-driven em `onboarding_stages` (editável sem deploy). Ordem seeda
 - **Sizing**: `chunkSize` 512→1024, `chunkOverlap` 50→128 ([env.ts](../../src/lib/env.ts)) — dentro do teto ~2048 tokens do `gemini-embedding-001`; como `embeddings` estava vazio, foi fixado sem re-ingestão.
 - **Backfill** (re-indexação retroativa): `POST /api/onboarding/backfill-embeddings` e `POST /api/contracts/negotiation/backfill-embeddings`.
 
+## Esforço de implantação → integração PSA (2026-06-08)
+
+Quando o profissional registra esforço **dentro do Onboarding**, as horas são herdadas do fluxo de esforço e apontadas no sistema **PSA** (controle de horas de implantação) via a Edge Function pública `teams-bot`.
+
+- **Onde**: ação "Registrar esforço de implantação" no `OnboardingPanel` (por contrato). Reusa o parse de IA do esforço (texto livre → horas/data/descrição).
+- **Marcação**: o `time_entry` é gravado com `activity_type='onboarding'` (aparece normal no módulo Esforço — "herdado") e gera um `onboarding_event` `event_type='effort'` (entra no diário e na trilha RAG de onboarding, com `time_entry_id`).
+- **Envio ao PSA** ([src/lib/integrations/psa.ts](../../src/lib/integrations/psa.ts), chamado em [api/time-entries/route.ts](../../src/app/api/time-entries/route.ts) quando `onboarding_contract_id` está presente): `POST teams-bot` com `{ user_email: e-mail de quem lançou, project_name: nome da conta, hours, date, notes }`. **Best-effort**: falha do PSA não bloqueia o lançamento; a `message` (PT-BR) é exibida ao usuário.
+- **Idempotência/observabilidade**: colunas `time_entries.psa_sync_status` (`skipped|pending|synced|failed`), `psa_synced_at`, `psa_message`. Cada esforço = um envio; edições não reenviam (o PSA só insere). O PSA decide `entry_type` (consulting/implementation) pelo tipo do recurso vinculado ao e-mail.
+- **Config** (env, server-side — a URL é segredo): `PSA_TEAMS_BOT_URL`, `PSA_INTEGRATION_TOKEN` (opcional), `PSA_SYNC_ENABLED` (default `false` = rollout seguro), `PSA_TIMEOUT_MS`. Com `false`, o esforço grava e o PSA fica `skipped`.
+- **Follow-ups**: entrada rápida no painel `/onboarding`; endpoint admin para reprocessar `failed`; mapa `accounts.psa_project_name` se o nome divergir do projeto no PSA.
+
 ## Permissões e visibilidade
 
 - Novo módulo de permissão **`onboarding`** ([modules.ts](../../src/lib/auth/modules.ts)); negociação fica sob **`contracts`**. Item no Sidebar (grupo Operação, ícone Rocket).

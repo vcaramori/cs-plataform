@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Rocket, ChevronDown, ChevronRight, Loader2, Plus, Check } from 'lucide-react'
+import { Rocket, ChevronDown, ChevronRight, Loader2, Plus, Check, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -34,7 +34,7 @@ const MS_STATUS: { value: string; label: string }[] = [
   { value: 'skipped', label: 'Pulado' },
 ]
 
-export function OnboardingPanel({ contractId, contractLabel }: { contractId: string; accountId?: string; contractLabel?: string }) {
+export function OnboardingPanel({ contractId, accountId }: { contractId: string; accountId?: string; contractLabel?: string }) {
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -42,6 +42,9 @@ export function OnboardingPanel({ contractId, contractLabel }: { contractId: str
   const [contract, setContract] = useState<ContractOb>(null)
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [note, setNote] = useState('')
+  const [effortText, setEffortText] = useState('')
+  const [effortBusy, setEffortBusy] = useState(false)
+  const [effortMsg, setEffortMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -110,6 +113,42 @@ export function OnboardingPanel({ contractId, contractLabel }: { contractId: str
       await load()
     } finally {
       setBusy(false)
+    }
+  }
+
+  // Esforço de implantação: herda o parse IA do esforço e aponta as horas no PSA.
+  const submitEffort = async () => {
+    if (effortText.trim().length < 5) return
+    setEffortBusy(true)
+    setEffortMsg(null)
+    try {
+      const res = await fetch('/api/time-entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raw_text: effortText.trim(),
+          account_id: accountId,
+          onboarding_contract_id: contractId,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        const msg = typeof data?.error === 'string' ? data.error : (data?.hint ?? 'Falha ao registrar esforço.')
+        setEffortMsg({ ok: false, text: msg })
+        return
+      }
+      setEffortText('')
+      const psa = data?.psa as { status: string; message: string } | null
+      const base = `Esforço de ${data.parsed_hours ?? ''}h registrado.`
+      setEffortMsg({
+        ok: !psa || psa.status !== 'error',
+        text: psa ? `${base} PSA: ${psa.message}` : base,
+      })
+      await load()
+    } catch {
+      setEffortMsg({ ok: false, text: 'Falha de rede ao registrar esforço.' })
+    } finally {
+      setEffortBusy(false)
     }
   }
 
@@ -200,6 +239,31 @@ export function OnboardingPanel({ contractId, contractLabel }: { contractId: str
                 <Button size="sm" variant="outline" onClick={addNote} disabled={busy || !note.trim()}>
                   <Plus className="w-3.5 h-3.5" />
                 </Button>
+              </div>
+
+              {/* Esforço de implantação → apontamento de horas no PSA */}
+              <div className="pt-2 border-t border-border-divider/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-plannera-primary" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-content-secondary">Esforço de implantação</span>
+                </div>
+                <textarea
+                  value={effortText}
+                  onChange={(e) => setEffortText(e.target.value)}
+                  placeholder="Ex.: 2h hoje configurando a instância e treinando o time"
+                  rows={2}
+                  className="w-full text-[11px] px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-divider text-content-primary placeholder:text-content-secondary/50 focus:outline-none focus:ring-1 focus:ring-plannera-primary/30"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[9px] text-content-secondary/70">Horas e data são lidas do texto (ex.: "ontem", "3h").</span>
+                  <Button size="sm" onClick={submitEffort} disabled={effortBusy || effortText.trim().length < 5}>
+                    {effortBusy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Clock className="w-3.5 h-3.5 mr-1" />}
+                    Registrar esforço
+                  </Button>
+                </div>
+                {effortMsg && (
+                  <p className={`text-[10px] ${effortMsg.ok ? 'text-success' : 'text-rose-500'}`}>{effortMsg.text}</p>
+                )}
               </div>
             </>
           )}
