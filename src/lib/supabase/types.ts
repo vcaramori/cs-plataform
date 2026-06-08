@@ -84,6 +84,7 @@ export type Contract = {
   onboarding_target_go_live?: string | null
   onboarding_completed_at?: string | null
   onboarding_health?: OnboardingHealth
+  onboarding_template_id?: string | null
 }
 
 // --- Onboarding ------------------------------------------------------------
@@ -101,19 +102,48 @@ export type OnboardingStage = {
   created_at: string
 }
 
+export type OnboardingMilestoneType =
+  | 'kickoff' | 'workteam' | 'training' | 'instance_setup'
+  | 'go_live' | 'hypercare' | 'handover' | 'milestone' | 'other'
+
 export type OnboardingMilestone = {
   id: string
   contract_id: string
   account_id: string
-  stage_key: string
+  stage_key: string | null
+  name: string | null
+  milestone_type: string | null
   status: OnboardingMilestoneStatus
   planned_date: string | null
+  planned_end: string | null
   completed_date: string | null
   owner_id: string | null
   notes: string | null
   sort_order: number
+  template_item_id?: string | null
   created_at: string
   updated_at: string
+}
+
+export type OnboardingTemplate = {
+  id: string
+  name: string
+  description: string | null
+  project_type: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type OnboardingTemplateItem = {
+  id: string
+  template_id: string
+  name: string
+  milestone_type: string
+  offset_days: number
+  duration_days: number
+  sort_order: number
+  created_at: string
 }
 
 export type OnboardingEvent = {
