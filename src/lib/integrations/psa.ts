@@ -4,9 +4,18 @@ import { env } from '@/lib/env'
  * Cliente da integração PSA — apontamento de horas de implantação.
  * Envia um time entry para a Edge Function pública `teams-bot` (modo estruturado).
  *
- * IMPORTANTE: a URL é o único segredo da integração — usar SOMENTE server-side.
+ * IMPORTANTE: ARQUIVO SERVER-ONLY — não importar em Client Components (a URL é
+ * o único segredo da integração e não deve ir para o bundle do navegador).
  * Best-effort: nunca lança para fora; sempre retorna { status, message }.
  */
+
+// URL padrão da Edge Function (sobrescrevível por PSA_TEAMS_BOT_URL).
+// Fica aqui (módulo server-only) e não em env.ts para não vazar no client.
+const DEFAULT_TEAMS_BOT_URL = 'https://pzeoqaplrlvobrxgwnne.supabase.co/functions/v1/teams-bot'
+
+function resolvePsaUrl(): string {
+  return env.psa.teamsBotUrl || DEFAULT_TEAMS_BOT_URL
+}
 
 export type PsaResult = {
   status: 'success' | 'error' | 'skipped'
@@ -23,12 +32,12 @@ export type PsaEffortInput = {
 }
 
 export function isPsaEnabled(): boolean {
-  return env.psa.enabled && !!env.psa.teamsBotUrl
+  return env.psa.enabled && !!resolvePsaUrl()
 }
 
 export async function postEffortToPSA(input: PsaEffortInput): Promise<PsaResult> {
   if (!isPsaEnabled()) {
-    return { status: 'skipped', message: 'Integração PSA desativada (PSA_SYNC_ENABLED/URL).' }
+    return { status: 'skipped', message: 'Integração PSA desativada (PSA_SYNC_ENABLED=false).' }
   }
   if (!input.userEmail) {
     return { status: 'error', message: 'E-mail do usuário ausente — não foi possível apontar no PSA.' }
@@ -41,7 +50,7 @@ export async function postEffortToPSA(input: PsaEffortInput): Promise<PsaResult>
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (env.psa.token) headers['Authorization'] = `Bearer ${env.psa.token}`
 
-    const res = await fetch(env.psa.teamsBotUrl, {
+    const res = await fetch(resolvePsaUrl(), {
       method: 'POST',
       headers,
       body: JSON.stringify({

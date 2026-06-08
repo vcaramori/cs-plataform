@@ -78,11 +78,13 @@ export const env = {
     token: process.env.AIRTABLE_TOKEN ?? '',
   },
   // PSA — apontamento de horas de implantação (Edge Function teams-bot).
-  // A URL é o segredo: usar SOMENTE server-side. enabled OFF por padrão (rollout seguro).
+  // LIGADO por padrão: todo esforço de onboarding é enviado automaticamente.
+  // A URL tem default embutido em src/lib/integrations/psa.ts (server-only);
+  // pode ser sobrescrita por PSA_TEAMS_BOT_URL. Para DESLIGAR: PSA_SYNC_ENABLED=false.
   psa: {
     teamsBotUrl: process.env.PSA_TEAMS_BOT_URL ?? '',
     token: process.env.PSA_INTEGRATION_TOKEN ?? '',
-    enabled: process.env.PSA_SYNC_ENABLED === 'true',
+    enabled: process.env.PSA_SYNC_ENABLED !== 'false',
     timeoutMs: parseInt(process.env.PSA_TIMEOUT_MS ?? '10000'),
   },
   support: {
