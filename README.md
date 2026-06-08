@@ -184,6 +184,19 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🚀 Onboarding & Implantação + Histórico de Negociação no RAG (2026-06-08)
+
+Novo módulo **Onboarding** (`/onboarding`) para acompanhar a implantação de cada contrato por etapa, e duas trilhas de **história do cliente** indexadas no RAG (**onboarding** e **negociação**), consultáveis no Perguntar. Ver [docs/product/12-onboarding.md](docs/product/12-onboarding.md).
+
+- **Jornada padrão (9 etapas, data-driven em `onboarding_stages`)**: Welcome Meeting (passagem comercial→CS) → Kickoff → GTs → Criação da instância & config → Treinamentos → Go Live → Hypercare → Tudo pronto → Handover (Onboarding Kickoff). Editável sem deploy.
+- **Por contrato** (colunas em `contracts`): `onboarding_status`, `onboarding_current_stage`, `onboarding_owner_id` (responsável de implantação separado do CSM), `onboarding_started_at`/`onboarding_target_go_live`/`onboarding_completed_at`, `onboarding_health`. Checklist em `onboarding_milestones`; diário em `onboarding_events`. **Status/etapa recalculados app-side** (não em trigger) a partir do checklist (`src/lib/onboarding/onboarding-service.ts`), preservando `on-hold`/`cancelled`.
+- **Painel `/onboarding`**: KPIs (em onboarding, atrasados, em risco/travados, tempo médio), board por etapa, tabela filtrável + export XLSX. Por contrato, na tela da conta: `OnboardingPanel` (iniciar, checklist, diário) e `NegotiationPanel` (histórico + registrar **venda inicial**/renovação).
+- **Negociação**: `contract_negotiation_history` (Epic 17 nunca aplicado no remoto — **criada** nesta migration) agora cobre venda inicial (`negotiation_type='initial'`, `outcome='won'`) além de renovações.
+- **RAG**: `embeddings.source_type` += `onboarding`, `negotiation`; `ingestOnboardingEvent`/`ingestNegotiation` ([rag-pipeline.ts](src/lib/rag/rag-pipeline.ts)), enriquecimento + rótulos das fontes no Perguntar; backfills em `/api/onboarding/backfill-embeddings` e `/api/contracts/negotiation/backfill-embeddings`. **Chunk 512→1024 / overlap 50→128** (dentro do teto ~2048 do `gemini-embedding-001`; `embeddings` estava vazio = sem re-ingestão).
+- **Permissões**: novo módulo `onboarding` (matriz `/settings/roles`); negociação sob `contracts`. RLS: interno lê/escreve (`is_internal_user()`), portal/externo bloqueado.
+- Migration: `supabase/migrations/20260608120000_onboarding_module.sql` (aditiva, aplicada via MCP).
+- **Follow-up**: fundir as trilhas onboarding/negociação na `AccountUnifiedTimeline` (hoje visíveis nos painéis por contrato e no Perguntar).
+
 ### 👁️ Visibilidade geral para internos; recorte por CSM só na Home (2026-06-03)
 
 Decisão de produto: **todo usuário interno enxerga todos os dados (leitura)**; a restrição por CSM responsável fica **apenas na tela Home** (que direciona cada CSM para a própria carteira). Resolve o caso "CSM não via contas de outros (ex.: Adimax)". Ver [docs/product/permissions-plan.md](docs/product/permissions-plan.md).

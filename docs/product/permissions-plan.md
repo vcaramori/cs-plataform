@@ -1,6 +1,12 @@
 # Permissões Dinâmicas — Acesso Total (flag) global, escopo por módulo, RLS escopada
 
-> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). "Acesso Total" virou flag separada do Perfil (2026-06-03). **Visibilidade de leitura virou geral para internos; recorte por CSM só na Home (2026-06-03).** Sweep dos demais módulos em andamento.
+> Status: núcleo + módulos principais + hardening de RLS (2026-06-02). "Acesso Total" virou flag separada do Perfil (2026-06-03). **Visibilidade de leitura virou geral para internos; recorte por CSM só na Home (2026-06-03).** Módulo **Onboarding** adicionado (2026-06-08). Sweep dos demais módulos em andamento.
+
+## Módulo Onboarding (2026-06-08)
+
+- Novo módulo de permissão **`onboarding`** em [modules.ts](../../src/lib/auth/modules.ts) (aparece na matriz `/settings/roles`). A negociação de contrato fica sob o módulo **`contracts`** já existente.
+- **RLS** das tabelas novas segue o modelo "internos veem tudo": `onboarding_stages` → `SELECT using is_internal_user()`; `onboarding_milestones`, `onboarding_events` e `contract_negotiation_history` → `FOR ALL using is_internal_user() with check is_internal_user()`. Portal/externo (não-interno) **bloqueado**; escrita real é adicionalmente filtrada na app por `getModulePermission('onboarding'|'contracts', 'create'|'edit')`.
+- `contract_negotiation_history` foi **criada** nesta migration (a do Epic 17 nunca foi aplicada no remoto); inclui `negotiation_type` e `outcome` ampliado (`won`).
 
 ## Modelo de visibilidade: leitura geral para internos; CSM só na Home — 2026-06-03
 
