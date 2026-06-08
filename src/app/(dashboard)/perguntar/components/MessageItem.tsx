@@ -1,18 +1,28 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Sparkles, User, FileText, TicketCheck, Zap } from 'lucide-react'
+import { Sparkles, User, FileText, TicketCheck, Zap, Rocket, Handshake, Star } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { cn } from '@/lib/utils'
 
+type SourceType = 'interaction' | 'support_ticket' | 'nps_response' | 'onboarding' | 'negotiation'
+
 type Source = {
-  type: 'interaction' | 'support_ticket'
+  type: SourceType
   source_id: string
   account_name: string
   title: string
   date: string
   excerpt: string
   similarity: number
+}
+
+const SOURCE_META: Record<SourceType, { label: string; Icon: typeof FileText }> = {
+  interaction: { label: 'Interação', Icon: FileText },
+  support_ticket: { label: 'Chamado', Icon: TicketCheck },
+  nps_response: { label: 'NPS', Icon: Star },
+  onboarding: { label: 'Onboarding', Icon: Rocket },
+  negotiation: { label: 'Negociação', Icon: Handshake },
 }
 
 type Message = {
@@ -83,24 +93,26 @@ export function MessageItem({ msg, idx }: MessageItemProps) {
               <span className="text-[10px] text-content-secondary font-black uppercase tracking-[0.2em] opacity-60">Grounding e Evidências</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {msg.sources.map((s, si) => (
-                <div 
+              {msg.sources.map((s, si) => {
+                const meta = SOURCE_META[s.type] ?? SOURCE_META.support_ticket
+                const Icon = meta.Icon
+                return (
+                <div
                   key={si}
                   className="group/src flex flex-col gap-2 bg-surface-card border border-border-divider/50 rounded-2xl p-4 transition-all shadow-sm hover:shadow-md border-l-2 hover:border-l-plannera-orange"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {s.type === 'interaction'
-                        ? <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                        : <TicketCheck className="w-3.5 h-3.5 text-plannera-orange" />}
-                      <span className="text-[9px] font-black uppercase tracking-tight text-content-secondary truncate">{s.type === 'interaction' ? 'Interação' : 'Chamado'}</span>
+                      <Icon className="w-3.5 h-3.5 text-indigo-500" />
+                      <span className="text-[9px] font-black uppercase tracking-tight text-content-secondary truncate">{meta.label}</span>
                     </div>
                     <span className="text-[9px] font-bold text-indigo-500 px-1.5 py-0.5 bg-indigo-500/5 rounded-md">{Math.round(s.similarity * 100)}% Match</span>
                   </div>
                   <p className="text-content-primary text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-1 group-hover/src:text-plannera-orange transition-colors">{s.title}</p>
                   <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest opacity-60 truncate">{s.account_name}</p>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

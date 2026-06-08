@@ -76,7 +76,64 @@ export type Contract = {
   csm_hour_cost: number
   notes: string | null
   description: string | null
+  // Onboarding (módulo de implantação) — opcionais: nem toda query seleciona
+  onboarding_status?: OnboardingStatus
+  onboarding_current_stage?: string | null
+  onboarding_owner_id?: string | null
+  onboarding_started_at?: string | null
+  onboarding_target_go_live?: string | null
+  onboarding_completed_at?: string | null
+  onboarding_health?: OnboardingHealth
 }
+
+// --- Onboarding ------------------------------------------------------------
+export type OnboardingStatus = 'not-started' | 'in-progress' | 'on-hold' | 'completed' | 'cancelled'
+export type OnboardingHealth = 'on-track' | 'at-risk' | 'stalled'
+export type OnboardingMilestoneStatus = 'pending' | 'in-progress' | 'done' | 'skipped'
+export type OnboardingEventType = 'note' | 'meeting' | 'blocker' | 'decision' | 'status_change' | 'attachment'
+
+export type OnboardingStage = {
+  id: string
+  key: string
+  label: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export type OnboardingMilestone = {
+  id: string
+  contract_id: string
+  account_id: string
+  stage_key: string
+  status: OnboardingMilestoneStatus
+  planned_date: string | null
+  completed_date: string | null
+  owner_id: string | null
+  notes: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type OnboardingEvent = {
+  id: string
+  contract_id: string
+  account_id: string
+  milestone_id: string | null
+  event_type: OnboardingEventType
+  title: string | null
+  description: string | null
+  date: string
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+// --- Negociação (histórico comercial: venda inicial + renovações) ----------
+// O tipo ContractNegotiationHistory existe abaixo (Epic 17) e foi estendido
+// com `negotiation_type` para cobrir também a venda inicial.
+export type NegotiationType = 'initial' | 'renewal' | 'renegotiation'
 
 export type CommercialGovernanceRuleType = 'discount' | 'penalty' | 'fidelity'
 export type CommercialGovernanceSubType = 'progressive' | 'fixed' | 'percentage' | 'fidelity_penalty'
@@ -191,7 +248,7 @@ export type SupportTicket = {
 export type Embedding = {
   id: string
   account_id: string
-  source_type: 'interaction' | 'support_ticket'
+  source_type: 'interaction' | 'support_ticket' | 'nps_response' | 'wishlist_signal' | 'onboarding' | 'negotiation'
   source_id: string
   chunk_index: number
   chunk_text: string
@@ -707,13 +764,14 @@ export type MeetingPrep = {
   updated_at: string
 }
 
-// Epic 17: Renewal Cockpit
-export type ContractNegotiationOutcome = 'renewed' | 'lost' | 'pending'
+// Epic 17: Renewal Cockpit (+ 'won' para venda inicial — onboarding module)
+export type ContractNegotiationOutcome = 'won' | 'renewed' | 'lost' | 'pending'
 
 export type ContractNegotiationHistory = {
   id: string
   contract_id: string
   account_id: string
+  negotiation_type?: NegotiationType
   date: string
   discount_offered_pct: number
   discount_accepted_pct: number

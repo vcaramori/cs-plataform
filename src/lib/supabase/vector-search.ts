@@ -13,6 +13,8 @@ export type EmbeddingSourceType =
   | 'support_ticket'
   | 'nps_response'
   | 'wishlist_signal'
+  | 'onboarding'
+  | 'negotiation'
 
 // ---------------------------------------------------------------------------
 // Chunking

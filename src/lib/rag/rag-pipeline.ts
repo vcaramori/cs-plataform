@@ -8,7 +8,7 @@ import { loadInstruction } from '@/lib/ai/load-instruction'
 import { getAIContextRules } from '@/lib/ai/ai-context'
 
 export type RAGSource = {
-  type: 'interaction' | 'support_ticket'
+  type: 'interaction' | 'support_ticket' | 'nps_response' | 'onboarding' | 'negotiation'
   source_id: string
   account_name: string
   title: string
@@ -237,6 +237,22 @@ ${effortLines || 'Nenhum esforço registrado.'}`
   const interactionMap = new Map((interactionRecords ?? []).map((i) => [i.id, i]))
   const ticketMap = new Map((ticketRecords ?? []).map((t) => [t.id, t]))
 
+  // 2.2 Enriquecimento das trilhas dedicadas de Onboarding e Negociação
+  const dbAny = supabase as any
+  const onboardingIds = finalChunks.filter((c) => c.source_type === 'onboarding').map((c) => c.source_id)
+  const negotiationIds = finalChunks.filter((c) => c.source_type === 'negotiation').map((c) => c.source_id)
+  const [onboardingRes, negotiationRes] = await Promise.all([
+    onboardingIds.length > 0
+      ? dbAny.from('onboarding_events').select('id, title, event_type, date, accounts(name)').in('id', onboardingIds)
+      : Promise.resolve({ data: [] as any[] }),
+    negotiationIds.length > 0
+      ? dbAny.from('contract_negotiation_history').select('id, negotiation_type, outcome, date, accounts(name)').in('id', negotiationIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ])
+  const onboardingMap = new Map<string, any>((onboardingRes.data ?? []).map((o: any) => [o.id, o]))
+  const negotiationMap = new Map<string, any>((negotiationRes.data ?? []).map((n: any) => [n.id, n]))
+  const accName = (raw: any) => (Array.isArray(raw) ? raw[0]?.name : raw?.name) ?? 'Conta desconhecida'
+
   // 3. Monta contexto para o Gemini
   const contextBlocks = finalChunks.map((chunk, idx) => {
     if (chunk.source_type === 'interaction') {
@@ -247,6 +263,12 @@ ${effortLines || 'Nenhum esforço registrado.'}`
       const type = meta?.type ?? 'meeting'
       const transcriptNote = meta?.raw_transcript ? `\n[TRANSCRIÇÃO DISPONÍVEL — trecho indexado abaixo]` : ''
       return `[${idx + 1}] REUNIÃO | ${account} | ${date} | Tipo: ${type}${transcriptNote}\n${chunk.chunk_text}`
+    } else if (chunk.source_type === 'onboarding') {
+      const meta = onboardingMap.get(chunk.source_id)
+      return `[${idx + 1}] ONBOARDING | ${accName(meta?.accounts)} | ${meta?.date ?? ''} | Evento: ${meta?.event_type ?? 'note'}\n${chunk.chunk_text}`
+    } else if (chunk.source_type === 'negotiation') {
+      const meta = negotiationMap.get(chunk.source_id)
+      return `[${idx + 1}] NEGOCIAÇÃO | ${accName(meta?.accounts)} | ${meta?.date ?? ''} | Tipo: ${meta?.negotiation_type ?? 'renewal'} / Resultado: ${meta?.outcome ?? 'pending'}\n${chunk.chunk_text}`
     } else {
       const meta = ticketMap.get(chunk.source_id)
       const accountsRaw = meta?.accounts as any
@@ -605,6 +627,38 @@ ${question}`
         excerpt: chunk.chunk_text.slice(0, 150),
         similarity: chunk.similarity,
       }
+    } else if (chunk.source_type === 'onboarding') {
+      const meta = onboardingMap.get(chunk.source_id)
+      return {
+        type: 'onboarding' as const,
+        source_id: chunk.source_id,
+        account_name: accName(meta?.accounts),
+        title: meta?.title ?? 'Onboarding',
+        date: meta?.date ?? '',
+        excerpt: chunk.chunk_text.slice(0, 150),
+        similarity: chunk.similarity,
+      }
+    } else if (chunk.source_type === 'negotiation') {
+      const meta = negotiationMap.get(chunk.source_id)
+      return {
+        type: 'negotiation' as const,
+        source_id: chunk.source_id,
+        account_name: accName(meta?.accounts),
+        title: `Negociação (${meta?.negotiation_type ?? 'renewal'})`,
+        date: meta?.date ?? '',
+        excerpt: chunk.chunk_text.slice(0, 150),
+        similarity: chunk.similarity,
+      }
+    } else if (chunk.source_type === 'nps_response') {
+      return {
+        type: 'nps_response' as const,
+        source_id: chunk.source_id,
+        account_name: 'NPS',
+        title: 'Resposta NPS',
+        date: '',
+        excerpt: chunk.chunk_text.slice(0, 150),
+        similarity: chunk.similarity,
+      }
     } else {
       const meta = ticketMap.get(chunk.source_id)
       const accountsRaw = meta?.accounts as any
@@ -680,6 +734,115 @@ export async function ingestNPSResponse(responseId: string): Promise<boolean> {
     return true
   } catch (err) {
     console.error('[RAG] Erro fatal na ingestão NPS:', err)
+    return false
+  }
+}
+
+/**
+ * Ingesta um evento de Onboarding na trilha 'onboarding' do RAG.
+ * Chamado ao criar/atualizar um onboarding_event.
+ */
+export async function ingestOnboardingEvent(eventId: string): Promise<boolean> {
+  try {
+    const db = getSupabaseAdminClient() as any
+
+    const { data: ev, error } = await db
+      .from('onboarding_events')
+      .select('*, accounts(name), contracts(description, contract_code), onboarding_milestones(stage_key)')
+      .eq('id', eventId)
+      .single()
+
+    if (error || !ev) {
+      console.error('[RAG] Erro ao buscar onboarding_event para ingestão:', error)
+      return false
+    }
+
+    const accountName = ev.accounts?.name ?? 'Conta desconhecida'
+    const contractLabel = ev.contracts?.description ?? ev.contracts?.contract_code ?? 'Contrato'
+    const stage = ev.onboarding_milestones?.stage_key ? ` | Etapa: ${ev.onboarding_milestones.stage_key}` : ''
+    const body = [ev.title, ev.description].filter(Boolean).join(' — ')
+
+    const chunkText = `Onboarding | ${accountName} | ${contractLabel}${stage} | Evento: ${ev.event_type} | Data: ${ev.date}${body ? ` | ${body}` : ''}`
+
+    const { result: embedding } = await generateEmbedding(chunkText, { allowFallback: true })
+
+    const { error: upsertErr } = await db
+      .from('embeddings')
+      .upsert({
+        account_id: ev.account_id,
+        source_type: 'onboarding',
+        source_id: ev.id,
+        chunk_index: 0,
+        chunk_text: chunkText,
+        embedding,
+      }, { onConflict: 'source_type,source_id,chunk_index' })
+
+    if (upsertErr) {
+      console.error('[RAG] Erro no upsert do embedding de onboarding:', upsertErr)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[RAG] Erro fatal na ingestão de onboarding:', err)
+    return false
+  }
+}
+
+/**
+ * Ingesta um registro do histórico de negociação na trilha 'negotiation' do RAG.
+ * Chamado ao criar/atualizar um contract_negotiation_history.
+ */
+export async function ingestNegotiation(negotiationId: string): Promise<boolean> {
+  try {
+    const db = getSupabaseAdminClient() as any
+
+    const { data: n, error } = await db
+      .from('contract_negotiation_history')
+      .select('*, accounts(name), contracts(description, contract_code)')
+      .eq('id', negotiationId)
+      .single()
+
+    if (error || !n) {
+      console.error('[RAG] Erro ao buscar negociação para ingestão:', error)
+      return false
+    }
+
+    const accountName = n.accounts?.name ?? 'Conta desconhecida'
+    const contractLabel = n.contracts?.description ?? n.contracts?.contract_code ?? 'Contrato'
+    const discounts = `Desconto ofertado ${n.discount_offered_pct ?? 0}% / aceito ${n.discount_accepted_pct ?? 0}%`
+    const counterpart = [n.counterpart_name, n.counterpart_role].filter(Boolean).join(' — ')
+    const parts = [
+      `Tipo: ${n.negotiation_type}`,
+      `Resultado: ${n.outcome ?? 'pending'}`,
+      discounts,
+      n.main_objection ? `Objeção: ${n.main_objection}` : '',
+      n.closing_argument ? `Argumento de fechamento: ${n.closing_argument}` : '',
+      counterpart ? `Contraparte: ${counterpart}` : '',
+      n.notes ? `Notas: ${n.notes}` : '',
+    ].filter(Boolean)
+
+    const chunkText = `Negociação | ${accountName} | ${contractLabel} | Data: ${n.date} | ${parts.join(' | ')}`
+
+    const { result: embedding } = await generateEmbedding(chunkText, { allowFallback: true })
+
+    const { error: upsertErr } = await db
+      .from('embeddings')
+      .upsert({
+        account_id: n.account_id,
+        source_type: 'negotiation',
+        source_id: n.id,
+        chunk_index: 0,
+        chunk_text: chunkText,
+        embedding,
+      }, { onConflict: 'source_type,source_id,chunk_index' })
+
+    if (upsertErr) {
+      console.error('[RAG] Erro no upsert do embedding de negociação:', upsertErr)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[RAG] Erro fatal na ingestão de negociação:', err)
     return false
   }
 }

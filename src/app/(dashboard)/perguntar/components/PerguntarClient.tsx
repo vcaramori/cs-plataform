@@ -12,7 +12,7 @@ import { InputConsole } from './InputConsole'
 type Account = { id: string; name: string }
 
 type Source = {
-  type: 'interaction' | 'support_ticket'
+  type: 'interaction' | 'support_ticket' | 'nps_response' | 'onboarding' | 'negotiation'
   source_id: string
   account_name: string
   title: string

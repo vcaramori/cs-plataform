@@ -62,8 +62,11 @@ export const env = {
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   },
   chunking: {
-    chunkSize: parseInt(process.env.CHUNK_SIZE ?? '512'),
-    chunkOverlap: parseInt(process.env.CHUNK_OVERLAP ?? '50'),
+    // 1024 tokens: dobra o contexto coeso por chunk e fica dentro do teto de
+    // ~2048 tokens do gemini-embedding-001 (3k truncaria). Dimensão de saída
+    // segue 1536 (independe do chunk). embeddings estava vazio → sem re-ingestão.
+    chunkSize: parseInt(process.env.CHUNK_SIZE ?? '1024'),
+    chunkOverlap: parseInt(process.env.CHUNK_OVERLAP ?? '128'),
   },
   thresholds: {
     sentimentAlert: numeric('SENTIMENT_ALERT_THRESHOLD', -0.4),
