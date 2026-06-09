@@ -196,6 +196,12 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 
 A saudação ("Bom dia/Boa tarde/Boa noite") era calculada com `getHours()` **no servidor (UTC)** → à tarde no Brasil já aparecia "Boa noite". Corrigido em [home/page.tsx](src/app/(dashboard)/home/page.tsx): hora e data agora usam o fuso da empresa (`env.support.businessTimezone`, default `America/Sao_Paulo`) via `toZonedTime` (`date-fns-tz`).
 
+### 🧹 Perguntar — tickets no deep-dive de portfólio + remoção do seletor de modos (2026-06-09)
+
+- **Tickets abertos no deep-dive**: ao perguntar em "Todo o Portfólio" citando uma conta (ex.: "tem chamado aberto na apodi?"), o Account Discovery agora inclui os **tickets abertos da conta citada buscados direto do banco** ([rag-pipeline.ts](src/lib/rag/rag-pipeline.ts)) — antes só trazia adoção/plano/journal, por isso respondia "não" mesmo com ticket aberto.
+- **Seletor de modos removido**: o toggle Preciso/Balanceado/Explorativo era **cosmético** — o `/api/ask` descartava `rag_mode` e o pipeline não tinha parâmetro de modo, então os três retornavam igual. Removido de [ScopeSelectorBar.tsx](src/app/(dashboard)/perguntar/components/ScopeSelectorBar.tsx) e [PerguntarClient.tsx](src/app/(dashboard)/perguntar/components/PerguntarClient.tsx).
+- **Trava de dimensão**: `storeEmbeddings` recusa vetor com dimensão ≠ `embeddingDimensions` (fallback de embedding incompatível não corrompe a base; item fica faltante e é reprocessado).
+
 ### 🕗 Esforço com data do evento + tag de onboarding + vetorização no RAG (2026-06-09)
 
 Permite **carga de contexto histórico** (interações antigas) reaproveitando o fluxo de esforço, sem tela de import nova e **sem migration**. Ver [docs/product/06-esforco.md](docs/product/06-esforco.md).

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { ScopeSelectorBar, type RAGMode } from './ScopeSelectorBar'
+import { ScopeSelectorBar } from './ScopeSelectorBar'
 import { EmptyState } from './EmptyState'
 import { MessageItem } from './MessageItem'
 import { InputConsole } from './InputConsole'
@@ -40,7 +40,6 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState('all')
-  const [ragMode, setRagMode] = useState<RAGMode>('balanced')
   const [isLoading, setIsLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -64,7 +63,6 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
         body: JSON.stringify({
           question,
           account_id: selectedAccountId === 'all' ? undefined : selectedAccountId,
-          rag_mode: ragMode,
         }),
       })
 
@@ -105,7 +103,7 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId)
 
   function handleExport() {
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Conversa IA — ${selectedAccount?.name ?? 'Portfólio'}</title><style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#111;}h1{font-size:18px;border-bottom:2px solid #eee;padding-bottom:8px;}.msg{margin:16px 0;padding:12px 16px;border-radius:8px;}.user{background:#f0f0f0;}.assistant{background:#fff;border:1px solid #e5e7eb;}.role{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;}.user .role{color:#6b7280;}.assistant .role{color:#f7941e;}.sources{margin-top:8px;font-size:11px;color:#6b7280;}@media print{body{margin:20px;}}</style></head><body><h1>Conversa IA — ${selectedAccount?.name ?? 'Portfólio Completo'}</h1><p style="font-size:11px;color:#9ca3af;">Modo: ${ragMode} · ${new Date().toLocaleString('pt-BR')}</p>${messages.map(m => `<div class="msg ${m.role}"><div class="role">${m.role === 'user' ? 'Você' : 'IA Assistente'}</div><div>${m.content.replace(/\n/g, '<br/>')}</div>${m.sources?.length ? `<div class="sources">Fontes: ${m.sources.map(s => s.title).join(', ')}</div>` : ''}</div>`).join('')}</body></html>`
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Conversa IA — ${selectedAccount?.name ?? 'Portfólio'}</title><style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#111;}h1{font-size:18px;border-bottom:2px solid #eee;padding-bottom:8px;}.msg{margin:16px 0;padding:12px 16px;border-radius:8px;}.user{background:#f0f0f0;}.assistant{background:#fff;border:1px solid #e5e7eb;}.role{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;}.user .role{color:#6b7280;}.assistant .role{color:#f7941e;}.sources{margin-top:8px;font-size:11px;color:#6b7280;}@media print{body{margin:20px;}}</style></head><body><h1>Conversa IA — ${selectedAccount?.name ?? 'Portfólio Completo'}</h1><p style="font-size:11px;color:#9ca3af;">${new Date().toLocaleString('pt-BR')}</p>${messages.map(m => `<div class="msg ${m.role}"><div class="role">${m.role === 'user' ? 'Você' : 'IA Assistente'}</div><div>${m.content.replace(/\n/g, '<br/>')}</div>${m.sources?.length ? `<div class="sources">Fontes: ${m.sources.map(s => s.title).join(', ')}</div>` : ''}</div>`).join('')}</body></html>`
     const win = window.open('', '_blank')
     if (!win) return
     win.document.write(html)
@@ -123,8 +121,6 @@ export function PerguntarClient({ accounts }: { accounts: Account[] }) {
           selectedAccountId={selectedAccountId}
           setSelectedAccountId={setSelectedAccountId}
           selectedAccount={selectedAccount}
-          ragMode={ragMode}
-          setRagMode={setRagMode}
           onExport={handleExport}
           hasMessages={messages.length > 0}
         />
