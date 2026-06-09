@@ -50,6 +50,7 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
   // nota + esforço
   const [note, setNote] = useState('')
   const [effortText, setEffortText] = useState('')
+  const [effortDate, setEffortDate] = useState('')
   const [effortBusy, setEffortBusy] = useState(false)
   const [effortMsg, setEffortMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
@@ -132,11 +133,11 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
     try {
       const res = await fetch('/api/time-entries', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raw_text: effortText.trim(), account_id: accountId, onboarding_contract_id: contractId }),
+        body: JSON.stringify({ raw_text: effortText.trim(), account_id: accountId, onboarding_contract_id: contractId, date: effortDate || undefined }),
       })
       const data = await res.json()
       if (!res.ok) { setEffortMsg({ ok: false, text: typeof data?.error === 'string' ? data.error : (data?.hint ?? 'Falha ao registrar esforço.') }); return }
-      setEffortText('')
+      setEffortText(''); setEffortDate('')
       const psa = data?.psa as { status: string; message: string } | null
       setEffortMsg({ ok: !psa || psa.status !== 'error', text: psa ? `Esforço de ${data.parsed_hours ?? ''}h registrado. PSA: ${psa.message}` : `Esforço de ${data.parsed_hours ?? ''}h registrado.` })
       await load()
@@ -239,9 +240,12 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
               {/* Esforço de implantação → PSA */}
               <div className="pt-2 border-t border-border-divider/40 space-y-2">
                 <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-plannera-primary" /><span className="text-[9px] font-black uppercase tracking-widest text-content-secondary">Esforço de implantação</span></div>
-                <textarea value={effortText} onChange={(e) => setEffortText(e.target.value)} placeholder="Ex.: 2h hoje configurando a instância e treinando o time" rows={2} className={`w-full ${inputCls}`} />
+                <textarea value={effortText} onChange={(e) => setEffortText(e.target.value)} placeholder="Ex.: 2h configurando a instância e treinando o time" rows={2} className={`w-full ${inputCls}`} />
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[9px] text-content-secondary/70">Horas e data são lidas do texto.</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-content-secondary/70">Data:</span>
+                    <input type="date" value={effortDate} onChange={(e) => setEffortDate(e.target.value)} className="text-[10px] px-1.5 py-1 rounded-md bg-surface-card border border-border-divider text-content-primary" title="Vazio = hoje" />
+                  </div>
                   <Button size="sm" onClick={submitEffort} disabled={effortBusy || effortText.trim().length < 5}>{effortBusy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Clock className="w-3.5 h-3.5 mr-1" />} Registrar esforço</Button>
                 </div>
                 {effortMsg && <p className={`text-[10px] ${effortMsg.ok ? 'text-success' : 'text-rose-500'}`}>{effortMsg.text}</p>}

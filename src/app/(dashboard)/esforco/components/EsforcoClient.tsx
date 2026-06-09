@@ -51,6 +51,8 @@ export function EsforcoClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [entries, setEntries] = useState<Entry[]>(initialEntries)
   const [fileUrls, setFileUrls] = useState<string[]>([])
+  const [eventDate, setEventDate] = useState<string>('') // vazio = hoje/IA (carga histórica usa data real)
+  const [isOnboarding, setIsOnboarding] = useState(false) // tag "ação de onboarding" (sem rodar o projeto)
 
   async function handleSubmit() {
     if (!text.trim()) {
@@ -68,6 +70,8 @@ export function EsforcoClient({
           raw_text: text,
           account_id: selectedAccountId !== 'all' ? selectedAccountId : undefined,
           file_urls: fileUrls,
+          date: eventDate || undefined,
+          is_onboarding: isOnboarding || undefined,
         }),
       })
 
@@ -88,6 +92,8 @@ export function EsforcoClient({
       setText('')
       setFileUrls([])
       setSelectedAccountId('all')
+      setEventDate('')
+      setIsOnboarding(false)
       router.refresh()
 
       // Adiciona ao topo da lista local para feedback imediato
@@ -124,6 +130,10 @@ export function EsforcoClient({
           onTextChange={setText}
           fileUrls={fileUrls}
           onFileUrlsChange={setFileUrls}
+          eventDate={eventDate}
+          onEventDateChange={setEventDate}
+          isOnboarding={isOnboarding}
+          onIsOnboardingChange={setIsOnboarding}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />

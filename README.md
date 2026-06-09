@@ -184,6 +184,13 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🕗 Esforço com data do evento + tag de onboarding + vetorização no RAG (2026-06-09)
+
+Permite **carga de contexto histórico** (interações antigas) reaproveitando o fluxo de esforço, sem tela de import nova e **sem migration**. Ver [docs/product/06-esforco.md](docs/product/06-esforco.md).
+- **Data do evento (opcional)** no lançamento de esforço: vazia = hoje; **preenchida = data real**. Usada no `time_entries.date`, na `interaction` criada e no texto vetorizado — **não** a data do upload.
+- **Toggle "É ação de onboarding?"**: só **classifica** (`activity_type='onboarding'` + rótulo `[ONBOARDING]` no RAG); **não** dispara o projeto de onboarding (templates/marcos/Gantt). Distingue "já passou por onboarding" de "implantação em andamento".
+- **Vetorização**: a `interaction` gerada pelo esforço passa a ser **indexada no RAG** (`source_type='interaction'`) com a **data embutida no `chunk_text`** → busca semântica com contexto temporal correto (antes só alimentava o "Journal de Esforço"). Reúso de `storeEmbeddings`. Arquivos: [api/time-entries/route.ts](src/app/api/time-entries/route.ts), [EsforcoKPIs.tsx](src/app/(dashboard)/esforco/components/EsforcoKPIs.tsx), [OnboardingPanel.tsx](src/app/(dashboard)/accounts/[id]/components/OnboardingPanel.tsx).
+
 ### 📅 Onboarding como Projeto — cronograma datado, Gantt exportável e templates (2026-06-08)
 
 Onboarding virou **projeto com cronograma** (supera o checklist fixo de 9 etapas). Ver [docs/product/12-onboarding.md](docs/product/12-onboarding.md).

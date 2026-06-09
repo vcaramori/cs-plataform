@@ -16,6 +16,10 @@ interface EsforcoKPIsProps {
   onTextChange: (text: string) => void
   fileUrls: string[]
   onFileUrlsChange: (urls: string[]) => void
+  eventDate: string
+  onEventDateChange: (d: string) => void
+  isOnboarding: boolean
+  onIsOnboardingChange: (v: boolean) => void
   onSubmit: () => void
   isSubmitting: boolean
 }
@@ -28,6 +32,10 @@ export function EsforcoKPIs({
   onTextChange,
   fileUrls,
   onFileUrlsChange,
+  eventDate,
+  onEventDateChange,
+  isOnboarding,
+  onIsOnboardingChange,
   onSubmit,
   isSubmitting
 }: EsforcoKPIsProps) {
@@ -81,9 +89,27 @@ export function EsforcoKPIs({
           </div>
           
           <div className="pt-2">
-            <AttachmentsUploader 
-              onUploadComplete={(urls) => onFileUrlsChange([...fileUrls, ...urls])} 
+            <AttachmentsUploader
+              onUploadComplete={(urls) => onFileUrlsChange([...fileUrls, ...urls])}
             />
+          </div>
+
+          {/* Data do evento (carga histórica) + tag de onboarding */}
+          <div className="flex flex-wrap items-end gap-4 pt-1">
+            <div className="flex flex-col gap-1">
+              <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-content-secondary">Data do evento</Label>
+              <input
+                type="date"
+                value={eventDate}
+                onChange={(e) => onEventDateChange(e.target.value)}
+                className="h-9 px-2.5 rounded-lg bg-surface-background/50 border border-border-divider text-content-primary text-xs"
+              />
+              <span className="text-[9px] text-content-secondary/60">Vazio = hoje. Use a data real em cargas históricas.</span>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none pb-5">
+              <input type="checkbox" checked={isOnboarding} onChange={(e) => onIsOnboardingChange(e.target.checked)} className="w-4 h-4 accent-plannera-primary" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">É ação de onboarding?</span>
+            </label>
           </div>
         </div>
 

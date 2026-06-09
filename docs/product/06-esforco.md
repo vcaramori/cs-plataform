@@ -6,6 +6,15 @@ O **Esforço** permite aos CSMs registrarem o tempo gasto em atividades de Custo
 
 **Caminho:** `/esforco`
 
+## Data do evento + tag de onboarding + vetorização no RAG (2026-06-09)
+
+Para permitir **carga de contexto histórico** (interações antigas) e melhorar o RAG, o lançamento de esforço ganhou:
+- **Data do evento (opcional)** — vazia = hoje/IA; **preenchida = data real** em que ocorreu. Vai no `time_entries.date`, na `interaction` criada e no texto vetorizado (não usa a data do upload). Campo em [EsforcoKPIs.tsx](../../src/app/(dashboard)/esforco/components/EsforcoKPIs.tsx); tratado em [api/time-entries/route.ts](../../src/app/api/time-entries/route.ts) (`date` → `effectiveDate`).
+- **Toggle "É ação de onboarding?"** — apenas **classifica** o registro como onboarding (`activity_type='onboarding'` + rótulo `[ONBOARDING]` no RAG). **Não** dispara o projeto de onboarding (templates/marcos/Gantt). Para implantações em andamento, use o projeto de onboarding na conta.
+- **Vetorização no RAG** — quando o esforço gera uma `interaction` (reunião/onboarding/qbr ou risco/positivo), ela passa a ser **indexada** (`storeEmbeddings`, `source_type='interaction'`) com a **data embutida no `chunk_text`** → busca semântica com contexto temporal correto. Antes só alimentava o "Journal de Esforço".
+
+> Carga histórica = exceção; o uso normal (sem data) segue idêntico.
+
 ---
 
 ## 1.1 Regras de Negócio

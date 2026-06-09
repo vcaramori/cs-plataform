@@ -8,14 +8,18 @@ import { getHealthClassification } from '@/lib/health/utils'
 import { extractWishlistSignals } from '@/lib/wishlist/extractor'
 import { postEffortToPSA } from '@/lib/integrations/psa'
 import { ingestOnboardingEvent } from '@/lib/rag/rag-pipeline'
+import { storeEmbeddings } from '@/lib/supabase/vector-search'
 
 const BodySchema = z.object({
   raw_text: z.string().min(5),
   account_id: z.string().uuid().optional(),
   file_urls: z.array(z.string()).optional(),
-  // Contexto de onboarding: quando presente, o esforço é marcado como implantação
-  // (activity_type='onboarding'), entra no diário/RAG e é apontado no PSA.
+  // Contexto de onboarding (PROJETO): quando presente, dispara diário/RAG + PSA.
   onboarding_contract_id: z.string().uuid().optional(),
+  // Data do evento (carga histórica): preenchida = data real; vazia = hoje/IA.
+  date: z.string().optional(),
+  // Tag "ação de onboarding" SEM rodar o projeto: só marca activity_type='onboarding'.
+  is_onboarding: z.boolean().optional(),
 })
 
 export async function GET(request: Request) {
@@ -126,10 +130,14 @@ export async function POST(request: Request) {
   const needsReview = parsedEntry.confidence_score < 0.8
   const fileUrls = parsed.data.file_urls ?? []
 
-  // Contexto de onboarding: força a classificação como implantação.
+  // Data do evento: data informada (carga histórica) tem prioridade sobre a da IA/hoje.
+  const effectiveDate = (parsed.data.date && parsed.data.date.slice(0, 10)) || parsedEntry.date
+
+  // Onboarding: contrato = PROJETO (dispara diário/PSA); is_onboarding = só TAG.
   const onboardingContractId = parsed.data.onboarding_contract_id ?? null
   const isOnboarding = !!onboardingContractId
-  const effectiveActivityType = isOnboarding ? 'onboarding' : parsedEntry.activity_type
+  const tagOnboarding = isOnboarding || parsed.data.is_onboarding === true
+  const effectiveActivityType: string = tagOnboarding ? 'onboarding' : parsedEntry.activity_type
 
   const { data, error } = await supabase
     .from('time_entries')
@@ -140,7 +148,7 @@ export async function POST(request: Request) {
       natural_language_input: parsed.data.raw_text,
       parsed_hours: parsedEntry.parsed_hours,
       parsed_description: parsedEntry.parsed_description,
-      date: parsedEntry.date,
+      date: effectiveDate,
       file_urls: fileUrls,
       ...(isOnboarding && { psa_sync_status: 'pending' }),
       ...(needsReview && { status: 'pending_review' }),
@@ -172,21 +180,23 @@ export async function POST(request: Request) {
   const isHighRisk = riskKeywords.some(kw => parsed.data.raw_text.toLowerCase().includes(kw))
   const isPositive = positiveKeywords.some(kw => parsed.data.raw_text.toLowerCase().includes(kw))
   
-  if (clientFacingTypes.includes(parsedEntry.activity_type) || isHighRisk || isPositive) {
+  if (clientFacingTypes.includes(effectiveActivityType) || isHighRisk || isPositive) {
     // Sentiment: -0.8 (risco), 0.8 (positivo), ou 0.2 (neutro/padrão)
     const sentimentScore = isHighRisk ? -0.8 : isPositive ? 0.8 : 0.2
     const alertTriggered = isHighRisk
+    const interactionTitle = isHighRisk
+      ? `ALERTA: ${(parsedEntry.parsed_description || 'Crise detectada').slice(0, 50)}...`
+      : isPositive
+      ? `SUCESSO: ${(parsedEntry.parsed_description || 'Problema resolvido').slice(0, 50)}...`
+      : `Esforço: ${effectiveActivityType === 'meeting' ? 'Reunião' : effectiveActivityType}`
+    const interactionType = isHighRisk ? 'churn-risk' : (effectiveActivityType === 'other' ? 'meeting' : effectiveActivityType)
 
-    const { error: intError } = await supabase.from('interactions').insert({
+    const { data: intRow, error: intError } = await supabase.from('interactions').insert({
       account_id: accountId,
       csm_id: user.id,
-      title: isHighRisk 
-        ? `ALERTA: ${(parsedEntry.parsed_description || 'Crise detectada').slice(0, 50)}...`
-        : isPositive
-        ? `SUCESSO: ${(parsedEntry.parsed_description || 'Problema resolvido').slice(0, 50)}...`
-        : `Esforço: ${(parsedEntry.activity_type as string) === 'meeting' ? 'Reunião' : parsedEntry.activity_type}`,
-      type: isHighRisk ? 'churn-risk' : isPositive ? 'success' : (parsedEntry.activity_type === 'other' ? 'meeting' : parsedEntry.activity_type),
-      date: parsedEntry.date,
+      title: interactionTitle,
+      type: interactionType,
+      date: effectiveDate,
       direct_hours: parsedEntry.parsed_hours,
       source: 'effort_sync',
       time_entry_id: result.id,
@@ -194,13 +204,20 @@ export async function POST(request: Request) {
       sentiment_score: sentimentScore,
       alert_triggered: alertTriggered,
       file_urls: fileUrls
-    })
+    }).select('id').single()
 
     if (intError) {
       console.error('[TimeEntry] Interaction Insert Error:', intError)
     } else {
+      // Vetoriza a interação no RAG com a DATA do evento embutida no texto
+      // (contexto temporal correto, inclusive em cargas históricas).
+      if (intRow?.id) {
+        const accountName = result.accounts?.name ?? 'Conta'
+        const label = tagOnboarding ? ' [ONBOARDING]' : ''
+        const chunk = `Interação${label} | ${accountName} | ${effectiveDate} | Tipo: ${interactionType}\n${parsed.data.raw_text}`
+        try { await storeEmbeddings(accountId, 'interaction', intRow.id, chunk) } catch (e) { console.error('[TimeEntry] Interaction embed error:', e) }
+      }
       // Trigger AI Analysis and WAIT for them to ensure they complete in this request cycle
-      
       try {
         // Aciona análise unificada (Risco + Saúde) usando o Admin Client interno do módulo
         await runAutomatedAccountAnalysis(accountId, user.id)
@@ -248,7 +265,7 @@ export async function POST(request: Request) {
           event_type: 'effort',
           title: `Esforço de implantação: ${parsedEntry.parsed_hours}h`,
           description: parsedEntry.parsed_description,
-          date: parsedEntry.date,
+          date: effectiveDate,
           created_by: user.id,
         })
         .select('id')
@@ -263,7 +280,7 @@ export async function POST(request: Request) {
       userEmail: user.email ?? '',
       projectName: accountName,
       hours: parsedEntry.parsed_hours,
-      date: parsedEntry.date,
+      date: effectiveDate,
       notes: parsedEntry.parsed_description,
     })
     psaResult = { status: psa.status, message: psa.message }
