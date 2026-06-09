@@ -29,6 +29,26 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const contractId = searchParams.get('contract_id')
 
+  // ----- Contratos candidatos a iniciar onboarding (p/ o fluxo central) -----
+  if (searchParams.get('candidates')) {
+    const scope = await getUserAccessScope(user.id, 'onboarding')
+    let q = admin
+      .from('contracts')
+      .select('id, description, contract_code, account_id, accounts!inner(name, csm_owner_id)')
+      .eq('onboarding_status', 'not-started')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (scope !== 'global') q = q.eq('accounts.csm_owner_id', user.id)
+    const { data, error } = await q
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json((data ?? []).map((c: any) => ({
+      contract_id: c.id,
+      contract_label: contractLabel(c),
+      account_id: c.account_id,
+      account_name: (Array.isArray(c.accounts) ? c.accounts[0]?.name : c.accounts?.name) ?? 'Conta',
+    })))
+  }
+
   // Catálogo de etapas (legado) + biblioteca de templates (p/ iniciar projeto)
   const [{ data: stages }, { data: templates }] = await Promise.all([
     admin.from('onboarding_stages').select('key, label, sort_order').eq('is_active', true).order('sort_order'),
@@ -184,4 +204,38 @@ export async function POST(request: Request) {
   if (ev?.id) { try { await ingestOnboardingEvent(ev.id) } catch { /* ingest best-effort */ } }
 
   return NextResponse.json({ ok: true, contract_id }, { status: 201 })
+}
+
+const HeaderPatchSchema = z.object({
+  contract_id: z.string().uuid(),
+  owner_id: z.string().uuid().nullable().optional(),
+  target_go_live: z.string().nullable().optional(),
+  onboarding_health: z.enum(['on-track', 'at-risk', 'stalled']).optional(),
+  onboarding_status: z.enum(['not-started', 'in-progress', 'on-hold', 'completed', 'cancelled']).optional(),
+})
+
+// PATCH /api/onboarding — atualiza o cabeçalho do onboarding do contrato
+// (responsável, go-live, saúde, status). Não mexe nos marcos.
+export async function PATCH(request: Request) {
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await getModulePermission(user.id, 'onboarding', 'edit'))) {
+    return NextResponse.json({ error: 'Sem permissão para editar onboarding' }, { status: 403 })
+  }
+
+  const parsed = HeaderPatchSchema.safeParse(await request.json())
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+
+  const patch: Record<string, unknown> = {}
+  if (parsed.data.owner_id !== undefined) patch.onboarding_owner_id = parsed.data.owner_id
+  if (parsed.data.target_go_live !== undefined) patch.onboarding_target_go_live = parsed.data.target_go_live
+  if (parsed.data.onboarding_health !== undefined) patch.onboarding_health = parsed.data.onboarding_health
+  if (parsed.data.onboarding_status !== undefined) patch.onboarding_status = parsed.data.onboarding_status
+  if (Object.keys(patch).length === 0) return NextResponse.json({ ok: true })
+
+  const admin = getSupabaseAdminClient() as any
+  const { error } = await admin.from('contracts').update(patch).eq('id', parsed.data.contract_id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }

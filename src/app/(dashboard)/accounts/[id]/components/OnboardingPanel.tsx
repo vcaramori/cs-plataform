@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Rocket, ChevronDown, ChevronRight, Loader2, Plus, Check, Clock, GanttChartSquare } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ type ContractOb = {
   onboarding_status: string
   onboarding_current_stage: string | null
   onboarding_health: string | null
+  onboarding_owner_id?: string | null
 } | null
 type UserOpt = { id: string; full_name: string | null; email?: string | null }
 
@@ -52,6 +53,7 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
   const [effortBusy, setEffortBusy] = useState(false)
   const [effortMsg, setEffortMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
+  const autoOpenedRef = useRef(false)
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -61,6 +63,10 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
       setContract(data.contract ?? null)
       setMilestones(data.milestones ?? [])
       if (!templateId && (data.templates ?? []).length) setTemplateId(data.templates[0].id)
+      // Auto-expande (1x) quando ainda não iniciado, p/ o "Iniciar" ficar visível
+      if (!autoOpenedRef.current && (data.contract?.onboarding_status ?? 'not-started') === 'not-started') {
+        setExpanded(true); autoOpenedRef.current = true
+      }
     } finally {
       setLoading(false)
     }
@@ -68,9 +74,17 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
-    // lista de usuários p/ responsável (best-effort; pode 403 sem permissão)
-    fetch('/api/users').then(r => r.ok ? r.json() : []).then((d) => setUsers(Array.isArray(d) ? d : (d?.users ?? []))).catch(() => {})
+    // responsáveis elegíveis = usuários com permissão de onboarding (perfil)
+    fetch('/api/onboarding/owners').then(r => r.ok ? r.json() : []).then((d) => setUsers(Array.isArray(d) ? d : [])).catch(() => {})
   }, [])
+
+  const setOwner = async (owner_id: string) => {
+    setBusy(true)
+    try {
+      await fetch('/api/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contract_id: contractId, owner_id: owner_id || null }) })
+      await load()
+    } finally { setBusy(false) }
+  }
 
   const status = contract?.onboarding_status ?? 'not-started'
   const started = status !== 'not-started' && milestones.length > 0
@@ -186,6 +200,15 @@ export function OnboardingPanel({ contractId, accountId }: { contractId: string;
                 <Link href={`/onboarding/${contractId}`} className="text-[10px] font-bold text-plannera-primary flex items-center gap-1 shrink-0 hover:underline">
                   <GanttChartSquare className="w-3.5 h-3.5" /> Cronograma
                 </Link>
+              </div>
+
+              {/* Responsável (implantação) — editável */}
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-content-secondary shrink-0">Responsável</span>
+                <select value={contract?.onboarding_owner_id ?? ''} disabled={busy} onChange={(e) => setOwner(e.target.value)} className="flex-1 text-[10px] px-2 py-1 rounded-md bg-surface-card border border-border-divider text-content-primary">
+                  <option value="">(sem responsável)</option>
+                  {users.map((u) => <option key={u.id} value={u.id}>{u.full_name || u.email || u.id}</option>)}
+                </select>
               </div>
 
               {/* Checklist (status + data) */}

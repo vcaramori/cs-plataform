@@ -44,6 +44,37 @@ export function OnboardingClient() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
+  // Fluxo central de habilitação
+  const [showStart, setShowStart] = useState(false)
+  const [candidates, setCandidates] = useState<{ contract_id: string; contract_label: string; account_name: string }[]>([])
+  const [templates, setTemplates] = useState<{ id: string; name: string }[]>([])
+  const [owners, setOwners] = useState<{ id: string; full_name: string | null }[]>([])
+  const [starting, setStarting] = useState(false)
+  const [sf, setSf] = useState({ contract_id: '', template_id: '', start_date: new Date().toISOString().slice(0, 10), owner_id: '', go_live: '' })
+
+  const openStart = async () => {
+    setShowStart(true)
+    const [c, base, o] = await Promise.all([
+      fetch('/api/onboarding?candidates=1').then(r => r.json()).catch(() => []),
+      fetch('/api/onboarding').then(r => r.json()).catch(() => ({ templates: [] })),
+      fetch('/api/onboarding/owners').then(r => r.json()).catch(() => []),
+    ])
+    setCandidates(Array.isArray(c) ? c : [])
+    setTemplates(base?.templates ?? [])
+    setOwners(Array.isArray(o) ? o : [])
+    setSf((s) => ({ ...s, template_id: base?.templates?.[0]?.id ?? '' }))
+  }
+  const startProject = async () => {
+    if (!sf.contract_id || !sf.template_id) return
+    setStarting(true)
+    try {
+      await fetch('/api/onboarding', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contract_id: sf.contract_id, template_id: sf.template_id, start_date: sf.start_date, owner_id: sf.owner_id || undefined, target_go_live: sf.go_live || undefined }) })
+      setShowStart(false)
+      setSf((s) => ({ ...s, contract_id: '', go_live: '', owner_id: '' }))
+      await load()
+    } finally { setStarting(false) }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,9 +128,44 @@ export function OnboardingClient() {
   return (
     <PageContainer>
       <ModuleHeader title="Onboarding & Implantação" subtitle="Projetos de implantação por contrato — cronograma, marcos e go-live" iconName="Rocket">
+        <Button size="sm" onClick={openStart}><Rocket className="w-4 h-4 mr-2" /> Iniciar onboarding</Button>
         <Link href="/onboarding/templates"><Button variant="outline" size="sm"><Library className="w-4 h-4 mr-2" /> Modelos</Button></Link>
         <Button variant="outline" size="sm" onClick={exportXlsx} disabled={filtered.length === 0}><Download className="w-4 h-4 mr-2" /> Exportar</Button>
       </ModuleHeader>
+
+      {showStart && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowStart(false)}>
+          <div className="bg-surface-card border border-border-divider rounded-2xl p-5 w-full max-w-md space-y-3 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-black uppercase tracking-widest text-content-primary">Iniciar onboarding</h3>
+            <label className="flex flex-col gap-1"><span className="text-[10px] text-content-secondary uppercase tracking-widest">Contrato (cliente)</span>
+              <select value={sf.contract_id} onChange={(e) => setSf({ ...sf, contract_id: e.target.value })} className="text-sm px-2.5 py-2 rounded-lg bg-surface-background border border-border-divider text-content-primary">
+                <option value="">Selecione…</option>
+                {candidates.map((c) => <option key={c.contract_id} value={c.contract_id}>{c.account_name} — {c.contract_label}</option>)}
+              </select>
+              {candidates.length === 0 && <span className="text-[10px] text-content-secondary/70">Nenhum contrato sem onboarding disponível.</span>}
+            </label>
+            <label className="flex flex-col gap-1"><span className="text-[10px] text-content-secondary uppercase tracking-widest">Modelo de cronograma</span>
+              <select value={sf.template_id} onChange={(e) => setSf({ ...sf, template_id: e.target.value })} className="text-sm px-2.5 py-2 rounded-lg bg-surface-background border border-border-divider text-content-primary">
+                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select></label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1"><span className="text-[10px] text-content-secondary uppercase tracking-widest">Início</span>
+                <input type="date" value={sf.start_date} onChange={(e) => setSf({ ...sf, start_date: e.target.value })} className="text-sm px-2.5 py-2 rounded-lg bg-surface-background border border-border-divider text-content-primary" /></label>
+              <label className="flex flex-col gap-1"><span className="text-[10px] text-content-secondary uppercase tracking-widest">Go-live alvo</span>
+                <input type="date" value={sf.go_live} onChange={(e) => setSf({ ...sf, go_live: e.target.value })} className="text-sm px-2.5 py-2 rounded-lg bg-surface-background border border-border-divider text-content-primary" /></label>
+            </div>
+            <label className="flex flex-col gap-1"><span className="text-[10px] text-content-secondary uppercase tracking-widest">Responsável (implantação)</span>
+              <select value={sf.owner_id} onChange={(e) => setSf({ ...sf, owner_id: e.target.value })} className="text-sm px-2.5 py-2 rounded-lg bg-surface-background border border-border-divider text-content-primary">
+                <option value="">(definir depois)</option>
+                {owners.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.id}</option>)}
+              </select></label>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button size="sm" variant="ghost" onClick={() => setShowStart(false)}>Cancelar</Button>
+              <Button size="sm" onClick={startProject} disabled={starting || !sf.contract_id || !sf.template_id}>{starting ? 'Iniciando…' : 'Iniciar'}</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCardPremium title="Em onboarding" value={kpis.activeCount} icon={Rocket} colorVariant="default" />
