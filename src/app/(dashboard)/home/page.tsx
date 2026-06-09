@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
+import { toZonedTime } from 'date-fns-tz'
+import { env } from '@/lib/env'
 import { getSupabaseServerClient, getUserProfile } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { isLeadershipRole } from '@/lib/auth/roles'
@@ -54,11 +56,14 @@ export default async function HomePage() {
     if (csmData) csms = csmData.map(c => ({ id: c.id, full_name: c.full_name ?? '' }))
   }
 
-  // Saudação + contexto
+  // Saudação + contexto. O servidor roda em UTC (Vercel); a saudação e a data
+  // precisam seguir o fuso da empresa, senão à tarde no Brasil já vira "Boa noite".
   const now = new Date()
+  const tz = env.support.businessTimezone
+  const localNow = toZonedTime(now, tz)
   const firstName = (profile?.full_name?.trim().split(/\s+/)[0]) || user.email?.split('@')[0] || ''
-  const greeting = greetingForHour(now.getHours())
-  const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+  const greeting = greetingForHour(localNow.getHours())
+  const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: tz })
 
   const contextParts: string[] = []
   if (kpis.atRisk > 0) contextParts.push(`${kpis.atRisk} ${kpis.atRisk === 1 ? 'conta em risco' : 'contas em risco'}`)

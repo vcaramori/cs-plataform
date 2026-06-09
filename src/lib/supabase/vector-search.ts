@@ -1,4 +1,5 @@
 import { generateEmbedding as gatewayEmbed } from '@/lib/llm/gateway'
+import { getLLMSettings } from '@/lib/llm/settings'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { env } from '@/lib/env'
 import { encode, decode } from 'gpt-tokenizer'
@@ -20,8 +21,12 @@ export type EmbeddingSourceType =
 // Chunking
 // ---------------------------------------------------------------------------
 
-export function chunkText(text: string): string[] {
-  const { chunkSize, chunkOverlap } = env.chunking
+export function chunkText(
+  text: string,
+  overrides?: { chunkSize?: number; chunkOverlap?: number }
+): string[] {
+  const chunkSize = overrides?.chunkSize ?? env.chunking.chunkSize
+  const chunkOverlap = overrides?.chunkOverlap ?? env.chunking.chunkOverlap
   const tokens = encode(text)
 
   if (tokens.length <= chunkSize) return [text]
@@ -62,7 +67,10 @@ export async function storeEmbeddings(
   text: string
 ): Promise<number> {
   const supabase = getSupabaseAdminClient()
-  const chunks = chunkText(text)
+  // Tamanho do chunk vem do banco (app_settings.rag_ai_settings), com fallback
+  // no env. Mantém dentro do teto de tokens do embedding e é ajustável sem deploy.
+  const { chunkSize, chunkOverlap } = await getLLMSettings()
+  const chunks = chunkText(text, { chunkSize, chunkOverlap })
 
   // Remove embeddings anteriores para este source (re-ingestão segura)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

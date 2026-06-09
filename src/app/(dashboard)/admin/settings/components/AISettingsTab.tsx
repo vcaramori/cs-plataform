@@ -240,6 +240,8 @@ interface AIValues {
   rag_top_k: number
   rag_confidence_threshold: number
   rag_cache_ttl_hours: number
+  chunk_size: number
+  chunk_overlap: number
   max_tokens_response: number
   temperature: number
 }
@@ -257,6 +259,8 @@ const DEFAULT_AI: AIValues = {
   rag_top_k: 5,
   rag_confidence_threshold: 0.7,
   rag_cache_ttl_hours: 24,
+  chunk_size: 1024,
+  chunk_overlap: 128,
   max_tokens_response: 2048,
   temperature: 0.1,
 }
@@ -813,6 +817,24 @@ export function AISettingsTab() {
                   onChange={e => setAi('rag_cache_ttl_hours', Number(e.target.value))}
                   className="bg-surface-background/50 border-border-divider rounded-xl" />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Tamanho do chunk (tokens)</Label>
+                  <Input type="number" min={128} max={2048} step={64} value={aiValues.chunk_size}
+                    onChange={e => setAi('chunk_size', Number(e.target.value))}
+                    className="bg-surface-background/50 border-border-divider rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Sobreposição (tokens)</Label>
+                  <Input type="number" min={0} max={512} step={16} value={aiValues.chunk_overlap}
+                    onChange={e => setAi('chunk_overlap', Number(e.target.value))}
+                    className="bg-surface-background/50 border-border-divider rounded-xl" />
+                </div>
+              </div>
+              <p className="text-[10px] text-content-secondary -mt-3">
+                Mantenha o chunk ≤ 2048 (teto do embedding Gemini). Reuniões longas são fatiadas em vários chunks automaticamente. Após mudar, rode &quot;Re-indexar todos os embeddings&quot; para regenerar.
+              </p>
 
               {/* Manutenção do RAG */}
               <div className="pt-3 border-t border-border-divider space-y-2">

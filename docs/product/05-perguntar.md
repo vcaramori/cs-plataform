@@ -165,9 +165,36 @@ O pipeline distingue automaticamente dois tipos de risco:
 
 ---
 
+## 1.6 Resiliência da ingestão, modelos livres e chunking
+
+### Resiliência (reprocessar itens faltantes)
+A ingestão no RAG é *best-effort*: se o provedor de embedding falhar (ex.: sem créditos), o registro **não é vetorizado** e ficaria invisível no Perguntar. Para contornar:
+
+- **"Faltante" = registro de origem sem linha em `embeddings`** (cobre tanto nunca-tentado quanto falha). Não há coluna de status; a detecção é por ausência.
+- **`reembedMissing()`** ([src/lib/rag/reembed.ts](src/lib/rag/reembed.ts)) reprocessa os faltantes de todas as fontes: `interaction`, `support_ticket`, `nps_response`, `onboarding`, `negotiation`. Idempotente.
+- **Botão "Reprocessar RAG (itens faltantes)"** em **Admin → IA** → `POST /api/admin/reembed-missing` (admin-gated). Uso típico após falha/sem-créditos.
+- **Cron `/api/cron/reembed-missing`** (catch-up automático): agendado em `vercel.json` (diário, 06:00 UTC). Auth aceita `Authorization: Bearer <CRON_SECRET>` (Vercel Cron) **ou** header `x-api-secret == API_SECRET` (agendador externo / manual).
+- **"Re-indexar todos os embeddings"**: operação pesada — **apaga tudo** e regenera (usar só ao trocar modelo/dimensão de embedding ou tamanho de chunk).
+- **Tickets abertos por fato**: o pipeline injeta os tickets abertos da conta buscados **direto do banco** (não via embeddings), então "tem ticket aberto?" responde mesmo sem o embedding existir.
+
+### Modelos livres (Gemini 3 / 3.5 / qualquer)
+Os campos **Modelo de Texto** e **Modelo de Embedding** (Admin → IA) são **campo livre com sugestões** (combobox) — aceitam qualquer model id atual/futuro (`gemini-3-pro`, `gemini-flash-latest`, etc.). O gateway repassa o id direto à API.
+- Trocar **texto** = imediato (RAG/LLM passam a usar).
+- Trocar **embedding** com dimensão diferente exige **Re-indexar** (a coluna `embeddings` é `vector(N)`; o fallback de embedding **deve** gerar a mesma dimensão).
+
+### Chunking (configurável no banco)
+- **Tamanho do chunk** e **sobreposição** (tokens) são editáveis em **Admin → IA → Parâmetros RAG** e persistem em `app_settings.rag_ai_settings` (`chunk_size`, `chunk_overlap`). Default **1024 / 128** (env `CHUNK_SIZE`/`CHUNK_OVERLAP` é apenas fallback).
+- Mantenha o chunk **≤ 2048** (teto de tokens do embedding Gemini). Reuniões longas são fatiadas em vários chunks automaticamente — não há perda por tamanho.
+- Após mudar o chunk, rode **"Re-indexar todos os embeddings"** para regenerar.
+
+> **Pinecone removido**: o RAG usa exclusivamente **pgvector**. Colunas `pinecone_vector_id` (interactions/support_tickets) e variáveis `PINECONE_*` foram eliminadas.
+
+---
+
 ## 1.7 Histórico
 
 | Data | Alteração |
 |------|------------|
 | Abr/2026 | Versão inicial |
 | Mai/2026 | Correção crítica: contratos expirados/churned agora visíveis para IA (removido filtro `status=active`); alertas ativos (`proactive_alerts`) adicionados ao contexto; classificação CHURN vs DOWNGRADE implementada; campos `seniority`/`departed_at` adicionados ao power map; `getPortfolioSummary` inclui contas com contratos expirados em `at_risk_accounts` |
+| Jun/2026 | Resiliência da ingestão (reprocessar faltantes via botão + cron `reembed-missing` agendado em `vercel.json`); modelos de texto/embedding livres (combobox, Gemini 3/3.5/qualquer); chunk size/overlap configuráveis no banco (default 1024/128); tickets abertos injetados por fato; Pinecone removido (pgvector apenas) |

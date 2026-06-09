@@ -17,6 +17,8 @@ export interface LLMSettings {
   ragTopK: number
   ragConfidenceThreshold: number
   ragCacheTtlHours: number
+  chunkSize: number
+  chunkOverlap: number
 }
 
 const CACHE_TTL_MS = 60_000
@@ -43,6 +45,8 @@ function buildFallbackSettings(): LLMSettings {
     ragTopK: env.thresholds.vectorTopK,
     ragConfidenceThreshold: 0.7,
     ragCacheTtlHours: 24,
+    chunkSize: env.chunking.chunkSize,
+    chunkOverlap: env.chunking.chunkOverlap,
   }
 }
 
@@ -107,6 +111,8 @@ export async function getLLMSettings(): Promise<LLMSettings> {
       ragTopK: aiSettings.rag_top_k ?? env.thresholds.vectorTopK,
       ragConfidenceThreshold: aiSettings.rag_confidence_threshold ?? 0.7,
       ragCacheTtlHours: aiSettings.rag_cache_ttl_hours ?? 24,
+      chunkSize: aiSettings.chunk_size ?? env.chunking.chunkSize,
+      chunkOverlap: aiSettings.chunk_overlap ?? env.chunking.chunkOverlap,
     }
 
     cache = { data: settings, timestamp: Date.now() }

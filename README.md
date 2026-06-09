@@ -186,10 +186,15 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 
 ### 🧠 Resiliência do RAG (reprocesso de faltantes) + modelos Gemini livres + fim do Pinecone (2026-06-09)
 
-- **Resiliência**: falhas de embedding (ex.: sem créditos) deixavam registros **fora do RAG sem reprocesso**. Novo serviço [reembed.ts](src/lib/rag/reembed.ts) (`reembedMissing`) detecta registros **sem embedding** (interações, tickets, NPS, onboarding, negociação) e re-indexa. Botão **"Reprocessar RAG (itens faltantes)"** no admin (IA), endpoint [/api/admin/reembed-missing](src/app/api/admin/reembed-missing/route.ts) e **cron** [/api/cron/reembed-missing](src/app/api/cron/reembed-missing/route.ts) (`x-api-secret`, catch-up automático). O `reindex-embeddings` agora cobre **todas** as fontes (antes só tickets).
+- **Resiliência**: falhas de embedding (ex.: sem créditos) deixavam registros **fora do RAG sem reprocesso**. Novo serviço [reembed.ts](src/lib/rag/reembed.ts) (`reembedMissing`) detecta registros **sem embedding** (interações, tickets, NPS, onboarding, negociação) e re-indexa. Botão **"Reprocessar RAG (itens faltantes)"** no admin (IA), endpoint [/api/admin/reembed-missing](src/app/api/admin/reembed-missing/route.ts) e **cron** [/api/cron/reembed-missing](src/app/api/cron/reembed-missing/route.ts) — **agendado nativamente em [vercel.json](vercel.json)** (diário, 06:00 UTC); a rota aceita a auth do Vercel Cron (`Authorization: Bearer <CRON_SECRET>`) **ou** `x-api-secret == API_SECRET` (agendador externo/manual). O `reindex-embeddings` agora cobre **todas** as fontes (antes só tickets).
 - **Robustez do Perguntar**: para pergunta sobre uma conta, o contexto agora inclui os **tickets abertos buscados direto do banco** ([rag-pipeline.ts](src/lib/rag/rag-pipeline.ts)) — responde "tem ticket aberto?" por fato, mesmo se o embedding falhou.
 - **Modelos livres**: o modelo de **texto** e **embedding** vira **campo livre com sugestões** (datalist) em [AISettingsTab.tsx](src/app/(dashboard)/admin/settings/components/AISettingsTab.tsx) — permite **Gemini 3, 3.5 e qualquer modelo** (o adapter já passa o id à API). Sugestões atualizadas (`gemini-flash-latest`, `gemini-pro-latest`, 3.x, 2.5) em [gemini-adapter.ts](src/lib/llm/providers/gemini-adapter.ts). Texto = imediato; embedding com nova dimensão exige reindex.
-- **Pinecone removido**: colunas `pinecone_vector_id` (interactions, support_tickets) dropadas; `.env` limpo; sem SDK/código. **Chunk** alinhado: `CHUNK_SIZE=1024`/`CHUNK_OVERLAP=128` (o `.env` tinha 4000, acima do teto ~2048 do embedding Gemini → truncava). Reuniões longas seguem cobertas por fatiamento.
+- **Pinecone removido**: colunas `pinecone_vector_id` (interactions, support_tickets) dropadas; `.env` limpo; sem SDK/código. **Chunk** alinhado: default `1024`/`128` (antes 4000, acima do teto ~2048 do embedding Gemini → truncava). Reuniões longas seguem cobertas por fatiamento.
+- **Chunk configurável no banco**: `chunk_size`/`chunk_overlap` agora editáveis em **Admin → IA → Parâmetros RAG** (persistem em `app_settings.rag_ai_settings`, lidos por [settings.ts](src/lib/llm/settings.ts)→[vector-search.ts](src/lib/supabase/vector-search.ts)); env `CHUNK_SIZE`/`CHUNK_OVERLAP` vira apenas **fallback** — ajuste sem redeploy. Após mudar, rodar **"Re-indexar todos os embeddings"**.
+
+### 🕗 Saudação da Home no fuso da empresa (2026-06-09)
+
+A saudação ("Bom dia/Boa tarde/Boa noite") era calculada com `getHours()` **no servidor (UTC)** → à tarde no Brasil já aparecia "Boa noite". Corrigido em [home/page.tsx](src/app/(dashboard)/home/page.tsx): hora e data agora usam o fuso da empresa (`env.support.businessTimezone`, default `America/Sao_Paulo`) via `toZonedTime` (`date-fns-tz`).
 
 ### 🕗 Esforço com data do evento + tag de onboarding + vetorização no RAG (2026-06-09)
 
@@ -703,6 +708,7 @@ Todos os crons são executados via endpoints POST seguro (header `x-api-secret`)
 | CSAT timeout | `POST /api/cron/csat-timeout` | `0 * * * *` (hourly) | Reseta tokens CSAT expirados |
 | Sentiment analysis | `POST /api/cron/analyze-ticket-sentiments` | `0 3 * * *` (daily 03:00 UTC) | Analisa replies sem sentimento via IA, regenera caches de tendência (F1-20) |
 | **Health Score Daily** | `POST /api/cron/health-score-daily` | `0 2 * * *` (daily 02:00 UTC) | **Recalcula health_score_v2 para todas as contas ativas via fórmula ponderada (F2-02)** |
+| **RAG reembed faltantes** | `POST /api/cron/reembed-missing` | `0 6 * * *` (daily 06:00 UTC) — **em `vercel.json`** | Reprocessa embeddings faltantes (catch-up após falha/sem-créditos). Auth: `Bearer CRON_SECRET` (Vercel) **ou** `x-api-secret` |
 
 **Configuração em Produção:**
 - Usar Vercel Crons, AWS EventBridge, GCP Cloud Scheduler ou similar
@@ -1368,6 +1374,14 @@ NEXT_PUBLIC_APP_URL=https://csplataform.plannera.com
 
 # ── API Secret para Cron Jobs ─────────────────────────────────
 API_SECRET=your-secure-random-secret-for-cron-jobs
+# CRON_SECRET: usado pelo Vercel Cron (vercel.json). A Vercel envia
+# `Authorization: Bearer <CRON_SECRET>` automaticamente quando esta var existe.
+# Necessária para o cron /api/cron/reembed-missing rodar agendado.
+CRON_SECRET=your-secure-random-secret-for-vercel-cron
+
+# ── Chunking do RAG (fallback — o valor efetivo vem do banco/Admin → IA) ──
+CHUNK_SIZE=1024
+CHUNK_OVERLAP=128
 ```
 
 ---
