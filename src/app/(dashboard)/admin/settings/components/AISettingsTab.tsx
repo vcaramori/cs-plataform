@@ -31,6 +31,10 @@ const PROVIDERS: ProviderDef[] = [
     label: 'Google Gemini',
     supportsEmbeddings: true,
     textModels: [
+      { id: 'gemini-flash-latest', label: 'Gemini Flash (latest — auto-atualiza)' },
+      { id: 'gemini-pro-latest', label: 'Gemini Pro (latest — auto-atualiza)' },
+      { id: 'gemini-3-pro', label: 'Gemini 3 Pro' },
+      { id: 'gemini-3-flash', label: 'Gemini 3 Flash' },
       { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Rápido)' },
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Avançado)' },
       { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Legado)' },
@@ -277,6 +281,7 @@ export function AISettingsTab() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reindexing, setReindexing] = useState(false)
+  const [reembedding, setReembedding] = useState(false)
   const [initialEmbeddingProvider, setInitialEmbeddingProvider] = useState<string>('gemini')
   const [initialEmbeddingModel, setInitialEmbeddingModel] = useState<string>('text-embedding-004')
 
@@ -463,6 +468,25 @@ export function AISettingsTab() {
     }
   }
 
+  async function handleReembed() {
+    setReembedding(true)
+    try {
+      const res = await fetch('/api/admin/reembed-missing', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limitPerType: 500 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      const s = (data.stats ?? {}) as Record<string, { missing: number; processed: number; failed: number }>
+      const proc = Object.values(s).reduce((a, b) => a + (b.processed || 0), 0)
+      const fail = Object.values(s).reduce((a, b) => a + (b.failed || 0), 0)
+      toast.success(`RAG reprocessado: ${proc} item(ns) indexado(s)${fail ? `, ${fail} falha(s)` : ''}.`)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao reprocessar embeddings')
+    } finally {
+      setReembedding(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <SectionHeader title="IA & RAG — Configurações do Motor" />
@@ -500,16 +524,17 @@ export function AISettingsTab() {
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Texto</Label>
-                  <Select value={aiValues.text_model} onValueChange={v => setAi('text_model', v)}>
-                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      {textProvider.textModels.map(m => (
-                        <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="ai-text-models"
+                    value={aiValues.text_model}
+                    onChange={e => setAi('text_model', e.target.value)}
+                    placeholder="ex.: gemini-2.5-flash, gemini-flash-latest, gemini-3-pro"
+                    className="bg-surface-background/50 border-border-divider rounded-xl"
+                  />
+                  <datalist id="ai-text-models">
+                    {textProvider?.textModels.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  </datalist>
+                  <p className="text-[9px] text-content-secondary/60">Campo livre: digite qualquer modelo suportado pelo provider (inclui futuros, ex.: Gemini 3/3.5).</p>
                 </div>
               </div>
 
@@ -531,16 +556,17 @@ export function AISettingsTab() {
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Modelo de Embedding</Label>
-                  <Select value={aiValues.embedding_model} onValueChange={v => setAi('embedding_model', v)}>
-                    <SelectTrigger className="bg-surface-background/50 border-border-divider rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface-card border-border-divider">
-                      {embeddingProvider?.embeddingModels.map(m => (
-                        <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    list="ai-embedding-models"
+                    value={aiValues.embedding_model}
+                    onChange={e => setAi('embedding_model', e.target.value)}
+                    placeholder="ex.: gemini-embedding-001"
+                    className="bg-surface-background/50 border-border-divider rounded-xl"
+                  />
+                  <datalist id="ai-embedding-models">
+                    {embeddingProvider?.embeddingModels.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  </datalist>
+                  <p className="text-[9px] text-content-secondary/60">Trocar o modelo de embedding pode exigir re-indexação (dimensão do vetor).</p>
                 </div>
 
                 <div className="flex items-center gap-2 text-[10px] text-content-secondary">
@@ -788,8 +814,19 @@ export function AISettingsTab() {
                   className="bg-surface-background/50 border-border-divider rounded-xl" />
               </div>
 
-              {/* Re-index button */}
-              <div className="pt-3 border-t border-border-divider">
+              {/* Manutenção do RAG */}
+              <div className="pt-3 border-t border-border-divider space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReembed}
+                  disabled={reembedding}
+                  className="gap-2 text-[10px] w-full"
+                >
+                  {reembedding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  Reprocessar RAG (itens faltantes)
+                </Button>
+                <p className="text-[9px] text-content-secondary/60">Indexa o que ficou de fora (ex.: falha por falta de créditos). Seguro re-rodar.</p>
                 <Button
                   variant="outline"
                   size="sm"

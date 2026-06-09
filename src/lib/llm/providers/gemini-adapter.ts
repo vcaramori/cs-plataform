@@ -17,6 +17,10 @@ export const geminiAdapter: LLMProviderAdapter = {
   defaultEmbeddingDimensions: 1536,
 
   availableTextModels: [
+    { id: 'gemini-flash-latest', label: 'Gemini Flash (latest)' },
+    { id: 'gemini-pro-latest', label: 'Gemini Pro (latest)' },
+    { id: 'gemini-3-pro', label: 'Gemini 3 Pro' },
+    { id: 'gemini-3-flash', label: 'Gemini 3 Flash' },
     { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Rápido)' },
     { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Avançado)' },
     { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Legado)' },

@@ -554,6 +554,16 @@ Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_month
     }
   }
 
+  // 3.10b Tickets abertos (factual, direto do banco — não depende de embedding).
+  // Garante resposta correta a "tem ticket aberto?" mesmo se a vetorização falhou.
+  let openTicketsContext = ''
+  if (accountId && ticketsWithSLA && ticketsWithSLA.length > 0) {
+    const lines = ticketsWithSLA
+      .map((t: any) => `- [${(t.priority ?? 'medium').toUpperCase()}] ${t.title} | status: ${t.status} | aberto em ${t.opened_at?.slice(0, 10) ?? '—'}`)
+      .join('\n')
+    openTicketsContext = `\n\n## TICKETS DE SUPORTE ABERTOS DESTA CONTA (${ticketsWithSLA.length})\n${lines}`
+  }
+
   // 4. Carrega system instruction do banco (admin pode editar via /admin/settings)
   const HARDCODED_INSTRUCTION = `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
 Sua missão é realizar uma AUDITORIA EXAUSTIVA cruzando TODAS as fontes de dados disponíveis e extrair insights acionáveis.
@@ -597,6 +607,7 @@ ${alertsContext}
 ${adoptionContext}
 ${planRiskContext}
 ${playbooksContext}
+${openTicketsContext}
 ${slaViolationsContext}
 ${npsContext}
 ${portfolioContext}

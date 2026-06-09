@@ -184,6 +184,13 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 🧠 Resiliência do RAG (reprocesso de faltantes) + modelos Gemini livres + fim do Pinecone (2026-06-09)
+
+- **Resiliência**: falhas de embedding (ex.: sem créditos) deixavam registros **fora do RAG sem reprocesso**. Novo serviço [reembed.ts](src/lib/rag/reembed.ts) (`reembedMissing`) detecta registros **sem embedding** (interações, tickets, NPS, onboarding, negociação) e re-indexa. Botão **"Reprocessar RAG (itens faltantes)"** no admin (IA), endpoint [/api/admin/reembed-missing](src/app/api/admin/reembed-missing/route.ts) e **cron** [/api/cron/reembed-missing](src/app/api/cron/reembed-missing/route.ts) (`x-api-secret`, catch-up automático). O `reindex-embeddings` agora cobre **todas** as fontes (antes só tickets).
+- **Robustez do Perguntar**: para pergunta sobre uma conta, o contexto agora inclui os **tickets abertos buscados direto do banco** ([rag-pipeline.ts](src/lib/rag/rag-pipeline.ts)) — responde "tem ticket aberto?" por fato, mesmo se o embedding falhou.
+- **Modelos livres**: o modelo de **texto** e **embedding** vira **campo livre com sugestões** (datalist) em [AISettingsTab.tsx](src/app/(dashboard)/admin/settings/components/AISettingsTab.tsx) — permite **Gemini 3, 3.5 e qualquer modelo** (o adapter já passa o id à API). Sugestões atualizadas (`gemini-flash-latest`, `gemini-pro-latest`, 3.x, 2.5) em [gemini-adapter.ts](src/lib/llm/providers/gemini-adapter.ts). Texto = imediato; embedding com nova dimensão exige reindex.
+- **Pinecone removido**: colunas `pinecone_vector_id` (interactions, support_tickets) dropadas; `.env` limpo; sem SDK/código. **Chunk** alinhado: `CHUNK_SIZE=1024`/`CHUNK_OVERLAP=128` (o `.env` tinha 4000, acima do teto ~2048 do embedding Gemini → truncava). Reuniões longas seguem cobertas por fatiamento.
+
 ### 🕗 Esforço com data do evento + tag de onboarding + vetorização no RAG (2026-06-09)
 
 Permite **carga de contexto histórico** (interações antigas) reaproveitando o fluxo de esforço, sem tela de import nova e **sem migration**. Ver [docs/product/06-esforco.md](docs/product/06-esforco.md).

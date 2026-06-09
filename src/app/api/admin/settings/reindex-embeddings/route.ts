@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getLLMSettings } from '@/lib/llm/settings'
+import { reembedMissing } from '@/lib/rag/reembed'
+
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   const supabase = await getSupabaseServerClient()
@@ -43,16 +46,13 @@ export async function POST(request: Request) {
       console.error('[Reindex] Could not alter dimension via RPC (may need manual migration):', alterError.message)
     }
 
-    // Trigger backfill by calling the existing endpoint internally
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    fetch(`${appUrl}/api/support-tickets/backfill-embeddings`, {
-      method: 'POST',
-      headers: { 'x-api-secret': process.env.API_SECRET || '' },
-    }).catch(err => console.error('[Reindex] Backfill trigger failed:', err))
+    // Re-indexa TODAS as fontes (não só tickets): interações, tickets, NPS,
+    // onboarding e negociação. Fire-and-forget; o cron/botão "Reprocessar" cobre o resto.
+    void reembedMissing({ limitPerType: 1000 }).catch(err => console.error('[Reindex] reembed falhou:', err))
 
     return NextResponse.json({
       ok: true,
-      message: `Embeddings cleared. Re-indexing started with ${settings.embeddingProvider} (${newDimensions}d).`,
+      message: `Embeddings limpos. Re-indexação iniciada (todas as fontes) com ${settings.embeddingProvider} (${newDimensions}d).`,
       dimensions: newDimensions,
       provider: settings.embeddingProvider,
     })
