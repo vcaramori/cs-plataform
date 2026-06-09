@@ -69,7 +69,7 @@ export async function storeEmbeddings(
   const supabase = getSupabaseAdminClient()
   // Tamanho do chunk vem do banco (app_settings.rag_ai_settings), com fallback
   // no env. Mantém dentro do teto de tokens do embedding e é ajustável sem deploy.
-  const { chunkSize, chunkOverlap } = await getLLMSettings()
+  const { chunkSize, chunkOverlap, embeddingDimensions } = await getLLMSettings()
   const chunks = chunkText(text, { chunkSize, chunkOverlap })
 
   // Remove embeddings anteriores para este source (re-ingestão segura)
@@ -97,6 +97,15 @@ export async function storeEmbeddings(
       batch.map(chunk => generateEmbedding(chunk))
     )
     embeddings.forEach((emb, j) => {
+      // Trava de dimensão: a coluna `embeddings.embedding` é vector(N) fixo.
+      // Um provedor de fallback com dimensão diferente (ex.: NVIDIA 1024d vs
+      // Gemini 1536d) corromperia a base / quebraria a busca. Recusamos o insert
+      // — o item fica "faltante" e é reprocessado quando o provedor correto voltar.
+      if (emb.length !== embeddingDimensions) {
+        throw new Error(
+          `Embedding com dimensão ${emb.length} ≠ esperado ${embeddingDimensions} (provável fallback de embedding incompatível). Mantenha todos os modelos de embedding na mesma dimensão.`
+        )
+      }
       rows.push({
         account_id: accountId,
         source_type: sourceType,
