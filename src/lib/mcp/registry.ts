@@ -1,7 +1,7 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { env } from '@/lib/env'
 import { runRAGPipeline, ingestOnboardingEvent, ingestNegotiation } from '@/lib/rag/rag-pipeline'
-import { recomputeContractOnboarding, seedMilestonesForContract } from '@/lib/onboarding/onboarding-service'
+import { recomputeContractOnboarding, seedMilestonesForContract, seedMilestonesFromTemplate } from '@/lib/onboarding/onboarding-service'
 import { logEffort } from '@/lib/effort/log-effort'
 
 /**
@@ -196,24 +196,51 @@ export const MCP_TOOLS: McpTool[] = [
 
   // ───────────────────────── Escrita (operacional) ─────────────────────────
   {
+    name: 'list_onboarding_templates',
+    description: 'Lista os modelos (templates) de cronograma de implantação e seus marcos (com offset em dias).',
+    write: false,
+    inputSchema: { type: 'object', properties: {} },
+    handler: async () => {
+      const db = admin()
+      const { data: templates } = await db.from('onboarding_templates').select('*').eq('is_active', true).order('name')
+      const ids = (templates ?? []).map((t: any) => t.id)
+      const byT: Record<string, any[]> = {}
+      if (ids.length) {
+        const { data: items } = await db.from('onboarding_template_items').select('*').in('template_id', ids).order('sort_order')
+        for (const it of items ?? []) (byT[it.template_id] ??= []).push(it)
+      }
+      return (templates ?? []).map((t: any) => ({ ...t, items: byT[t.id] ?? [] }))
+    },
+  },
+  {
     name: 'start_onboarding',
-    description: 'Inicia o onboarding de um contrato: cria os marcos das etapas padrão e marca o contrato como "em andamento".',
+    description: 'Inicia o projeto de onboarding de um contrato a partir de um TEMPLATE (datas calculadas pelo offset) e uma data de início. Sem template_id, usa o catálogo legado.',
     write: true,
-    inputSchema: { type: 'object', properties: { contract_id: { type: 'string' }, owner_id: { type: 'string' }, target_go_live: { type: 'string', description: 'AAAA-MM-DD' } }, required: ['contract_id'] },
+    inputSchema: { type: 'object', properties: { contract_id: { type: 'string' }, template_id: { type: 'string', description: 'id do modelo (use list_onboarding_templates)' }, start_date: { type: 'string', description: 'AAAA-MM-DD (default hoje)' }, owner_id: { type: 'string' }, target_go_live: { type: 'string', description: 'AAAA-MM-DD' } }, required: ['contract_id'] },
     handler: async (a) => {
       const db = admin()
       const contractId = String(a.contract_id)
+      const startDate = (a.start_date ? String(a.start_date) : new Date().toISOString()).slice(0, 10)
       const { data: contract, error } = await db.from('contracts').select('id, account_id').eq('id', contractId).single()
       if (error || !contract) throw new Error('Contrato não encontrado')
-      await seedMilestonesForContract(db, contractId, contract.account_id)
-      const { data: firstStage } = await db.from('onboarding_stages').select('key').eq('is_active', true).order('sort_order').limit(1).single()
+
+      let firstName: string | null = null
+      if (a.template_id) {
+        const seeded = await seedMilestonesFromTemplate(db, contractId, contract.account_id, String(a.template_id), startDate)
+        firstName = seeded.firstName
+      } else {
+        await seedMilestonesForContract(db, contractId, contract.account_id)
+        const { data: first } = await db.from('onboarding_milestones').select('name').eq('contract_id', contractId).order('sort_order').limit(1).single()
+        firstName = first?.name ?? null
+      }
       await db.from('contracts').update({
         onboarding_status: 'in-progress',
-        onboarding_started_at: new Date().toISOString(),
-        onboarding_current_stage: firstStage?.key ?? null,
+        onboarding_started_at: `${startDate}T00:00:00Z`,
+        onboarding_current_stage: firstName,
         onboarding_owner_id: a.owner_id ?? null,
         onboarding_target_go_live: a.target_go_live ?? null,
         onboarding_health: 'on-track',
+        onboarding_template_id: a.template_id ?? null,
       }).eq('id', contractId)
       const { data: ev } = await db.from('onboarding_events').insert({
         contract_id: contractId, account_id: contract.account_id, event_type: 'status_change',
@@ -221,6 +248,43 @@ export const MCP_TOOLS: McpTool[] = [
       }).select('id').single()
       if (ev?.id) { try { await ingestOnboardingEvent(ev.id) } catch { /* best-effort */ } }
       return { ok: true, contract_id: contractId }
+    },
+  },
+  {
+    name: 'add_onboarding_milestone',
+    description: 'Adiciona um marco datado ao cronograma de um contrato (ex.: "5º GT").',
+    write: true,
+    inputSchema: { type: 'object', properties: { contract_id: { type: 'string' }, name: { type: 'string' }, milestone_type: { type: 'string', description: 'kickoff|workteam|training|go_live|handover|milestone' }, planned_date: { type: 'string', description: 'AAAA-MM-DD' } }, required: ['contract_id', 'name'] },
+    handler: async (a) => {
+      const db = admin()
+      const { data: contract, error } = await db.from('contracts').select('account_id').eq('id', String(a.contract_id)).single()
+      if (error || !contract) throw new Error('Contrato não encontrado')
+      const { data: last } = await db.from('onboarding_milestones').select('sort_order').eq('contract_id', String(a.contract_id)).order('sort_order', { ascending: false }).limit(1).single()
+      const { data: row, error: insErr } = await db.from('onboarding_milestones').insert({
+        contract_id: String(a.contract_id), account_id: contract.account_id, stage_key: null,
+        name: String(a.name), milestone_type: a.milestone_type ?? 'milestone', status: 'pending',
+        planned_date: a.planned_date ?? null, sort_order: (last?.sort_order ?? 0) + 1,
+      }).select('id').single()
+      if (insErr) throw new Error(insErr.message)
+      const recompute = await recomputeContractOnboarding(db, String(a.contract_id))
+      return { ok: true, milestone_id: row.id, recompute }
+    },
+  },
+  {
+    name: 'set_milestone_date',
+    description: 'Define/ajusta a data planejada (e opcionalmente o nome) de um marco de onboarding.',
+    write: true,
+    inputSchema: { type: 'object', properties: { milestone_id: { type: 'string' }, planned_date: { type: 'string', description: 'AAAA-MM-DD' }, name: { type: 'string' } }, required: ['milestone_id'] },
+    handler: async (a) => {
+      const db = admin()
+      const patch: Record<string, unknown> = {}
+      if (a.planned_date !== undefined) patch.planned_date = a.planned_date
+      if (a.name !== undefined) patch.name = a.name
+      const { data: cur } = await db.from('onboarding_milestones').select('contract_id').eq('id', String(a.milestone_id)).single()
+      if (!cur) throw new Error('Marco não encontrado')
+      await db.from('onboarding_milestones').update(patch).eq('id', String(a.milestone_id))
+      const recompute = await recomputeContractOnboarding(db, cur.contract_id)
+      return { ok: true, recompute }
     },
   },
   {

@@ -1,6 +1,24 @@
 # 12 — Onboarding & Implantação
 
-> Status: entregue 2026-06-08. Módulo de acompanhamento de implantação por contrato + duas trilhas de história do cliente (onboarding e negociação) no RAG.
+> Status: entregue 2026-06-08. Módulo de acompanhamento de implantação por contrato + duas trilhas de história do cliente (onboarding e negociação) no RAG. **Atualização (2026-06-08): onboarding virou PROJETO — cronograma de marcos datados, Gantt exportável e biblioteca de templates** (ver seção abaixo, que supera o checklist fixo de 9 etapas).
+
+## Modelo de projeto: cronograma datado + Gantt + templates (2026-06-08)
+
+Cada implantação é um **projeto com cronograma**: marcos **datados e livres** (Kick off, GTs, TSs, Go Live, Handover…), variáveis por escopo. Substitui o checklist fixo de 9 etapas (o catálogo legado `onboarding_stages` continua só como fallback).
+
+- **Biblioteca de templates** (`onboarding_templates` + `onboarding_template_items`): modelos por tipo (ex.: "Implantação Padrão 5+5 semanas", "Express 3+2"). Cada item tem `offset_days` (e `duration_days`) → o sistema **calcula as datas** dos marcos a partir da data de início. Admin em **/onboarding/templates**.
+- **Iniciar projeto** (painel do contrato): escolher **template + data de início + responsável + go-live** → marcos criados com datas. Depois é tudo **editável** por escopo (add/remover/renomear marco, mudar datas/status) no painel e na página do cronograma.
+- **Marcos** (`onboarding_milestones`, evoluído): `name`, `milestone_type`, `planned_date`, `planned_end`, `status`, `owner_id`, `sort_order` (e `stage_key` legado, agora opcional). **Finalizar um marco avança** o projeto (recompute de etapa atual/status).
+- **Gantt do projeto** em **/onboarding/[contractId]**: timeline por semanas + marcos coloridos por status (concluído/em andamento/pendente/atrasado), cabeçalho apresentável (conta, responsável, go-live, modelo) e **export PNG (html-to-image) + PDF (impressão)** para apresentar ao cliente. Editor de marcos abaixo.
+- **Dashboard /onboarding**: KPIs + tabela com **próximo marco/data**; linha abre o cronograma; atalho "Modelos".
+- **APIs**: `POST /api/onboarding` (start com `template_id`+`start_date`); `/api/onboarding/milestones` (POST add) e `/milestones/[id]` (PATCH/DELETE); `/api/onboarding/templates` (+`/[id]`) CRUD.
+- **MCP**: `list_onboarding_templates`, `start_onboarding` (com template), `add_onboarding_milestone`, `set_milestone_date`.
+
+**Follow-ups**: fases/atividades por marco; vínculo com playbooks; saúde automática (travado/atrasado); dependências entre marcos.
+
+---
+
+### (Histórico) Modelo inicial — checklist fixo de 9 etapas
 
 ## Visão
 

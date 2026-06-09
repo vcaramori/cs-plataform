@@ -184,6 +184,14 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - Removidos: `src/app/(dashboard)/cs-ops/tasks/` (page + `CSOpsTasksClient`), o item de menu na `Sidebar` e a action órfã `reassignTask` em `playbooks/actions.ts` (único consumidor era a tela removida).
 - Mantidos intactos: `account_playbook_tasks` (ainda usada na execução de Playbooks), `csm_tasks` (exclusiva de Atividades) — **sem migration**.
 
+### 📅 Onboarding como Projeto — cronograma datado, Gantt exportável e templates (2026-06-08)
+
+Onboarding virou **projeto com cronograma** (supera o checklist fixo de 9 etapas). Ver [docs/product/12-onboarding.md](docs/product/12-onboarding.md).
+- **Biblioteca de templates** por tipo (`onboarding_templates`/`_items`, `offset_days` calcula as datas); admin em `/onboarding/templates`. Seed: "Implantação Padrão (5+5)" e "Express (3+2)".
+- **Marcos datados livres** (`onboarding_milestones` evoluído: `name`, `milestone_type`, `planned_date`/`planned_end`; `stage_key` opcional; removido o UNIQUE p/ permitir N GTs). Iniciar = template + data de início + responsável + go-live → datas calculadas; tudo editável por escopo.
+- **Gantt do projeto** em `/onboarding/[contractId]`: timeline por semanas + marcos por status + **export PNG (`html-to-image`) e PDF (impressão)** p/ apresentar ao cliente; editor de marcos.
+- APIs: `POST /api/onboarding` (start c/ `template_id`+`start_date`), `/api/onboarding/milestones` (POST/PATCH/DELETE), `/api/onboarding/templates` (+`/[id]`). MCP: `list_onboarding_templates`, `start_onboarding`, `add_onboarding_milestone`, `set_milestone_date`. Migration `20260608170000` (aditiva).
+
 ### 🤖 MCP da ferramenta (agentes) + correção da foto na sidebar (2026-06-08)
 
 **MCP de negócio** para um agente interagir em todas as frentes (além do Supabase MCP). Ver [docs/product/13-mcp.md](docs/product/13-mcp.md).

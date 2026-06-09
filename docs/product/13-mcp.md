@@ -16,8 +16,8 @@ Além do **Supabase MCP** (acesso a banco, já no `.mcp.json`), a plataforma exp
 
 ## Tools v1
 
-- **Leitura**: `ask` (RAG), `list_accounts`, `get_account` (360°), `get_onboarding`, `list_onboarding`, `get_nps`, `list_tickets`, `get_ticket`, `list_effort`.
-- **Escrita (operacional)**: `start_onboarding`, `update_onboarding_milestone`, `log_onboarding_effort` (→ PSA), `log_effort`, `add_onboarding_event`, `create_ticket`, `log_interaction`, `register_negotiation`.
+- **Leitura**: `ask` (RAG), `list_accounts`, `get_account` (360°), `get_onboarding`, `list_onboarding`, `list_onboarding_templates`, `get_nps`, `list_tickets`, `get_ticket`, `list_effort`.
+- **Escrita (operacional)**: `start_onboarding` (com `template_id`+`start_date`), `add_onboarding_milestone`, `set_milestone_date`, `update_onboarding_milestone`, `log_onboarding_effort` (→ PSA), `log_effort`, `add_onboarding_event`, `create_ticket`, `log_interaction`, `register_negotiation`.
 - **Por design não existem**: usuários/perfis, admin/settings, exclusões.
 
 ## Configuração (env, server-side)
