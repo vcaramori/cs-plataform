@@ -1671,7 +1671,6 @@ export type Database = {
           direct_hours: number
           file_urls: Json | null
           id: string
-          pinecone_vector_id: string | null
           raw_transcript: string | null
           sentiment_score: number | null
           source: string
@@ -1689,7 +1688,6 @@ export type Database = {
           direct_hours?: number
           file_urls?: Json | null
           id?: string
-          pinecone_vector_id?: string | null
           raw_transcript?: string | null
           sentiment_score?: number | null
           source?: string
@@ -1707,7 +1705,6 @@ export type Database = {
           direct_hours?: number
           file_urls?: Json | null
           id?: string
-          pinecone_vector_id?: string | null
           raw_transcript?: string | null
           sentiment_score?: number | null
           source?: string
@@ -3176,7 +3173,6 @@ export type Database = {
           opened_at: string
           parent_ticket_id: string | null
           pending_reason: string | null
-          pinecone_vector_id: string | null
           priority: string
           product: string | null
           requester_email: string | null
@@ -3227,7 +3223,6 @@ export type Database = {
           opened_at: string
           parent_ticket_id?: string | null
           pending_reason?: string | null
-          pinecone_vector_id?: string | null
           priority?: string
           product?: string | null
           requester_email?: string | null
@@ -3278,7 +3273,6 @@ export type Database = {
           opened_at?: string
           parent_ticket_id?: string | null
           pending_reason?: string | null
-          pinecone_vector_id?: string | null
           priority?: string
           product?: string | null
           requester_email?: string | null
