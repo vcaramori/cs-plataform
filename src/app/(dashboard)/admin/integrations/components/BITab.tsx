@@ -105,7 +105,7 @@ export function BITab({ accountId }: BITabProps) {
     <>
       <SectionHeader
         title={`Integrações BI${integrations.length > 0 ? ` (${integrations.length})` : ''}`}
-        action={<Button className="bg-plannera-orange hover:bg-plannera-orange/90">Adicionar BI</Button>}
+        action={<Badge variant="outline" className="border-border-divider text-content-secondary text-[10px] font-black uppercase tracking-widest px-3 py-1">Em breve</Badge>}
       />
 
       {loading ? (
@@ -201,10 +201,10 @@ export function BITab({ accountId }: BITabProps) {
       ) : (
         <div className="p-12 bg-surface-card border-2 border-dashed border-border-divider rounded-2xl text-center">
           <div className="text-4xl mb-4">📊</div>
-          <p className="text-content-secondary mb-4">Nenhuma integração BI configurada</p>
-          <Button className="bg-plannera-orange hover:bg-plannera-orange/90">
-            Conectar BigQuery, Snowflake ou Tableau
-          </Button>
+          <p className="text-content-secondary mb-2">Nenhuma integração BI configurada</p>
+          <Badge variant="outline" className="border-border-divider text-content-secondary text-[10px] font-black uppercase tracking-widest px-3 py-1">
+            Conexão BigQuery / Snowflake / Tableau — em breve
+          </Badge>
         </div>
       )}
     </>

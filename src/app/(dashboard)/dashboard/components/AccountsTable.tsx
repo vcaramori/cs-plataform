@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -98,28 +98,46 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
   const searchParams = useSearchParams()
   const [search, setSearch] = useState('')
   const [segmentFilter, setSegmentFilter] = useState<string>('all')
-  const [riskFilter, setRiskFilter] = useState<boolean>(false)
 
-  useEffect(() => {
-    const filter = searchParams.get('filter')
-    setRiskFilter(filter === 'at-risk')
-  }, [searchParams])
+  // Filtro/ordenação vêm da URL — drill-down dos KPIs do dashboard/home.
+  const activeFilter = searchParams.get('filter')   // at-risk | health-low | renewals
+  const activeSort = searchParams.get('sort')        // mrr
+  const hasUrlScope = !!activeFilter || !!activeSort
 
-  const filtered = accounts.filter(a => {
-    const matchSearch = a.name.toLowerCase().includes(search.toLowerCase())
-    const matchSegment = segmentFilter === 'all' || a.segment === segmentFilter
-    
-    let matchRisk = true
-    if (riskFilter) {
-      const healthRisk = a.health_score < 40
-      const riskAssessments = Array.isArray(a.account_risk_assessments) ? a.account_risk_assessments : []
-      const aiRisk = riskAssessments.some((r: RiskAssessmentRow) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
-
-      matchRisk = healthRisk || aiRisk
+  const matchesUrlFilter = (a: AccountWithContracts): boolean => {
+    if (!activeFilter) return true
+    if (activeFilter === 'at-risk') {
+      const ra = Array.isArray(a.account_risk_assessments) ? a.account_risk_assessments : []
+      const aiRisk = ra.some((r: RiskAssessmentRow) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
+      return a.health_score < 40 || aiRisk
     }
+    if (activeFilter === 'health-low') return a.health_score < 40
+    if (activeFilter === 'renewals') {
+      const in90 = Date.now() + 90 * 24 * 60 * 60 * 1000
+      const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
+      return contracts.some(c => c.status === 'active' && c.renewal_date && new Date(c.renewal_date).getTime() <= in90)
+    }
+    return true
+  }
 
-    return matchSearch && matchSegment && matchRisk
-  })
+  const filtered = accounts
+    .filter(a => {
+      const matchSearch = a.name.toLowerCase().includes(search.toLowerCase())
+      const matchSegment = segmentFilter === 'all' || a.segment === segmentFilter
+      return matchSearch && matchSegment && matchesUrlFilter(a)
+    })
+    .sort((a, b) => activeSort === 'mrr'
+      ? calculateAccountMetrics(b).totalMRR - calculateAccountMetrics(a).totalMRR
+      : 0)
+
+  const FILTER_LABELS: Record<string, string> = {
+    'at-risk': 'Em risco',
+    'health-low': 'Health < 40',
+    'renewals': 'Renovações ≤ 90d',
+  }
+  const scopeLabel = activeFilter
+    ? FILTER_LABELS[activeFilter] ?? activeFilter
+    : activeSort === 'mrr' ? 'Maior MRR' : null
 
   return (
     <>
@@ -128,7 +146,14 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
           <div className="flex items-center justify-between flex-wrap gap-6">
             <div className="space-y-1">
               <CardTitle className="text-xl font-heading font-extrabold uppercase tracking-tight">Portfólio de LOGOS</CardTitle>
-              <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">{filtered.length} Clientes Encontrados</p>
+              <div className="flex items-center gap-2">
+                <p className="text-content-secondary text-[10px] font-bold uppercase tracking-widest">{filtered.length} Clientes Encontrados</p>
+                {scopeLabel && (
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
+                    {scopeLabel}
+                  </Badge>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
@@ -140,13 +165,12 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10 w-72 h-11 rounded-xl"
                 />
-                { (search || riskFilter || segmentFilter !== 'all') && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                { (search || hasUrlScope || segmentFilter !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setSearch('')
-                      setRiskFilter(false)
                       setSegmentFilter('all')
                       router.push('/dashboard')
                     }}

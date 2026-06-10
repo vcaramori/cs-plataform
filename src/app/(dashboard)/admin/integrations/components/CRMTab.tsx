@@ -101,7 +101,7 @@ export function CRMTab({ accountId }: CRMTabProps) {
     <>
       <SectionHeader
         title={`Integrações CRM${integrations.length > 0 ? ` (${integrations.length})` : ''}`}
-        action={<Button className="bg-plannera-orange hover:bg-plannera-orange/90">Adicionar CRM</Button>}
+        action={<Badge variant="outline" className="border-border-divider text-content-secondary text-[10px] font-black uppercase tracking-widest px-3 py-1">Em breve</Badge>}
       />
 
       {loading ? (
@@ -196,10 +196,10 @@ export function CRMTab({ accountId }: CRMTabProps) {
       ) : (
         <div className="p-12 bg-surface-card border-2 border-dashed border-border-divider rounded-2xl text-center">
           <div className="text-4xl mb-4">☁️</div>
-          <p className="text-content-secondary mb-4">Nenhuma integração CRM configurada</p>
-          <Button className="bg-plannera-orange hover:bg-plannera-orange/90">
-            Conectar Salesforce ou HubSpot
-          </Button>
+          <p className="text-content-secondary mb-2">Nenhuma integração CRM configurada</p>
+          <Badge variant="outline" className="border-border-divider text-content-secondary text-[10px] font-black uppercase tracking-widest px-3 py-1">
+            Conexão Salesforce / HubSpot — em breve
+          </Badge>
         </div>
       )}
     </>

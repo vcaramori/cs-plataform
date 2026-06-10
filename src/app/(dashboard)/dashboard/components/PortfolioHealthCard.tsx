@@ -50,6 +50,7 @@ export function PortfolioHealthCard({
         }
         iconName="DollarSign"
         colorVariant="emerald"
+        onClick={() => router.push('/dashboard?sort=mrr')}
       />
       <StatCardPremium
         title={"HEALTH MÉDIO"}
@@ -58,6 +59,7 @@ export function PortfolioHealthCard({
         status="Score Geral"
         iconName="Heart"
         colorVariant={avgHealthScore >= 70 ? 'emerald' : avgHealthScore >= 40 ? 'orange' : 'destructive'}
+        onClick={() => router.push('/dashboard?filter=health-low')}
       />
       <StatCardPremium
         title={"LOGOS EM RISCO"}
@@ -73,6 +75,7 @@ export function PortfolioHealthCard({
         status="Cycle Monitor"
         iconName="CalendarClock"
         colorVariant={renewalsSoon > 0 ? 'default' : 'default'}
+        onClick={() => router.push('/dashboard?filter=renewals')}
       />
       <StatCardPremium
         title={"NPS SCORE"}
@@ -81,6 +84,7 @@ export function PortfolioHealthCard({
         status={npsScore === null ? 'Sem dados' : npsScore >= 50 ? 'Excelente' : npsScore >= 0 ? 'Bom' : 'Crítico'}
         iconName="Star"
         colorVariant={npsScore === null ? 'default' : npsScore >= 50 ? 'emerald' : npsScore >= 0 ? 'orange' : 'destructive'}
+        onClick={() => router.push('/nps')}
       />
     </div>
   )

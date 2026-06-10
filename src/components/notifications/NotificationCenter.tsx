@@ -175,9 +175,11 @@ export function NotificationCenter({ isCollapsed = false }: { isCollapsed?: bool
         </div>
 
         <div className="p-6 border-t border-border-divider bg-white dark:bg-slate-900">
-          <Button variant="outline" className="w-full border-border-divider bg-white dark:bg-slate-900 text-content-secondary hover:text-content-primary text-[11px] font-extrabold uppercase tracking-widest py-6 rounded-2xl">
-            Ver tudos os logos pendentes
-          </Button>
+          <Link href="/dashboard?filter=at-risk" onClick={() => setOpen(false)} className="block">
+            <Button variant="outline" className="w-full border-border-divider bg-white dark:bg-slate-900 text-content-secondary hover:text-content-primary text-[11px] font-extrabold uppercase tracking-widest py-6 rounded-2xl">
+              Ver todas as contas em risco
+            </Button>
+          </Link>
         </div>
       </SheetContent>
     </Sheet>
