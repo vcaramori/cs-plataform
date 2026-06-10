@@ -29,6 +29,8 @@ import {
   Lightbulb,
   Package,
   Rocket,
+  CalendarClock,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -45,6 +47,8 @@ import { env } from '@/lib/env'
 // dinamicamente conforme permissão (ver render).
 const analiseItems = [
   { href: '/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, module: 'dashboard' },
+  { href: '/renovacoes',        label: 'Renovações',      icon: CalendarClock,   module: 'dashboard' },
+  { href: '/risco',             label: 'Risco',           icon: AlertTriangle,   module: 'dashboard' },
   { href: '/adoption',          label: 'Adoção',          icon: Target,          module: 'adoption' },
   { href: '/nps',               label: 'NPS',             icon: Star,            module: 'nps' },
   { href: '/voc',               label: 'Voz do Cliente',  icon: SmilePlus,       module: 'voc' },

@@ -67,7 +67,7 @@ export function PortfolioHealthCard({
         status="Risk or Health < 40"
         iconName="AlertTriangle"
         colorVariant={atRisk > 0 ? 'destructive' : 'default'}
-        onClick={() => router.push('/dashboard?filter=at-risk')}
+        onClick={() => router.push('/risco')}
       />
       <StatCardPremium
         title={"RENOVAÇÕES (90D + VENC.)"}
@@ -75,7 +75,7 @@ export function PortfolioHealthCard({
         status="Cycle Monitor"
         iconName="CalendarClock"
         colorVariant={renewalsSoon > 0 ? 'default' : 'default'}
-        onClick={() => router.push('/dashboard?filter=renewals')}
+        onClick={() => router.push('/renovacoes')}
       />
       <StatCardPremium
         title={"NPS SCORE"}
