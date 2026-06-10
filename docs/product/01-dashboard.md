@@ -137,3 +137,4 @@ O **Dashboard** é a tela inicial do sistema, oferecendo uma visão executiva Co
 | Data | Alteração |
 |------|------------|
 | Abr/2026 | Versão inicial |
+| Jun/2026 | Início ("Ações de Hoje"): além de **Hoje** e **Atrasadas**, passa a listar **"Próximas (7 dias)"** e **"Sem prazo"** (tarefas com `due_date` nulo). Antes a Início só consultava `due_date = hoje`/`< hoje`, então follow-ups futuros ou sem data ficavam invisíveis e a tela mostrava "Tudo em dia" indevidamente. Agora também filtra tarefas soft-deletadas (`deleted_at`). |

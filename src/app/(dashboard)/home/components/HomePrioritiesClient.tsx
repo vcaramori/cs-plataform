@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle, TrendingUp, Target, ArrowRight, CheckCircle2, Clock, CalendarDays, CheckCheck } from 'lucide-react'
+import { AlertCircle, TrendingUp, Target, ArrowRight, CheckCircle2, Clock, CalendarDays, CalendarClock, Inbox, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DailyHomePriority } from '@/lib/supabase/types'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
@@ -70,6 +70,16 @@ const TASK_TODAY: SectionStyle = {
   label: 'Atividades de Hoje', subtitle: 'Para resolver hoje', icon: CalendarDays,
   color: 'text-amber-500', bar: 'bg-amber-500', iconBg: 'bg-amber-500/10', iconBorder: 'border-amber-500/20',
   chip: 'bg-amber-500/15 text-amber-600', glow: 'bg-amber-500/20', hoverBorder: '', arrow: '',
+}
+const TASK_UPCOMING: SectionStyle = {
+  label: 'Próximas (7 dias)', subtitle: 'A vencer em breve', icon: CalendarClock,
+  color: 'text-blue-500', bar: 'bg-blue-500', iconBg: 'bg-blue-500/10', iconBorder: 'border-blue-500/20',
+  chip: 'bg-blue-500/15 text-blue-500', glow: 'bg-blue-500/20', hoverBorder: '', arrow: '',
+}
+const TASK_NODATE: SectionStyle = {
+  label: 'Sem prazo', subtitle: 'A fazer — sem data definida', icon: Inbox,
+  color: 'text-slate-400', bar: 'bg-slate-400', iconBg: 'bg-slate-400/10', iconBorder: 'border-slate-400/20',
+  chip: 'bg-slate-400/15 text-slate-400', glow: 'bg-slate-400/20', hoverBorder: '', arrow: '',
 }
 
 const Chip = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -137,6 +147,8 @@ export function HomePrioritiesClient() {
   const supabase = getSupabaseBrowserClient()
   const [todayTasks, setTodayTasks] = useState<CsmTask[]>([])
   const [overdueTasks, setOverdueTasks] = useState<CsmTask[]>([])
+  const [upcomingTasks, setUpcomingTasks] = useState<CsmTask[]>([])
+  const [noDateTasks, setNoDateTasks] = useState<CsmTask[]>([])
 
   const { data: priorities, isLoading } = useQuery({
     queryKey: ['home-priorities'],
@@ -152,23 +164,24 @@ export function HomePrioritiesClient() {
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
+    const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+    // Uma query (RLS escopa por csm_id = auth.uid()): traz atrasadas + hoje +
+    // próximas 7 dias + sem prazo. Bucketização no cliente para 4 seções.
     db
       .from('csm_tasks')
       .select('id, title, status, priority, due_date, accounts(name)')
-      .eq('due_date', today)
       .in('status', ['todo', 'in_progress'])
-      .order('priority', { ascending: false })
-      .limit(5)
-      .then(({ data }) => setTodayTasks((data as CsmTask[] | null) ?? []))
-
-    db
-      .from('csm_tasks')
-      .select('id, title, status, priority, due_date, accounts(name)')
-      .lt('due_date', today)
-      .in('status', ['todo', 'in_progress'])
-      .order('due_date', { ascending: true })
-      .limit(5)
-      .then(({ data }) => setOverdueTasks((data as CsmTask[] | null) ?? []))
+      .is('deleted_at', null)
+      .or(`due_date.lte.${in7},due_date.is.null`)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .limit(40)
+      .then(({ data }) => {
+        const rows = (data as CsmTask[] | null) ?? []
+        setOverdueTasks(rows.filter(t => t.due_date && t.due_date < today).slice(0, 5))
+        setTodayTasks(rows.filter(t => t.due_date === today).slice(0, 5))
+        setUpcomingTasks(rows.filter(t => t.due_date && t.due_date > today && t.due_date <= in7).slice(0, 5))
+        setNoDateTasks(rows.filter(t => !t.due_date).slice(0, 5))
+      })
   }, [db])
 
   const categorized = {
@@ -211,7 +224,7 @@ export function HomePrioritiesClient() {
   }
 
   const hasPriorities = (priorities?.length ?? 0) > 0
-  const hasTasks = overdueTasks.length > 0 || todayTasks.length > 0
+  const hasTasks = overdueTasks.length > 0 || todayTasks.length > 0 || upcomingTasks.length > 0 || noDateTasks.length > 0
   const isEmpty = !isLoading && !hasPriorities && !hasTasks
 
   return (
@@ -235,6 +248,8 @@ export function HomePrioritiesClient() {
         <div className="grid gap-4 lg:grid-cols-2">
           {overdueTasks.length > 0 && <TaskSection cfg={TASK_OVERDUE} tasks={overdueTasks} />}
           {todayTasks.length > 0 && <TaskSection cfg={TASK_TODAY} tasks={todayTasks} />}
+          {upcomingTasks.length > 0 && <TaskSection cfg={TASK_UPCOMING} tasks={upcomingTasks} />}
+          {noDateTasks.length > 0 && <TaskSection cfg={TASK_NODATE} tasks={noDateTasks} />}
         </div>
       )}
 

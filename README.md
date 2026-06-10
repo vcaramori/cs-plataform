@@ -192,6 +192,10 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - **Pinecone removido**: colunas `pinecone_vector_id` (interactions, support_tickets) dropadas; `.env` limpo; sem SDK/código. **Chunk** alinhado: default `1024`/`128` (antes 4000, acima do teto ~2048 do embedding Gemini → truncava). Reuniões longas seguem cobertas por fatiamento.
 - **Chunk configurável no banco**: `chunk_size`/`chunk_overlap` agora editáveis em **Admin → IA → Parâmetros RAG** (persistem em `app_settings.rag_ai_settings`, lidos por [settings.ts](src/lib/llm/settings.ts)→[vector-search.ts](src/lib/supabase/vector-search.ts)); env `CHUNK_SIZE`/`CHUNK_OVERLAP` vira apenas **fallback** — ajuste sem redeploy. Após mudar, rodar **"Re-indexar todos os embeddings"**.
 
+### 🏠 Início — tarefas "Sem prazo" e "Próximas 7 dias" (2026-06-10)
+
+A Início ("Ações de Hoje") só mostrava tarefas com `due_date = hoje` ou atrasadas → follow-ups recém-criados (futuros ou **sem data**) ficavam invisíveis e a tela exibia **"Tudo em dia"** indevidamente (ex.: atividades geradas por reunião via Esforço). Corrigido em [HomePrioritiesClient.tsx](src/app/(dashboard)/home/components/HomePrioritiesClient.tsx): uma única query (RLS por `csm_id`) traz atrasadas + hoje + próximas 7 dias + sem prazo, bucketizadas em 4 seções (**Atrasadas / Hoje / Próximas (7 dias) / Sem prazo**); também passa a ignorar tarefas soft-deletadas.
+
 ### 🕗 Saudação da Home no fuso da empresa (2026-06-09)
 
 A saudação ("Bom dia/Boa tarde/Boa noite") era calculada com `getHours()` **no servidor (UTC)** → à tarde no Brasil já aparecia "Boa noite". Corrigido em [home/page.tsx](src/app/(dashboard)/home/page.tsx): hora e data agora usam o fuso da empresa (`env.support.businessTimezone`, default `America/Sao_Paulo`) via `toZonedTime` (`date-fns-tz`).
