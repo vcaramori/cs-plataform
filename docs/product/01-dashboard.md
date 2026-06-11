@@ -138,3 +138,4 @@ O **Dashboard** é a tela inicial do sistema, oferecendo uma visão executiva Co
 |------|------------|
 | Abr/2026 | Versão inicial |
 | Jun/2026 | Início ("Ações de Hoje"): além de **Hoje** e **Atrasadas**, passa a listar **"Próximas (7 dias)"** e **"Sem prazo"** (tarefas com `due_date` nulo). Antes a Início só consultava `due_date = hoje`/`< hoje`, então follow-ups futuros ou sem data ficavam invisíveis e a tela mostrava "Tudo em dia" indevidamente. Agora também filtra tarefas soft-deletadas (`deleted_at`). |
+| Jun/2026 | **Drill-down dos KPIs (fim dos órfãos)**: os 6 tiles do Portfolio Control viraram clicáveis — MRR→`?sort=mrr`, Health→`?filter=health-low`, NPS→`/nps`. **Cockpits novos**: **/renovacoes** (resumo + pipeline) e **/risco** (contas em risco com drivers + curadoria), para onde apontam os tiles "Renovações" e "Logos em Risco"; ambos na Sidebar (grupo Análise). |

@@ -549,6 +549,8 @@ type Contract = {
 | Mai/2026 | Novo componente `HealthBreakdownCard` exibindo as 4 barras de progresso (coluna direita) |
 | Mai/2026 | Cron diário `/api/cron/health-score-daily` recalcula health_score_v2 para todos os clientes ativos |
 | Mai/2026 | Modal `HealthScoreDetailsModal` mostra breakdown v2 quando disponível (abaixo do gráfico histórico) |
+| Jun/2026 | **Success Plan — cadastro acessível**: painel na conta ganha botão "Nova Meta" **sempre visível** (+ CTA no empty state) abrindo o `AddIndicatorModal`; "Abrir Plano Completo" deixa de exigir indicadores. Corrige o beco sem saída (não havia como cadastrar o 1º indicador). |
+| Jun/2026 | **Curadoria de risco**: confirmar/marcar falso positivo (+ motivo) no AlertCenter e no Cockpit de Risco (`/risco`); salvo em `risk_curation_feedback` e injetado no contexto da IA (predictive-risk + RAG) para não repetir o erro. |
 
 ---
 

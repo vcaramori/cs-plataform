@@ -139,3 +139,4 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 | Data | Alteração |
 |------|------------|
 | Abr/2026 | Versão inicial |
+| Jun/2026 | **Carga histórica de esforços**: painel "Carga histórica" (cola um bloco com várias reuniões → a IA separa por data e registra cada esforço com a data real, vetorizado no RAG). `parseHistoricalEfforts` (multi-entrada) + `persistHistoricalEffort` + `POST /api/time-entries/bulk` (preview/commit). Tarefas criadas por padrão, mas **respeita** instrução de "não registrar atividades" por reunião (`skip_tasks`), com toggle no preview. |
