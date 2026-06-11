@@ -72,10 +72,14 @@ export function AccountUnifiedTimeline({
     return 'created'
   }
 
-  // Combinar todos os eventos e normalizar
+  // Combinar todos os eventos e normalizar.
+  // Interações geradas a partir de um esforço (`time_entry_id` setado, source
+  // 'effort_sync') são ESPELHO do time_entry e não devem duplicar na timeline —
+  // o próprio esforço já é o registro. Interações avulsas (upload de transcrição,
+  // manuais) não têm time_entry_id e seguem aparecendo.
   const combined = [
     ...interactions
-      .filter(i => !i.deleted_at && !i.is_archived)
+      .filter(i => !i.deleted_at && !i.is_archived && !i.time_entry_id)
       .map(i => ({
         ...i,
         itemType: 'interaction',

@@ -192,6 +192,10 @@ A sub-rota `/cs-ops/tasks` ("Minhas Tarefas") foi **removida** por ficar redunda
 - **Pinecone removido**: colunas `pinecone_vector_id` (interactions, support_tickets) dropadas; `.env` limpo; sem SDK/código. **Chunk** alinhado: default `1024`/`128` (antes 4000, acima do teto ~2048 do embedding Gemini → truncava). Reuniões longas seguem cobertas por fatiamento.
 - **Chunk configurável no banco**: `chunk_size`/`chunk_overlap` agora editáveis em **Admin → IA → Parâmetros RAG** (persistem em `app_settings.rag_ai_settings`, lidos por [settings.ts](src/lib/llm/settings.ts)→[vector-search.ts](src/lib/supabase/vector-search.ts)); env `CHUNK_SIZE`/`CHUNK_OVERLAP` vira apenas **fallback** — ajuste sem redeploy. Após mudar, rodar **"Re-indexar todos os embeddings"**.
 
+### 🧹 Timeline da conta sem duplicação de esforço (2026-06-11)
+
+A timeline unificada listava o mesmo esforço duas vezes: como **time_entry** (esforço) e como **interaction** espelho (`source='effort_sync'`, criada para sentimento/RAG). Corrigido em [AccountUnifiedTimeline.tsx](src/app/(dashboard)/accounts/[id]/components/AccountUnifiedTimeline.tsx): interações com `time_entry_id` setado são ocultadas (o esforço já é o registro). Interações avulsas (upload de transcrição, manuais) seguem aparecendo. Vale também para a carga histórica.
+
 ### 🧭 Cockpits + curadoria de risco + carga histórica + cadastro do Success Plan (2026-06-11)
 
 - **Órfãos Fase 2 — cockpits**: novas rotas **[/renovacoes](src/app/(dashboard)/renovacoes/page.tsx)** (resumo: total 90d, ARR em risco, vencidas, prontas + pipeline) e **[/risco](src/app/(dashboard)/risco/page.tsx)** (contas em risco com drivers: health, risk_score, sentiment, `ai_reasoning` + curadoria). Os tiles "Renovações" e "Logos em Risco" apontam para os cockpits; ambos na Sidebar (grupo Análise).

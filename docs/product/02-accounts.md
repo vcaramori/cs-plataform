@@ -551,6 +551,7 @@ type Contract = {
 | Mai/2026 | Modal `HealthScoreDetailsModal` mostra breakdown v2 quando disponível (abaixo do gráfico histórico) |
 | Jun/2026 | **Success Plan — cadastro acessível**: painel na conta ganha botão "Nova Meta" **sempre visível** (+ CTA no empty state) abrindo o `AddIndicatorModal`; "Abrir Plano Completo" deixa de exigir indicadores. Corrige o beco sem saída (não havia como cadastrar o 1º indicador). |
 | Jun/2026 | **Curadoria de risco**: confirmar/marcar falso positivo (+ motivo) no AlertCenter e no Cockpit de Risco (`/risco`); salvo em `risk_curation_feedback` e injetado no contexto da IA (predictive-risk + RAG) para não repetir o erro. |
+| Jun/2026 | **Timeline sem duplicação**: interações geradas a partir de um esforço (`time_entry_id` setado, `source='effort_sync'`) deixam de aparecer como item separado — o esforço (time_entry) já é o registro. Interações avulsas (upload de transcrição/manuais) seguem normais. |
 
 ---
 
