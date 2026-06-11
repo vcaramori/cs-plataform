@@ -579,6 +579,24 @@ Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_month
     openTicketsContext = `\n\n## TICKETS DE SUPORTE ABERTOS DESTA CONTA (${ticketsWithSLA.length})\n${lines}`
   }
 
+  // 3.10c Curadoria de risco — falsos positivos refutados pelo CSM (não repetir o erro)
+  let riskCurationContext = ''
+  if (accountId) {
+    const { data: curation } = await (supabase as any)
+      .from('risk_curation_feedback')
+      .select('decision, reason, risk_key, created_at')
+      .eq('account_id', accountId)
+      .eq('decision', 'false_positive')
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (curation && curation.length > 0) {
+      const lines = curation
+        .map((c: any) => `- [${(c.created_at || '').slice(0, 10)}]${c.risk_key ? ` (${c.risk_key})` : ''}: ${c.reason || 'sem motivo'}`)
+        .join('\n')
+      riskCurationContext = `\n\n## CURADORIA DE RISCO — FALSOS POSITIVOS REFUTADOS (NÃO trate como risco)\nO CSM revisou e marcou os pontos abaixo como falso positivo. Não os apresente como risco, salvo evidência nova e clara.\n${lines}`
+    }
+  }
+
   // 4. Carrega system instruction do banco (admin pode editar via /admin/settings)
   const HARDCODED_INSTRUCTION = `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
 Sua missão é realizar uma AUDITORIA EXAUSTIVA cruzando TODAS as fontes de dados disponíveis e extrair insights acionáveis.
@@ -624,6 +642,7 @@ ${planRiskContext}
 ${playbooksContext}
 ${openTicketsContext}
 ${slaViolationsContext}
+${riskCurationContext}
 ${npsContext}
 ${portfolioContext}
 ${stakeholderContext}

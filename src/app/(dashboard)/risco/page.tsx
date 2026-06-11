@@ -36,6 +36,23 @@ export default async function RiscoPage() {
     .filter((a: RiskAccount) => a.isAtRisk)
     .sort((a: RiskAccount, b: RiskAccount) => (b.risk_score ?? 0) - (a.risk_score ?? 0))
 
+  // Curadorias (auditoria) das contas em risco
+  const ids = atRisk.map(a => a.id)
+  const curationsByAccount: Record<string, any[]> = {}
+  if (ids.length > 0) {
+    const { data: cur } = await (supabase as any)
+      .from('risk_curation_feedback')
+      .select('account_id, decision, reason, risk_key, created_at')
+      .in('account_id', ids)
+      .order('created_at', { ascending: false })
+    for (const row of cur ?? []) {
+      const list = curationsByAccount[row.account_id] ?? []
+      list.push(row)
+      curationsByAccount[row.account_id] = list
+    }
+  }
+  const withCurations = atRisk.map(a => ({ ...a, curations: (curationsByAccount[a.id] ?? []).slice(0, 5) }))
+
   return (
     <PageContainer>
       <ModuleHeader
@@ -43,7 +60,7 @@ export default async function RiscoPage() {
         subtitle="Contas em risco — drivers, motivo da IA e curadoria"
         iconName="AlertTriangle"
       />
-      <RiskCockpitClient accounts={atRisk} />
+      <RiskCockpitClient accounts={withCurations} />
     </PageContainer>
   )
 }

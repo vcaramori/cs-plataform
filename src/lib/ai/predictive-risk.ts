@@ -54,6 +54,24 @@ export async function runPredictiveRiskAnalysis(accountId: string): Promise<Pred
     payload += `[${t.created_at}] STATUS: ${t.status}\nTítulo: ${t.title}\nDescrição: ${t.description}\n\n`
   })
 
+  // 3.5 Curadoria humana — falsos positivos já refutados (não repetir o erro)
+  const { data: curation } = await (supabase as any)
+    .from('risk_curation_feedback')
+    .select('decision, reason, risk_key, created_at')
+    .eq('account_id', accountId)
+    .eq('decision', 'false_positive')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (curation && curation.length > 0) {
+    payload += `=== CURADORIA HUMANA — FALSOS POSITIVOS JÁ REFUTADOS ===\n`
+    payload += `Um CSM revisou avaliações anteriores e marcou os pontos abaixo como FALSO POSITIVO. NÃO classifique novamente como risco pelos mesmos motivos, a menos que haja evidência NOVA e clara nas interações/tickets recentes acima.\n`
+    curation.forEach((c: any) => {
+      payload += `- [${(c.created_at || '').slice(0, 10)}]${c.risk_key ? ` (${c.risk_key})` : ''}: ${c.reason || 'sem motivo informado'}\n`
+    })
+    payload += `\n`
+  }
+
   // 4. Prompt system instruction
   const systemInstruction = `
 Você é um especialista em Customer Success (CSM) e Analista de Risco de Churn.

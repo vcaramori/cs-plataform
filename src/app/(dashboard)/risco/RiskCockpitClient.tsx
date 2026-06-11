@@ -1,9 +1,18 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
+import { RiskCurationControl } from '@/components/risk/RiskCurationControl'
+
+export type Curation = {
+  decision: 'confirmed' | 'false_positive'
+  reason: string | null
+  risk_key: string | null
+  created_at: string
+}
 
 export type RiskAccount = {
   id: string
@@ -15,9 +24,12 @@ export type RiskAccount = {
   ai_reasoning: string | null
   analyzed_at: string | null
   isAtRisk: boolean
+  curations?: Curation[]
 }
 
 export function RiskCockpitClient({ accounts }: { accounts: RiskAccount[] }) {
+  const router = useRouter()
+
   if (accounts.length === 0) {
     return (
       <Card className="border-dashed p-12 text-center">
@@ -70,6 +82,29 @@ export function RiskCockpitClient({ accounts }: { accounts: RiskAccount[] }) {
                 Abrir <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
+          </div>
+
+          {/* Curadoria + auditoria */}
+          <div className="mt-3 pt-3 border-t border-border-divider/60 flex flex-col gap-2">
+            <RiskCurationControl
+              accountId={a.id}
+              source="assessment"
+              riskKey={a.sentiment_label ?? 'risk'}
+              onDone={() => router.refresh()}
+            />
+            {a.curations && a.curations.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[9px] font-black uppercase tracking-widest text-content-secondary/60">Auditoria</p>
+                {a.curations.map((c, i) => (
+                  <p key={i} className="text-[10px] text-content-secondary">
+                    <span className={c.decision === 'false_positive' ? 'text-destructive font-bold' : 'text-success font-bold'}>
+                      {c.decision === 'false_positive' ? 'Falso positivo' : 'Confirmado'}
+                    </span>
+                    {' · '}{(c.created_at || '').slice(0, 10)}{c.reason ? ` — ${c.reason}` : ''}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       ))}

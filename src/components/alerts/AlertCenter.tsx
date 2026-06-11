@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { RiskCurationControl } from '@/components/risk/RiskCurationControl'
 import type { ProactiveAlert } from '@/lib/supabase/types'
 
 const severityConfig = {
@@ -202,6 +203,19 @@ export function AlertCenter() {
                             {isResolving ? '...' : <X className="w-4 h-4" />}
                           </Button>
                         )}
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-border-divider/60">
+                        <RiskCurationControl
+                          accountId={alert.account_id}
+                          source="alert"
+                          sourceId={alert.id}
+                          riskKey={alert.type}
+                          onDone={(decision) => {
+                            if (decision === 'false_positive') handleResolve(alert.id)
+                            refetch()
+                          }}
+                        />
                       </div>
                     </CardContent>
                   </Card>
