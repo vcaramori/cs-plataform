@@ -2,6 +2,8 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { parseTimeEntry } from '@/lib/gemini/parse-time-entry'
 import { ingestOnboardingEvent } from '@/lib/rag/rag-pipeline'
 import { postEffortToPSA } from '@/lib/integrations/psa'
+import { storeEmbeddings } from '@/lib/supabase/vector-search'
+import type { HistoricalEntry } from '@/lib/gemini/parse-historical-efforts'
 
 /**
  * Lógica de esforço compartilhada entre a rota /api/time-entries e o MCP.
@@ -156,4 +158,83 @@ export async function logEffort(params: {
   }
 
   return { timeEntry, parsed, psa }
+}
+
+/**
+ * Carga histórica: persiste UMA entrada já parseada (de parseHistoricalEfforts)
+ * com a DATA real do evento. Cria time_entry + interaction + vetoriza no RAG
+ * (data embutida no chunk). Cria tarefas só se `createTasks` e a entrada não pedir
+ * para pular (`skip_tasks`). Não dispara análise de IA por entrada (lote).
+ */
+export async function persistHistoricalEffort(params: {
+  userId: string
+  accountId: string
+  entry: HistoricalEntry
+  createTasks: boolean
+}): Promise<{ timeEntryId: string; tasksCreated: number }> {
+  const admin = getSupabaseAdminClient() as any
+  const { entry, accountId, userId } = params
+
+  const { data: te, error } = await admin
+    .from('time_entries')
+    .insert({
+      account_id: accountId,
+      csm_id: userId,
+      activity_type: entry.activity_type,
+      natural_language_input: entry.raw_text,
+      parsed_hours: entry.parsed_hours,
+      parsed_description: entry.parsed_description,
+      date: entry.date,
+    })
+    .select('*, accounts(name)')
+    .single()
+  if (error) throw new Error(error.message)
+
+  // Interação + RAG com a data do evento embutida (contexto temporal correto)
+  const accountName = te.accounts?.name ?? 'Conta'
+  const interactionType = ['meeting', 'onboarding', 'qbr'].includes(entry.activity_type) ? entry.activity_type : 'meeting'
+  try {
+    const { data: intRow } = await admin
+      .from('interactions')
+      .insert({
+        account_id: accountId,
+        csm_id: userId,
+        title: `Reunião (histórico): ${(entry.parsed_description || 'Esforço').slice(0, 60)}`,
+        type: interactionType,
+        date: entry.date,
+        direct_hours: entry.parsed_hours,
+        source: 'effort_sync',
+        time_entry_id: te.id,
+        raw_transcript: entry.raw_text,
+        sentiment_score: 0.2,
+      })
+      .select('id')
+      .single()
+    if (intRow?.id) {
+      const chunk = `Interação | ${accountName} | ${entry.date} | Tipo: ${interactionType}\n${entry.raw_text}`
+      try { await storeEmbeddings(accountId, 'interaction', intRow.id, chunk) } catch (e) { console.error('[historical] embed error:', e) }
+    }
+  } catch (intErr) {
+    console.error('[historical] interaction insert error:', intErr)
+  }
+
+  // Tarefas (condicional): respeita createTasks global e skip_tasks por entrada
+  let tasksCreated = 0
+  if (params.createTasks && !entry.skip_tasks && entry.action_items.length > 0) {
+    const inserts = entry.action_items.map((it) => ({
+      csm_id: userId,
+      account_id: accountId,
+      title: it.title,
+      status: 'todo',
+      priority: 'medium',
+      due_date: it.due_date ?? null,
+      time_entry_id: te.id,
+      source_label: 'time_entry',
+    }))
+    const { error: tErr } = await admin.from('csm_tasks').insert(inserts)
+    if (tErr) console.error('[historical] task insert error:', tErr)
+    else tasksCreated = inserts.length
+  }
+
+  return { timeEntryId: te.id, tasksCreated }
 }

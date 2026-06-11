@@ -8,6 +8,7 @@ import { useDateRange } from '@/hooks/useDateRange'
 import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { EsforcoKPIs } from './EsforcoKPIs'
 import { EsforcoTable } from './EsforcoTable'
+import { HistoricalImportPanel } from './HistoricalImportPanel'
 
 const activityLabels: Record<string, string> = {
   preparation: 'Preparação de material',
@@ -137,6 +138,9 @@ export function EsforcoClient({
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />
+
+        {/* Carga histórica de esforços (IA separa por data) */}
+        <HistoricalImportPanel accounts={accounts} />
 
         {/* History Area */}
         <EsforcoTable
