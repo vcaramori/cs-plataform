@@ -72,6 +72,7 @@ interface Props {
 interface DeletionPreview {
   interactions: number
   wishlistSignals: number
+  opportunitySignals: number
   embeddings: number
   suggestedTasks: number
   keptTasks: number
@@ -142,7 +143,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
       setDeletePreview(preview)
     } catch {
       // Sem preview: ainda permite excluir, mas avisa que há derivados não contabilizados.
-      setDeletePreview({ interactions: 0, wishlistSignals: 0, embeddings: 0, suggestedTasks: 0, keptTasks: 0, onboardingEvents: 0 })
+      setDeletePreview({ interactions: 0, wishlistSignals: 0, opportunitySignals: 0, embeddings: 0, suggestedTasks: 0, keptTasks: 0, onboardingEvents: 0 })
     } finally {
       setLoadingPreview(false)
     }
@@ -425,6 +426,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
             const items: string[] = []
             if (deletePreview.interactions > 0) items.push(`${deletePreview.interactions} interação(ões) na timeline`)
             if (deletePreview.wishlistSignals > 0) items.push(`${deletePreview.wishlistSignals} item(ns) de wishlist`)
+            if (deletePreview.opportunitySignals > 0) items.push(`${deletePreview.opportunitySignals} sinal(is) de oportunidade`)
             if (deletePreview.embeddings > 0) items.push(`${deletePreview.embeddings} trecho(s) da memória da IA (RAG)`)
             if (deletePreview.suggestedTasks > 0) items.push(`${deletePreview.suggestedTasks} tarefa(s) sugerida(s) pendente(s)`)
             return (
