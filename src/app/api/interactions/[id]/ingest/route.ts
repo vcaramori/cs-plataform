@@ -3,7 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { generateText } from '@/lib/llm/gateway'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
-import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { extractSignals } from '@/lib/signals/extract-signals'
 
 async function analyzeSentiment(text: string): Promise<number> {
   try {
@@ -72,7 +72,7 @@ export async function POST(
     // WISHLIST: extrai pedidos de produto da transcrição.
     // Pula interações vindas de effort_sync (já capturadas no registro de esforço).
     if ((interaction as any).source !== 'effort_sync') {
-      await extractWishlistSignals({
+      await extractSignals({
         text: interaction.raw_transcript,
         accountId: interaction.account_id,
         sourceType: 'interaction',

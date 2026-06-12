@@ -73,55 +73,70 @@ export async function extractWishlistSignals(input: ExtractInput): Promise<numbe
     const extracted = parseSignals(result).filter((s) => s.confidence >= MIN_CONFIDENCE)
     if (extracted.length === 0) return 0
 
-    const supabase = getSupabaseAdminClient()
-    const db = supabase
-
-    // Re-ingestão segura: remove sinais IA anteriores desta mesma origem
-    if (sourceId) {
-      await db
-        .from('wishlist_signals')
-        .delete()
-        .eq('source_type', sourceType)
-        .eq('source_id', sourceId)
-        .eq('ai_extracted', true)
-    }
-
-    const rows = extracted.map((s) => ({
-      account_id: accountId,
-      source_type: sourceType,
-      source_id: sourceId ?? null,
-      verbatim: s.verbatim,
-      summary: s.summary,
-      kind: s.kind,
-      requester_name: s.requester ?? null,
-      requester_email: requesterEmail ?? null,
-      created_by: createdBy ?? null,
-      ai_extracted: true,
-      ai_confidence: s.confidence,
-    }))
-
-    const { data: inserted, error } = await db
-      .from('wishlist_signals')
-      .insert(rows)
-      .select('id, verbatim')
-
-    if (error) {
-      console.error('[wishlist/extractor] insert error:', error.message)
-      return 0
-    }
-
-    // Embeda cada sinal (para matching cross-customer). Não bloqueia em caso de falha.
-    await Promise.all(
-      (inserted ?? []).map((sig: any) =>
-        storeEmbeddings(accountId, 'wishlist_signal', sig.id, sig.verbatim).catch((e) =>
-          console.error('[wishlist/extractor] embed error:', e?.message)
-        )
-      )
-    )
-
-    return inserted?.length ?? 0
+    return await persistWishlistSignals({ signals: extracted, accountId, sourceType, sourceId, createdBy, requesterEmail })
   } catch (err) {
     console.error('[wishlist/extractor] failed:', err instanceof Error ? err.message : err)
     return 0
   }
+}
+
+/**
+ * Persiste sinais de wishlist já extraídos (idempotente por source). Reutilizado pela
+ * extração unificada (`src/lib/signals/extract-signals.ts`) para não duplicar a lógica.
+ */
+export async function persistWishlistSignals(input: {
+  signals: ExtractedSignal[]
+  accountId: string
+  sourceType: WishlistSignalSource
+  sourceId?: string | null
+  createdBy?: string | null
+  requesterEmail?: string | null
+}): Promise<number> {
+  const { signals, accountId, sourceType, sourceId, createdBy, requesterEmail } = input
+  if (!signals || signals.length === 0) return 0
+  const db = getSupabaseAdminClient()
+
+  // Re-ingestão segura: remove sinais IA anteriores desta mesma origem
+  if (sourceId) {
+    await db
+      .from('wishlist_signals')
+      .delete()
+      .eq('source_type', sourceType)
+      .eq('source_id', sourceId)
+      .eq('ai_extracted', true)
+  }
+
+  const rows = signals.map((s) => ({
+    account_id: accountId,
+    source_type: sourceType,
+    source_id: sourceId ?? null,
+    verbatim: s.verbatim,
+    summary: s.summary,
+    kind: s.kind,
+    requester_name: s.requester ?? null,
+    requester_email: requesterEmail ?? null,
+    created_by: createdBy ?? null,
+    ai_extracted: true,
+    ai_confidence: s.confidence,
+  }))
+
+  const { data: inserted, error } = await db
+    .from('wishlist_signals')
+    .insert(rows)
+    .select('id, verbatim')
+
+  if (error) {
+    console.error('[wishlist/extractor] insert error:', error.message)
+    return 0
+  }
+
+  await Promise.all(
+    (inserted ?? []).map((sig: any) =>
+      storeEmbeddings(accountId, 'wishlist_signal', sig.id, sig.verbatim).catch((e) =>
+        console.error('[wishlist/extractor] embed error:', e?.message)
+      )
+    )
+  )
+
+  return inserted?.length ?? 0
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { deleteInteractionCascade } from '@/lib/effort/effort-cascade'
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const supabase = await getSupabaseServerClient()
@@ -39,14 +40,18 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   const params = await context.params
 
   try {
-    const { error } = await supabase
+    // Gate de propriedade
+    const { data: owned } = await supabase
       .from('interactions')
-      .delete()
+      .select('id')
       .eq('id', params.id)
       .eq('csm_id', user.id)
+      .single()
+    if (!owned) return NextResponse.json({ error: 'Interação não encontrada ou sem acesso.' }, { status: 404 })
 
-    if (error) throw error
-    return new NextResponse(null, { status: 204 })
+    // Cascade: limpa derivados (wishlist, RAG); se espelha um esforço, remove o esforço todo.
+    const result = await deleteInteractionCascade(params.id, user.id)
+    return NextResponse.json({ ok: true, ...result })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

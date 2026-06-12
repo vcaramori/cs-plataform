@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { deleteEffortCascade, reevaluateEffortOnEdit } from '@/lib/effort/effort-cascade'
 
 const UpdateSchema = z.object({
   account_id: z.string().uuid().optional(),
@@ -27,6 +28,15 @@ export async function PATCH(
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
+  // Estado anterior — para detectar troca de conta e manter os derivados coerentes.
+  const { data: before } = await supabase
+    .from('time_entries')
+    .select('account_id')
+    .eq('id', id)
+    .eq('csm_id', user.id)
+    .single()
+  const oldAccountId: string | null = before?.account_id ?? null
+
   // 1. Atualizar o esforço
   const { data: updatedEntry, error: entryError } = await supabase
     .from('time_entries')
@@ -47,6 +57,8 @@ export async function PATCH(
     .select('id')
     .eq('time_entry_id', id)
     .single()
+
+  let interactionId: string | null = existingInteraction?.id ?? null
 
   if (existingInteraction) {
     if (isClientFacing) {
@@ -69,10 +81,11 @@ export async function PATCH(
         .from('interactions')
         .delete()
         .eq('id', existingInteraction.id)
+      interactionId = null
     }
   } else if (isClientFacing) {
     // Criar nova interação se o tipo mudou de interno para cliente
-    await supabase
+    const { data: newInt } = await supabase
       .from('interactions')
       .insert({
         account_id: updatedEntry.account_id,
@@ -86,6 +99,25 @@ export async function PATCH(
         time_entry_id: updatedEntry.id,
         file_urls: updatedEntry.file_urls,
       })
+      .select('id')
+      .single()
+    interactionId = newInt?.id ?? null
+  }
+
+  // 3. Reavaliação dos derivados (re-vetoriza RAG; realoca wishlist se a conta mudou). Best-effort.
+  try {
+    await reevaluateEffortOnEdit({
+      timeEntryId: id,
+      interactionId,
+      accountId: updatedEntry.account_id,
+      oldAccountId,
+      accountName: updatedEntry.accounts?.name ?? 'Conta',
+      date: updatedEntry.date,
+      activityType: updatedEntry.activity_type,
+      text: updatedEntry.parsed_description ?? '',
+    })
+  } catch (e) {
+    console.error('[time-entries PATCH] reevaluate error:', e)
   }
 
   return NextResponse.json(updatedEntry)
@@ -100,20 +132,21 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // 1. Remover interações vinculadas primeiro
-  await supabase
-    .from('interactions')
-    .delete()
-    .eq('time_entry_id', id)
-
-  // 2. Remover o esforço
-  const { error } = await supabase
+  // Gate de propriedade: só o autor do esforço pode excluí-lo (consistente com a página de Esforço).
+  const { data: owned } = await supabase
     .from('time_entries')
-    .delete()
+    .select('id')
     .eq('id', id)
     .eq('csm_id', user.id)
+    .single()
+  if (!owned) return NextResponse.json({ error: 'Esforço não encontrado ou sem acesso.' }, { status: 404 })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return new NextResponse(null, { status: 204 })
+  // Exclusão em cascata: limpa TODOS os derivados (wishlist, RAG, tarefas sugeridas,
+  // interações espelho) + recalcula demanda + reavalia saúde/risco. SEM órfãos.
+  try {
+    const result = await deleteEffortCascade(id, user.id)
+    return NextResponse.json({ ok: true, ...result })
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? 'Falha ao excluir o esforço.' }, { status: 500 })
+  }
 }

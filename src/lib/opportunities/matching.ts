@@ -2,7 +2,7 @@ import { generateText } from '@/lib/llm/gateway'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { searchEmbeddings } from '@/lib/supabase/vector-search'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
-import type { CatalogMatch } from './types'
+import type { PlanMatch } from './types'
 
 export interface SignalMatch {
   signal_id: string
@@ -16,21 +16,21 @@ export interface ItemMatch {
   item_id: string
   title: string
   status: string
-  kind: string
+  opportunity_type: string
   demand_accounts: number
-  similarity: number   // melhor similaridade entre os sinais que apontam para este item
-  mentions: number     // quantos sinais semelhantes apontam para este item
+  similarity: number
+  mentions: number
 }
 
 export interface MatchResult {
-  items: ItemMatch[]       // itens canônicos candidatos para linkar (cross-customer)
-  siblings: SignalMatch[]  // sinais semelhantes ainda não itemizados
+  items: ItemMatch[]
+  siblings: SignalMatch[]
 }
 
 /**
- * Busca sinais semelhantes em TODA a base (cross-customer) e os organiza em:
- * - itens canônicos candidatos (quando o sinal semelhante já está linkado a um item)
- * - sinais "irmãos" ainda soltos (candidatos a virar/serem agrupados no mesmo item)
+ * Dedup cross-customer: busca sinais de oportunidade semelhantes em toda a base e
+ * organiza em itens canônicos candidatos + sinais "irmãos" ainda soltos.
+ * Espelho de `src/lib/wishlist/matching.ts:findSimilar` para `opportunity_signal`.
  */
 export async function findSimilar(
   text: string,
@@ -41,19 +41,17 @@ export async function findSimilar(
   let results: { source_id: string; similarity: number }[]
   try {
     const raw = await searchEmbeddings(text, {
-      sourceType: 'wishlist_signal',
+      sourceType: 'opportunity_signal',
       limit: opts.limit ?? 20,
-      // 0.7: frases curtas de CS no mesmo domínio têm similaridade-base alta (~0.55–0.65
-      // mesmo sem relação). 0.5 marcava tudo como "parecido". 0.7 só agrupa o que é de fato similar.
+      // 0.7: evita marcar tudo como "parecido" (frases curtas no mesmo domínio têm base ~0.55–0.65).
       threshold: opts.threshold ?? 0.7,
     })
     results = raw.map((r) => ({ source_id: r.source_id, similarity: r.similarity }))
   } catch (e) {
-    console.error('[wishlist/matching] vector search failed:', e instanceof Error ? e.message : e)
+    console.error('[opportunities/matching] vector search failed:', e instanceof Error ? e.message : e)
     return { items: [], siblings: [] }
   }
 
-  // melhor similaridade por sinal
   const bySignal = new Map<string, number>()
   for (const r of results) {
     if (opts.excludeSignalId && r.source_id === opts.excludeSignalId) continue
@@ -64,7 +62,7 @@ export async function findSimilar(
 
   const db = getSupabaseAdminClient() as any
   const { data: signals } = await db
-    .from('wishlist_signals')
+    .from('opportunity_signals')
     .select('id, verbatim, account_id, item_id, accounts(name)')
     .in('id', Array.from(bySignal.keys()))
 
@@ -92,14 +90,14 @@ export async function findSimilar(
   let items: ItemMatch[] = []
   if (itemAgg.size > 0) {
     const { data: itemRows } = await db
-      .from('wishlist_items')
-      .select('id, title, status, kind, demand_accounts')
+      .from('opportunity_items')
+      .select('id, title, status, opportunity_type, demand_accounts')
       .in('id', Array.from(itemAgg.keys()))
     items = (itemRows ?? []).map((it: any) => ({
       item_id: it.id,
       title: it.title,
       status: it.status,
-      kind: it.kind,
+      opportunity_type: it.opportunity_type,
       demand_accounts: it.demand_accounts ?? 0,
       similarity: itemAgg.get(it.id)?.best ?? 0,
       mentions: itemAgg.get(it.id)?.mentions ?? 0,
@@ -111,33 +109,50 @@ export async function findSimilar(
   return { items, siblings: siblings.slice(0, 8) }
 }
 
-const CATALOG_SYSTEM = `Você é um especialista no produto de uma plataforma SaaS de S&OP/S&OE.
-Dada a lista de funcionalidades existentes e um pedido de cliente, diga se o pedido JÁ É ATENDIDO por alguma funcionalidade existente.
-Responda SOMENTE em JSON: {"feature_id":"<id ou null>","confidence":0.0,"rationale":"curto"}. Se nada se encaixa, feature_id=null.`
+const PLAN_SYSTEM = `Você é um especialista comercial de uma plataforma SaaS de S&OP/S&OE.
+Dada a lista de funcionalidades existentes (com os planos que as incluem) e uma necessidade do cliente,
+diga se a necessidade JÁ É ATENDIDA por uma funcionalidade que existe em ALGUM plano (caminho de upsell: o
+cliente só precisa subir de plano). Responda SOMENTE em JSON:
+{"feature_id":"<id ou null>","confidence":0.0,"rationale":"curto"}. Se nada se encaixa, feature_id=null.`
 
 /**
- * Sugere uma funcionalidade existente do catálogo (product_features) que possa
- * atender ao pedido — base do caminho "já existe / insuficiente". Retorna null se nada encaixa.
+ * Sugere uma funcionalidade existente (em algum plano) que atenda à necessidade — base do
+ * caminho "já temos / upsell de plano". Preenche matched_feature_id + matched_plan_id.
  */
-export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | null> {
+export async function suggestPlanMatch(text: string): Promise<PlanMatch | null> {
   if (!text || text.trim().length < 8) return null
   const db = getSupabaseAdminClient() as any
+
   const { data: features } = await db
     .from('product_features')
     .select('id, name, description, module')
     .eq('is_active', true)
     .limit(200)
-
   if (!features || features.length === 0) return null
 
+  // Mapa feature -> planos que a incluem (para indicar "no plano X")
+  const { data: planFeatures } = await db
+    .from('plan_features')
+    .select('feature_id, plan_id, subscription_plans(name, tier_rank)')
+  const plansByFeature = new Map<string, { plan_id: string; name: string; tier_rank: number }[]>()
+  for (const pf of planFeatures ?? []) {
+    if (!pf.subscription_plans) continue
+    const arr = plansByFeature.get(pf.feature_id) ?? []
+    arr.push({ plan_id: pf.plan_id, name: pf.subscription_plans.name, tier_rank: pf.subscription_plans.tier_rank ?? 0 })
+    plansByFeature.set(pf.feature_id, arr)
+  }
+
   const catalog = features
-    .map((f: any) => `- [${f.id}] ${f.name}${f.module ? ` (${f.module})` : ''}: ${f.description ?? ''}`)
+    .map((f: any) => {
+      const plans = (plansByFeature.get(f.id) ?? []).map((p) => p.name).join(', ')
+      return `- [${f.id}] ${f.name}${f.module ? ` (${f.module})` : ''}${plans ? ` — planos: ${plans}` : ''}: ${f.description ?? ''}`
+    })
     .join('\n')
 
   try {
     const { result } = await generateText(
-      `Funcionalidades existentes:\n${catalog}\n\nPedido do cliente:\n${text.slice(0, 1500)}`,
-      { systemInstruction: await buildSystemInstruction('wishlist_catalog_match', CATALOG_SYSTEM), responseMimeType: 'application/json', temperature: 0, allowFallback: true }
+      `Funcionalidades existentes (com planos):\n${catalog}\n\nNecessidade do cliente:\n${text.slice(0, 1500)}`,
+      { systemInstruction: await buildSystemInstruction('opportunity_plan_match', PLAN_SYSTEM), responseMimeType: 'application/json', temperature: 0, allowFallback: true }
     )
     let txt = result.trim()
     if (txt.startsWith('```')) txt = txt.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
@@ -145,14 +160,19 @@ export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | 
     if (!parsed || !parsed.feature_id) return null
     const feature = features.find((f: any) => f.id === parsed.feature_id)
     if (!feature) return null
+    // escolhe o plano de menor tier que inclui a feature (alvo de upsell)
+    const plans = (plansByFeature.get(feature.id) ?? []).sort((a, b) => a.tier_rank - b.tier_rank)
+    const plan = plans[0] ?? null
     return {
       feature_id: feature.id,
       feature_name: feature.name,
+      plan_id: plan?.plan_id ?? null,
+      plan_name: plan?.name ?? null,
       confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.6,
       rationale: String(parsed.rationale ?? '').slice(0, 400),
     }
   } catch (e) {
-    console.error('[wishlist/matching] catalog match failed:', e instanceof Error ? e.message : e)
+    console.error('[opportunities/matching] plan match failed:', e instanceof Error ? e.message : e)
     return null
   }
 }

@@ -25,6 +25,7 @@ export function AIContextSettingsTab() {
   const [rules, setRules] = useState<any>(null)
   const [instructions, setInstructions] = useState<Record<string, string>>({})
   const [skills, setSkills] = useState<Skill[]>([])
+  const [glossaryRows, setGlossaryRows] = useState<{ sigla: string; sig: string }[]>([])
 
   async function loadAll() {
     setLoading(true)
@@ -39,6 +40,8 @@ export function AIContextSettingsTab() {
       for (const i of AI_INSTRUCTIONS) if (typeof s[i.key] === 'string') instr[i.key] = s[i.key]
       setInstructions(instr)
       setSkills(sk)
+      const g = s.sop_glossary && typeof s.sop_glossary === 'object' ? s.sop_glossary : {}
+      setGlossaryRows(Object.entries(g).map(([sigla, sig]) => ({ sigla, sig: String(sig) })))
     } finally { setLoading(false) }
   }
   useEffect(() => { loadAll() }, [])
@@ -48,7 +51,7 @@ export function AIContextSettingsTab() {
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ module: 'ai_context', settings: { ai_global_context: globalContext, ai_context_rules: rules, instructions } }),
+        body: JSON.stringify({ module: 'ai_context', settings: { ai_global_context: globalContext, ai_context_rules: rules, instructions, sop_glossary: Object.fromEntries(glossaryRows.filter((r) => r.sigla.trim()).map((r) => [r.sigla.trim(), r.sig])) } }),
       })
       if (!res.ok) throw new Error((await res.json())?.error?.toString() || 'Erro ao salvar')
       toast.success('Configurações de IA salvas!')
@@ -125,6 +128,31 @@ export function AIContextSettingsTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Glossário S&OP */}
+      <Card>
+        <CardContent className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-bold text-sm">Glossário S&amp;OP</p>
+              <p className="text-xs text-content-secondary">Siglas/módulos de sistemas correlatos a S&amp;OP (ex.: MPS, DRP, MRO). A IA usa para reconhecer necessidades de sistema como <strong>oportunidades</strong>.</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setGlossaryRows((r) => [...r, { sigla: '', sig: '' }])}>+ Termo</Button>
+          </div>
+          <div className="space-y-2">
+            {glossaryRows.map((row, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input className="w-36" placeholder="Sigla (ex.: DRP)" value={row.sigla} onChange={(e) => setGlossaryRows((rs) => rs.map((r, i) => (i === idx ? { ...r, sigla: e.target.value } : r)))} />
+                <Input className="flex-1" placeholder="Significado / o que o sistema faz" value={row.sig} onChange={(e) => setGlossaryRows((rs) => rs.map((r, i) => (i === idx ? { ...r, sig: e.target.value } : r)))} />
+                <button onClick={() => setGlossaryRows((rs) => rs.filter((_, i) => i !== idx))} className="text-content-secondary hover:text-red-500 p-1" aria-label="Remover termo"><X className="w-4 h-4" /></button>
+              </div>
+            ))}
+            {glossaryRows.length === 0 && (
+              <p className="text-xs text-content-secondary">Nenhum termo cadastrado — a IA usa o glossário padrão (S&amp;OP, MPS, MRP, DRP, MRO, CPFR, IBP).</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Skills */}
       <Card>

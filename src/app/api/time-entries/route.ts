@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { parseTimeEntry } from '@/lib/gemini/parse-time-entry'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 import { getHealthClassification } from '@/lib/health/utils'
-import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { extractSignals } from '@/lib/signals/extract-signals'
 import { postEffortToPSA } from '@/lib/integrations/psa'
 import { ingestOnboardingEvent } from '@/lib/rag/rag-pipeline'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
@@ -159,8 +159,8 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const result = data as any
 
-  // WISHLIST: extrai pedidos de produto da nota de esforço (não bloqueia se nada for encontrado)
-  await extractWishlistSignals({
+  // SINAIS (passada única): extrai wishlist + oportunidades da nota de esforço (não bloqueia)
+  await extractSignals({
     text: parsed.data.raw_text,
     accountId,
     sourceType: 'time_entry',

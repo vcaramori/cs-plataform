@@ -17,7 +17,8 @@ import {
   Loader2,
   Check,
   FileText,
-  Paperclip
+  Paperclip,
+  X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -61,10 +62,21 @@ interface Props {
   accountName?: string
 }
 
+interface DeletionPreview {
+  interactions: number
+  wishlistSignals: number
+  embeddings: number
+  suggestedTasks: number
+  keptTasks: number
+  onboardingEvents: number
+}
+
 export function InteractionDetailModal({ interaction, onClose, onUpdate, accountName }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Interaction>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [deletePreview, setDeletePreview] = useState<DeletionPreview | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   useEffect(() => {
     if (interaction) {
@@ -101,13 +113,30 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
     }
   }
 
-  const handleDelete = async () => {
-    if (!interaction || !confirm(`Deseja realmente excluir este registro? Esta ação é irreversível.`)) return
+  // Passo 1: busca o raio de impacto e abre o diálogo de confirmação.
+  const requestDelete = async () => {
+    if (!interaction) return
+    setLoadingPreview(true)
+    try {
+      const resp = await fetch(`/api/interactions/${interaction.id}/deletion-preview`)
+      if (!resp.ok) throw new Error()
+      setDeletePreview(await resp.json())
+    } catch {
+      setDeletePreview({ interactions: 1, wishlistSignals: 0, embeddings: 0, suggestedTasks: 0, keptTasks: 0, onboardingEvents: 0 })
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  // Passo 2: confirma e exclui em cascata.
+  const confirmDelete = async () => {
+    if (!interaction || isSaving) return
     setIsSaving(true)
     try {
        const resp = await fetch(`/api/interactions/${interaction.id}`, { method: 'DELETE' })
        if (!resp.ok) throw new Error()
-       toast.success('Registro removido')
+       toast.success('Registro e dados vinculados removidos')
+       setDeletePreview(null)
        onClose()
     } catch (err) {
        console.error('[InteractionDetailModal] Delete error:', err)
@@ -118,6 +147,7 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
   }
 
   return (
+    <>
     <Dialog open={!!interaction} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 shadow-2xl text-foreground dark:text-white max-w-2xl overflow-hidden p-0 rounded-2xl">
         
@@ -332,12 +362,13 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
         {/* Footer Actions */}
         <div className="p-4 px-6 border-t border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 rounded-b-2xl flex items-center justify-between">
             {interaction && !isEditing ? (
-               <Button 
-                 variant="ghost" 
-                 onClick={handleDelete}
+               <Button
+                 variant="ghost"
+                 onClick={requestDelete}
+                 disabled={loadingPreview}
                  className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 font-black uppercase tracking-widest text-[10px] gap-2 h-10 px-5 rounded-xl transition-all"
                >
-                  <Trash2 className="w-4.5 h-4.5" /> Remover Registro
+                  {loadingPreview ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Trash2 className="w-4.5 h-4.5" />} Remover Registro
                </Button>
             ) : <div />}
 
@@ -357,5 +388,56 @@ export function InteractionDetailModal({ interaction, onClose, onUpdate, account
 
       </DialogContent>
     </Dialog>
+
+      {/* Confirmação de exclusão — lista o raio de impacto antes de apagar */}
+      <Dialog open={!!deletePreview} onOpenChange={(open) => !open && !isSaving && setDeletePreview(null)}>
+        <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 shadow-2xl text-foreground dark:text-white max-w-md rounded-2xl">
+          <DialogTitle className="text-base font-black uppercase tracking-tighter flex items-center gap-2 text-destructive">
+            <Trash2 className="w-4.5 h-4.5" /> Excluir esta interação?
+          </DialogTitle>
+          <DialogDescription className="text-content-secondary text-xs font-medium">
+            Esta ação é permanente. Para manter os dados consistentes, serão removidos junto:
+          </DialogDescription>
+
+          {deletePreview && (() => {
+            const items: string[] = []
+            if (deletePreview.interactions > 0) items.push(`${deletePreview.interactions} interação(ões) / esforço espelho`)
+            if (deletePreview.wishlistSignals > 0) items.push(`${deletePreview.wishlistSignals} item(ns) de wishlist`)
+            if (deletePreview.embeddings > 0) items.push(`${deletePreview.embeddings} trecho(s) da memória da IA (RAG)`)
+            if (deletePreview.suggestedTasks > 0) items.push(`${deletePreview.suggestedTasks} tarefa(s) sugerida(s) pendente(s)`)
+            return (
+              <div className="space-y-3 py-1">
+                {items.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {items.map((t, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm font-bold text-foreground dark:text-white">
+                        <X className="w-3.5 h-3.5 mt-1 text-destructive shrink-0" /> {t}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-content-secondary italic">Nenhum dado derivado vinculado.</p>
+                )}
+                {(deletePreview.keptTasks > 0 || deletePreview.onboardingEvents > 0) && (
+                  <p className="text-[11px] text-content-secondary/80 leading-relaxed border-t border-border-divider pt-2">
+                    {deletePreview.keptTasks > 0 && `${deletePreview.keptTasks} tarefa(s) já iniciada(s)/concluída(s) serão preservadas (apenas desvinculadas). `}
+                    {deletePreview.onboardingEvents > 0 && `${deletePreview.onboardingEvents} evento(s) de onboarding serão preservados.`}
+                  </p>
+                )}
+              </div>
+            )
+          })()}
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setDeletePreview(null)} disabled={isSaving} className="font-black uppercase tracking-widest text-[10px] h-10 px-5 rounded-xl">
+              Cancelar
+            </Button>
+            <Button onClick={confirmDelete} disabled={isSaving} className="bg-destructive hover:bg-destructive/90 text-white font-black uppercase tracking-widest text-[10px] h-10 px-5 rounded-xl gap-2">
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Confirmar exclusão
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

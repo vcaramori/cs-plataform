@@ -6,8 +6,6 @@ import { Sidebar } from './Sidebar'
 import { QuickActionsFAB } from './QuickActionsFAB'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NotificationCenter } from '../notifications/NotificationCenter'
-import { AlertCenter } from '../alerts/AlertCenter'
 import { UserProvider } from '../providers/UserProvider'
 import { Profile } from '@/lib/supabase/types'
 

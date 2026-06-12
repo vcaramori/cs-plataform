@@ -62,16 +62,18 @@ export async function createSignalManual(input: {
 export interface SignalInsights {
   catalog: CatalogMatch | null
   matches: MatchResult
+  catalogConfigured: boolean   // false = não há funcionalidades cadastradas (catálogo vazio)
 }
 export async function analyzeSignal(signalId: string): Promise<SignalInsights> {
   await requireUser()
   const { data: signal } = await db().from('wishlist_signals').select('id, verbatim').eq('id', signalId).single()
   if (!signal) throw new Error('Sinal não encontrado')
-  const [catalog, matches] = await Promise.all([
+  const [catalog, matches, featureCount] = await Promise.all([
     suggestCatalogMatch(signal.verbatim),
     findSimilar(signal.verbatim, { excludeSignalId: signalId }),
+    db().from('product_features').select('id', { count: 'exact', head: true }).eq('is_active', true),
   ])
-  return { catalog, matches }
+  return { catalog, matches, catalogConfigured: (featureCount?.count ?? 0) > 0 }
 }
 
 // ── Triagem (desfechos sem promoção) ──────────────────────────────────────────

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { ingestNPSResponse } from '@/lib/rag/rag-pipeline'
-import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { extractSignals } from '@/lib/signals/extract-signals'
 import { resolveAccountByInstance } from '@/lib/nps/instance'
 
 const AnswerSchema = z.object({
@@ -132,14 +132,14 @@ export async function POST(request: Request) {
 
   // WISHLIST: comentário de detrator (nota ≤ 6) pode conter pedido de produto
   if (responseRecord.comment && finalScore !== null && finalScore <= 6 && !isTestResponse && resolvedAccountId) {
-    extractWishlistSignals({
+    extractSignals({
       text: responseRecord.comment,
       accountId: resolvedAccountId,
       sourceType: 'nps_response',
       sourceId: responseRecord.id,
       requesterEmail: user_email,
       contextHint: `Comentário de detrator de NPS (nota ${finalScore}).`,
-    }).catch(err => console.error('[Wishlist] NPS extract fail:', err))
+    }).catch(err => console.error('[Signals] NPS extract fail:', err))
   }
 
   // Insere respostas individuais por questão

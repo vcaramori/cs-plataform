@@ -69,10 +69,21 @@ interface Props {
   accounts: any[]
 }
 
+interface DeletionPreview {
+  interactions: number
+  wishlistSignals: number
+  embeddings: number
+  suggestedTasks: number
+  keptTasks: number
+  onboardingEvents: number
+}
+
 export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Entry>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [deletePreview, setDeletePreview] = useState<DeletionPreview | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   useEffect(() => {
     if (entry) {
@@ -119,13 +130,33 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
     }
   }
 
-  const handleDelete = async () => {
-    if (!entry || !confirm(`Deseja realmente excluir este registro de esforço? Esta ação não pode ser desfeita.`)) return
+  // Passo 1: busca o "raio de impacto" e abre o diálogo de confirmação listando
+  // tudo que será apagado junto (wishlist, RAG, tarefas sugeridas, interações).
+  const requestDelete = async () => {
+    if (!entry) return
+    setLoadingPreview(true)
+    try {
+      const resp = await fetch(`/api/time-entries/${entry.id}/deletion-preview`)
+      if (!resp.ok) throw new Error()
+      const preview = await resp.json()
+      setDeletePreview(preview)
+    } catch {
+      // Sem preview: ainda permite excluir, mas avisa que há derivados não contabilizados.
+      setDeletePreview({ interactions: 0, wishlistSignals: 0, embeddings: 0, suggestedTasks: 0, keptTasks: 0, onboardingEvents: 0 })
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  // Passo 2: confirma e exclui em cascata (backend limpa todos os derivados).
+  const confirmDelete = async () => {
+    if (!entry || isSaving) return
     setIsSaving(true)
     try {
       const resp = await fetch(`/api/time-entries/${entry.id}`, { method: 'DELETE' })
       if (!resp.ok) throw new Error()
-      toast.success('Registro removido')
+      toast.success('Registro e dados vinculados removidos')
+      setDeletePreview(null)
       onClose()
     } catch (err) {
       console.error('[EffortEditModal] Delete error:', err)
@@ -136,6 +167,7 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
   }
 
   return (
+    <>
     <Dialog open={!!entry} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 shadow-2xl text-[#2d3558] dark:text-white max-w-2xl overflow-hidden p-0 rounded-2xl">
 
@@ -354,10 +386,11 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
           {entry && !isEditing ? (
             <Button
               variant="ghost"
-              onClick={handleDelete}
+              onClick={requestDelete}
+              disabled={loadingPreview}
               className="text-destructive/60 hover:text-destructive hover:bg-destructive/10 font-black uppercase tracking-widest text-[10px] gap-2 h-10 px-5 rounded-xl transition-all"
             >
-              <Trash2 className="w-4.5 h-4.5" /> Remover Registro
+              {loadingPreview ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Trash2 className="w-4.5 h-4.5" />} Remover Registro
             </Button>
           ) : <div />}
 
@@ -377,5 +410,65 @@ export function EffortEditModal({ entry, onClose, onUpdate, accounts }: Props) {
 
       </DialogContent>
     </Dialog>
+
+      {/* Confirmação de exclusão — lista o raio de impacto (dados derivados) antes de apagar */}
+      <Dialog open={!!deletePreview} onOpenChange={(open) => !open && !isSaving && setDeletePreview(null)}>
+        <DialogContent className="bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 shadow-2xl text-[#2d3558] dark:text-white max-w-md rounded-2xl">
+          <DialogTitle className="text-base font-black uppercase tracking-tighter flex items-center gap-2 text-destructive">
+            <Trash2 className="w-4.5 h-4.5" /> Excluir registro de esforço?
+          </DialogTitle>
+          <DialogDescription className="text-content-secondary text-xs font-medium">
+            Esta ação é permanente. Para manter os dados consistentes, serão removidos junto:
+          </DialogDescription>
+
+          {deletePreview && (() => {
+            const items: string[] = []
+            if (deletePreview.interactions > 0) items.push(`${deletePreview.interactions} interação(ões) na timeline`)
+            if (deletePreview.wishlistSignals > 0) items.push(`${deletePreview.wishlistSignals} item(ns) de wishlist`)
+            if (deletePreview.embeddings > 0) items.push(`${deletePreview.embeddings} trecho(s) da memória da IA (RAG)`)
+            if (deletePreview.suggestedTasks > 0) items.push(`${deletePreview.suggestedTasks} tarefa(s) sugerida(s) pendente(s)`)
+            return (
+              <div className="space-y-3 py-1">
+                {items.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {items.map((t, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm font-bold text-[#2d3558] dark:text-white">
+                        <X className="w-3.5 h-3.5 mt-1 text-destructive shrink-0" /> {t}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-content-secondary italic">Nenhum dado derivado vinculado a este registro.</p>
+                )}
+                {(deletePreview.keptTasks > 0 || deletePreview.onboardingEvents > 0) && (
+                  <p className="text-[11px] text-content-secondary/80 leading-relaxed border-t border-border-divider pt-2">
+                    {deletePreview.keptTasks > 0 && `${deletePreview.keptTasks} tarefa(s) já iniciada(s)/concluída(s) serão preservadas (apenas desvinculadas). `}
+                    {deletePreview.onboardingEvents > 0 && `${deletePreview.onboardingEvents} evento(s) de onboarding serão preservados.`}
+                  </p>
+                )}
+              </div>
+            )
+          })()}
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              variant="ghost"
+              onClick={() => setDeletePreview(null)}
+              disabled={isSaving}
+              className="font-black uppercase tracking-widest text-[10px] h-10 px-5 rounded-xl"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={isSaving}
+              className="bg-destructive hover:bg-destructive/90 text-white font-black uppercase tracking-widest text-[10px] h-10 px-5 rounded-xl gap-2"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Confirmar exclusão
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

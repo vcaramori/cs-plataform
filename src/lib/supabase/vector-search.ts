@@ -16,6 +16,7 @@ export type EmbeddingSourceType =
   | 'wishlist_signal'
   | 'onboarding'
   | 'negotiation'
+  | 'opportunity_signal'
 
 // ---------------------------------------------------------------------------
 // Chunking

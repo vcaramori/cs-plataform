@@ -31,13 +31,14 @@ import {
   Rocket,
   CalendarClock,
   AlertTriangle,
+  Bell,
+  TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { NotificationCenter } from '@/components/notifications/NotificationCenter'
-import { AlertCenter } from '@/components/alerts/AlertCenter'
+import { AlertBell } from '@/components/alerts/AlertBell'
 import { useModulePermission, useModulePermissionChecker } from '@/hooks/useModulePermission'
 
 import { UserRole } from '@/lib/supabase/types'
@@ -47,6 +48,7 @@ import { env } from '@/lib/env'
 // dinamicamente conforme permissão (ver render).
 const analiseItems = [
   { href: '/dashboard',         label: 'Dashboard',       icon: LayoutDashboard, module: 'dashboard' },
+  { href: '/alertas',           label: 'Alertas',         icon: Bell,            module: 'dashboard' },
   { href: '/renovacoes',        label: 'Renovações',      icon: CalendarClock,   module: 'dashboard' },
   { href: '/risco',             label: 'Risco',           icon: AlertTriangle,   module: 'dashboard' },
   { href: '/adoption',          label: 'Adoção',          icon: Target,          module: 'adoption' },
@@ -61,6 +63,7 @@ const operacaoItems = [
   { href: '/suporte',           label: 'Suporte',          icon: TicketCheck,    module: 'suporte' },
   { href: '/fluxos',            label: 'Fluxos',            icon: Workflow,       module: 'playbooks' },
   { href: '/wishlist',          label: 'Wishlist',          icon: Lightbulb,      module: 'wishlist' },
+  { href: '/oportunidades',     label: 'Oportunidades',     icon: TrendingUp,     module: 'wishlist' },
 ]
 
 const settingsItems = [
@@ -354,15 +357,12 @@ export function Sidebar({ user, role, avatarUrl, onMobileClose }: SidebarProps) 
         </div>
       </nav>
 
-      {/* ── Notificações e Alertas ──────────────────────── */}
+      {/* ── Central de Alertas (sino único) ──────────────── */}
       <div className={cn(
         "py-2 border-t border-border-divider bg-muted/20 transition-all duration-300",
         isCollapsed ? "px-2" : "px-3"
       )}>
-        <div className="flex items-center gap-2 justify-center">
-          <NotificationCenter isCollapsed={isCollapsed} />
-          <AlertCenter />
-        </div>
+        <AlertBell isCollapsed={isCollapsed} />
       </div>
 
       {/* ── Rodapé do usuário ─────────────────────────────── */}

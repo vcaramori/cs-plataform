@@ -107,6 +107,8 @@ function SignalCard({ signal }: { signal: any }) {
                   <p className="text-content-secondary">{insights.catalog.rationale}</p>
                 </div>
               </div>
+            ) : !insights.catalogConfigured ? (
+              <p className="text-xs text-content-secondary">Catálogo de funcionalidades vazio — cadastre em <span className="font-semibold">Funcionalidades</span> para a IA sugerir correspondências.</p>
             ) : (
               <p className="text-xs text-content-secondary">Sem correspondência no catálogo de funcionalidades.</p>
             )}

@@ -117,8 +117,9 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 |--------|----------|-----------|
 | GET | `/api/time-entries` | Lista entries do usuário |
 | POST | `/api/time-entries` | Criar entry (processa via IA) |
-| PATCH | `/api/time-entries/[id]` | Atualizar entry |
-| DELETE | `/api/time-entries/[id]` | Excluir entry |
+| PATCH | `/api/time-entries/[id]` | Atualizar entry (reavalia derivados: re-vetoriza RAG e realoca wishlist na troca de conta) |
+| GET | `/api/time-entries/[id]/deletion-preview` | Raio de impacto da exclusão (wishlist, RAG, tarefas sugeridas, interações) |
+| DELETE | `/api/time-entries/[id]` | Excluir entry **em cascata** (limpa todos os derivados) |
 
 ---
 
@@ -140,3 +141,4 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 |------|------------|
 | Abr/2026 | Versão inicial |
 | Jun/2026 | **Carga histórica de esforços**: painel "Carga histórica" (cola um bloco com várias reuniões → a IA separa por data e registra cada esforço com a data real, vetorizado no RAG). `parseHistoricalEfforts` (multi-entrada) + `persistHistoricalEffort` + `POST /api/time-entries/bulk` (preview/commit). Tarefas criadas por padrão, mas **respeita** instrução de "não registrar atividades" por reunião (`skip_tasks`), com toggle no preview. |
+| Jun/2026 | **Integridade na exclusão/edição** (`src/lib/effort/effort-cascade.ts`): um esforço alimenta `interactions`, `wishlist_signals`, `embeddings` (RAG) e `csm_tasks` sugeridas. A FK `interactions.time_entry_id` é CASCADE, mas wishlist/embeddings são polimórficos (sem FK) e viravam **órfãos** ao deletar. Agora a exclusão é **em cascata** e precedida de um **diálogo de confirmação** (`EffortEditModal`) que lista o raio de impacto via `GET .../deletion-preview`. Tarefas já iniciadas/concluídas e eventos de onboarding são **preservados** (desvinculados). Na **edição**, re-vetoriza o RAG da interação e realoca os sinais de wishlist quando a conta muda. **Sem triggers** — limpeza centralizada na aplicação. Órfãos legados foram removidos do banco. |

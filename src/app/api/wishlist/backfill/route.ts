@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
-import { extractWishlistSignals } from '@/lib/wishlist/extractor'
+import { extractSignals } from '@/lib/signals/extract-signals'
 
 /**
  * POST /api/wishlist/backfill
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       scanned++
       if (done.has(t.id) || !t.account_id) continue
       const text = [t.title, t.description, t.thread_content].filter(Boolean).join('\n\n')
-      const n = await extractWishlistSignals({
+      const n = await extractSignals({
         text,
         accountId: t.account_id,
         sourceType: 'support_ticket',
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         contextHint: 'Ticket de suporte.',
       })
       processed++
-      created += n
+      created += n.wishlist + n.opportunities
     }
   } else {
     const { data: rows } = await db
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       if (processed >= limit) break
       scanned++
       if (done.has(r.id) || !r.account_id) continue
-      const n = await extractWishlistSignals({
+      const n = await extractSignals({
         text: r.comment,
         accountId: r.account_id,
         sourceType: 'nps_response',
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         contextHint: `Comentário de detrator de NPS (nota ${r.score}).`,
       })
       processed++
-      created += n
+      created += n.wishlist + n.opportunities
     }
   }
 

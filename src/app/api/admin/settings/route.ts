@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { encrypt, maskApiKey } from '@/lib/crypto/encryption'
 import { invalidateLLMSettingsCache } from '@/lib/llm/settings'
 import { invalidateAIContextCache } from '@/lib/ai/ai-context'
+import { invalidateSopGlossaryCache } from '@/lib/opportunities/glossary'
 import { AI_INSTRUCTIONS } from '@/lib/ai/instructions-catalog'
 import type { LLMProvider } from '@/lib/llm/providers/types'
 
@@ -40,7 +41,7 @@ export async function GET() {
   const { data, error } = await (admin as any)
     .from('app_settings')
     .select('key, value')
-    .in('key', ['rag_ai_settings', 'llm_provider_keys', 'ai_global_context', 'ai_context_rules', ...INSTRUCTION_KEYS, ...AI_INSTRUCTIONS.map((i) => i.key)])
+    .in('key', ['rag_ai_settings', 'llm_provider_keys', 'ai_global_context', 'ai_context_rules', 'sop_glossary', ...INSTRUCTION_KEYS, ...AI_INSTRUCTIONS.map((i) => i.key)])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -94,11 +95,18 @@ export async function POST(request: Request) {
         }
       }
 
+      // Glossário S&OP (siglas/módulos correlatos) — usado na extração de oportunidades
+      const glossary = settings.sop_glossary
+      if (glossary && typeof glossary === 'object') {
+        ctxUpserts.push({ key: 'sop_glossary', value: glossary, description: 'Glossário S&OP (siglas/módulos correlatos)', updated_by: user.id })
+      }
+
       if (ctxUpserts.length > 0) {
         const { error } = await db.from('app_settings').upsert(ctxUpserts, { onConflict: 'key' })
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       }
       invalidateAIContextCache()
+      invalidateSopGlossaryCache()
       return NextResponse.json({ ok: true })
     }
 
