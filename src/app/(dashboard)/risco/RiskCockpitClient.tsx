@@ -1,113 +1,83 @@
 'use client'
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ArrowRight, ShieldCheck } from 'lucide-react'
-import { RiskCurationControl } from '@/components/risk/RiskCurationControl'
+import { Loader2, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react'
+import { toast } from 'sonner'
+import { RiskKpis } from './components/RiskKpis'
+import { RiskMatrix } from './components/RiskMatrix'
+import { RiskKanban } from './components/RiskKanban'
+import { RiskDistributions } from './components/RiskDistributions'
+import { RiskTable } from './components/RiskTable'
+import type { CockpitData } from './components/risk-types'
 
-export type Curation = {
-  decision: 'confirmed' | 'false_positive'
-  reason: string | null
-  risk_key: string | null
-  created_at: string
-}
+export function RiskCockpitClient() {
+  const [data, setData] = useState<CockpitData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [evaluating, setEvaluating] = useState(false)
 
-export type RiskAccount = {
-  id: string
-  name: string
-  segment: string | null
-  health_score: number | null
-  risk_score: number | null
-  sentiment_label: string | null
-  ai_reasoning: string | null
-  analyzed_at: string | null
-  isAtRisk: boolean
-  curations?: Curation[]
-}
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/dashboard/risk-cockpit')
+      if (!res.ok) throw new Error()
+      setData(await res.json())
+    } catch {
+      toast.error('Falha ao carregar o cockpit de risco')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-export function RiskCockpitClient({ accounts }: { accounts: RiskAccount[] }) {
-  const router = useRouter()
+  useEffect(() => { load() }, [load])
 
-  if (accounts.length === 0) {
-    return (
-      <Card className="border-dashed p-12 text-center">
-        <ShieldCheck className="w-10 h-10 text-success mx-auto mb-3" />
-        <p className="text-sm font-bold text-content-primary">Nenhuma conta em risco</p>
-        <p className="text-xs text-content-secondary mt-1">Health ≥ 40 e sem sinais de risco da IA no portfólio.</p>
-      </Card>
-    )
+  // Reavalia o motor (popula alertas → drivers/tratamento) e recarrega.
+  const evaluateNow = async () => {
+    setEvaluating(true)
+    try {
+      await fetch('/api/alerts/evaluate', { method: 'POST' })
+      await load()
+      toast.success('Risco reavaliado')
+    } catch {
+      toast.error('Falha ao reavaliar')
+    } finally { setEvaluating(false) }
   }
 
-  return (
-    <div className="space-y-3">
-      <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
-        {accounts.length} {accounts.length === 1 ? 'conta em risco' : 'contas em risco'}
-      </p>
-      {accounts.map(a => (
-        <Card key={a.id} className="p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-extrabold text-content-primary uppercase text-sm truncate">{a.name}</p>
-                {a.segment && <Badge variant="outline" className="text-[9px] uppercase">{a.segment}</Badge>}
-                {a.sentiment_label && (
-                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-[9px] uppercase">
-                    {a.sentiment_label}
-                  </Badge>
-                )}
-              </div>
-              {a.ai_reasoning ? (
-                <p className="text-xs text-content-secondary mt-1.5 line-clamp-3">{a.ai_reasoning}</p>
-              ) : (
-                <p className="text-xs text-content-secondary/60 mt-1.5 italic">Sem análise de risco da IA — sinalizado por health baixo.</p>
-              )}
-            </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="text-center">
-                <p className="text-[9px] font-black uppercase text-content-secondary">Health</p>
-                <p className={`text-lg font-black ${(a.health_score ?? 100) < 40 ? 'text-destructive' : 'text-content-primary'}`}>{a.health_score ?? '—'}</p>
-              </div>
-              {a.risk_score != null && (
-                <div className="text-center">
-                  <p className="text-[9px] font-black uppercase text-content-secondary">Risco IA</p>
-                  <p className="text-lg font-black text-destructive">{a.risk_score}</p>
-                </div>
-              )}
-              <Link
-                href={`/accounts/${a.id}`}
-                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-plannera-orange hover:gap-2 transition-all"
-              >
-                Abrir <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
+  if (loading && !data) {
+    return <div className="flex items-center justify-center py-24"><Loader2 className="w-7 h-7 animate-spin text-accent" /></div>
+  }
+  if (!data) return null
 
-          {/* Curadoria + auditoria */}
-          <div className="mt-3 pt-3 border-t border-border-divider/60 flex flex-col gap-2">
-            <RiskCurationControl
-              accountId={a.id}
-              source="assessment"
-              riskKey={a.sentiment_label ?? 'risk'}
-              onDone={() => router.refresh()}
-            />
-            {a.curations && a.curations.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-[9px] font-black uppercase tracking-widest text-content-secondary/60">Auditoria</p>
-                {a.curations.map((c, i) => (
-                  <p key={i} className="text-[10px] text-content-secondary">
-                    <span className={c.decision === 'false_positive' ? 'text-destructive font-bold' : 'text-success font-bold'}>
-                      {c.decision === 'false_positive' ? 'Falso positivo' : 'Confirmado'}
-                    </span>
-                    {' · '}{(c.created_at || '').slice(0, 10)}{c.reason ? ` — ${c.reason}` : ''}
-                  </p>
-                ))}
-              </div>
-            )}
-          </div>
+  const showOwner = data.scope === 'global'
+  const hasRisk = (data.kpis?.accountsAtRisk ?? 0) > 0 || data.accounts.length > 0
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={load} disabled={loading} className="gap-2 text-[10px] font-black uppercase tracking-widest"><RefreshCw className="w-4 h-4" /> Atualizar</Button>
+        <Button size="sm" onClick={evaluateNow} disabled={evaluating} className="gap-2 text-[10px] font-black uppercase tracking-widest">{evaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Reavaliar risco</Button>
+      </div>
+
+      <RiskKpis kpis={data.kpis} />
+
+      {!hasRisk ? (
+        <Card className="border-dashed p-12 text-center">
+          <ShieldCheck className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+          <p className="text-sm font-bold text-content-primary">Portfólio saudável</p>
+          <p className="text-xs text-content-secondary mt-1">Nenhuma conta em risco no escopo atual.</p>
         </Card>
-      ))}
+      ) : (
+        <>
+          <RiskMatrix accounts={data.accounts} />
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Carteira por severidade</p>
+            <RiskKanban accounts={data.accounts} />
+          </div>
+          <RiskDistributions data={data} showOwner={showOwner} />
+          <RiskTable accounts={data.accounts} showOwner={showOwner} onChanged={load} />
+        </>
+      )}
     </div>
   )
 }
