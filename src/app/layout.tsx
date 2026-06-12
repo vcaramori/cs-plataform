@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 /*
   Fontes latinas de alta qualidade como base de renderização.
@@ -51,6 +52,7 @@ export default function RootLayout({
           </TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
           <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
