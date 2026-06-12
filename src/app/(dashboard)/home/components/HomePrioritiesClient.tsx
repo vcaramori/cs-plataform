@@ -208,7 +208,7 @@ export function HomePrioritiesClient() {
     return (
       <div>
         <SectionHead cfg={cfg} count={tasks.length} unit={tasks.length === 1 ? 'tarefa' : 'tarefas'} />
-        <div className="relative overflow-hidden rounded-xl bg-surface-card border border-border-divider shadow-premium h-full">
+        <div className="relative overflow-hidden rounded-xl bg-surface-card border border-border-divider shadow-premium">
           <div className={cn('absolute left-0 top-0 bottom-0 w-1', cfg.bar)} />
           <div className="p-3.5 pl-4">
             {tasks.map(t => <TaskRow key={t.id} task={t} accent={cfg} />)}
@@ -228,7 +228,7 @@ export function HomePrioritiesClient() {
   const isEmpty = !isLoading && !hasPriorities && !hasTasks
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center gap-3">
         <h2 className="h2-section">Ações de Hoje</h2>
         <div className="h-px flex-1 bg-gradient-to-r from-border-divider to-transparent" />
@@ -245,7 +245,7 @@ export function HomePrioritiesClient() {
       )}
 
       {hasTasks && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 items-start auto-rows-min relative z-0">
           {overdueTasks.length > 0 && <TaskSection cfg={TASK_OVERDUE} tasks={overdueTasks} />}
           {todayTasks.length > 0 && <TaskSection cfg={TASK_TODAY} tasks={todayTasks} />}
           {upcomingTasks.length > 0 && <TaskSection cfg={TASK_UPCOMING} tasks={upcomingTasks} />}
@@ -259,7 +259,7 @@ export function HomePrioritiesClient() {
         if (!isLoading && items.length === 0) return null
 
         return (
-          <div key={key}>
+          <div key={key} className="relative z-10">
             <SectionHead cfg={cfg} count={items.length} unit={items.length === 1 ? 'conta' : 'contas'} />
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3">

@@ -97,14 +97,14 @@ export default async function HomePage() {
         />
       </Suspense>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2 items-start">
         {/* Ações de hoje (ocupa 2/3) */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <HomePrioritiesClient />
         </div>
 
-        {/* Agenda (ocupa 1/3) */}
-        <div className="flex flex-col gap-4">
+        {/* Agenda (ocupa 1/3) — fixa ao rolar a coluna longa de ações */}
+        <div className="flex flex-col gap-4 self-start lg:sticky lg:top-6">
           <Office365CalendarContainer isLeadership={leadership} csms={csms} />
         </div>
       </div>
