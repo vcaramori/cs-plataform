@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/reembed-missing",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/helpdesk-sync",
+      "schedule": "0 * * * *"
     }
   ]
 }

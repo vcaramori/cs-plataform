@@ -77,6 +77,18 @@ export const env = {
   airtable: {
     token: process.env.AIRTABLE_TOKEN ?? '',
   },
+  // HelpDesk (LiveChat/Text Inc) — sincronização automática de chamados.
+  // Autenticação por Bearer token (o token do app web; renovado pelo GitHub Actions
+  // e guardado em app_settings.helpdesk_token). Não exige a API paga.
+  helpdesk: {
+    // Bearer token do app web (cookie credentials.access_token, dura ~5 dias).
+    // Em runtime o cron lê de app_settings.helpdesk_token; este env é fallback/bootstrap.
+    bearerToken: process.env.HELPDESK_BEARER_TOKEN ?? '',
+    baseUrl: process.env.HELPDESK_API_BASE_URL ?? 'https://api.helpdesk.com/v1',
+    // Conta padrão (UUID em accounts) usada quando a cascata de resolução não casar.
+    // Vazio = pula o chamado e registra em erros (não cria lixo).
+    fallbackAccountId: process.env.HELPDESK_FALLBACK_ACCOUNT_ID ?? '',
+  },
   // MCP da ferramenta (servidor de tools para agentes). Token = segredo (server-only).
   // actorUserId: usuário real (auth.users.id) atribuído a lançamentos feitos pelo agente
   // (time_entries.csm_id / interactions.csm_id são NOT NULL com FK). Pode ser sobrescrito

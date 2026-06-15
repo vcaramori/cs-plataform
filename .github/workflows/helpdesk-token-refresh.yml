@@ -1,0 +1,44 @@
+name: HelpDesk Token Refresh
+
+# Renova o Bearer token do HelpDesk (dura ~5 dias) via login automatizado e o
+# envia para a cs-plataform. Roda a cada 3 dias e pode ser disparado manualmente.
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *' # a cada 3 dias, 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (chromium)
+        run: |
+          npm install -D playwright
+          npx playwright install --with-deps chromium
+
+      - name: Refresh HelpDesk token
+        env:
+          HELPDESK_EMAIL: ${{ secrets.HELPDESK_EMAIL }}
+          HELPDESK_PASSWORD: ${{ secrets.HELPDESK_PASSWORD }}
+          CSPLATAFORM_BASE_URL: ${{ secrets.CSPLATAFORM_BASE_URL }}
+          HELPDESK_API_SECRET: ${{ secrets.HELPDESK_API_SECRET }}
+        run: node scripts/helpdesk-refresh-token.mjs
+
+      - name: Upload failure screenshot
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helpdesk-login-failure
+          path: helpdesk-login-failure.png
+          if-no-files-found: ignore
