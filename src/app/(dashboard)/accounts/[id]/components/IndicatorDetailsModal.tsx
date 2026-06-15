@@ -16,7 +16,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
-import { Plus, CalendarClock, Loader2 } from 'lucide-react'
+import { Plus, CalendarClock, Loader2, Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useState, useEffect } from 'react'
@@ -31,11 +31,18 @@ interface Props {
   onAddDataPoint: () => void
   /** Chamado após salvar a data-alvo, para o pai recarregar os indicadores. */
   onUpdated?: () => void
+  /** Chamado após excluir a meta, para o pai recarregar os indicadores. */
+  onDeleted?: () => void
 }
 
-export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, accountName, onAddDataPoint, onUpdated }: Props) {
+export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, accountName, onAddDataPoint, onUpdated, onDeleted }: Props) {
   const [targetDate, setTargetDate] = useState('')
   const [savingDate, setSavingDate] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  // Reseta a confirmação de exclusão ao abrir/trocar de meta
+  useEffect(() => { setConfirmingDelete(false) }, [indicator?.id, isOpen])
 
   // Sincroniza o input com a meta selecionada ao abrir/trocar
   useEffect(() => {
@@ -62,6 +69,26 @@ export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, acc
       toast.error(err.message)
     } finally {
       setSavingDate(false)
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/accounts/${indicator.account_id}/indicators/${indicator.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Erro ao excluir a meta')
+      }
+      toast.success('Meta excluída')
+      onDeleted?.()
+      onClose()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -103,7 +130,32 @@ export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, acc
                 Salvar
               </Button>
             )}
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-content-secondary hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Excluir meta
+            </button>
           </div>
+
+          {/* Confirmação de exclusão permanente (apaga a meta + medições via cascade) */}
+          {confirmingDelete && (
+            <div className="mt-3 flex items-center gap-3 flex-wrap rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+              <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="text-[11px] font-bold text-red-500 leading-snug flex-1 min-w-[200px] normal-case">
+                Excluir <span className="uppercase">{indicator.name}</span> e suas {history.length} medições? Esta ação é permanente.
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="h-8 text-[10px] font-black uppercase tracking-widest text-content-secondary">
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={handleDelete} disabled={deleting} className="h-8 gap-1.5 text-[10px] font-black uppercase tracking-widest bg-red-500 hover:bg-red-600 text-white">
+                  {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Confirmar exclusão
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-8 py-4 px-6">

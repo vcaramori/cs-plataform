@@ -105,6 +105,7 @@ export function SuccessPlan({ accountName }: { accountName?: string }) {
         accountName={accountName || 'Cliente'}
         onAddDataPoint={handleOpenEdit}
         onUpdated={() => queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })}
+        onDeleted={() => queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })}
       />
 
       <IndicatorEditModal

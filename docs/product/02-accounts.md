@@ -382,6 +382,7 @@ interface Props {
 | Criar meta (indicador) | "Nova Meta" no Plano de Sucesso | `AddIndicatorModal` → `POST /api/accounts/[id]/indicators`. **Data-alvo (`target_date`) obrigatória** (campo "Atingir até") |
 | Definir/editar data-alvo | Abrir a meta → editar "Atingir até" no `IndicatorDetailsModal` | `PATCH /api/accounts/[id]/indicators/[indicatorId]` — usado para dar prazo a metas antigas (sem data) |
 | Acompanhar prazo da meta | Visualizar o card do indicador | Chip de status: Atingida / Atrasada / Vence hoje / faltam Nd / até DD/MM / Sem prazo (compara `current_value` vs `target_value` e hoje vs `target_date`) |
+| Excluir meta (indicador) | Abrir a meta → "Excluir meta" no `IndicatorDetailsModal` → confirmar | `DELETE /api/accounts/[id]/indicators/[indicatorId]`. Exclusão **permanente** com confirmação (lista a meta + N medições); o histórico some via `ON DELETE CASCADE` |
 
 ---
 

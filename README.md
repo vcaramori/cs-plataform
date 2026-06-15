@@ -169,6 +169,10 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🗑️ Metas do cliente — excluir indicador (2026-06-15)
+
+Faltava poder **excluir uma meta** (`account_indicators`) cadastrada errada — a rota `DELETE` já existia, mas não havia botão na UI. Adicionado no [IndicatorDetailsModal.tsx](src/app/(dashboard)/accounts/[id]/components/IndicatorDetailsModal.tsx): botão **"Excluir meta"** com confirmação em dois passos, listando o impacto (a meta + suas N medições, removidas via `ON DELETE CASCADE`). Exclusão **permanente** (decisão do usuário); após excluir, a lista recarrega (`onDeleted` → invalidate). Sobre vigência: ficou definido **"só a data-alvo basta"** (período implícito até o alvo), sem novo campo de início.
+
 ### 🎯 Metas com data-alvo + logo legível no tema escuro (2026-06-15)
 
 Dois ajustes no detalhe da conta (`/accounts/[id]`):
