@@ -2,6 +2,7 @@
 
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { brlCompact, type CockpitKpis } from './risk-types'
+import { classifyHealth } from '@/lib/health/classify'
 
 export function RiskKpis({ kpis }: { kpis: CockpitKpis | null }) {
   const k = kpis ?? { arrAtRisk: 0, arrTotal: 0, accountsAtRisk: 0, critical: 0, high: 0, renewalsAtRisk: 0, renewalsAtRiskArr: 0, avgHealth: null, treatedPct: null }
@@ -34,8 +35,8 @@ export function RiskKpis({ kpis }: { kpis: CockpitKpis | null }) {
         title="HEALTH MÉDIO"
         value={k.avgHealth ?? '—'}
         iconName="Activity"
-        colorVariant={(k.avgHealth ?? 100) < 50 ? 'destructive' : (k.avgHealth ?? 100) < 70 ? 'orange' : 'emerald'}
-        status="Portfólio (v2)"
+        colorVariant={k.avgHealth == null ? 'default' : classifyHealth(k.avgHealth).band === 'saudavel' ? 'emerald' : classifyHealth(k.avgHealth).band === 'atencao' ? 'orange' : 'destructive'}
+        status="Portfólio (manual)"
       />
       <StatCardPremium
         title="EM TRATAMENTO"

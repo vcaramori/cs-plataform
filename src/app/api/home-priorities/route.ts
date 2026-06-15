@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { AlertService } from '@/lib/alerts/alert-service'
 import { isLeadershipRole } from '@/lib/auth/roles'
 import type { UserRole } from '@/lib/supabase/types'
+import { classifyHealth, isAtRiskScore } from '@/lib/health/classify'
 import { z } from 'zod'
 
 const PrioritySchema = z.object({
@@ -129,14 +130,14 @@ export async function GET(request: Request) {
         }
       }
 
-      // Fallback Risk priority (low health score < 40)
-      if (account.health_score < 40 && !hasLowHealthAlert) {
+      // Fallback Risk priority (health manual em risco < 50, régua única)
+      if (isAtRiskScore(account.health_score) && !hasLowHealthAlert) {
         priorities.push({
           id: `health-low-${account.id}`,
           csm_id: profile.id,
           account_id: account.id,
           category: 'focar_agora',
-          reason: `Health Score crítico de ${account.health_score}% — intervenção emergencial necessária`,
+          reason: `Health Score ${classifyHealth(account.health_score).label.toLowerCase()} (${account.health_score}%) — intervenção necessária`,
           score: 85,
           action_type: 'health_remediation',
           created_at: new Date().toISOString(),
@@ -147,8 +148,8 @@ export async function GET(request: Request) {
         })
       }
 
-      // Fallback Adoption priority (moderate health score 40-60)
-      if (account.health_score >= 40 && account.health_score < 60 && (!alerts || alerts.length === 0)) {
+      // Fallback Adoption priority (health em atenção 50–69, régua única)
+      if (classifyHealth(account.health_score).band === 'atencao' && (!alerts || alerts.length === 0)) {
         priorities.push({
           id: `health-mid-${account.id}`,
           csm_id: profile.id,

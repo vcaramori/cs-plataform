@@ -14,6 +14,7 @@ import {
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { HealthScore } from '@/lib/supabase/types'
+import { classifyHealth } from '@/lib/health/classify'
 import { toast } from 'sonner'
 
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
@@ -43,7 +44,7 @@ export function HealthScoreCard({
   accountId,
 }: HealthScoreCardProps) {
   const scoreValue = Math.round(healthScore)
-  const statusColor = scoreValue <= 40 ? 'hsl(var(--destructive))' : scoreValue < 70 ? '#f7941e' : '#10b981'
+  const statusColor = classifyHealth(scoreValue).color // régua única
 
   const trendStyle = {
     up: {

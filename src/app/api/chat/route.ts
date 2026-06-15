@@ -4,6 +4,7 @@ import { generateText, generateEmbedding } from '@/lib/llm/gateway'
 import { searchEmbeddingsWithVector } from '@/lib/supabase/vector-search'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { loadInstruction } from '@/lib/ai/load-instruction'
+import { classifyHealth } from '@/lib/health/classify'
 
 // Timeout para o chat: 45 segundos (bem menor que o RAG completo)
 const CHAT_TIMEOUT_MS = 45_000
@@ -143,9 +144,12 @@ async function runChatPipeline(
         }
       }
 
-      const critical = latest.filter((r: any) => (r.manual_score ?? r.shadow_score ?? 100) < 40)
-      const atRisk   = latest.filter((r: any) => { const s = r.manual_score ?? r.shadow_score ?? 100; return s >= 40 && s < 60 })
-      const healthy  = latest.filter((r: any) => (r.manual_score ?? r.shadow_score ?? 0) >= 60)
+      // Régua única (classifyHealth). Fonte = manual_score (fallback shadow_score só p/ contexto).
+      const bandOf = (r: any) => classifyHealth(r.manual_score ?? r.shadow_score).band
+      const critical = latest.filter((r: any) => bandOf(r) === 'critico')
+      const atRisk   = latest.filter((r: any) => bandOf(r) === 'risco')
+      const attention = latest.filter((r: any) => bandOf(r) === 'atencao')
+      const healthy  = latest.filter((r: any) => bandOf(r) === 'saudavel')
 
       const toLine = (r: any) => {
         const name = r.accounts?.name ?? r.account_id
@@ -155,8 +159,9 @@ async function runChatPipeline(
 
       const lines: string[] = [`## Resumo Global do Portfólio (${latest.length} contas)`]
       if (critical.length > 0) lines.push(`### Crítico (score < 40) — ${critical.length} conta(s)\n${critical.map(toLine).join('\n')}`)
-      if (atRisk.length  > 0) lines.push(`### Em Risco (score 40–59) — ${atRisk.length} conta(s)\n${atRisk.map(toLine).join('\n')}`)
-      if (healthy.length > 0) lines.push(`### Saudáveis (score ≥ 60) — ${healthy.length} conta(s)\n${healthy.map(toLine).join('\n')}`)
+      if (atRisk.length  > 0) lines.push(`### Em risco (score 40–49) — ${atRisk.length} conta(s)\n${atRisk.map(toLine).join('\n')}`)
+      if (attention.length > 0) lines.push(`### Atenção (score 50–69) — ${attention.length} conta(s)\n${attention.map(toLine).join('\n')}`)
+      if (healthy.length > 0) lines.push(`### Saudáveis (score ≥ 70) — ${healthy.length} conta(s)\n${healthy.map(toLine).join('\n')}`)
       contextParts.push(lines.join('\n'))
     }
   }

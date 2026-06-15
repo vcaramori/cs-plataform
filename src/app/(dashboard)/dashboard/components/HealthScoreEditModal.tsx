@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Loader2, Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { classifyHealth } from '@/lib/health/classify'
 import { motion } from 'framer-motion'
 
 interface Props {
@@ -115,8 +116,8 @@ export function HealthScoreEditModal({ isOpen, onClose, account, onSuccess }: Pr
                       initial={{ width: 0 }}
                       animate={{ width: `${score}%` }}
                       className="h-full transition-all duration-500 rounded-full"
-                      style={{ 
-                        backgroundColor: score >= 70 ? '#2ba09d' : score >= 40 ? '#f7941e' : '#d85d4b' 
+                      style={{
+                        backgroundColor: classifyHealth(score).color
                       }}
                     />
                   </div>
@@ -124,9 +125,9 @@ export function HealthScoreEditModal({ isOpen, onClose, account, onSuccess }: Pr
                     <span className="text-[9px] font-bold text-content-secondary dark:text-content-secondary uppercase tracking-widest">Estado Atual</span>
                     <span className={cn(
                       "text-[10px] font-black uppercase tracking-widest",
-                      score >= 70 ? 'text-success' : score >= 40 ? 'text-plannera-orange' : 'text-plannera-demand'
+                      classifyHealth(score).textClass
                     )}>
-                      {score >= 70 ? 'Saudável' : score >= 40 ? 'Em Observação' : 'Crítico'}
+                      {classifyHealth(score).label}
                     </span>
                   </div>
                 </div>

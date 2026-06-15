@@ -1,0 +1,33 @@
+name: HelpDesk Sync (hourly)
+
+# Aciona o endpoint de sincronização do HelpDesk na cs-plataform a cada hora.
+# Usamos GitHub Actions (e não o cron da Vercel) porque o plano Hobby da Vercel
+# só permite cron diário. O endpoint roda na Vercel; aqui só o disparamos.
+
+on:
+  schedule:
+    - cron: '0 * * * *' # de hora em hora
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger sync endpoint
+        env:
+          CSPLATAFORM_BASE_URL: ${{ secrets.CSPLATAFORM_BASE_URL }}
+          HELPDESK_API_SECRET: ${{ secrets.HELPDESK_API_SECRET }}
+        run: |
+          echo "Disparando sync..."
+          code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "$CSPLATAFORM_BASE_URL/api/cron/helpdesk-sync" \
+            -H "x-api-secret: $HELPDESK_API_SECRET" \
+            --max-time 290)
+          echo "HTTP $code"
+          cat /tmp/resp.json || true
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::error::Sync falhou (HTTP $code)"
+            exit 1
+          fi

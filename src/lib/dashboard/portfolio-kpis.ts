@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { getNPSSegment } from '@/lib/supabase/types'
+import { isAtRiskScore } from '@/lib/health/classify'
 
 /**
  * KPIs de portfólio reutilizados pelo /dashboard (Portfolio Control) e pela
@@ -31,13 +32,9 @@ export function computePortfolioKpis(accounts: any[] | null | undefined): Portfo
     return sum + activeMRR
   }, 0)
 
-  const atRisk = safe.filter(a => {
-    const healthRisk = a.health_score < 40
-    const aiRisk = toArray<any>(a.account_risk_assessments).some(
-      r => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative'
-    )
-    return healthRisk || aiRisk
-  }).length
+  // "Em risco" pela régua canônica única (health manual < 50). O risco IA é advisory
+  // (camada de alerta para o CSM avaliar) e NÃO entra nesta contagem.
+  const atRisk = safe.filter(a => isAtRiskScore(a.health_score)).length
 
   const avgHealthScore = safe.length
     ? Math.round(safe.reduce((sum, a) => sum + (Number(a.health_score) || 0), 0) / safe.length)

@@ -4,6 +4,8 @@
 // priorizável por ARR. Núcleo puro (sem I/O) — a API monta os inputs.
 // ============================================================================
 
+import { classifyHealth } from '@/lib/health/classify'
+
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none'
 export type Treatment = 'pendente' | 'em_tratamento' | 'tratado'
 
@@ -59,6 +61,8 @@ export interface AccountRiskProfile {
   health: number | null
   aiRisk: number | null
   aiReasoning: string | null
+  /** IA/sentimento sinalizou risco — é ALERTA para o CSM avaliar, NÃO escala o nível sozinho. */
+  aiFlag: boolean
   riskLevel: RiskLevel
   reasons: string[]
   arr: number
@@ -83,31 +87,25 @@ function daysUntil(dateStr: string | null, today: string): number | null {
  */
 export function classifyAccountRisk(input: ClassifyInput): AccountRiskProfile {
   const today = input.today ?? new Date().toISOString().slice(0, 10)
-  // health 0/null = NÃO COMPUTADO (não é "crítico"). Consistente com o resto do código
-  // (cron usa `health_score_v2 || 50`). Evita marcar todo o portfólio como crítico
-  // quando o score ainda não foi calculado.
-  const v2 = input.health_score_v2
-  const v1 = input.health_score
-  const health = (v2 != null && v2 > 0) ? v2 : (v1 != null && v1 > 0) ? v1 : null
+  // FONTE DA VERDADE = health_score MANUAL (v1). O health_score_v2 (ponderado) é
+  // advisory e fica fora do headline. Régua única em classifyHealth().
+  const health = input.health_score
+  const hc = classifyHealth(health)
   const reasons: string[] = []
   let level: RiskLevel = 'none'
 
-  // Health (v2)
-  if (health != null) {
-    if (health < 40) { level = worst(level, 'critical'); reasons.push(`Health crítico (${Math.round(health)})`) }
-    else if (health < 50) { level = worst(level, 'high'); reasons.push(`Health baixo (${Math.round(health)})`) }
-    else if (health < 60) { level = worst(level, 'medium'); reasons.push(`Health em atenção (${Math.round(health)})`) }
-  }
+  // Health manual (régua canônica): crítico→critical, em risco→high, atenção→low (watch, não conta).
+  if (hc.band === 'critico') { level = worst(level, 'critical'); reasons.push(`Health crítico (${Math.round(health!)})`) }
+  else if (hc.band === 'risco') { level = worst(level, 'high'); reasons.push(`Health em risco (${Math.round(health!)})`) }
+  else if (hc.band === 'atencao') { level = worst(level, 'low'); reasons.push(`Health em atenção (${Math.round(health!)})`) }
 
-  // Risco IA
-  if (input.ai_risk_score != null) {
-    if (input.ai_risk_score >= 80) { level = worst(level, 'critical'); reasons.push(`Risco IA ${input.ai_risk_score}`) }
-    else if (input.ai_risk_score >= 60) { level = worst(level, 'high'); reasons.push(`Risco IA ${input.ai_risk_score}`) }
-    else if (input.ai_risk_score >= 40) { level = worst(level, 'medium'); reasons.push(`Risco IA ${input.ai_risk_score}`) }
-  }
-  if (input.ai_sentiment === 'at-risk' || input.ai_sentiment === 'negative') {
-    level = worst(level, 'high')
-    if (input.ai_risk_score == null) reasons.push(`Sentimento ${input.ai_sentiment === 'at-risk' ? 'em risco' : 'negativo'} (IA)`)
+  // Risco IA / sentimento → NÃO escala o nível. Vira ALERTA para o CSM avaliar
+  // (curadoria) se "vira risco" de fato. Ao confirmar, vira alerta/risco manual e aí escala.
+  let aiFlag = false
+  if ((input.ai_risk_score != null && input.ai_risk_score >= 60) || input.ai_sentiment === 'at-risk' || input.ai_sentiment === 'negative') {
+    aiFlag = true
+    level = worst(level, 'low') // entra como "watch" no cockpit, mas NÃO conta como "em risco" (que é >= medium)
+    reasons.push('IA sinaliza risco — revisar')
   }
 
   // Alertas proativos de risco (ativos)
@@ -143,6 +141,7 @@ export function classifyAccountRisk(input: ClassifyInput): AccountRiskProfile {
     health,
     aiRisk: input.ai_risk_score,
     aiReasoning: input.ai_reasoning,
+    aiFlag,
     riskLevel: level,
     reasons,
     arr: input.arr,

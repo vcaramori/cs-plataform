@@ -169,6 +169,15 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🎯 Unificação dos indicadores de risco/saúde (2026-06-15)
+
+Resolvidas as divergências de risco entre telas (números diferentes para o mesmo cliente). Duas causas: (1) ~5 réguas de faixas diferentes e (2) pipeline automático morto (`health_score_v2` zerado, cron falhando com `schema "net" does not exist`).
+
+- **Régua única** em [classify.ts](src/lib/health/classify.ts) (`classifyHealth`/`isAtRiskScore`): `≥70 saudável · 50–69 atenção · 40–49 em risco · <40 crítico`; **"em risco" = score <50**. Aplicada em dashboard, gauge, edição manual, home, cockpit e chat de IA — fim dos thresholds inline divergentes.
+- **Fonte da verdade = `health_score` manual.** O `health_score_v2` (ponderado) virou advisory e saiu do headline; cards do v2 degradam para "Automático — aguardando processamento".
+- **IA/shadow = camada de alerta** ([risk-cockpit.ts](src/lib/risk/risk-cockpit.ts)): `ai_risk_score`/`sentiment` não escalam mais o risco sozinhos — setam `aiFlag` ("revisar" na triagem) para o CSM avaliar e curar (vira `account_risks` ao confirmar).
+- **Cron reativado:** extensão `pg_net` habilitada (os crons chamavam `net.http_post` inexistente). `cron-shadow-score-weekly` volta a rodar (alimenta a camada de IA); o `health_score_v2` segue dormente (edge function `cron-health-score-daily` não deployada — ok, é advisory).
+
 ### 📊 Backfill de Health Score histórico — planilha CS (2026-06-15)
 
 Carga (somente dados, sem mudança de código) dos health scores manuais a partir da planilha de CS, com 3 snapshots mensais por cliente em `health_scores.manual_score` (`evaluated_at` = **2026-02-28 / 2026-03-31 / 2026-04-30**) e atualização de `accounts.health_score` (M0) + `health_trend` (via `calculateTrend`). **35 contas** (100 snapshots). Clientes com múltiplas linhas na planilha (S&OP/S&OE/Abast/Int.Vendas — General Mills, SABESP, Skala, SIN, Lindt, Suzano, Pierre Fabre) foram **consolidados pelo maior score** do mês. **Supley** e **Brasal** ficaram de fora (sem conta no sistema); `health_score_v2` (cálculo automático) não foi tocado. Registros marcados com `manual_notes = 'Backfill planilha CS — snapshot mensal'` (reexecução idempotente). De-para completo no plano da sessão.
