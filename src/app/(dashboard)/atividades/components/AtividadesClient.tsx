@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { AtividadesListView } from './AtividadesListView'
@@ -8,7 +9,7 @@ import { AtividadesKanbanView } from './AtividadesKanbanView'
 import { CreateTaskModal } from './CreateTaskModal'
 import { TaskDetailSheet } from './TaskDetailSheet'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { List, LayoutGrid, Plus, Trash2, RotateCcw, Users } from 'lucide-react'
+import { List, LayoutGrid, Plus, Trash2, RotateCcw, Users, Building2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CsmTask, CsmTaskStatus } from '@/lib/supabase/types'
 
@@ -23,12 +24,16 @@ type Scope = string
 
 export function AtividadesClient({ userId, canViewTeam }: Props) {
   const supabase = getSupabaseBrowserClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [tasks, setTasks] = useState<CsmTask[]>([])
   const [deletedTasks, setDeletedTasks] = useState<CsmTask[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [scope, setScope] = useState<Scope>('mine')
   const [csms, setCsms] = useState<{ id: string; full_name: string }[]>([])
+  const [accountFilter, setAccountFilter] = useState<string | null>(() => searchParams.get('account'))
+  const [accountName, setAccountName] = useState<string | null>(null)
   const [showTrash, setShowTrash] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
@@ -43,24 +48,43 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
       .then(({ data }: any) => { if (data) setCsms(data.map((c: any) => ({ id: c.id, full_name: c.full_name ?? 'CSM' }))) })
   }, [db, canViewTeam])
 
-  /** Aplica o escopo (dono) a uma query de csm_tasks. */
-  const scopeQuery = useCallback((q: any) => (scope === 'all' ? q : q.eq('csm_id', scope === 'mine' ? userId : scope)), [scope, userId])
+  // Mantém o filtro em sincronia com a URL (?account=) ao navegar entre contas
+  useEffect(() => { setAccountFilter(searchParams.get('account')) }, [searchParams])
+
+  // Nome da conta filtrada (vinda de ?account= no link "Ver todas" do detalhe do cliente)
+  useEffect(() => {
+    if (!accountFilter) { setAccountName(null); return }
+    db.from('accounts').select('name').eq('id', accountFilter).maybeSingle()
+      .then(({ data }: any) => setAccountName(data?.name ?? null))
+  }, [db, accountFilter])
+
+  function clearAccountFilter() {
+    setAccountFilter(null)
+    router.replace('/atividades')
+  }
+
+  /** Aplica escopo (dono) + filtro de conta a uma query de csm_tasks. */
+  const applyFilters = useCallback((q: any) => {
+    let r = scope === 'all' ? q : q.eq('csm_id', scope === 'mine' ? userId : scope)
+    if (accountFilter) r = r.eq('account_id', accountFilter)
+    return r
+  }, [scope, userId, accountFilter])
 
   const loadDeletedTasks = useCallback(async () => {
-    const { data } = await scopeQuery(
+    const { data } = await applyFilters(
       db.from('csm_tasks').select('*, accounts(name)').not('deleted_at', 'is', null)
     ).order('deleted_at', { ascending: false }).limit(50)
     setDeletedTasks((data as CsmTask[]) ?? [])
-  }, [db, scopeQuery])
+  }, [db, applyFilters])
 
   const loadActiveTasks = useCallback(async () => {
     setLoading(true)
-    const { data } = await scopeQuery(
+    const { data } = await applyFilters(
       db.from('csm_tasks').select('*, accounts(name)').is('deleted_at', null)
     ).order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
     setTasks((data as CsmTask[]) ?? [])
     setLoading(false)
-  }, [db, scopeQuery])
+  }, [db, applyFilters])
 
   useEffect(() => {
     loadActiveTasks()
@@ -165,6 +189,17 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
                   />
                 </div>
               </div>
+            )}
+
+            {/* Filtro de conta (vindo de ?account= no detalhe do cliente) */}
+            {accountFilter && !showTrash && (
+              <span className="flex items-center gap-1.5 h-7 px-2.5 rounded-xl bg-accent/10 border border-accent/30 text-accent text-[10px] font-black uppercase">
+                <Building2 className="w-3 h-3" />
+                {accountName ?? 'Conta'}
+                <button onClick={clearAccountFilter} className="ml-0.5 hover:text-content-primary" aria-label="Remover filtro de conta">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
             )}
 
             {/* Lixeira toggle */}

@@ -5,6 +5,8 @@ import { PageContainer } from '@/components/ui/page-container'
 import { CheckSquare } from 'lucide-react'
 import { AtividadesClient } from './components/AtividadesClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AtividadesPage() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
