@@ -3,6 +3,13 @@
 import { Building2, DollarSign, Heart, AlertTriangle, CalendarClock, Star } from 'lucide-react'
 import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { useRouter } from 'next/navigation'
+import { classifyHealth } from '@/lib/health/classify'
+
+// Régua única → variante de cor do StatCard
+function healthVariant(score: number): 'emerald' | 'orange' | 'destructive' {
+  const band = classifyHealth(score).band
+  return band === 'saudavel' ? 'emerald' : band === 'atencao' ? 'orange' : 'destructive'
+}
 
 interface Props {
   totalAccounts: number
@@ -58,13 +65,13 @@ export function PortfolioHealthCard({
         suffix="%"
         status="Score Geral"
         iconName="Heart"
-        colorVariant={avgHealthScore >= 70 ? 'emerald' : avgHealthScore >= 40 ? 'orange' : 'destructive'}
+        colorVariant={healthVariant(avgHealthScore)}
         onClick={() => router.push('/dashboard?filter=health-low')}
       />
       <StatCardPremium
         title={"LOGOS EM RISCO"}
         value={atRisk}
-        status="Risk or Health < 40"
+        status="Health < 50"
         iconName="AlertTriangle"
         colorVariant={atRisk > 0 ? 'destructive' : 'default'}
         onClick={() => router.push('/risco')}

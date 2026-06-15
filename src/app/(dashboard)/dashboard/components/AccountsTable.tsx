@@ -16,6 +16,7 @@ type RiskAssessmentRow = Database['public']['Tables']['account_risk_assessments'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn, formatCurrency, formatNumber } from '@/lib/utils'
+import { classifyHealth, isAtRiskScore } from '@/lib/health/classify'
 import {
   Tooltip,
   TooltipContent,
@@ -46,9 +47,11 @@ function calculateAccountMetrics(account: AccountWithContracts) {
 }
 
 function HealthBadge({ score, isDiscrepant }: { score: number, isDiscrepant?: boolean }) {
-  const color = score >= 70 ? 'text-success' : score >= 40 ? 'text-primary' : 'text-destructive'
-  const bg = score >= 70 ? 'bg-success/10' : score >= 40 ? 'bg-primary/10' : 'bg-destructive/10'
-  const ring = score >= 70 ? 'ring-emerald-500/20' : score >= 40 ? 'ring-primary/20' : 'ring-destructive/20'
+  // Régua única (classifyHealth): saudável → verde, atenção → laranja, em risco/crítico → vermelho.
+  const band = classifyHealth(score).band
+  const color = band === 'saudavel' ? 'text-success' : band === 'atencao' ? 'text-primary' : 'text-destructive'
+  const bg = band === 'saudavel' ? 'bg-success/10' : band === 'atencao' ? 'bg-primary/10' : 'bg-destructive/10'
+  const ring = band === 'saudavel' ? 'ring-emerald-500/20' : band === 'atencao' ? 'ring-primary/20' : 'ring-destructive/20'
 
   return (
     <div className="flex items-center gap-2">
@@ -106,12 +109,9 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
 
   const matchesUrlFilter = (a: AccountWithContracts): boolean => {
     if (!activeFilter) return true
-    if (activeFilter === 'at-risk') {
-      const ra = Array.isArray(a.account_risk_assessments) ? a.account_risk_assessments : []
-      const aiRisk = ra.some((r: RiskAssessmentRow) => r.risk_score >= 80 || r.sentiment_label === 'at-risk' || r.sentiment_label === 'negative')
-      return a.health_score < 40 || aiRisk
-    }
-    if (activeFilter === 'health-low') return a.health_score < 40
+    // Régua única: "em risco" = health manual < 50 (IA é advisory, não filtra aqui).
+    if (activeFilter === 'at-risk') return isAtRiskScore(a.health_score)
+    if (activeFilter === 'health-low') return isAtRiskScore(a.health_score)
     if (activeFilter === 'renewals') {
       const in90 = Date.now() + 90 * 24 * 60 * 60 * 1000
       const contracts = Array.isArray(a.contracts) ? a.contracts : (a.contracts ? [a.contracts] : [])
@@ -132,7 +132,7 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
 
   const FILTER_LABELS: Record<string, string> = {
     'at-risk': 'Em risco',
-    'health-low': 'Health < 40',
+    'health-low': 'Health em risco (<50)',
     'renewals': 'Renovações ≤ 90d',
   }
   const scopeLabel = activeFilter

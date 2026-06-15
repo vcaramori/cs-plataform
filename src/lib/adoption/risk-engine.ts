@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import { classifyHealth, isAtRiskScore } from '@/lib/health/classify'
 
 export interface PlanSummary {
   plan_name: string
@@ -156,10 +157,11 @@ export async function getPortfolioSummary(
   const total = accounts.length
   const avgHealth = accounts.reduce((sum, a) => sum + Number(a.health_score), 0) / total
 
+  // Régua única (classifyHealth): saudável ≥70 · atenção 50–69 · em risco <50.
   const health_dist = {
-    healthy: accounts.filter(a => a.health_score >= 70).length,
-    attention: accounts.filter(a => a.health_score >= 40 && a.health_score < 70).length,
-    risk: accounts.filter(a => a.health_score < 40).length
+    healthy: accounts.filter(a => classifyHealth(a.health_score).band === 'saudavel').length,
+    attention: accounts.filter(a => classifyHealth(a.health_score).band === 'atencao').length,
+    risk: accounts.filter(a => isAtRiskScore(a.health_score)).length
   }
 
   // Calculate Downgrade Risk for each account with a plan > 1
@@ -184,10 +186,10 @@ export async function getPortfolioSummary(
     .sort((a, b) => (a.risk === 'high' ? -1 : 1))
     .slice(0, 5)
 
-  // Clientes em risco: health < 40 OU flagados pela IA OU com contrato expirado/churn
+  // Clientes em risco: health manual < 50 (régua única) OU flagados pela IA OU com contrato expirado/churn
   const healthRiskAccounts = accounts
-    .filter(a => Number(a.health_score) < 40)
-    .map(a => ({ name: a.name, health_score: Number(a.health_score), risk_reason: 'Health Score Crítico (<40)' }))
+    .filter(a => isAtRiskScore(a.health_score))
+    .map(a => ({ name: a.name, health_score: Number(a.health_score), risk_reason: `Health em risco (${classifyHealth(a.health_score).label})` }))
 
   const today = new Date()
   const todayISO = today.toISOString().slice(0, 10)
@@ -208,7 +210,7 @@ export async function getPortfolioSummary(
       .map((c: any) => c.account_id)
   )
 
-  const healthRiskIds = new Set(accounts.filter(a => Number(a.health_score) < 40).map(a => a.id))
+  const healthRiskIds = new Set(accounts.filter(a => isAtRiskScore(a.health_score)).map(a => a.id))
 
   const aiRiskAccounts = (accounts as any[])
     .filter(a => {

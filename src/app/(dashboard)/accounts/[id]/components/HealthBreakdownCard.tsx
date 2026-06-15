@@ -62,8 +62,9 @@ export function HealthBreakdownCard({ breakdown, status, classifiedAt }: Props) 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[200px] text-content-secondary dark:text-content-secondary">
-            Sem dados disponíveis
+          <div className="flex flex-col items-center justify-center h-[200px] text-center gap-1.5 px-4 text-content-secondary dark:text-content-secondary">
+            <span className="text-sm font-bold">Automático — aguardando processamento</span>
+            <span className="text-xs leading-snug">Score ponderado (SLA / NPS / Adoção / Relacionamento) ainda não calculado. A fonte da verdade é o <strong>Health manual</strong> do card ao lado.</span>
           </div>
         </CardContent>
       </Card>

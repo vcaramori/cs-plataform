@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { classifyHealth } from '@/lib/health/classify'
 import { RiskCurationControl } from '@/components/risk/RiskCurationControl'
 import {
   LEVEL_LABEL, LEVEL_BADGE, TREATMENT_LABEL, TREATMENT_BADGE, brlCompact,
@@ -78,8 +79,13 @@ export function RiskTable({ accounts, showOwner, onChanged }: { accounts: Accoun
               <tr key={a.id} className="border-b border-border-divider/60 hover:bg-muted/30 align-middle">
                 <td className="py-2.5 pr-3"><span className="font-extrabold text-[12px] uppercase text-content-primary">{a.name}</span>{showOwner && a.owner_name && <span className="block text-[9px] text-content-secondary uppercase">{a.owner_name}</span>}</td>
                 <td className="py-2.5 pr-3"><Badge className={cn('text-[9px] uppercase border-none', LEVEL_BADGE[a.riskLevel])}>{LEVEL_LABEL[a.riskLevel]}</Badge></td>
-                <td className="py-2.5 pr-3 text-center"><span className={cn('font-black', (a.health ?? 100) < 40 ? 'text-red-500' : (a.health ?? 100) < 60 ? 'text-amber-500' : 'text-content-primary')}>{a.health ?? '—'}</span></td>
-                <td className="py-2.5 pr-3 text-center font-black text-content-primary">{a.aiRisk ?? '—'}</td>
+                <td className="py-2.5 pr-3 text-center"><span className={cn('font-black', a.health == null ? 'text-content-secondary' : classifyHealth(a.health).textClass)}>{a.health ?? '—'}</span></td>
+                <td className="py-2.5 pr-3 text-center">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="font-black text-content-primary">{a.aiRisk ?? '—'}</span>
+                    {a.aiFlag && <span className="text-[8px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">revisar</span>}
+                  </div>
+                </td>
                 <td className="py-2.5 pr-3 max-w-[220px]"><span className="text-[11px] text-content-secondary line-clamp-1">{a.reasons[0] ?? '—'}</span></td>
                 <td className="py-2.5 pr-3 text-right text-[11px] text-content-secondary">{a.arr > 0 ? brlCompact(a.arr) : '—'}</td>
                 <td className="py-2.5 pr-3 text-[11px] text-content-secondary">{a.renewalDays != null && a.renewalDays >= 0 ? `${a.renewalDays}d` : '—'}</td>

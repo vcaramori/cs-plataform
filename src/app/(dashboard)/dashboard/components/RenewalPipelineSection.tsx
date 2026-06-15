@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { SectionHeader } from '@/components/ui/section-header'
 import { Loader2, Calendar, TrendingUp, DollarSign, ChevronDown, ChevronRight } from 'lucide-react'
+import { classifyHealth } from '@/lib/health/classify'
 
 interface RenewalCard {
   account_id: string
@@ -101,7 +102,7 @@ function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
         <div className="flex items-center gap-2.5 text-[9px]">
           <div className="flex items-center gap-0.5">
             <TrendingUp className="w-2.5 h-2.5 text-content-secondary shrink-0" />
-            <span className={card.health_score >= 70 ? 'text-emerald-600 font-extrabold' : card.health_score >= 50 ? 'text-amber-600 font-extrabold' : 'text-red-600 font-extrabold'}>
+            <span className={`font-extrabold ${classifyHealth(card.health_score).textClass}`}>
               {card.health_score}%
             </span>
             <span className="text-content-secondary/70">health</span>

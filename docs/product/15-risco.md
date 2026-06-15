@@ -4,17 +4,29 @@
 
 `/risco` é o painel nº 1 da retenção: responde num olhar **quanto de receita está em risco, quantas contas e em que severidade, onde está concentrado, o que está causando e o que está sendo feito**. Antes era apenas uma lista; agora é um cockpit completo, no padrão do Cockpit de Renovações.
 
+## Régua única de health (fonte da verdade = score manual)
+
+Toda a plataforma classifica o health do cliente por **uma única régua** em `src/lib/health/classify.ts` (`classifyHealth`/`isAtRiskScore`). Não há mais thresholds inline espalhados (antes havia ~5 réguas divergentes que faziam as telas mostrarem números diferentes).
+
+- **Régua canônica:** `≥70 saudável · 50–69 atenção · 40–49 em risco · <40 crítico`. **"Em risco" = score < 50** (bandas *em risco* + *crítico*).
+- **Fonte da verdade = `accounts.health_score` (MANUAL).** O `health_score_v2` (ponderado, cron) é **advisory** e **não** entra no headline/classificação. Os cards "Health Score Ponderado" e mini-gauges degradam para "Automático — aguardando processamento" enquanto não calculados.
+- **Consumidores da régua única:** dashboard (`portfolio-kpis`, `PortfolioHealthCard`, `AccountsTable`, `RenewalPipelineSection`), gauge da conta (`HealthScoreCard`), edição manual (`HealthScoreEditModal`), home (`risk-engine`, `home-priorities`), cockpit (`classifyAccountRisk`, `RiskKpis`, `RiskTable`) e o resumo do chat de IA.
+
 ## Risco Unificado (núcleo)
 
-`src/lib/risk/risk-cockpit.ts` (`classifyAccountRisk`) consolida os sinais fragmentados num único perfil por conta:
+`src/lib/risk/risk-cockpit.ts` (`classifyAccountRisk`) consolida os sinais num único perfil por conta:
 
-- **Entradas:** `health_score_v2`, última `account_risk_assessments` (risk_score, sentiment, reasoning), `proactive_alerts` ativos de risco (churn, silêncio, renovação, detrator NPS, anomalia de adoção, playbook), `account_risks` (CS Ops), `contracts` (arr, renovação), última curadoria.
-- **`risk_level`** = pior nível entre os sinais: `critical` / `high` / `medium` / `low` / `none`. (`health_score_v2 = 0/null` é tratado como **não computado**, não como crítico — evita inundar o portfólio de falsos críticos.)
-- **`reasons[]`**: drivers legíveis ("Health crítico", "Risco IA 85", "Cliente silencioso", "Detrator NPS sem ação", "Renovação em 18d"…).
-- **`arrAtRisk`**: ARR ativo da conta quando em risco.
-- **`treatment`** (`pendente`/`em_tratamento`/`tratado`): derivado da `csm_task` vinculada ao alerta (mesma lógica da Central de Alertas). Curadoria `false_positive` rebaixa/oculta.
+- **Entradas:** `health_score` (manual), última `account_risk_assessments` (risk_score, sentiment, reasoning), `proactive_alerts` ativos de risco (churn, silêncio, renovação, detrator NPS, anomalia de adoção, playbook), `account_risks` (CS Ops), `contracts` (arr, renovação), última curadoria.
+- **`risk_level`** = pior nível entre os sinais: `critical` / `high` / `medium` / `low` / `none`. Mapeamento do health manual: crítico→`critical`, em risco→`high`, atenção→`low` (watch, **não** conta como "em risco" = `medium`+).
+- **IA = camada de ALERTA, não escala o risco sozinho.** `ai_risk_score`/`ai_sentiment` setam `aiFlag` (sobe a conta para `low`/"watch" e exibe o chip **"revisar"** na triagem), mas **não inflam** a contagem de "em risco". O CSM avalia e, ao confirmar, cria um `account_risks`/alerta — aí sim escala. Curadoria `false_positive` rebaixa/oculta.
+- **`reasons[]`**: drivers legíveis ("Health em risco", "IA sinaliza risco — revisar", "Cliente silencioso", "Renovação em 18d"…).
+- **`arrAtRisk`**: ARR ativo da conta quando em risco. **`treatment`**: derivado da `csm_task` vinculada ao alerta.
 
-`buildCockpitAggregates` produz os KPIs e as distribuições (segmento, CSM, drivers).
+`buildCockpitAggregates` produz os KPIs e as distribuições (segmento, CSM, drivers). **Nota:** o KPI "Contas em risco" do Cockpit é um **superset** do "Logos em risco" do Dashboard — ambos usam a mesma régua de health (<50), mas o Cockpit soma também risco por alertas ativos, riscos manuais e renovação ≤90d.
+
+## Pipeline automático (crons)
+
+Os scores automáticos rodam via pg_cron → edge functions, usando `net.http_post` (extensão **`pg_net`**, habilitada). `cron-shadow-score-weekly` (seg 8h UTC) gera o shadow/IA — a **camada de alerta**. O `cron-health-score-daily` (4h UTC) recalcularia o `health_score_v2`, mas a edge function correspondente ainda **não está deployada** → o v2 segue dormente (ok: é advisory). Sem `pg_net` (estado anterior) ambos falhavam com `schema "net" does not exist`.
 
 ## API
 
@@ -34,8 +46,8 @@ Botão **"Reavaliar risco"** roda o motor de alertas (`/api/alerts/evaluate`) e 
 ## Estados vazios elegantes
 
 - Sem contratos → ARR em risco "R$ 0" + dica "Cadastre contratos"; renovações 0.
-- `health_score_v2 = 0` (não computado) → não vira crítico; Health médio "—".
-- `health_breakdown` vazio → drivers vêm de alertas+IA (quando o breakdown for populado, adicionar painel por dimensão SLA/NPS/Adoção/Relacionamento).
+- `health_score` ausente → conta como "Sem dados" (não vira crítico). Health médio do cockpit usa o score **manual**.
+- `health_score_v2`/`health_breakdown` vazios → são advisory; cards do v2 mostram "Automático — aguardando processamento". Drivers do risco vêm do health manual + alertas + IA (flag).
 - Tendência com <2 pontos → "histórico insuficiente".
 
 ## Reúso
