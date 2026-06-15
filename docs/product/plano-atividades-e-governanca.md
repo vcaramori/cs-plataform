@@ -392,6 +392,15 @@ Seção "Atividades" na coluna 2 da página de conta (`AccountDetailPageClient.t
 - **Prévia da descrição** exibida nos cards (`TaskCard`, `line-clamp-2`) e nas linhas do widget da conta (`line-clamp-1`).
 - **Detalhe do cliente:** no `AccountActivitiesWidget`, **clicar na atividade abre o modal** de detalhe (`TaskDetailSheet`, reusado), com "Editar" (`CreateTaskModal`) e mudança de status; o select passou a trazer `*, accounts(name)`.
 
+## Atualização — Indicadores no topo + filtro de cliente próprio (2026-06-15)
+
+Feedback: a tela parecia "só a lista com um filtro" e o recorte por cliente só existia ao chegar pelo deep-link `?account=` (botão "Ver todas" do detalhe da conta).
+
+- **Faixa de indicadores** (`AtividadesKpis.tsx`, reusa `StatCardPremium`): **Abertas / Atrasadas / Para hoje / Esta semana** (próximos 7 dias). Computados em `useMemo` a partir do `tasks` já carregado (sem query extra), então **refletem o escopo de CSM e o cliente filtrados**. Escondidos na Lixeira; skeleton durante o carregamento.
+- **Filtro de cliente permanente**: o chip que só aparecia com `?account=` virou um `SearchableSelect` fixo ao lado do filtro de CSM. Opções = "Todos os clientes" + clientes com atividades no escopo atual (`loadAccountOptions` — query leve `account_id, accounts(name)` com escopo aplicado, dedup client-side). O cliente vindo do deep-link é injetado na lista mesmo sem tarefas listadas; a URL (`?account=`) é mantida em sincronia pelo `handleAccountChange` (preserva o link "Ver todas").
+- **Refactor:** `applyFilters` foi dividido em `applyScope` (só dono) + filtro de conta, para o seletor de cliente listar opções independentes do recorte de conta atual.
+- **Escopo padrão role-aware:** o estado inicial de `scope` passou a ser `canViewTeam ? 'all' : 'mine'` — liderança entra em "Toda a equipe" (portfólio inteiro), CSM em "Minhas atividades". Coerente com a Home (`isLeadershipRole`) e evita a tela zerada para o gestor dono de 0 contas.
+
 ## Verificação End-to-End
 
 1. `npx tsc --noEmit --skipLibCheck` — zero erros

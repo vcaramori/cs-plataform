@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { AtividadesListView } from './AtividadesListView'
 import { AtividadesKanbanView } from './AtividadesKanbanView'
+import { AtividadesKpis } from './AtividadesKpis'
 import { CreateTaskModal } from './CreateTaskModal'
 import { TaskDetailSheet } from './TaskDetailSheet'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { List, LayoutGrid, Plus, Trash2, RotateCcw, Users, Building2, X } from 'lucide-react'
+import { List, LayoutGrid, Plus, Trash2, RotateCcw, Users, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CsmTask, CsmTaskStatus } from '@/lib/supabase/types'
 
@@ -30,10 +31,12 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   const [deletedTasks, setDeletedTasks] = useState<CsmTask[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [scope, setScope] = useState<Scope>('mine')
+  // Liderança (view_team) entra vendo o portfólio inteiro; CSM, a própria carteira.
+  const [scope, setScope] = useState<Scope>(() => (canViewTeam ? 'all' : 'mine'))
   const [csms, setCsms] = useState<{ id: string; full_name: string }[]>([])
   const [accountFilter, setAccountFilter] = useState<string | null>(() => searchParams.get('account'))
   const [accountName, setAccountName] = useState<string | null>(null)
+  const [accountOptions, setAccountOptions] = useState<{ id: string; name: string }[]>([])
   const [showTrash, setShowTrash] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
@@ -58,17 +61,43 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
       .then(({ data }: any) => setAccountName(data?.name ?? null))
   }, [db, accountFilter])
 
-  function clearAccountFilter() {
-    setAccountFilter(null)
-    router.replace('/atividades')
+  /** Troca o cliente filtrado mantendo a URL (?account=) em sincronia. */
+  function handleAccountChange(value: string) {
+    if (value === 'all') {
+      setAccountFilter(null)
+      router.replace('/atividades')
+    } else {
+      setAccountFilter(value)
+      router.replace(`/atividades?account=${value}`)
+    }
   }
 
-  /** Aplica escopo (dono) + filtro de conta a uma query de csm_tasks. */
+  /** Aplica apenas o escopo (dono) a uma query de csm_tasks. */
+  const applyScope = useCallback((q: any) =>
+    scope === 'all' ? q : q.eq('csm_id', scope === 'mine' ? userId : scope)
+  , [scope, userId])
+
+  /** Aplica escopo (dono) + filtro de cliente a uma query de csm_tasks. */
   const applyFilters = useCallback((q: any) => {
-    let r = scope === 'all' ? q : q.eq('csm_id', scope === 'mine' ? userId : scope)
-    if (accountFilter) r = r.eq('account_id', accountFilter)
-    return r
-  }, [scope, userId, accountFilter])
+    const r = applyScope(q)
+    return accountFilter ? r.eq('account_id', accountFilter) : r
+  }, [applyScope, accountFilter])
+
+  /** Clientes que têm atividades no escopo atual — alimenta o filtro de cliente. */
+  const loadAccountOptions = useCallback(async () => {
+    const { data } = await applyScope(
+      db.from('csm_tasks').select('account_id, accounts(name)').is('deleted_at', null).not('account_id', 'is', null)
+    )
+    const map = new Map<string, string>()
+    ;(data ?? []).forEach((r: any) => {
+      if (r.account_id && !map.has(r.account_id)) map.set(r.account_id, r.accounts?.name ?? 'Cliente')
+    })
+    setAccountOptions(
+      [...map.entries()]
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    )
+  }, [db, applyScope])
 
   const loadDeletedTasks = useCallback(async () => {
     const { data } = await applyFilters(
@@ -89,7 +118,37 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   useEffect(() => {
     loadActiveTasks()
     loadDeletedTasks()
-  }, [loadActiveTasks, loadDeletedTasks])
+    loadAccountOptions()
+  }, [loadActiveTasks, loadDeletedTasks, loadAccountOptions])
+
+  // Indicadores do topo — refletem o escopo + cliente já filtrados em `tasks`.
+  const kpis = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let open = 0, overdue = 0, dueToday = 0, week = 0
+    tasks.forEach(t => {
+      if (t.status === 'completed' || t.status === 'cancelled') return
+      open++
+      if (!t.due_date) return
+      const due = new Date(t.due_date + 'T00:00:00')
+      const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000)
+      if (diff < 0) overdue++
+      else if (diff === 0) dueToday++
+      else if (diff <= 7) week++
+    })
+    return { open, overdue, dueToday, week }
+  }, [tasks])
+
+  // Opções do filtro de cliente: "Todos" + clientes com atividades no escopo
+  // (garante que o cliente vindo de ?account= apareça mesmo sem tarefas listadas).
+  const accountSelectOptions = useMemo(() => {
+    const list = [...accountOptions]
+    if (accountFilter && !list.some(a => a.id === accountFilter)) {
+      list.push({ id: accountFilter, name: accountName ?? 'Cliente' })
+      list.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return [{ label: 'Todos os clientes', value: 'all' }, ...list.map(a => ({ label: a.name, value: a.id }))]
+  }, [accountOptions, accountFilter, accountName])
 
   // Realtime
   useEffect(() => {
@@ -106,11 +165,12 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
       }, () => {
         loadActiveTasks()
         loadDeletedTasks()
+        loadAccountOptions()
       })
       .subscribe()
 
     return () => { (supabase as any).removeChannel(channel) }
-  }, [supabase, userId, scope, loadActiveTasks, loadDeletedTasks])
+  }, [supabase, userId, scope, loadActiveTasks, loadDeletedTasks, loadAccountOptions])
 
   async function handleStatusChange(id: string, status: CsmTaskStatus) {
     const payload: Record<string, any> = { status }
@@ -156,6 +216,17 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Indicadores do topo (escondidos na lixeira) */}
+      {!showTrash && (
+        loading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />)}
+          </div>
+        ) : (
+          <AtividadesKpis open={kpis.open} overdue={kpis.overdue} dueToday={kpis.dueToday} week={kpis.week} />
+        )
+      )}
+
       {/* Toolbar (fixa no topo ao rolar) */}
       <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-background/85 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-border-divider bg-surface-card/70 shadow-premium px-3 py-2">
@@ -191,15 +262,20 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
               </div>
             )}
 
-            {/* Filtro de conta (vindo de ?account= no detalhe do cliente) */}
-            {accountFilter && !showTrash && (
-              <span className="flex items-center gap-1.5 h-7 px-2.5 rounded-xl bg-accent/10 border border-accent/30 text-accent text-[10px] font-black uppercase">
-                <Building2 className="w-3 h-3" />
-                {accountName ?? 'Conta'}
-                <button onClick={clearAccountFilter} className="ml-0.5 hover:text-content-primary" aria-label="Remover filtro de conta">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
+            {/* Filtro de cliente */}
+            {!showTrash && (
+              <div className="flex items-center gap-1.5">
+                <Building2 className={cn('w-3.5 h-3.5', accountFilter ? 'text-accent' : 'text-content-secondary')} />
+                <div className="w-52">
+                  <SearchableSelect
+                    value={accountFilter ?? 'all'}
+                    onValueChange={handleAccountChange}
+                    options={accountSelectOptions}
+                    placeholder="Filtrar por cliente"
+                    emptyMessage="Nenhum cliente com atividades."
+                  />
+                </div>
+              </div>
             )}
 
             {/* Lixeira toggle */}

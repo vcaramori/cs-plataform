@@ -169,6 +169,14 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### ✅ Atividades — Indicadores no topo + filtro de cliente próprio (2026-06-15)
+
+A tela `/atividades` ainda parecia "só a lista com um filtro" porque (a) não havia visão agregada e (b) o recorte por cliente só existia quando se chegava pelo deep-link `?account=` (botão "Ver todas" no detalhe da conta). Resolvido em [AtividadesClient.tsx](src/app/(dashboard)/atividades/components/AtividadesClient.tsx):
+
+- **Faixa de indicadores** (novo [AtividadesKpis.tsx](src/app/(dashboard)/atividades/components/AtividadesKpis.tsx), reusa `StatCardPremium`): **Abertas**, **Atrasadas**, **Para hoje** e **Esta semana** (próximos 7 dias). Os números **refletem o escopo (CSM) e o cliente filtrados** — derivados do mesmo `tasks` já carregado (sem query extra). Escondidos na Lixeira.
+- **Filtro de cliente permanente**: o chip que só aparecia via `?account=` virou um **`SearchableSelect` sempre visível** (ao lado do filtro de CSM) com "Todos os clientes" + os clientes que **têm atividades no escopo atual** (`loadAccountOptions`, dedup client-side; o cliente vindo do deep-link é injetado mesmo sem tarefas listadas). A URL (`?account=`) é mantida em sincronia, então o link do detalhe da conta continua funcionando.
+- **Escopo padrão role-aware**: liderança (`view_team`) entra vendo **"Toda a equipe"** (portfólio inteiro); CSM segue em "Minhas atividades". Alinha com a Home e evita que o gestor (dono de 0 contas) veja a tela zerada por padrão.
+
 ### 🛠️ Estabilização CS Ops — Correções de Dados e Visibilidade (2026-05-12)
 
 Em resposta aos problemas de dados vazios e falta de visibilidade reportados no Cockpit de CS Ops, foram realizadas as seguintes correções:
