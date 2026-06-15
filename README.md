@@ -169,6 +169,14 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### ✏️ Power Map — Editar stakeholder ao clicar no card (2026-06-15)
+
+Não havia como **editar** um stakeholder já cadastrado (corrigir cargo, influência, e-mail, etc.) — só adicionar, convidar e desligar. Resolvido em [ContactsPowerMap.tsx](src/app/(dashboard)/accounts/[id]/components/ContactsPowerMap.tsx) + [AddContactModal.tsx](src/app/(dashboard)/accounts/[id]/components/AddContactModal.tsx):
+
+- **Clique no card abre o modal em modo de edição**, já preenchido (nome dividido em nome/sobrenome, cargo, senioridade, influência remapeada PT↔EN, decisor, contatos). Ícone `Pencil` aparece no hover do card como afordância.
+- O `AddContactModal` virou add/edit: com `contact` faz `PATCH /api/contacts/[id]`, sem ele faz `POST` como antes (opcionais vazios viram `''` no PATCH, que não aceita `null`). Callback `onSaved` faz **upsert no estado local** → add e edição refletem na hora (não dependem só do `router.refresh()`).
+- Cliques em **Convidar/Desligar** e nos links de contato dão `stopPropagation` para não abrir a edição.
+
 ### ✅ Atividades — Indicadores no topo + filtro de cliente próprio (2026-06-15)
 
 A tela `/atividades` ainda parecia "só a lista com um filtro" porque (a) não havia visão agregada e (b) o recorte por cliente só existia quando se chegava pelo deep-link `?account=` (botão "Ver todas" no detalhe da conta). Resolvido em [AtividadesClient.tsx](src/app/(dashboard)/atividades/components/AtividadesClient.tsx):

@@ -376,6 +376,9 @@ interface Props {
 | Editar Contrato | Clique em "Editar Contrato" no `ContractDetailModal` | Abre `EditContractDialog` |
 | Filtrar por Estratégia | Clique em aba "Estratégia" | Mostra apenas interações + contratos (isStrategic=true) |
 | Filtrar por Atendimento | Clique em aba "Atendimento & NPS" | Mostra apenas tickets + NPS (exclui contratos) |
+| Adicionar stakeholder | Clique em "Adicionar" no Mapa de Influência | Abre `AddContactModal` (form vazio) → `POST /api/contacts` |
+| **Editar stakeholder** | **Clique no card do stakeholder** (afordância: lápis no hover) | Abre `AddContactModal` preenchido → `PATCH /api/contacts/[id]`; upsert otimista no card. Cliques em Convidar/Desligar/contatos não disparam (stopPropagation) |
+| Desligar stakeholder | Clique em "Desligar" no card | Abre `DepartureDialog` → `PATCH` com `departed_at` |
 
 ---
 

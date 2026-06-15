@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { Loader2, UserPlus } from 'lucide-react'
+import { Loader2, UserPlus, Pencil } from 'lucide-react'
 import { MaskedInput } from '@/components/ui/masked-input'
 import { toast } from 'sonner'
 
@@ -36,13 +36,41 @@ const influenceMap: Record<string, string> = {
   'Bloqueador': 'Blocker',
 }
 
-export function AddContactModal({ open, onClose, accountId }: {
+// Inverso: o banco guarda em inglês; o formulário usa os rótulos em PT
+const influenceReverseMap: Record<string, string> = {
+  Champion: 'Campeão',
+  Neutral: 'Neutro',
+  Detractor: 'Detrator',
+  Blocker: 'Bloqueador',
+}
+
+const SENIORITY_OPTIONS = ['C-Level', 'VP', 'Director', 'Manager', 'IC']
+
+/** Contato existente para edição (campos relevantes do registro de `contacts`). */
+interface EditableContact {
+  id: string
+  name: string
+  role: string
+  seniority: string
+  influence_level: string
+  decision_maker: boolean
+  email?: string | null
+  phone?: string | null
+  linkedin_url?: string | null
+}
+
+export function AddContactModal({ open, onClose, accountId, contact, onSaved }: {
   open: boolean
   onClose: () => void
   accountId: string
+  /** Quando presente, o modal abre em modo de edição (PATCH). */
+  contact?: EditableContact | null
+  /** Recebe o registro salvo (criado ou editado) para atualização otimista do pai. */
+  onSaved?: (saved: any) => void
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const isEdit = !!contact?.id
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as any,
@@ -56,30 +84,59 @@ export function AddContactModal({ open, onClose, accountId }: {
     },
   })
 
+  // Preenche (edição) ou limpa (adição) o formulário ao abrir
+  useEffect(() => {
+    if (!open) return
+    if (contact) {
+      const parts = contact.name.trim().split(/\s+/)
+      reset({
+        firstName: parts[0] ?? '',
+        lastName: parts.slice(1).join(' '),
+        role: contact.role ?? '',
+        seniority: (SENIORITY_OPTIONS.includes(contact.seniority) ? contact.seniority : 'Manager') as FormData['seniority'],
+        influence_level: (influenceReverseMap[contact.influence_level] ?? 'Neutro') as FormData['influence_level'],
+        email: contact.email ?? '',
+        phone: contact.phone ?? '',
+        linkedin_url: contact.linkedin_url ?? '',
+        decision_maker: !!contact.decision_maker,
+      })
+    } else {
+      reset({
+        firstName: '', lastName: '', role: '',
+        seniority: 'Manager', influence_level: 'Neutro', decision_maker: false,
+        email: '', phone: '', linkedin_url: '',
+      })
+    }
+  }, [open, contact, reset])
+
   async function onSubmit(data: FormData) {
     setLoading(true)
     try {
-      const res = await fetch('/api/contacts', {
-        method: 'POST',
+      // PATCH não aceita null nos opcionais (só ''); POST aceita null.
+      const emptyVal = isEdit ? '' : null
+      const payload = {
+        name: `${data.firstName} ${data.lastName}`.trim(),
+        role: data.role,
+        seniority: data.seniority,
+        influence_level: influenceMap[data.influence_level] ?? 'Neutral',
+        decision_maker: data.decision_maker,
+        email: data.email?.toLowerCase() || emptyVal,
+        phone: data.phone || emptyVal,
+        linkedin_url: data.linkedin_url || emptyVal,
+      }
+      const res = await fetch(isEdit ? `/api/contacts/${contact!.id}` : '/api/contacts', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          account_id: accountId,
-          name: `${data.firstName} ${data.lastName}`.trim(),
-          role: data.role,
-          seniority: data.seniority,
-          influence_level: influenceMap[data.influence_level] ?? 'Neutral',
-          decision_maker: data.decision_maker,
-          email: data.email?.toLowerCase() || null,
-          phone: data.phone || null,
-          linkedin_url: data.linkedin_url || null,
-        }),
+        body: JSON.stringify(isEdit ? payload : { account_id: accountId, ...payload }),
       })
       if (!res.ok) {
         const err = await res.json()
         const msg = typeof err.error === 'string' ? err.error : JSON.stringify(err.error)
         throw new Error(msg ?? 'Erro ao salvar')
       }
-      toast.success('Stakeholder adicionado!')
+      const saved = await res.json()
+      toast.success(isEdit ? 'Stakeholder atualizado!' : 'Stakeholder adicionado!')
+      onSaved?.(saved)
       reset()
       onClose()
       router.refresh()
@@ -96,11 +153,11 @@ export function AddContactModal({ open, onClose, accountId }: {
         <DialogHeader className="p-8 border-b border-border-divider dark:border-slate-800 bg-surface-background dark:bg-slate-800/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 flex items-center justify-center">
-              <UserPlus className="w-6 h-6 text-plannera-orange" />
+              {isEdit ? <Pencil className="w-6 h-6 text-plannera-orange" /> : <UserPlus className="w-6 h-6 text-plannera-orange" />}
             </div>
             <div>
               <DialogTitle className="text-xl font-black uppercase tracking-tighter text-[#2d3558] dark:text-white">
-                Adicionar Stakeholder
+                {isEdit ? 'Editar Stakeholder' : 'Adicionar Stakeholder'}
               </DialogTitle>
               <DialogDescription className="text-content-secondary dark:text-content-secondary text-xs font-medium mt-1">
                 Mapa de Influência
@@ -238,7 +295,7 @@ export function AddContactModal({ open, onClose, accountId }: {
               className="px-6 rounded-xl shadow-lg bg-plannera-orange hover:bg-plannera-orange/90 text-white font-black uppercase tracking-widest gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Salvar Stakeholder
+              {isEdit ? 'Salvar alterações' : 'Salvar Stakeholder'}
             </Button>
           </div>
         </form>

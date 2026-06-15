@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { ElementType } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Crown, ShieldAlert, User, ShieldCheck, UserPlus, Mail, Phone, Link2, ExternalLink, UserX, AlertTriangle, Globe, Clock, CheckCircle2, XCircle } from 'lucide-react'
+import { Crown, ShieldAlert, User, ShieldCheck, UserPlus, Mail, Phone, Link2, ExternalLink, UserX, AlertTriangle, Globe, Clock, CheckCircle2, XCircle, Pencil } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -172,12 +172,29 @@ export function ContactsPowerMap({
 }) {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts)
   const [portalInvites, setPortalInvites] = useState<any[]>(initialInvites)
-  const [addOpen, setAddOpen] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editContact, setEditContact] = useState<Contact | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [departureTarget, setDepartureTarget] = useState<Contact | null>(null)
   const [inviteTarget, setInviteTarget] = useState<Contact | null>(null)
 
   const visible = expanded ? contacts : contacts.slice(0, 4)
+
+  function openAdd() { setEditContact(null); setModalOpen(true) }
+  function openEdit(c: Contact) { setEditContact(c); setModalOpen(true) }
+
+  // Upsert no estado local — reflete add e edição na hora (o useState(initialContacts) não re-sincroniza com a prop após router.refresh())
+  function handleContactSaved(saved: Contact) {
+    setContacts(prev => {
+      const idx = prev.findIndex(c => c.id === saved.id)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = { ...next[idx], ...saved }
+        return next
+      }
+      return [...prev, saved]
+    })
+  }
 
   function handleDepartureSuccess(id: string, reason: string) {
     setContacts(prev => prev.map(c =>
@@ -205,7 +222,13 @@ export function ContactsPowerMap({
 
   return (
     <>
-      <AddContactModal open={addOpen} onClose={() => setAddOpen(false)} accountId={accountId} />
+      <AddContactModal
+        open={modalOpen}
+        contact={editContact}
+        onClose={() => setModalOpen(false)}
+        accountId={accountId}
+        onSaved={handleContactSaved}
+      />
       {departureTarget && (
         <DepartureDialog
           contact={departureTarget}
@@ -237,7 +260,7 @@ export function ContactsPowerMap({
               Nenhum stakeholder mapeado
             </p>
             <button
-              onClick={() => setAddOpen(true)}
+              onClick={openAdd}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 text-plannera-orange text-[10px] font-bold uppercase tracking-wide hover:bg-plannera-orange/20 transition-all"
             >
               <UserPlus className="w-3.5 h-3.5" />
@@ -266,14 +289,18 @@ export function ContactsPowerMap({
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: idx * 0.05 }}
                   >
-                    <Card className={cn(
-                      'group transition-all duration-200 overflow-hidden',
-                      isDeparted
-                        ? isHighRisk
-                          ? 'border-red-500/30 bg-red-500/5'
-                          : 'opacity-60 grayscale'
-                        : 'hover:bg-surface-background'
-                    )}>
+                    <Card
+                      onClick={() => openEdit(c)}
+                      title="Clique para editar"
+                      className={cn(
+                        'group transition-all duration-200 overflow-hidden cursor-pointer',
+                        isDeparted
+                          ? isHighRisk
+                            ? 'border-red-500/30 bg-red-500/5'
+                            : 'opacity-60 grayscale'
+                          : 'hover:bg-surface-background'
+                      )}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           {/* Avatar */}
@@ -315,6 +342,9 @@ export function ContactsPowerMap({
                                 {c.name}
                               </span>
                               <div className="flex items-center gap-1.5 shrink-0">
+                                {!isDeparted && (
+                                  <Pencil className="w-3 h-3 text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
                                 {isDeparted ? (
                                   <span className={cn(
                                     'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ring-1 ring-inset',
@@ -404,7 +434,7 @@ export function ContactsPowerMap({
                                 {/* Badge portal ou botão convidar */}
                                 {inviteConfig && InviteIcon ? (
                                   <button
-                                    onClick={() => setInviteTarget(c)}
+                                    onClick={(e) => { e.stopPropagation(); setInviteTarget(c) }}
                                     className={cn(
                                       'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide transition-colors',
                                       inviteConfig.color
@@ -415,7 +445,7 @@ export function ContactsPowerMap({
                                   </button>
                                 ) : c.email ? (
                                   <button
-                                    onClick={() => setInviteTarget(c)}
+                                    onClick={(e) => { e.stopPropagation(); setInviteTarget(c) }}
                                     className="inline-flex items-center gap-1 text-[9px] font-bold text-plannera-ds hover:text-plannera-ds/80 transition-colors uppercase tracking-wide"
                                   >
                                     <Globe className="w-3 h-3" />
@@ -424,7 +454,7 @@ export function ContactsPowerMap({
                                 ) : null}
 
                                 <button
-                                  onClick={() => setDepartureTarget(c)}
+                                  onClick={(e) => { e.stopPropagation(); setDepartureTarget(c) }}
                                   className="inline-flex items-center gap-1 text-[9px] font-bold text-content-secondary hover:text-red-500 transition-colors uppercase tracking-wide"
                                 >
                                   <UserX className="w-3 h-3" />
@@ -451,7 +481,7 @@ export function ContactsPowerMap({
                 </button>
               )}
               <button
-                onClick={() => setAddOpen(true)}
+                onClick={openAdd}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-plannera-orange/10 border border-plannera-orange/20 text-plannera-orange hover:bg-plannera-orange/20 transition-all text-[10px] font-bold uppercase tracking-wide whitespace-nowrap"
               >
                 <UserPlus className="w-3.5 h-3.5" />
