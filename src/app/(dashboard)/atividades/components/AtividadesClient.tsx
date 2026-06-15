@@ -7,7 +7,8 @@ import { AtividadesListView } from './AtividadesListView'
 import { AtividadesKanbanView } from './AtividadesKanbanView'
 import { CreateTaskModal } from './CreateTaskModal'
 import { TaskDetailSheet } from './TaskDetailSheet'
-import { List, LayoutGrid, Plus, Users, User, Trash2, RotateCcw } from 'lucide-react'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { List, LayoutGrid, Plus, Trash2, RotateCcw, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CsmTask, CsmTaskStatus } from '@/lib/supabase/types'
 
@@ -17,7 +18,8 @@ interface Props {
 }
 
 type ViewMode = 'list' | 'kanban'
-type TeamFilter = 'mine' | 'team'
+/** Escopo: 'mine' = minhas; 'all' = toda a equipe; ou um csm_id específico. */
+type Scope = string
 
 export function AtividadesClient({ userId, canViewTeam }: Props) {
   const supabase = getSupabaseBrowserClient()
@@ -25,7 +27,8 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
   const [deletedTasks, setDeletedTasks] = useState<CsmTask[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>('mine')
+  const [scope, setScope] = useState<Scope>('mine')
+  const [csms, setCsms] = useState<{ id: string; full_name: string }[]>([])
   const [showTrash, setShowTrash] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editTask, setEditTask] = useState<CsmTask | null>(null)
@@ -33,74 +36,31 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
 
   const db = supabase as any // TECH_DEBT #8: schema/tipos ainda divergem neste arquivo
 
-  const loadTasks = useCallback(async () => {
-    setLoading(true)
+  // Lista de CSMs para o filtro (só liderança escolhe outro CSM)
+  useEffect(() => {
+    if (!canViewTeam) return
+    db.from('profiles').select('id, full_name').in('role', ['csm', 'csm_senior']).eq('is_active', true).order('full_name')
+      .then(({ data }: any) => { if (data) setCsms(data.map((c: any) => ({ id: c.id, full_name: c.full_name ?? 'CSM' }))) })
+  }, [db, canViewTeam])
 
-    let baseQuery = db
-      .from('csm_tasks')
-      .select('*, accounts(name)')
+  /** Aplica o escopo (dono) a uma query de csm_tasks. */
+  const scopeQuery = useCallback((q: any) => (scope === 'all' ? q : q.eq('csm_id', scope === 'mine' ? userId : scope)), [scope, userId])
 
-    if (teamFilter === 'mine') {
-      baseQuery = baseQuery.eq('csm_id', userId)
-    }
-
-    // Tarefas ativas
-    const { data: active } = await baseQuery
-      .is('deleted_at', null)
-      .order('due_date', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-
-    // Tarefas excluídas (lixeira) — na visão de time, sem filtro de dono
-    let deletedQuery = db
-      .from('csm_tasks')
-      .select('*, accounts(name)')
-      .not('deleted_at', 'is', null)
-    if (teamFilter === 'mine') {
-      deletedQuery = deletedQuery.eq('csm_id', userId)
-    }
-    const { data: deleted } = await deletedQuery
-      .order('deleted_at', { ascending: false })
-      .limit(50)
-
-    setTasks((active as CsmTask[]) ?? [])
-    setDeletedTasks((deleted as CsmTask[]) ?? [])
-    setLoading(false)
-  }, [db, userId, teamFilter])
-
-  // Query separada para lixeira respeitando filtro de equipe
   const loadDeletedTasks = useCallback(async () => {
-    let query = db
-      .from('csm_tasks')
-      .select('*, accounts(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false })
-      .limit(50)
-
-    if (teamFilter === 'mine') {
-      query = query.eq('csm_id', userId)
-    }
-
-    const { data } = await query
+    const { data } = await scopeQuery(
+      db.from('csm_tasks').select('*, accounts(name)').not('deleted_at', 'is', null)
+    ).order('deleted_at', { ascending: false }).limit(50)
     setDeletedTasks((data as CsmTask[]) ?? [])
-  }, [db, userId, teamFilter])
+  }, [db, scopeQuery])
 
   const loadActiveTasks = useCallback(async () => {
     setLoading(true)
-    let query = db
-      .from('csm_tasks')
-      .select('*, accounts(name)')
-      .is('deleted_at', null)
-      .order('due_date', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-
-    if (teamFilter === 'mine') {
-      query = query.eq('csm_id', userId)
-    }
-
-    const { data } = await query
+    const { data } = await scopeQuery(
+      db.from('csm_tasks').select('*, accounts(name)').is('deleted_at', null)
+    ).order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false })
     setTasks((data as CsmTask[]) ?? [])
     setLoading(false)
-  }, [db, userId, teamFilter])
+  }, [db, scopeQuery])
 
   useEffect(() => {
     loadActiveTasks()
@@ -109,11 +69,11 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
 
   // Realtime
   useEffect(() => {
-    const channelName = `csm_tasks_${teamFilter}`
-    const filter = teamFilter === 'mine' ? `csm_id=eq.${userId}` : undefined
+    const targetId = scope === 'all' ? null : (scope === 'mine' ? userId : scope)
+    const filter = targetId ? `csm_id=eq.${targetId}` : undefined
 
     const channel = (supabase as any)
-      .channel(channelName)
+      .channel(`csm_tasks_${scope}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -126,7 +86,7 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
       .subscribe()
 
     return () => { (supabase as any).removeChannel(channel) }
-  }, [supabase, userId, teamFilter, loadActiveTasks, loadDeletedTasks])
+  }, [supabase, userId, scope, loadActiveTasks, loadDeletedTasks])
 
   async function handleStatusChange(id: string, status: CsmTaskStatus) {
     const payload: Record<string, any> = { status }
@@ -172,90 +132,68 @@ export function AtividadesClient({ userId, canViewTeam }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          {/* View toggle — só visível fora da lixeira */}
+      {/* Toolbar (fixa no topo ao rolar) */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 py-2 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-border-divider bg-surface-card/70 shadow-premium px-3 py-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* View toggle — só visível fora da lixeira */}
+            {!showTrash && (
+              <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
+                <Button variant="ghost" size="sm" className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'list' && 'bg-surface-card shadow-sm')} onClick={() => setViewMode('list')}>
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'kanban' && 'bg-surface-card shadow-sm')} onClick={() => setViewMode('kanban')}>
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Filtro de CSM (só liderança escolhe outro) */}
+            {canViewTeam && !showTrash && (
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-content-secondary" />
+                <div className="w-52">
+                  <SearchableSelect
+                    value={scope}
+                    onValueChange={setScope}
+                    options={[
+                      { label: 'Minhas atividades', value: 'mine' },
+                      { label: 'Toda a equipe', value: 'all' },
+                      ...csms.map(c => ({ label: c.full_name, value: c.id })),
+                    ]}
+                    placeholder="Filtrar por CSM"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Lixeira toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'h-7 gap-1.5 px-3 rounded-xl text-[10px] font-black uppercase',
+                showTrash ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'text-content-secondary hover:text-content-primary'
+              )}
+              onClick={() => setShowTrash(v => !v)}
+            >
+              <Trash2 className="w-3 h-3" />
+              Lixeira
+              {deletedTasks.length > 0 && (
+                <span className={cn('ml-1 px-1.5 py-0 rounded-full text-[9px] font-black', showTrash ? 'bg-destructive/20' : 'bg-muted')}>
+                  {deletedTasks.length}
+                </span>
+              )}
+            </Button>
+          </div>
+
           {!showTrash && (
-            <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'list' && 'bg-surface-card shadow-sm')}
-                onClick={() => setViewMode('list')}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn('h-7 w-7 p-0 rounded-lg', viewMode === 'kanban' && 'bg-surface-card shadow-sm')}
-                onClick={() => setViewMode('kanban')}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button size="sm" className="gap-1.5 h-9" onClick={() => { setEditTask(null); setModalOpen(true) }}>
+              <Plus className="w-4 h-4" />
+              Nova
+            </Button>
           )}
-
-          {/* Team filter */}
-          {canViewTeam && !showTrash && (
-            <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn('h-7 gap-1.5 px-2 rounded-lg text-[10px] font-black uppercase', teamFilter === 'mine' && 'bg-surface-card shadow-sm')}
-                onClick={() => setTeamFilter('mine')}
-              >
-                <User className="w-3 h-3" />
-                Minhas
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn('h-7 gap-1.5 px-2 rounded-lg text-[10px] font-black uppercase', teamFilter === 'team' && 'bg-surface-card shadow-sm')}
-                onClick={() => setTeamFilter('team')}
-              >
-                <Users className="w-3 h-3" />
-                Equipe
-              </Button>
-            </div>
-          )}
-
-          {/* Lixeira toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'h-7 gap-1.5 px-3 rounded-xl text-[10px] font-black uppercase',
-              showTrash
-                ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                : 'text-content-secondary hover:text-content-primary'
-            )}
-            onClick={() => setShowTrash(v => !v)}
-          >
-            <Trash2 className="w-3 h-3" />
-            Lixeira
-            {deletedTasks.length > 0 && (
-              <span className={cn(
-                'ml-1 px-1.5 py-0 rounded-full text-[9px] font-black',
-                showTrash ? 'bg-destructive/20' : 'bg-muted'
-              )}>
-                {deletedTasks.length}
-              </span>
-            )}
-          </Button>
         </div>
-
-        {!showTrash && (
-          <Button
-            size="sm"
-            className="gap-1.5 h-9"
-            onClick={() => { setEditTask(null); setModalOpen(true) }}
-          >
-            <Plus className="w-4 h-4" />
-            Nova
-          </Button>
-        )}
       </div>
 
       {/* Content */}

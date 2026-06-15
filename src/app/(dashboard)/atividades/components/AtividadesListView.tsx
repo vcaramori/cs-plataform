@@ -18,6 +18,11 @@ type Group = {
   label: string
   tasks: CsmTask[]
   colorClass: string
+  bar: string
+}
+
+const GROUP_BAR: Record<string, string> = {
+  overdue: 'bg-destructive', today: 'bg-amber-500', week: 'bg-primary', upcoming: 'bg-content-secondary/50', no_date: 'bg-content-secondary/30',
 }
 
 function getGroupKey(task: CsmTask): string {
@@ -49,11 +54,11 @@ export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete, on
     })
 
     const orderedGroups: Group[] = [
-      { key: 'overdue',  label: 'Atrasadas',    tasks: grouped.overdue  ?? [], colorClass: 'text-destructive' },
-      { key: 'today',    label: 'Hoje',          tasks: grouped.today    ?? [], colorClass: 'text-amber-500' },
-      { key: 'week',     label: 'Esta semana',   tasks: grouped.week     ?? [], colorClass: 'text-content-primary' },
-      { key: 'upcoming', label: 'Próximas',      tasks: grouped.upcoming ?? [], colorClass: 'text-content-secondary' },
-      { key: 'no_date',  label: 'Sem data',      tasks: grouped.no_date  ?? [], colorClass: 'text-content-secondary/60' },
+      { key: 'overdue',  label: 'Atrasadas',    tasks: grouped.overdue  ?? [], colorClass: 'text-destructive',          bar: GROUP_BAR.overdue },
+      { key: 'today',    label: 'Hoje',          tasks: grouped.today    ?? [], colorClass: 'text-amber-500',            bar: GROUP_BAR.today },
+      { key: 'week',     label: 'Esta semana',   tasks: grouped.week     ?? [], colorClass: 'text-content-primary',      bar: GROUP_BAR.week },
+      { key: 'upcoming', label: 'Próximas',      tasks: grouped.upcoming ?? [], colorClass: 'text-content-secondary',    bar: GROUP_BAR.upcoming },
+      { key: 'no_date',  label: 'Sem data',      tasks: grouped.no_date  ?? [], colorClass: 'text-content-secondary/60', bar: GROUP_BAR.no_date },
     ]
 
     return orderedGroups.filter(g => g.tasks.length > 0)
@@ -73,6 +78,7 @@ export function AtividadesListView({ tasks, onEdit, onStatusChange, onDelete, on
       {groups.map(group => (
         <div key={group.key}>
           <div className="flex items-center gap-2 mb-3">
+            <span className={cn('w-1 h-3.5 rounded-full', group.bar)} />
             <h3 className={cn('text-xs font-black uppercase tracking-[0.15em]', group.colorClass)}>
               {group.label}
             </h3>
