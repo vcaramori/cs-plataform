@@ -93,6 +93,11 @@ export function TaskCard({ task, onEdit, onStatusChange, onDelete, onOpenDetail,
         </div>
       </div>
 
+      {/* Descrição (prévia) */}
+      {task.description && (
+        <p className="text-xs text-content-secondary line-clamp-2 leading-snug">{task.description}</p>
+      )}
+
       {/* Conta e prioridade */}
       <div className="flex items-center gap-2 flex-wrap">
         {task.accounts?.name && (

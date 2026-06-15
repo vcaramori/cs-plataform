@@ -233,6 +233,10 @@ export async function POST(request: Request) {
       csm_id: user.id,
       account_id: accountId,
       title: item.title,
+      // Contexto da IA + linha de origem (rastreabilidade da sugestão)
+      description: item.description
+        ? `${item.description}\n\n— Origem: esforço de ${effectiveDate}`
+        : `Sugerida a partir do esforço de ${effectiveDate}.`,
       status: 'todo',
       priority: 'medium',
       due_date: item.due_date ?? null,

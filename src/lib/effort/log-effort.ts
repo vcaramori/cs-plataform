@@ -225,6 +225,9 @@ export async function persistHistoricalEffort(params: {
       csm_id: userId,
       account_id: accountId,
       title: it.title,
+      description: it.description
+        ? `${it.description}\n\n— Origem: esforço de ${entry.date}`
+        : `Sugerida a partir do esforço de ${entry.date}.`,
       status: 'todo',
       priority: 'medium',
       due_date: it.due_date ?? null,

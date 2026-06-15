@@ -5,6 +5,7 @@ import type { ActivityType } from '@/lib/supabase/types'
 export type ActionItem = {
   title: string
   due_date: string | null  // YYYY-MM-DD ou null
+  description?: string | null  // contexto/porquê da tarefa (extraído da reunião/nota)
 }
 
 export type ParsedTimeEntry = {
@@ -35,7 +36,7 @@ Retorne APENAS um JSON válido com esta estrutura:
   "date": "<YYYY-MM-DD>",
   "confidence_score": <número entre 0.0 e 1.0>,
   "action_items": [
-    { "title": "<ação concreta identificada>", "due_date": "<YYYY-MM-DD ou null>" }
+    { "title": "<ação concreta identificada>", "due_date": "<YYYY-MM-DD ou null>", "description": "<contexto curto da tarefa>" }
   ]
 }
 
@@ -44,6 +45,7 @@ Regras para action_items:
 - Se não houver ações identificáveis, retorne um array vazio []
 - Máximo de 5 itens; prefira qualidade a quantidade
 - due_date: interprete datas relativas (ex: "até sexta", "próxima semana") usando ${today} como referência; use null se não houver prazo mencionado
+- "description": 1-2 frases de CONTEXTO da tarefa (o porquê, o que motivou, dado/decisão relevante da reunião). Terceira pessoa, fiel ao que foi dito — NÃO invente. Se não houver contexto além do título, repita objetivamente o pedido.
 
 Critérios para confidence_score:
 - 1.0: texto claro com tipo, duração, descrição e conta todos explícitos

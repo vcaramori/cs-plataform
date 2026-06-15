@@ -5,6 +5,7 @@ import type { ActivityType } from '@/lib/supabase/types'
 export type HistoricalActionItem = {
   title: string
   due_date: string | null // YYYY-MM-DD ou null
+  description?: string | null // contexto/porquê da tarefa
 }
 
 export type HistoricalEntry = {
@@ -43,7 +44,7 @@ Retorne APENAS um JSON válido:
       "activity_type": "<tipo>",
       "parsed_hours": <número decimal>,
       "account_name_hint": "<nome da conta se mencionado, senão null>",
-      "action_items": [ { "title": "<ação concreta>", "due_date": "<YYYY-MM-DD ou null>" } ],
+      "action_items": [ { "title": "<ação concreta>", "due_date": "<YYYY-MM-DD ou null>", "description": "<contexto curto da tarefa>" } ],
       "skip_tasks": <true|false>
     }
   ]
@@ -55,7 +56,7 @@ Regras OBRIGATÓRIAS:
 - "raw_text": copie FIELMENTE o trecho daquela reunião (não invente, não resuma aqui). É o que será indexado no RAG.
 - "parsed_description": resumo executivo, terceira pessoa, fiel ao trecho. Sem quebras de linha físicas — use "\\n" literal se precisar.
 - "skip_tasks": defina TRUE se o texto daquela reunião indicar que NÃO se deve registrar atividades/tarefas/follow-ups (ex.: "não gerar tarefas", "não registrar atividades", "apenas histórico"). Caso contrário FALSE.
-- "action_items": só ações concretas mencionadas; máximo 5 por reunião; due_date relativa a ${today}; [] se não houver. Se skip_tasks=true, retorne [].
+- "action_items": só ações concretas mencionadas; máximo 5 por reunião; due_date relativa a ${today}; [] se não houver. Se skip_tasks=true, retorne []. "description" = 1-2 frases de contexto da tarefa (porquê/dado relevante da reunião), 3ª pessoa, fiel — não invente.
 - parsed_hours: converta tempo ("1h30"→1.5, "30min"→0.5); se não houver menção, use 1.0.
 
 Tipos válidos para activity_type:

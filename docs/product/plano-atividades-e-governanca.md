@@ -386,6 +386,12 @@ Seção "Atividades" na coluna 2 da página de conta (`AccountDetailPageClient.t
 
 ---
 
+## Atualização — Descrição com contexto da IA + modal no detalhe do cliente (2026-06-12)
+
+- **Descrição preenchida pela IA:** os action items extraídos de esforços/reuniões agora trazem `description` (contexto/porquê) — `parseTimeEntry`/`parseHistoricalEfforts` retornam o campo, e a criação das `csm_tasks` grava o contexto + uma **linha de origem** ("— Origem: esforço de DD/MM"). (A coluna `csm_tasks.description` já existia e era editável no `CreateTaskModal`/`TaskDetailSheet`.)
+- **Prévia da descrição** exibida nos cards (`TaskCard`, `line-clamp-2`) e nas linhas do widget da conta (`line-clamp-1`).
+- **Detalhe do cliente:** no `AccountActivitiesWidget`, **clicar na atividade abre o modal** de detalhe (`TaskDetailSheet`, reusado), com "Editar" (`CreateTaskModal`) e mudança de status; o select passou a trazer `*, accounts(name)`.
+
 ## Verificação End-to-End
 
 1. `npx tsc --noEmit --skipLibCheck` — zero erros
