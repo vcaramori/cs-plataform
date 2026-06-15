@@ -169,6 +169,13 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🎯 Metas com data-alvo + logo legível no tema escuro (2026-06-15)
+
+Dois ajustes no detalhe da conta (`/accounts/[id]`):
+
+- **Logo em placa clara fixa**: o container do logo no [AccountHeader.tsx](src/app/(dashboard)/accounts/[id]/components/AccountHeader.tsx) usava `bg-surface-background` (escuro no dark theme) e a maioria das marcas (feitas para fundo claro) sumia. Passou a `bg-slate-100` fixo — legível nos dois temas.
+- **Data-alvo nas metas do cliente** (`account_indicators` — o "Nova Meta" do Plano de Sucesso): nova coluna `target_date` (migração aditiva `20260615120000`). **Obrigatória ao criar** ([AddIndicatorModal.tsx](src/app/(dashboard)/accounts/[id]/components/AddIndicatorModal.tsx) — campo "Atingir até"); metas antigas recebem a data **editando no [IndicatorDetailsModal.tsx](src/app/(dashboard)/accounts/[id]/components/IndicatorDetailsModal.tsx)** (novo `PATCH /api/accounts/[id]/indicators/[indicatorId]`). O [IndicatorCard.tsx](src/app/(dashboard)/accounts/[id]/components/IndicatorCard.tsx) ganhou **chip de acompanhamento**: Atingida (verde) / Atrasada (vermelho) / Vence hoje / faltam Nd / até DD/MM / Sem prazo.
+
 ### ✏️ Power Map — Editar stakeholder ao clicar no card (2026-06-15)
 
 Não havia como **editar** um stakeholder já cadastrado (corrigir cargo, influência, e-mail, etc.) — só adicionar, convidar e desligar. Resolvido em [ContactsPowerMap.tsx](src/app/(dashboard)/accounts/[id]/components/ContactsPowerMap.tsx) + [AddContactModal.tsx](src/app/(dashboard)/accounts/[id]/components/AddContactModal.tsx):

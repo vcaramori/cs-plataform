@@ -104,6 +104,7 @@ export function SuccessPlan({ accountName }: { accountName?: string }) {
         history={currentSelectedIndicator?.history || []}
         accountName={accountName || 'Cliente'}
         onAddDataPoint={handleOpenEdit}
+        onUpdated={() => queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })}
       />
 
       <IndicatorEditModal

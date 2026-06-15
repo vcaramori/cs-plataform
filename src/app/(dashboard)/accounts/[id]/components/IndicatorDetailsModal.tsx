@@ -16,8 +16,11 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
-import { Plus } from 'lucide-react'
+import { Plus, CalendarClock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 
 interface Props {
   isOpen: boolean
@@ -26,10 +29,43 @@ interface Props {
   history: any[]
   accountName: string
   onAddDataPoint: () => void
+  /** Chamado após salvar a data-alvo, para o pai recarregar os indicadores. */
+  onUpdated?: () => void
 }
 
-export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, accountName, onAddDataPoint }: Props) {
+export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, accountName, onAddDataPoint, onUpdated }: Props) {
+  const [targetDate, setTargetDate] = useState('')
+  const [savingDate, setSavingDate] = useState(false)
+
+  // Sincroniza o input com a meta selecionada ao abrir/trocar
+  useEffect(() => {
+    setTargetDate(indicator?.target_date ?? '')
+  }, [indicator?.id, indicator?.target_date, isOpen])
+
   if (!indicator) return null
+
+  async function handleSaveDate() {
+    setSavingDate(true)
+    try {
+      const res = await fetch(`/api/accounts/${indicator.account_id}/indicators/${indicator.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_date: targetDate || '' }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Erro ao salvar a data-alvo')
+      }
+      toast.success('Data-alvo atualizada!')
+      onUpdated?.()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setSavingDate(false)
+    }
+  }
+
+  const dateChanged = (targetDate || '') !== (indicator.target_date ?? '')
 
   // Format data for chart
   const chartData = history.map(h => ({
@@ -50,6 +86,24 @@ export function IndicatorDetailsModal({ isOpen, onClose, indicator, history, acc
               <Plus className="w-4 h-4" /> Nova Medição
             </Button>
           </DialogTitle>
+
+          {/* Data-alvo: define/edita o prazo da meta (preenche metas antigas sem data) */}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <CalendarClock className="w-4 h-4 text-content-secondary shrink-0" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Atingir até</span>
+            <Input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="h-9 w-auto rounded-lg bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white font-medium text-xs"
+            />
+            {dateChanged && (
+              <Button onClick={handleSaveDate} disabled={savingDate} size="sm" className="h-9 gap-1.5 text-[10px] font-black uppercase tracking-widest">
+                {savingDate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                Salvar
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-8 py-4 px-6">

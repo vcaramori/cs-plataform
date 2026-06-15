@@ -379,6 +379,9 @@ interface Props {
 | Adicionar stakeholder | Clique em "Adicionar" no Mapa de Influência | Abre `AddContactModal` (form vazio) → `POST /api/contacts` |
 | **Editar stakeholder** | **Clique no card do stakeholder** (afordância: lápis no hover) | Abre `AddContactModal` preenchido → `PATCH /api/contacts/[id]`; upsert otimista no card. Cliques em Convidar/Desligar/contatos não disparam (stopPropagation) |
 | Desligar stakeholder | Clique em "Desligar" no card | Abre `DepartureDialog` → `PATCH` com `departed_at` |
+| Criar meta (indicador) | "Nova Meta" no Plano de Sucesso | `AddIndicatorModal` → `POST /api/accounts/[id]/indicators`. **Data-alvo (`target_date`) obrigatória** (campo "Atingir até") |
+| Definir/editar data-alvo | Abrir a meta → editar "Atingir até" no `IndicatorDetailsModal` | `PATCH /api/accounts/[id]/indicators/[indicatorId]` — usado para dar prazo a metas antigas (sem data) |
+| Acompanhar prazo da meta | Visualizar o card do indicador | Chip de status: Atingida / Atrasada / Vence hoje / faltam Nd / até DD/MM / Sem prazo (compara `current_value` vs `target_value` e hoje vs `target_date`) |
 
 ---
 

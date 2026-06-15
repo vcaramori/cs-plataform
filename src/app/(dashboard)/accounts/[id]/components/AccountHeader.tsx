@@ -132,7 +132,8 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
 
           <div className="flex items-center gap-4 min-w-0">
             {account.logo_url ? (
-              <div className="w-20 h-12 sm:w-24 sm:h-14 rounded-2xl bg-surface-background border border-border-divider/60 shadow-xl overflow-hidden shrink-0 flex items-center justify-center p-2">
+              <div className="w-20 h-12 sm:w-24 sm:h-14 rounded-2xl bg-slate-100 border border-border-divider/60 shadow-xl overflow-hidden shrink-0 flex items-center justify-center p-2">
+                {/* Placa clara fixa: a maioria das marcas é feita para fundo claro e sumia no tema escuro */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={account.logo_url}

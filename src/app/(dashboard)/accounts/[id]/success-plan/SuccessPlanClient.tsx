@@ -96,7 +96,7 @@ export function SuccessPlanClient() {
       )}
 
       <AddIndicatorModal isOpen={isAddIndicatorOpen} onClose={() => setIsAddIndicatorOpen(false)} accountId={accountId} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] }) }} />
-      <IndicatorDetailsModal isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} indicator={currentSelectedIndicator} history={currentSelectedIndicator?.history || []} accountName={accountData?.name || 'Cliente'} onAddDataPoint={handleOpenEdit} />
+      <IndicatorDetailsModal isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} indicator={currentSelectedIndicator} history={currentSelectedIndicator?.history || []} accountName={accountData?.name || 'Cliente'} onAddDataPoint={handleOpenEdit} onUpdated={() => queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] })} />
       <IndicatorEditModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} indicator={currentSelectedIndicator} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['account-indicators', accountId] }) }} />
     </PageContainer>
   )

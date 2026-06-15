@@ -650,6 +650,8 @@ export type AccountIndicator = {
   unit: string
   icon: string
   color: string
+  /** Data-alvo: quando a meta deve ser atingida (null em metas antigas até serem editadas). */
+  target_date: string | null
   created_at: string
   updated_at: string
 }

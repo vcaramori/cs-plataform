@@ -30,12 +30,13 @@ export function AddIndicatorModal({ isOpen, onClose, accountId, onSuccess }: Pro
   const [name, setName] = useState('')
   const [target, setTarget] = useState<number | ''>('')
   const [unit, setUnit] = useState('%')
+  const [targetDate, setTargetDate] = useState('')
   const [icon, setIcon] = useState('Activity')
   const [color, setColor] = useState('#2ba09d')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit() {
-    if (!name || target === '') {
+    if (!name || target === '' || !targetDate) {
       toast.error('Preencha os campos obrigatórios')
       return
     }
@@ -49,6 +50,7 @@ export function AddIndicatorModal({ isOpen, onClose, accountId, onSuccess }: Pro
           name,
           target_value: Number(target),
           unit,
+          target_date: targetDate,
           icon,
           color,
         }),
@@ -62,6 +64,7 @@ export function AddIndicatorModal({ isOpen, onClose, accountId, onSuccess }: Pro
       toast.success('Indicador criado!')
       setName('')
       setTarget('')
+      setTargetDate('')
       onSuccess?.()
       onClose()
     } catch (err: any) {
@@ -117,6 +120,21 @@ export function AddIndicatorModal({ isOpen, onClose, accountId, onSuccess }: Pro
                 className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 h-12 rounded-xl text-[#2d3558] dark:text-white font-medium"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary dark:text-content-secondary">
+              Atingir até *
+            </Label>
+            <Input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="bg-white dark:bg-slate-900 border-border-divider dark:border-slate-800 h-12 rounded-xl text-[#2d3558] dark:text-white font-medium"
+            />
+            <p className="text-[10px] text-content-secondary dark:text-content-secondary">
+              Data em que a meta deve ser atingida — usada para acompanhar o prazo.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

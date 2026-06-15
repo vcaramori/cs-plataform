@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Card } from "@/components/ui/card"
 import dynamic from 'next/dynamic'
 import { Activity, Zap, Ticket, Heart, MessageSquare, ShieldCheck, PieChart, Star, Target, ArrowUpRight, TrendingUp } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
 const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false })
@@ -53,6 +54,21 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
   // Barra inferior sempre baseada na porcentagem em relação à meta
   const pctOfTarget = target > 0 ? Math.min(100, Math.max(0, (value / target) * 100)) : 0
 
+  // Acompanhamento do prazo da meta (data-alvo)
+  const targetStatus = (() => {
+    if (pctOfTarget >= 100) return { label: 'Atingida', cls: 'bg-success/15 text-success' }
+    if (!indicator.target_date) return { label: 'Sem prazo', cls: 'bg-muted text-content-secondary/70' }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(indicator.target_date + 'T00:00:00')
+    const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000)
+    if (diff < 0) return { label: 'Atrasada', cls: 'bg-red-500/15 text-red-500' }
+    if (diff === 0) return { label: 'Vence hoje', cls: 'bg-amber-500/15 text-amber-500' }
+    if (diff <= 7) return { label: `faltam ${diff}d`, cls: 'bg-amber-500/15 text-amber-500' }
+    if (diff <= 30) return { label: `faltam ${diff}d`, cls: 'bg-muted text-content-secondary' }
+    return { label: `até ${due.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`, cls: 'bg-muted text-content-secondary' }
+  })()
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -100,6 +116,9 @@ export function IndicatorCard({ indicator, history, onClick, index = 0 }: Indica
           {displayValue}
           <span className="text-[10px] text-content-secondary opacity-60">/ {targetDisplayValue}</span>
         </p>
+        <span className={cn('mt-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wide', targetStatus.cls)}>
+          {targetStatus.label}
+        </span>
       </div>
     </motion.div>
   )
