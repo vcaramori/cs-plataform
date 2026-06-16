@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
 import { storeBearerToken, getBearerToken } from '@/lib/integrations/helpdesk/client'
+import { verifyHelpDeskRequest } from '@/lib/integrations/helpdesk/auth'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * Recebe e armazena o Bearer token do HelpDesk (renovado pelo refresher de login).
- * Protegido por API_SECRET (header x-api-secret).
+ * Protegido pelo segredo da integração (tela de Configurações) ou API_SECRET/CRON_SECRET.
  *
  * POST body: { access_token: string, expires_in?: number }
  */
 export async function POST(request: Request) {
-  if (request.headers.get('x-api-secret') !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 
 /** Status: indica se há token armazenado (sem expor o valor). */
 export async function GET(request: Request) {
-  if (request.headers.get('x-api-secret') !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const token = await getBearerToken()

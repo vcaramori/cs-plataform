@@ -12,6 +12,7 @@ import { PlaybookSettingsTab } from './PlaybookSettingsTab'
 import { AISettingsTab } from './AISettingsTab'
 import { AIContextSettingsTab } from './AIContextSettingsTab'
 import { SecuritySettingsTab } from './SecuritySettingsTab'
+import { HelpDeskSettingsTab } from './HelpDeskSettingsTab'
 
 const TABS = [
   { value: 'health', label: 'Health Score' },
@@ -22,6 +23,7 @@ const TABS = [
   { value: 'ai', label: 'IA & RAG' },
   { value: 'ai_context', label: 'IA — Contexto & Regras' },
   { value: 'security', label: 'Segurança' },
+  { value: 'helpdesk', label: 'HelpDesk' },
 ]
 
 export function AdminSettingsClient() {
@@ -61,6 +63,7 @@ export function AdminSettingsClient() {
         <TabsContent value="ai"><AISettingsTab /></TabsContent>
         <TabsContent value="ai_context"><AIContextSettingsTab /></TabsContent>
         <TabsContent value="security"><SecuritySettingsTab /></TabsContent>
+        <TabsContent value="helpdesk"><HelpDeskSettingsTab /></TabsContent>
       </Tabs>
     </PageContainer>
   )
