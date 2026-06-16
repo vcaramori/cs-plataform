@@ -30,6 +30,7 @@ const schema = z.object({
   website: z.string().url('URL inválida').optional().or(z.literal('')),
   logo_url: z.string().url().optional().nullable(),
   tax_id: z.string().optional().nullable(),
+  helpdesk_tags: z.string().optional().or(z.literal('')),
   plan_id: z.string().uuid().optional().nullable(),
 })
 
@@ -79,6 +80,7 @@ export function EditAccountDialog({ account }: { account: Account }) {
       website: account.website || '',
       logo_url: account.logo_url ?? undefined,
       tax_id: (account as any).tax_id || '',
+      helpdesk_tags: (account as any).helpdesk_tags || '',
       plan_id: null,
     },
   })
@@ -191,6 +193,18 @@ export function EditAccountDialog({ account }: { account: Account }) {
                   className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
                 />
                 {errors.website && <p className="text-destructive text-[10px] font-black uppercase mt-1">{errors.website.message}</p>}
+                <p className="text-content-secondary/70 text-[9px] font-medium ml-1">Domínio usado para casar chamados do HelpDesk pelo e-mail do solicitante.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-helpdesk-tags" className="text-[10px] font-black text-content-secondary dark:text-content-secondary uppercase tracking-widest ml-1">Tags HelpDesk</Label>
+                <Input
+                  id="edit-helpdesk-tags"
+                  {...register('helpdesk_tags')}
+                  placeholder="Ex: ANDI, BAND, sherwin.com"
+                  className="h-11 rounded-xl bg-white dark:bg-slate-900 border border-border-divider dark:border-slate-800 text-[#2d3558] dark:text-white shadow-sm focus-visible:ring-plannera-orange"
+                />
+                <p className="text-content-secondary/70 text-[9px] font-medium ml-1">Códigos do assunto ([CÓDIGO]) e/ou domínios de e-mail alternativos, separados por vírgula. Casa o chamado → esta conta.</p>
               </div>
 
               <div className="space-y-2">

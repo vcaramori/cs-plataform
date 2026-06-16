@@ -23,6 +23,7 @@ const UpdateSchema = z.object({
   website: z.string().url().optional().or(z.literal('')).nullable(),
   logo_url: z.string().url().optional().or(z.literal('')).nullable(),
   tax_id: z.string().optional().or(z.literal('')).nullable(),
+  helpdesk_tags: z.string().optional().or(z.literal('')).nullable(),
   
   // Endereço
   cep: z.string().optional().nullable(),

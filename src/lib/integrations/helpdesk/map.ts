@@ -143,7 +143,7 @@ function subdomainOf(url: string): string | null {
 }
 
 export function buildAccountIndex(
-  accounts: Array<{ id: string; name: string; client_id: string | null; website: string | null }>,
+  accounts: Array<{ id: string; name: string; client_id: string | null; website: string | null; helpdesk_tags?: string | null }>,
   contracts: Array<{ account_id: string; instance_url: string | null }> = [],
   maps: { code_map?: Record<string, string>; domain_map?: Record<string, string> } = {}
 ): AccountIndex {
@@ -153,6 +153,7 @@ export function buildAccountIndex(
   const bySubdomain = new Map<string, string>()
   const codeMap = new Map<string, string>()
   const domainMap = new Map<string, string>()
+  // Config maps (opcionais, compatibilidade) entram primeiro; campos da conta sobrescrevem.
   for (const [k, v] of Object.entries(maps.code_map ?? {})) codeMap.set(normalize(k), v)
   for (const [k, v] of Object.entries(maps.domain_map ?? {})) domainMap.set(normalize(k), v)
   for (const a of accounts) {
@@ -160,7 +161,12 @@ export function buildAccountIndex(
     if (a.client_id) byCode.set(normalize(a.client_id), a.id)
     if (a.website) {
       const dom = a.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-      if (dom) byDomain.set(normalize(dom), a.id)
+      if (dom) domainMap.set(normalize(dom), a.id) // website da conta = de-para de domínio
+    }
+    // Tags do HelpDesk (separadas por vírgula/;) = de-para de código, editável na UI.
+    for (const tag of (a.helpdesk_tags ?? '').split(/[,;]+/)) {
+      const t = normalize(tag)
+      if (t) codeMap.set(t, a.id)
     }
   }
   for (const c of contracts) {
@@ -194,6 +200,8 @@ export function resolveAccountId(t: NormalizedTicket, idx: AccountIndex): string
   // 2) Domínio do e-mail (ignora domínios internos — nesses casos o cliente está no assunto).
   if (domain && !isInternalDomain(domain)) {
     if (idx.domainMap.has(domain)) return idx.domainMap.get(domain)!
+    // Tags também aceitam domínios alternativos (ex.: Suvinil recebe de sherwin.com).
+    if (idx.codeMap.has(domain)) return idx.codeMap.get(domain)!
     if (idx.byDomain.has(domain)) return idx.byDomain.get(domain)!
     const core = domain.split('.')[0]
     for (const [name, id] of idx.byName) {
