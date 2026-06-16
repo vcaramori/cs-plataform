@@ -99,6 +99,7 @@ const schema = z.object({
   website: z.string().url('URL inválida').optional().or(z.literal('')).nullable(),
   logo_url: z.string().optional().nullable(),
   tax_id: z.string().optional().or(z.literal('')).nullable(),
+  helpdesk_tags: z.string().optional().or(z.literal('')).nullable(),
 
   cep: z.string().optional().nullable(),
   street: z.string().optional().nullable(),
@@ -421,6 +422,15 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
                   className={INPUT}
                 />
               </div>
+            </div>
+
+            {/* Tags HelpDesk — resolução automática de chamados → conta */}
+            <div className="space-y-2">
+              <Label className={LABEL}>Tags HelpDesk</Label>
+              <Input {...register('helpdesk_tags')} placeholder="Ex: ANDI, BAND, sherwin.com" className={INPUT} />
+              <p className="text-[10px] text-content-secondary/70 font-medium">
+                Códigos do assunto ([CÓDIGO]) e/ou domínios de e-mail alternativos, separados por vírgula. Usado para casar chamados do HelpDesk com esta conta (o domínio do site também é usado).
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -45,7 +45,8 @@ const AccountSchema = z.object({
   website: z.string().url().optional().or(z.literal('')).nullable(),
   logo_url: z.string().url().optional().or(z.literal('')).nullable(),
   tax_id: z.string().optional().or(z.literal('')).nullable(),
-  
+  helpdesk_tags: z.string().optional().or(z.literal('')).nullable(),
+
   // Endereço Estruturado
   cep: z.string().optional().nullable(),
   street: z.string().optional().nullable(),
@@ -236,8 +237,8 @@ export async function POST(request: Request) {
   }
 
   // 2. Criar a account
-  const { data: account, error: accountErr } = await supabase
-    .from('accounts')
+  // cast: helpdesk_tags ainda não está em database.types (coluna nova).
+  const { data: account, error: accountErr } = await (supabase.from('accounts') as any)
     .insert({
       client_id: clientId,
       company_name: payload.company_name,
@@ -245,7 +246,9 @@ export async function POST(request: Request) {
       segment: payload.segment,
       logo_url: payload.logo_url || null,
       tax_id: payload.tax_id || null,
-      
+      website: payload.website || null,
+      helpdesk_tags: payload.helpdesk_tags || null,
+
       cep: payload.cep || null,
       street: payload.street || null,
       number: payload.number || null,
