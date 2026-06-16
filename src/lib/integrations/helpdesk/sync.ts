@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import { env } from '@/lib/env'
 import { getBearerToken, listTicketsPage, HelpDeskAuthError } from './client'
+import { getIntegrationConfig } from './auth'
 import {
   normalizeTicket,
   buildAccountIndex,
@@ -171,6 +172,8 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
   }
 
   const accountIdx = await loadAccountIndex()
+  const cfg = await getIntegrationConfig()
+  const fallbackAccountId = cfg.fallback_account_id || env.helpdesk.fallbackAccountId || ''
 
   let page = 1
   let totalPages = 1
@@ -199,7 +202,7 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
 
       result.scanned++
 
-      const accountId = resolveAccountId(n, accountIdx) || env.helpdesk.fallbackAccountId || null
+      const accountId = resolveAccountId(n, accountIdx) || fallbackAccountId || null
       if (!accountId) {
         result.skipped++
         result.errors.push(`Ticket ${n.externalId} (${n.subject}) — conta não identificada`)

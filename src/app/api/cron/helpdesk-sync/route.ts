@@ -1,28 +1,18 @@
 import { NextResponse } from 'next/server'
 import { runHelpDeskSync } from '@/lib/integrations/helpdesk/sync'
+import { verifyHelpDeskRequest } from '@/lib/integrations/helpdesk/auth'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 /**
- * Cron horário: sincroniza chamados solved/closed do HelpDesk para o Suporte.
+ * Cron horário: sincroniza chamados do HelpDesk para o Suporte.
  *
- * Autenticação (qualquer uma):
- *  - header `x-api-secret: <API_SECRET>` (mesmo padrão dos outros crons), ou
- *  - header `Authorization: Bearer <CRON_SECRET>` (Vercel Cron).
+ * Autenticação: segredo da integração (gerido na tela de Configurações),
+ * com fallback para API_SECRET (env) e Bearer CRON_SECRET (Vercel Cron).
  */
-function isAuthorized(request: Request): boolean {
-  const apiSecret = request.headers.get('x-api-secret')
-  if (apiSecret && apiSecret === process.env.API_SECRET) return true
-
-  const auth = request.headers.get('authorization')
-  if (auth && process.env.CRON_SECRET && auth === `Bearer ${process.env.CRON_SECRET}`) return true
-
-  return false
-}
-
 async function handle(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
