@@ -175,11 +175,13 @@ O sync histórico do HelpDesk mostrava *"Sync historical: 0 processados, 0 CSAT,
 
 Diagnóstico via reexecução da lógica real contra a API: **313 chamados, 305 resolvem conta** (código `[..]` 126 + domínio 168 + nome 11), **8 sem cliente** (forwards internos + 2 domínios não mapeados).
 
-Correções:
+Correções (3 bugs de constraint + observabilidade + estado):
 - **Migration** [20260616160000_helpdesk_source_check.sql](supabase/migrations/20260616160000_helpdesk_source_check.sql): adiciona `'helpdesk'` ao CHECK de `source`.
+- **Migration** [20260616170000_csat_responses_unique_ticket.sql](supabase/migrations/20260616170000_csat_responses_unique_ticket.sql): `csat_responses` não tinha `UNIQUE(ticket_id)`, mas o sync faz `upsert(onConflict:'ticket_id')` → todo CSAT falhava ("0 CSAT"). Adiciona o UNIQUE (1 avaliação por chamado).
 - [map.ts](src/lib/integrations/helpdesk/map.ts): `mapStatus` emite `in_progress` (underscore) — `AppStatus` alinhado ao `TicketStatus` do banco.
 - [sync.ts](src/lib/integrations/helpdesk/sync.ts): `historical_done=true` só quando a carga **progride** (created+updated>0 ou sem erros) — antes um backfill falho travava em modo incremental e nunca reprocessava. Estado poisoned foi resetado.
 - [HelpDeskSettingsTab.tsx](src/app/(dashboard)/admin/settings/components/HelpDeskSettingsTab.tsx): toast mostra `lidos · novos · atualizados · CSAT · pulados · erros` + surfacing do 1º erro.
+- **Backfill executado**: **305 chamados + 40 CSAT** carregados (8 sem cliente: 6 forwards internos + 2 domínios não mapeados — `meetupconsultoria.com.br`/`masterlinebrasil.com.br`). Embeddings via "Reprocessar RAG (itens faltantes)".
 
 ### 🐛 Carga histórica — fix do "formato inválido" + validação antes de subir (2026-06-16)
 
