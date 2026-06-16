@@ -164,6 +164,20 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
               <p className="label-premium !text-[11px] opacity-60 flex items-center gap-2 mt-2 truncate">
                 ID: {account.id.split('-')[0].toUpperCase()}{account.industry ? <><span className="opacity-60">/</span>{account.industry}</> : null}
               </p>
+              {((account as any).website || (account as any).helpdesk_tags) && (
+                <div className="flex items-center gap-2 mt-2 text-[10px] flex-wrap">
+                  {(account as any).website && (
+                    <a href={(account as any).website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-content-secondary hover:text-primary transition-colors border border-border-divider bg-surface-background px-2 py-0.5 rounded-md shadow-sm truncate max-w-[150px]">
+                      <span className="opacity-70">🌐</span> {(account as any).website.replace(/^https?:\/\//, '')}
+                    </a>
+                  )}
+                  {(account as any).helpdesk_tags && (account as any).helpdesk_tags.split(/[,;]+/).map((tag: string) => tag.trim()).filter(Boolean).map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="bg-surface-background text-content-secondary border-border-divider px-1.5 py-0 text-[9px] uppercase font-bold shadow-sm">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
