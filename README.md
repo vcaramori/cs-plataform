@@ -169,6 +169,18 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🐛 Sync HelpDesk gravava 0 chamados (constraint mismatch) (2026-06-16)
+
+O sync histórico do HelpDesk mostrava *"Sync historical: 0 processados, 0 CSAT, 8 pulados"* — deveria trazer todos. **Causa raiz:** o upsert escrevia `support_tickets.source='helpdesk'` e `status='in-progress'`, mas os CHECK constraints da tabela só aceitavam `source ∈ (csv,manual,email)` e `status='in_progress'` (underscore). Resultado: **todos os 305 chamados resolvíveis falhavam no upsert** (caíam em `result.errors`, que o toast não exibia) e só os 8 sem cliente apareciam como "pulados". O toast usava `created` como "processados", mascarando 305 erros.
+
+Diagnóstico via reexecução da lógica real contra a API: **313 chamados, 305 resolvem conta** (código `[..]` 126 + domínio 168 + nome 11), **8 sem cliente** (forwards internos + 2 domínios não mapeados).
+
+Correções:
+- **Migration** [20260616160000_helpdesk_source_check.sql](supabase/migrations/20260616160000_helpdesk_source_check.sql): adiciona `'helpdesk'` ao CHECK de `source`.
+- [map.ts](src/lib/integrations/helpdesk/map.ts): `mapStatus` emite `in_progress` (underscore) — `AppStatus` alinhado ao `TicketStatus` do banco.
+- [sync.ts](src/lib/integrations/helpdesk/sync.ts): `historical_done=true` só quando a carga **progride** (created+updated>0 ou sem erros) — antes um backfill falho travava em modo incremental e nunca reprocessava. Estado poisoned foi resetado.
+- [HelpDeskSettingsTab.tsx](src/app/(dashboard)/admin/settings/components/HelpDeskSettingsTab.tsx): toast mostra `lidos · novos · atualizados · CSAT · pulados · erros` + surfacing do 1º erro.
+
 ### 🐛 Carga histórica — fix do "formato inválido" + validação antes de subir (2026-06-16)
 
 Colar um bloco grande (várias transcrições de reunião) na **Carga histórica de esforços** falhava com *"IA retornou formato inválido para a carga histórica"*. Causa raiz: o prompt pede para **ecoar o `raw_text` FIEL** de cada reunião, então a saída JSON é, no mínimo, do tamanho do texto colado — mas o teto de saída era o padrão **2048 tokens** ([settings.ts](src/lib/llm/settings.ts)). A resposta vinha **truncada** no meio de uma string e o `JSON.parse` quebrava.

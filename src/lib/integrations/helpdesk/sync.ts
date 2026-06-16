@@ -225,7 +225,14 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
     page++
   } while (page <= totalPages)
 
-  await writeState({ historical_done: true, last_sync_at: startedAt })
+  // Só dá a carga histórica por concluída se ela REALMENTE progrediu — senão um
+  // backfill que falhou (ex.: todos os upserts barrados por constraint) marcaria
+  // historical_done=true e as próximas runs cairiam em incremental, nunca reprocessando.
+  const historicalDone =
+    mode === 'incremental'
+      ? true
+      : result.created + result.updated > 0 || result.errors.length === 0
+  await writeState({ historical_done: historicalDone, last_sync_at: startedAt })
   result.errors = result.errors.slice(0, 50)
   return result
 }

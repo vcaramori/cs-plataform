@@ -5,7 +5,8 @@ import type { HelpDeskTicket, HelpDeskEvent, HelpDeskStatusEvent } from './clien
  * Schema confirmado por reconhecimento na API (2026-06-15).
  */
 
-export type AppStatus = 'open' | 'in-progress' | 'resolved' | 'closed'
+// Valores DEVEM casar com o CHECK de support_tickets.status (underscore, não hífen).
+export type AppStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type AppPriority = 'low' | 'medium' | 'high' | 'critical'
 
 export interface NormalizedTicket {
@@ -31,9 +32,9 @@ export function mapStatus(raw: string | undefined): AppStatus {
   const map: Record<string, AppStatus> = {
     open: 'open',
     new: 'open',
-    pending: 'in-progress',
-    onhold: 'in-progress',
-    'on-hold': 'in-progress',
+    pending: 'in_progress',
+    onhold: 'in_progress',
+    'on-hold': 'in_progress',
     solved: 'resolved',
     resolved: 'resolved',
     closed: 'closed',

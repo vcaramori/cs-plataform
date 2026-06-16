@@ -79,7 +79,10 @@ export function HelpDeskSettingsTab() {
     const j = await action({ action: 'run_sync' }, 'sync')
     if (j?.success) {
       const r = j.result
-      toast.success(`Sync ${r.mode}: ${r.created} processados, ${r.csat} CSAT, ${r.skipped} pulados`)
+      const errCount = r.errors?.length ?? 0
+      toast.success(`Sync ${r.mode}: ${r.scanned} lidos · ${r.created} novos · ${r.updated} atualizados · ${r.csat} CSAT · ${r.skipped} pulados${errCount ? ` · ${errCount} erros` : ''}`)
+      // Surfacing dos erros (antes ficavam invisíveis e a falha parecia "0 processados").
+      if (errCount) toast.error(`${errCount} erro(s). Ex.: ${r.errors[0]}`, { duration: 8000 })
       load()
     }
   }
