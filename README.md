@@ -169,6 +169,19 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🐛 Carga histórica — fix do "formato inválido" + validação antes de subir (2026-06-16)
+
+Colar um bloco grande (várias transcrições de reunião) na **Carga histórica de esforços** falhava com *"IA retornou formato inválido para a carga histórica"*. Causa raiz: o prompt pede para **ecoar o `raw_text` FIEL** de cada reunião, então a saída JSON é, no mínimo, do tamanho do texto colado — mas o teto de saída era o padrão **2048 tokens** ([settings.ts](src/lib/llm/settings.ts)). A resposta vinha **truncada** no meio de uma string e o `JSON.parse` quebrava.
+
+**1) Robustez do parse** ([parse-historical-efforts.ts](src/lib/gemini/parse-historical-efforts.ts)):
+- **Teto de saída elevado para 32768 tokens** apenas nessa chamada (folga para ecoar o texto integral).
+- **Salvage de truncamento** (`salvageEntries`): se o JSON ainda vier cortado, varre o array `entries` objeto a objeto e **recupera as reuniões completas**, descartando só a última cortada — em vez de perder tudo. Passa a sinalizar `truncated`.
+- **Erro acionável**: quando nada é recuperável, a mensagem orienta a **colar menos reuniões por vez**.
+
+**2) Validação no preview (antes do commit)** ([validate-historical.ts](src/lib/effort/validate-historical.ts)): a rota `preview` agora retorna `warnings` que a UI ([HistoricalImportPanel.tsx](src/app/(dashboard)/esforco/components/HistoricalImportPanel.tsx)) exibe em banners e como badges por reunião:
+- **Truncamento** (algumas reuniões podem não ter vindo), **data inválida** (`error` → não sobe), **data futura** (incomum em histórico) e **duplicatas por conteúdo** (mesmo trecho em datas diferentes — caso clássico de bloco colado 2×).
+- Cada reunião tem um checkbox **"Importar"**; erros e duplicatas vêm **desmarcados por padrão**. O commit envia **só o que estiver marcado** e o botão mostra a contagem real. Defesa no servidor também ignora datas inválidas.
+
 ### 🎯 Unificação dos indicadores de risco/saúde (2026-06-15)
 
 Resolvidas as divergências de risco entre telas (números diferentes para o mesmo cliente). Duas causas: (1) ~5 réguas de faixas diferentes e (2) pipeline automático morto (`health_score_v2` zerado, cron falhando com `schema "net" does not exist`).

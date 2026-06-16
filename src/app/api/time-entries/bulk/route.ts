@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { parseHistoricalEfforts, type HistoricalEntry } from '@/lib/gemini/parse-historical-efforts'
+import { validateHistoricalEntries } from '@/lib/effort/validate-historical'
 import { persistHistoricalEffort } from '@/lib/effort/log-effort'
 
 export const maxDuration = 300
@@ -39,8 +40,9 @@ export async function POST(request: Request) {
     }
     const today = new Date().toISOString().slice(0, 10)
     try {
-      const entries = await parseHistoricalEfforts(body.text, today)
-      return NextResponse.json({ entries })
+      const { entries, truncated } = await parseHistoricalEfforts(body.text, today)
+      const warnings = validateHistoricalEntries(entries, { today, truncated })
+      return NextResponse.json({ entries, warnings })
     } catch (e: any) {
       return NextResponse.json({ error: e?.message ?? 'Falha ao analisar o texto.' }, { status: 500 })
     }
@@ -61,6 +63,11 @@ export async function POST(request: Request) {
   let tasksCreated = 0
   const errors: string[] = []
   for (const entry of parsed.data.entries) {
+    // Defesa: nunca grava data inválida (a UI já desmarca, mas chamadas diretas não)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || Number.isNaN(Date.parse(entry.date))) {
+      errors.push(`${entry.date}: data inválida (ignorada)`)
+      continue
+    }
     try {
       const r = await persistHistoricalEffort({
         userId: user.id,

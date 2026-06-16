@@ -19,13 +19,59 @@ export type HistoricalEntry = {
   skip_tasks: boolean          // true se o texto pedir para NÃO registrar atividades
 }
 
+export type HistoricalParseResult = {
+  entries: HistoricalEntry[]
+  /** true quando a resposta da IA veio truncada e só recuperamos parte das reuniões */
+  truncated: boolean
+}
+
+/**
+ * Recupera entradas de um JSON possivelmente truncado (resposta da IA cortada pelo
+ * teto de saída). Varre o array `entries` objeto a objeto, com controle de strings
+ * e profundidade de chaves, e devolve apenas os objetos COMPLETOS — a última reunião
+ * cortada é descartada em silêncio.
+ */
+function salvageEntries(raw: string): HistoricalEntry[] {
+  const keyIdx = raw.indexOf('"entries"')
+  const startIdx = raw.indexOf('[', keyIdx === -1 ? 0 : keyIdx)
+  if (startIdx === -1) return []
+
+  const objects: HistoricalEntry[] = []
+  let depth = 0
+  let objStart = -1
+  let inStr = false
+  let esc = false
+
+  for (let i = startIdx + 1; i < raw.length; i++) {
+    const c = raw[i]
+    if (inStr) {
+      if (esc) esc = false
+      else if (c === '\\') esc = true
+      else if (c === '"') inStr = false
+      continue
+    }
+    if (c === '"') { inStr = true; continue }
+    if (c === '{') { if (depth === 0) objStart = i; depth++ }
+    else if (c === '}') {
+      depth--
+      if (depth === 0 && objStart !== -1) {
+        try { objects.push(JSON.parse(raw.slice(objStart, i + 1)) as HistoricalEntry) } catch { /* objeto incompleto */ }
+        objStart = -1
+      }
+    } else if (c === ']' && depth === 0) {
+      break
+    }
+  }
+  return objects
+}
+
 /**
  * Carga histórica: recebe UM bloco contendo VÁRIAS reuniões/esforços (cada um com
  * sua data) e separa em entradas individuais por data. Cada entrada preserva o
  * trecho original (para o RAG) + resumo + ações. `skip_tasks=true` quando o texto
  * daquela reunião pedir explicitamente para não registrar atividades/tarefas.
  */
-export async function parseHistoricalEfforts(rawText: string, today: string): Promise<HistoricalEntry[]> {
+export async function parseHistoricalEfforts(rawText: string, today: string): Promise<HistoricalParseResult> {
   const prompt = `Você é um assistente de Customer Success. O texto abaixo é uma CARGA HISTÓRICA contendo VÁRIAS reuniões/esforços com um cliente, cada um geralmente com sua própria DATA. Separe o texto em ENTRADAS INDIVIDUAIS — uma por reunião/data.
 
 Texto:
@@ -70,21 +116,33 @@ ATENÇÃO: escreva o JSON sem quebras de linha físicas dentro de strings (use "
     allowFallback: true,
     disableThinking: true,
     responseMimeType: 'application/json',
+    // A carga histórica precisa ecoar o `raw_text` FIEL de cada reunião — a saída
+    // é, no mínimo, do tamanho do texto colado. O teto padrão (2048) trunca o JSON
+    // em textos grandes e quebra o parse. Damos folga generosa aqui.
+    maxOutputTokens: 32768,
   })
 
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
   const json = jsonMatch ? jsonMatch[0] : raw
 
-  let parsed: { entries?: HistoricalEntry[] }
+  let entries: HistoricalEntry[]
+  let truncated = false
   try {
-    parsed = JSON.parse(json)
+    const parsed = JSON.parse(json) as { entries?: HistoricalEntry[] }
+    entries = Array.isArray(parsed.entries) ? parsed.entries : []
   } catch {
-    console.error('[Historical] JSON inválido:', json)
-    throw new Error('IA retornou formato inválido para a carga histórica')
+    // Resposta provavelmente truncada (texto longo demais para o teto de saída).
+    // Tenta recuperar as reuniões completas e descarta apenas a última cortada.
+    entries = salvageEntries(raw)
+    truncated = true
+    if (entries.length === 0) {
+      console.error('[Historical] JSON inválido:', raw.slice(0, 800))
+      throw new Error('IA retornou formato inválido para a carga histórica. O texto pode estar longo demais — cole menos reuniões por vez e tente novamente.')
+    }
+    console.warn(`[Historical] Resposta truncada; recuperadas ${entries.length} reunião(ões) completa(s).`)
   }
 
-  const entries = Array.isArray(parsed.entries) ? parsed.entries : []
-  return entries.map((e) => ({
+  const normalized = entries.map((e) => ({
     date: e.date || today,
     raw_text: (e.raw_text || '').trim() || (e.parsed_description || ''),
     parsed_description: e.parsed_description || '',
@@ -94,4 +152,6 @@ ATENÇÃO: escreva o JSON sem quebras de linha físicas dentro de strings (use "
     action_items: Array.isArray(e.action_items) ? e.action_items.slice(0, 5) : [],
     skip_tasks: e.skip_tasks === true,
   }))
+
+  return { entries: normalized, truncated }
 }
