@@ -126,6 +126,10 @@ export interface AccountIndex {
   byCode: Map<string, string>
   byDomain: Map<string, string>
   bySubdomain: Map<string, string>
+  /** de-para explícito código→account_id (gerido na config) */
+  codeMap: Map<string, string>
+  /** de-para explícito domínio→account_id (gerido na config) */
+  domainMap: Map<string, string>
 }
 
 const normalize = (s: string) =>
@@ -140,12 +144,17 @@ function subdomainOf(url: string): string | null {
 
 export function buildAccountIndex(
   accounts: Array<{ id: string; name: string; client_id: string | null; website: string | null }>,
-  contracts: Array<{ account_id: string; instance_url: string | null }> = []
+  contracts: Array<{ account_id: string; instance_url: string | null }> = [],
+  maps: { code_map?: Record<string, string>; domain_map?: Record<string, string> } = {}
 ): AccountIndex {
   const byName = new Map<string, string>()
   const byCode = new Map<string, string>()
   const byDomain = new Map<string, string>()
   const bySubdomain = new Map<string, string>()
+  const codeMap = new Map<string, string>()
+  const domainMap = new Map<string, string>()
+  for (const [k, v] of Object.entries(maps.code_map ?? {})) codeMap.set(normalize(k), v)
+  for (const [k, v] of Object.entries(maps.domain_map ?? {})) domainMap.set(normalize(k), v)
   for (const a of accounts) {
     if (a.name) byName.set(normalize(a.name), a.id)
     if (a.client_id) byCode.set(normalize(a.client_id), a.id)
@@ -160,32 +169,35 @@ export function buildAccountIndex(
       if (sub) bySubdomain.set(sub, c.account_id)
     }
   }
-  return { byName, byCode, byDomain, bySubdomain }
+  return { byName, byCode, byDomain, bySubdomain, codeMap, domainMap }
 }
 
+const isInternalDomain = (d: string) => d === 'plannera.com.br' || d === 'plannera.com'
+
 export function resolveAccountId(t: NormalizedTicket, idx: AccountIndex): string | null {
-  // 1) Código entre colchetes no assunto (= subdomínio da instance_url do contrato).
   const codeMatch = t.subject.match(/\[([^\]]+)\]/)
+  const domain = t.requesterEmail?.includes('@') ? normalize(t.requesterEmail.split('@')[1] ?? '') : ''
+
+  // 1) Código entre colchetes — de-para explícito por TOKEN (resolve "[S&OP LINDT BR]",
+  //    "[SOE-GMILLS]", "[SKLA - S&OE]" etc.), depois subdomínio do contrato.
   if (codeMatch) {
-    const code = normalize(codeMatch[1])
-    if (idx.bySubdomain.has(code)) return idx.bySubdomain.get(code)!
-    if (idx.byCode.has(code)) return idx.byCode.get(code)!
-    for (const [name, id] of idx.byName) {
-      if (name.includes(code) || code.includes(name)) return id
+    const raw = normalize(codeMatch[1])
+    if (idx.codeMap.has(raw)) return idx.codeMap.get(raw)!
+    for (const tokRaw of codeMatch[1].split(/[^A-Za-z0-9]+/)) {
+      const tok = normalize(tokRaw)
+      if (tok && idx.codeMap.has(tok)) return idx.codeMap.get(tok)!
     }
+    if (idx.bySubdomain.has(raw)) return idx.bySubdomain.get(raw)!
+    if (idx.byCode.has(raw)) return idx.byCode.get(raw)!
   }
 
-  // 2) Domínio do e-mail do solicitante.
-  if (t.requesterEmail && t.requesterEmail.includes('@')) {
-    const domain = normalize(t.requesterEmail.split('@')[1] ?? '')
-    if (domain) {
-      if (idx.byDomain.has(domain)) return idx.byDomain.get(domain)!
-      const core = domain.split('.')[0]
-      for (const [name, id] of idx.byName) {
-        if (name.replace(/\s/g, '').includes(core) || core.includes(name.replace(/\s/g, ''))) {
-          return id
-        }
-      }
+  // 2) Domínio do e-mail (ignora domínios internos — nesses casos o código é o sinal).
+  if (domain && !isInternalDomain(domain)) {
+    if (idx.domainMap.has(domain)) return idx.domainMap.get(domain)!
+    if (idx.byDomain.has(domain)) return idx.byDomain.get(domain)!
+    const core = domain.split('.')[0]
+    for (const [name, id] of idx.byName) {
+      if (name.replace(/\s/g, '').includes(core) || core.includes(name.replace(/\s/g, ''))) return id
     }
   }
 

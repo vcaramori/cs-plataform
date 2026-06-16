@@ -13,6 +13,10 @@ export interface HelpDeskIntegrationConfig {
   secret?: string
   fallback_account_id?: string
   enabled?: boolean
+  /** de-para código (do colchete no assunto) → account_id */
+  code_map?: Record<string, string>
+  /** de-para domínio do e-mail → account_id */
+  domain_map?: Record<string, string>
 }
 
 export async function getIntegrationConfig(): Promise<HelpDeskIntegrationConfig> {

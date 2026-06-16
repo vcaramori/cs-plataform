@@ -68,11 +68,15 @@ async function writeState(state: SyncState): Promise<void> {
 
 async function loadAccountIndex(): Promise<AccountIndex> {
   const admin = getSupabaseAdminClient()
-  const [{ data: accounts }, { data: contracts }] = await Promise.all([
+  const [{ data: accounts }, { data: contracts }, cfg] = await Promise.all([
     admin.from('accounts').select('id, name, client_id, website'),
     admin.from('contracts').select('account_id, instance_url'),
+    getIntegrationConfig(),
   ])
-  return buildAccountIndex(accounts ?? [], contracts ?? [])
+  return buildAccountIndex(accounts ?? [], contracts ?? [], {
+    code_map: cfg.code_map,
+    domain_map: cfg.domain_map,
+  })
 }
 
 async function upsertTicket(
