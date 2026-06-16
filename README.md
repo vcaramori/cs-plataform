@@ -183,6 +183,13 @@ Correções (3 bugs de constraint + observabilidade + estado):
 - [HelpDeskSettingsTab.tsx](src/app/(dashboard)/admin/settings/components/HelpDeskSettingsTab.tsx): toast mostra `lidos · novos · atualizados · CSAT · pulados · erros` + surfacing do 1º erro.
 - **Backfill executado**: **305 chamados + 40 CSAT** carregados (8 sem cliente: 6 forwards internos + 2 domínios não mapeados — `meetupconsultoria.com.br`/`masterlinebrasil.com.br`). Embeddings via "Reprocessar RAG (itens faltantes)".
 
+#### Follow-up: tempos de atendimento corretos (2026-06-16)
+
+Após a carga, o dashboard de suporte mostrava **tempo de 1ª resposta vazio** e **tempo médio de resolução incorreto**. Dois problemas:
+- **1ª resposta nunca era computada**: o sync não preenchia `first_response_at`. Agora [map.ts](src/lib/integrations/helpdesk/map.ts) extrai a **primeira mensagem pública de um agente** dos `events` (`author.type==='agent'`) e [sync.ts](src/lib/integrations/helpdesk/sync.ts) grava em `first_response_at`. Backfill: **298/305** com 1ª resposta.
+- **Tempos sem precisão**: `opened_at`/`resolved_at` eram `date` (sem hora) → resolução no mesmo dia contava 0min. Migration [20260616180000](supabase/migrations/20260616180000_support_tickets_opened_resolved_timestamptz.sql) converte para `timestamptz` (drop/recreate da view `stale_ticket_summaries`) e o backfill regravou os horários reais. TMP ≈ 20h, TMR ≈ 3,9 dias.
+- **CSAT**: os 40 estão corretos e ligados aos chamados (15 nos últimos 30 dias). Aparecem no KPI do período e no recorte por cliente; **por agente fica zerado** porque os chamados importados não têm `assigned_to` (agentes do HelpDesk não mapeiam para usuários da plataforma).
+
 ### 🐛 Carga histórica — fix do "formato inválido" + validação antes de subir (2026-06-16)
 
 Colar um bloco grande (várias transcrições de reunião) na **Carga histórica de esforços** falhava com *"IA retornou formato inválido para a carga histórica"*. Causa raiz: o prompt pede para **ecoar o `raw_text` FIEL** de cada reunião, então a saída JSON é, no mínimo, do tamanho do texto colado — mas o teto de saída era o padrão **2048 tokens** ([settings.ts](src/lib/llm/settings.ts)). A resposta vinha **truncada** no meio de uma string e o `JSON.parse` quebrava.

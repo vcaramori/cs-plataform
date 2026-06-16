@@ -1,4 +1,4 @@
-import type { HelpDeskTicket, HelpDeskEvent, HelpDeskStatusEvent } from './client'
+import type { HelpDeskTicket, HelpDeskEvent, HelpDeskStatusEvent, HelpDeskMessageEvent } from './client'
 
 /**
  * Normalização do payload REAL da HelpDesk API para o modelo do cs-plataform.
@@ -22,6 +22,7 @@ export interface NormalizedTicket {
   openedAt: string | null
   resolvedAt: string | null
   closedAt: string | null
+  firstResponseAt: string | null  // 1ª resposta de um AGENTE (não privada)
   updatedAt: string | null
   rating: { score: number; comment: string | null } | null
 }
@@ -81,6 +82,18 @@ function lastStatusDate(events: HelpDeskEvent[] | undefined, target: string): st
   return date
 }
 
+/** Data da PRIMEIRA mensagem pública de um AGENTE (= tempo de 1ª resposta). */
+function firstAgentResponseDate(events: HelpDeskEvent[] | undefined): string | null {
+  if (!events) return null
+  for (const e of events) {
+    if (e.type !== 'message') continue
+    const msg = (e as HelpDeskMessageEvent).message
+    const author = (e as HelpDeskMessageEvent).author
+    if (msg && msg.isPrivate !== true && author?.type === 'agent' && e.date) return e.date
+  }
+  return null
+}
+
 /** Concatena os textos das mensagens públicas da thread. */
 function buildThread(events: HelpDeskEvent[] | undefined): { description: string; thread: string } {
   if (!events) return { description: '', thread: '' }
@@ -112,6 +125,7 @@ export function normalizeTicket(t: HelpDeskTicket): NormalizedTicket | null {
     openedAt: t.createdAt ?? null,
     resolvedAt: lastStatusDate(t.events, 'solved'),
     closedAt: lastStatusDate(t.events, 'closed'),
+    firstResponseAt: firstAgentResponseDate(t.events),
     updatedAt: t.updatedAt ?? t.lastMessageAt ?? null,
     rating: extractRating(t),
   }

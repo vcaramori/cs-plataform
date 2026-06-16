@@ -27,6 +27,8 @@ export interface HelpDeskStatusEvent {
 export interface HelpDeskMessageEvent {
   type: 'message'
   date: string
+  // author.type distingue 'client' (requester) de 'agent' (operador) — usado p/ 1ª resposta.
+  author?: { type?: string; email?: string; ID?: string; name?: string }
   message?: { text?: string; isPrivate?: boolean }
 }
 export type HelpDeskEvent =

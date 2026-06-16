@@ -108,6 +108,7 @@ async function upsertTicket(
         opened_at: n.openedAt ?? new Date().toISOString(),
         resolved_at: n.resolvedAt,
         closed_at: n.closedAt,
+        first_response_at: n.firstResponseAt,
         external_ticket_id: n.externalId,
         source: 'helpdesk',
       },
