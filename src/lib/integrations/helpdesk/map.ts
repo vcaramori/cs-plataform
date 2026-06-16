@@ -191,7 +191,7 @@ export function resolveAccountId(t: NormalizedTicket, idx: AccountIndex): string
     if (idx.byCode.has(raw)) return idx.byCode.get(raw)!
   }
 
-  // 2) Domínio do e-mail (ignora domínios internos — nesses casos o código é o sinal).
+  // 2) Domínio do e-mail (ignora domínios internos — nesses casos o cliente está no assunto).
   if (domain && !isInternalDomain(domain)) {
     if (idx.domainMap.has(domain)) return idx.domainMap.get(domain)!
     if (idx.byDomain.has(domain)) return idx.byDomain.get(domain)!
@@ -200,6 +200,19 @@ export function resolveAccountId(t: NormalizedTicket, idx: AccountIndex): string
       if (name.replace(/\s/g, '').includes(core) || core.includes(name.replace(/\s/g, ''))) return id
     }
   }
+
+  // 3) Nome da conta mencionado no assunto (o cliente quase sempre é citado no subject,
+  //    inclusive nos chamados internos da Plannera). Exige nome com >=5 chars p/ evitar
+  //    falsos positivos; prioriza o nome mais longo encontrado.
+  const subjNorm = normalize(t.subject).replace(/\s/g, '')
+  let best: { id: string; len: number } | null = null
+  for (const [name, id] of idx.byName) {
+    const n = name.replace(/\s/g, '')
+    if (n.length >= 5 && subjNorm.includes(n) && (!best || n.length > best.len)) {
+      best = { id, len: n.length }
+    }
+  }
+  if (best) return best.id
 
   return null
 }
