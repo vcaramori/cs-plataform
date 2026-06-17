@@ -169,6 +169,15 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 💬 Conversa completa do chamado (thread HelpDesk) + tempo médio de resposta (2026-06-17)
+
+A tela de detalhe do chamado ([TicketDetailClient.tsx](src/app/(dashboard)/suporte/[id]/components/TicketDetailClient.tsx)) passou a renderizar a **conversa importada do HelpDesk** igual à ferramenta de origem: cada mensagem separada por **ator** (cliente/agente), **logs de status/atribuição/avaliação** intercalados, **imagens inline** e **anexos** — tudo num **scroll único**.
+
+- **Nova tabela** [helpdesk_thread_events](supabase/migrations/20260617140000_helpdesk_thread_events.sql) (1 linha por evento: message/note/status/assignment/rating). O sync ([map.ts](src/lib/integrations/helpdesk/map.ts) `buildThreadEvents`) reconstrói a thread dos `events` do HelpDesk: mapeia `cid → url` (imagens inline embutidas no e-mail vêm como `cid:`), separa anexos não-inline, e preserva a ordem cronológica. [sync.ts](src/lib/integrations/helpdesk/sync.ts) persiste (apaga+reinsere por chamado). RLS sem policies → leitura via admin na [page.tsx](src/app/(dashboard)/suporte/[id]/page.tsx) (acesso já validado por RLS no chamado).
+- **HTML rico**: o corpo do e-mail é renderizado sanitizado com **isomorphic-dompurify** (imagens, tabelas, links) — URLs de imagem/anexo são do CDN público do HelpDesk (`cdn.livechat-files.com`).
+- **Tempo médio de resposta** (novo indicador): intervalo **solicitante → resposta do agente**, média por chamado, nas variantes **corrido** e **útil (horário comercial/SLA)**. Colunas `avg_response_minutes`/`avg_response_business_minutes`; card no Painel Tático.
+- **Re-importação executada**: 305 chamados → **3.069 eventos de thread** (1.193 mensagens, 359 com anexos), e recálculo de **todas** as métricas pendentes (interações, FCR, tempo útil, 1ª resposta, tempo de resposta). Tempo médio de resposta: ~28h corrido / ~8h útil.
+
 ### 📊 Indicadores de atendimento: tempo útil (SLA), interações e FCR (2026-06-17)
 
 Novos indicadores no Painel Tático de Suporte ([SupportDashboardClient.tsx](src/app/(dashboard)/suporte/dashboard/SupportDashboardClient.tsx) + [period/route.ts](src/app/api/support-dashboard/period/route.ts)):

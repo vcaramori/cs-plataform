@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import DOMPurify from 'isomorphic-dompurify'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -136,6 +137,7 @@ interface Ticket {
   external_ticket_id?: string | null
   account_id: string
   contract_id?: string | null
+  source?: string | null
   accounts: { id: string; name: string }
   external_priority_label?: string | null
   merged_into?: string | null
@@ -196,10 +198,26 @@ interface SupportMessage {
   } | null
 }
 
+// Conversa importada do HelpDesk (1 linha por evento) — ver helpdesk_thread_events.
+interface ThreadEventRow {
+  id: string
+  kind: 'message' | 'note' | 'status' | 'assignment' | 'rating_request'
+  author_type: 'client' | 'agent' | 'system' | null
+  author_name: string | null
+  author_email: string | null
+  body_html: string | null
+  body_text: string | null
+  is_private: boolean
+  attachments: { name: string; url: string; type: string | null; size: number | null }[]
+  metadata: Record<string, any> | null
+  occurred_at: string
+}
+
 interface Props {
   ticket: Ticket
   events: SLAEvent[]
   messages: SupportMessage[]
+  threadEvents: ThreadEventRow[]
   csatResponse: CSATResponse | null
   agents: Agent[]
   currentUserId: string
@@ -368,9 +386,116 @@ function LifecycleDivider({ event }: { event: SLAEvent }) {
   )
 }
 
+// ─── HelpDesk imported thread ───────────────────────────────────────────────
+
+const HD_STATUS_LABEL: Record<string, string> = {
+  open: 'Aberto', new: 'Aberto', pending: 'Pendente', onhold: 'Em espera',
+  'on-hold': 'Em espera', solved: 'Resolvido', resolved: 'Resolvido', closed: 'Fechado',
+}
+const hdStatus = (s: string | null | undefined) => (s ? (HD_STATUS_LABEL[s.toLowerCase()] ?? s) : '—')
+
+function fmtBytes(b: number | null) {
+  if (!b || b <= 0) return ''
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function ThreadAttachments({ files }: { files: ThreadEventRow['attachments'] }) {
+  if (!files?.length) return null
+  return (
+    <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 space-y-1">
+      <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-1"><Paperclip className="w-3 h-3" /> Anexos</p>
+      {files.map((f, i) => (
+        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs underline underline-offset-2 hover:opacity-80 break-all">
+          <FileText className="w-3 h-3 shrink-0" /> {f.name}{f.size ? <span className="opacity-50 no-underline">· {fmtBytes(f.size)}</span> : null}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+/** Renderiza a conversa completa do HelpDesk em scroll único (mensagens + logs). */
+function HelpDeskThread({ events }: { events: ThreadEventRow[] }) {
+  return (
+    <div className="space-y-4">
+      {events.map((ev) => {
+        const ts = fmtTs(ev.occurred_at)
+        const who = ev.author_name || (ev.author_email ? ev.author_email.split('@')[0] : null)
+
+        if (ev.kind === 'status') {
+          return (
+            <div key={ev.id} className="flex items-center gap-2 py-0.5">
+              <div className="h-px flex-1 bg-border-divider" />
+              <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest shrink-0 text-content-secondary">
+                <RefreshCw className="w-2.5 h-2.5" />
+                Status: {hdStatus(ev.metadata?.status_old)} → {hdStatus(ev.metadata?.status_new)}
+                <span className="font-normal normal-case">· {who ? `${who} · ` : ''}{ts}</span>
+              </div>
+              <div className="h-px flex-1 bg-border-divider" />
+            </div>
+          )
+        }
+        if (ev.kind === 'assignment' || ev.kind === 'rating_request') {
+          const Icon = ev.kind === 'assignment' ? UserCheck : Star
+          const label = ev.kind === 'assignment' ? 'Atribuição' : 'Pesquisa de satisfação enviada'
+          return (
+            <div key={ev.id} className="flex items-center gap-2 py-0.5">
+              <div className="h-px flex-1 bg-border-divider" />
+              <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest shrink-0 text-content-secondary">
+                <Icon className="w-2.5 h-2.5" /> {label}
+                <span className="font-normal normal-case">· {who ? `${who} · ` : ''}{ts}</span>
+              </div>
+              <div className="h-px flex-1 bg-border-divider" />
+            </div>
+          )
+        }
+
+        // message | note
+        const isAgent = ev.author_type === 'agent'
+        const isNote = ev.kind === 'note'
+        const bodyHtml = ev.body_html ? DOMPurify.sanitize(ev.body_html, { ADD_ATTR: ['target'] }) : null
+        const bubble = isNote
+          ? 'bg-amber-50 dark:bg-amber-950/40 border-warning-100 dark:border-warning-900/50 text-amber-950 dark:text-amber-200 rounded-tl-sm'
+          : isAgent
+            ? 'bg-indigo-600 border-indigo-500 text-white rounded-tr-sm shadow-premium'
+            : 'bg-surface-background border-border-divider text-content-primary rounded-tl-sm'
+        return (
+          <div key={ev.id} className={cn('flex gap-2', isAgent && 'flex-row-reverse')}>
+            <div className={cn('w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm border',
+              isNote ? 'bg-amber-100 border-warning-200' : isAgent ? 'bg-indigo-50 border-indigo-200' : 'bg-surface-background border-border-divider')}>
+              {isNote ? <Lock className="w-3 h-3 text-amber-600" /> : isAgent ? <Mail className="w-3.5 h-3.5 text-indigo-600" /> : <User className="w-3.5 h-3.5 text-content-secondary" />}
+            </div>
+            <div className={cn('flex-1 max-w-2xl flex flex-col', isAgent && 'items-end')}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={cn('text-xs font-semibold', isAgent ? 'text-indigo-500 dark:text-indigo-400 uppercase tracking-tight' : 'text-content-primary')}>
+                  {who ? (isAgent ? who : `Cliente (${who})`) : (isAgent ? 'Agente' : 'Cliente')}
+                </span>
+                {isNote && <span className="bg-amber-100 border border-warning-200 text-amber-700 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1"><Lock className="w-2 h-2" /> Nota Interna</span>}
+                <span className="text-content-secondary text-[10px]">{ts}</span>
+              </div>
+              <div className={cn('border rounded-xl p-3 w-full', bubble)}>
+                {bodyHtml ? (
+                  <div
+                    className="text-xs leading-relaxed break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2 [&_table]:block [&_table]:overflow-x-auto [&_table]:max-w-full [&_a]:underline [&_*]:!max-w-full [&_p]:mb-2 [&_p:last-child]:mb-0"
+                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                  />
+                ) : (
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap break-words">{ev.body_text || '(sem conteúdo)'}</p>
+                )}
+                <ThreadAttachments files={ev.attachments} />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function TicketDetailClient({ ticket: init, events: initEvents, messages: initMessages, csatResponse, agents, currentUserId }: Props) {
+export function TicketDetailClient({ ticket: init, events: initEvents, messages: initMessages, threadEvents, csatResponse, agents, currentUserId }: Props) {
   const router = useRouter()
   const threadRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -950,80 +1075,87 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
               initialSummary={ticket.summary}
             />
 
-            {/* Original message */}
-            <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
+            {/* Conversa: HelpDesk importado (thread completa, scroll único) OU thread nativa */}
+            {ticket.source === 'helpdesk' && threadEvents.length > 0 ? (
+              <HelpDeskThread events={threadEvents} />
+            ) : (
+              <>
+                {/* Original message */}
+                <ClientMessage text={ticket.description} ts={ticket.opened_at + 'T12:00:00'} />
 
-            {/* Email thread if exists (and is different from description) */}
-            {ticket.thread_content && ticket.thread_content.trim() !== ticket.description?.trim() && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                  <Mail className="w-3.5 h-3.5 text-content-secondary" />
-                </div>
-                <div className="flex-1 max-w-2xl">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-content-secondary text-xs font-semibold">Thread de E-mail</span>
+                {/* Email thread if exists (and is different from description) */}
+                {ticket.thread_content && ticket.thread_content.trim() !== ticket.description?.trim() && (
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-surface-background border border-border-divider flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                      <Mail className="w-3.5 h-3.5 text-content-secondary" />
+                    </div>
+                    <div className="flex-1 max-w-2xl">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-content-secondary text-xs font-semibold">Thread de E-mail</span>
+                      </div>
+                      <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4 max-h-80 overflow-y-auto">
+                        <p className="text-content-secondary text-xs leading-relaxed whitespace-pre-wrap font-mono">{ticket.thread_content}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-surface-background border border-border-divider rounded-2xl rounded-tl-sm p-4 max-h-80 overflow-y-auto">
-                    <p className="text-content-secondary text-xs leading-relaxed whitespace-pre-wrap font-mono">{ticket.thread_content}</p>
-                  </div>
-                </div>
-              </div>
+                )}
+
+                {/* Unified Messaging Thread */}
+                <AnimatePresence initial={false}>
+                  {messages.map(msg => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {msg.type === 'reply' && (
+                        agents.some(a => a.email.toLowerCase() === msg.author_email?.toLowerCase()) ? (
+                          <AgentReply
+                            event={{
+                              id: msg.id,
+                              occurred_at: msg.created_at,
+                              event_type: 'agent_reply',
+                              metadata: { body: msg.body, author_email: msg.author_email },
+                              ticket_id: msg.ticket_id
+                            }}
+                            agents={agents}
+                            sentiment={msg.sentiment || null}
+                          />
+                        ) : (
+                          <ClientMessage text={msg.body} ts={msg.created_at} authorEmail={msg.author_email} />
+                        )
+                      )}
+                      {msg.type === 'note' && (
+                        <InternalNote
+                          event={{
+                            id: msg.id,
+                            occurred_at: msg.created_at,
+                            event_type: 'internal_note',
+                            metadata: { body: msg.body, author_email: msg.author_email },
+                            ticket_id: msg.ticket_id
+                          }}
+                        />
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Lifecycle Divider Events (that are not replies/notes) */}
+                <AnimatePresence initial={false}>
+                  {events.filter(e => e.event_type !== 'agent_reply' && e.event_type !== 'internal_note').map(event => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <LifecycleDivider event={event} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </>
             )}
-
-            {/* Unified Messaging Thread */}
-            <AnimatePresence initial={false}>
-              {messages.map(msg => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {msg.type === 'reply' && (
-                    agents.some(a => a.email.toLowerCase() === msg.author_email?.toLowerCase()) ? (
-                      <AgentReply
-                        event={{
-                          id: msg.id,
-                          occurred_at: msg.created_at,
-                          event_type: 'agent_reply',
-                          metadata: { body: msg.body, author_email: msg.author_email },
-                          ticket_id: msg.ticket_id
-                        }}
-                        agents={agents}
-                        sentiment={msg.sentiment || null}
-                      />
-                    ) : (
-                      <ClientMessage text={msg.body} ts={msg.created_at} authorEmail={msg.author_email} />
-                    )
-                  )}
-                  {msg.type === 'note' && (
-                    <InternalNote
-                      event={{
-                        id: msg.id,
-                        occurred_at: msg.created_at,
-                        event_type: 'internal_note',
-                        metadata: { body: msg.body, author_email: msg.author_email },
-                        ticket_id: msg.ticket_id
-                      }}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {/* Lifecycle Divider Events (that are not replies/notes) */}
-            <AnimatePresence initial={false}>
-              {events.filter(e => e.event_type !== 'agent_reply' && e.event_type !== 'internal_note').map(event => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <LifecycleDivider event={event} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
 
             {/* CSAT at bottom of thread */}
             {isClosedOrResolved && (

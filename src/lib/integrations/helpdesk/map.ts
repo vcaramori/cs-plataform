@@ -25,9 +25,28 @@ export interface NormalizedTicket {
   firstResponseAt: string | null  // 1ª resposta de um AGENTE (não privada)
   publicMessageCount: number       // mensagens públicas (cliente+agente) = interações
   agentReplyCount: number          // respostas públicas do agente (FCR = 1)
+  thread: ThreadEvent[]            // conversa completa (mensagens + logs) p/ a tela de detalhe
+  responseGaps: ResponseGap[]      // pares solicitante→resposta do agente (tempo médio de resposta)
   updatedAt: string | null
   rating: { score: number; comment: string | null } | null
 }
+
+export type ThreadAttachment = { name: string; url: string; type: string | null; size: number | null }
+export type ThreadEventKind = 'message' | 'note' | 'status' | 'assignment' | 'rating_request'
+export interface ThreadEvent {
+  externalEventId: string | null
+  kind: ThreadEventKind
+  authorType: 'client' | 'agent' | 'system' | null
+  authorName: string | null
+  authorEmail: string | null
+  bodyHtml: string | null          // HTML do e-mail com imagens inline (cid→url) reescritas
+  bodyText: string | null
+  isPrivate: boolean
+  attachments: ThreadAttachment[]
+  metadata: Record<string, unknown> | null
+  occurredAt: string
+}
+export type ResponseGap = { from: string; to: string }
 
 // HelpDesk: open, pending, onhold, solved, closed.
 export function mapStatus(raw: string | undefined): AppStatus {
@@ -125,11 +144,111 @@ function buildThread(events: HelpDeskEvent[] | undefined): { description: string
   return { description: texts[0] ?? '', thread: texts.join('\n\n---\n\n') }
 }
 
+/**
+ * Reconstrói a conversa completa do chamado a partir dos `events` do HelpDesk:
+ * mensagens (HTML com imagens inline cid→url + anexos), notas privadas, mudanças de
+ * status, atribuições e pedido de avaliação. Mantém a ordem cronológica original.
+ */
+function buildThreadEvents(rawEvents: HelpDeskEvent[] | undefined): ThreadEvent[] {
+  const events = (rawEvents ?? []) as any[]
+
+  // 1) Mapa cid→arquivo (imagens inline e anexos vêm em eventos type:'attachments').
+  const cidMap = new Map<string, ThreadAttachment>()
+  for (const e of events) {
+    const files = e?.attachments?.files
+    if (Array.isArray(files)) {
+      for (const f of files) {
+        if (f?.url && f?.cid) cidMap.set(f.cid, { name: f.name ?? 'arquivo', url: f.url, type: f.type ?? null, size: typeof f.size === 'number' ? f.size : null })
+      }
+    }
+  }
+  // 2) cids realmente usados inline no corpo das mensagens (para não duplicar como anexo).
+  const inlineCids = new Set<string>()
+  for (const e of events) {
+    if (e?.type === 'message' && typeof e?.message?.richTextHtml === 'string') {
+      for (const m of e.message.richTextHtml.matchAll(/cid:([^"')\s]+)/gi)) inlineCids.add(m[1])
+    }
+  }
+  const rewriteCids = (html: string) =>
+    html.replace(/src=["']cid:([^"']+)["']/gi, (full, cid) => {
+      const f = cidMap.get(cid)
+      return f ? `src="${f.url}"` : full
+    })
+
+  const out: ThreadEvent[] = []
+  let lastMessage: ThreadEvent | null = null
+
+  for (const e of events) {
+    const occurredAt = e?.date ?? null
+    if (!occurredAt) continue
+    const author = e?.author ?? null
+    const authorType: ThreadEvent['authorType'] =
+      author?.type === 'client' || author?.type === 'agent' ? author.type : 'system'
+    const authorName = author?.name ?? null
+    const authorEmail = author?.email ?? null
+
+    if (e.type === 'message') {
+      const m = e.message ?? {}
+      const isPrivate = m.isPrivate === true
+      const html = typeof m.richTextHtml === 'string' && m.richTextHtml.trim() ? rewriteCids(m.richTextHtml) : null
+      const row: ThreadEvent = {
+        externalEventId: e.ID ?? null,
+        kind: isPrivate ? 'note' : 'message',
+        authorType, authorName, authorEmail,
+        bodyHtml: html,
+        bodyText: (m.text ?? m.stripped ?? '').trim() || null,
+        isPrivate,
+        attachments: [],
+        metadata: null,
+        occurredAt,
+      }
+      out.push(row)
+      lastMessage = row
+    } else if (e.type === 'attachments') {
+      const files = e?.attachments?.files
+      if (Array.isArray(files) && lastMessage) {
+        for (const f of files) {
+          if (!f?.url) continue
+          if (f.cid && inlineCids.has(f.cid)) continue // já renderizada inline no HTML
+          lastMessage.attachments.push({ name: f.name ?? 'arquivo', url: f.url, type: f.type ?? null, size: typeof f.size === 'number' ? f.size : null })
+        }
+      }
+    } else if (e.type === 'status') {
+      out.push({ externalEventId: e.ID ?? null, kind: 'status', authorType, authorName, authorEmail, bodyHtml: null, bodyText: null, isPrivate: false, attachments: [], metadata: { status_old: e.status?.old ?? null, status_new: e.status?.new ?? null }, occurredAt })
+    } else if (e.type === 'assignment') {
+      out.push({ externalEventId: e.ID ?? null, kind: 'assignment', authorType, authorName, authorEmail, bodyHtml: null, bodyText: null, isPrivate: false, attachments: [], metadata: (e.assignment ?? null) as Record<string, unknown> | null, occurredAt })
+    } else if (e.type === 'ratingRequestSent') {
+      out.push({ externalEventId: e.ID ?? null, kind: 'rating_request', authorType, authorName, authorEmail, bodyHtml: null, bodyText: null, isPrivate: false, attachments: [], metadata: null, occurredAt })
+    }
+    // demais tipos (tags, followers, subject, priority, spam) não entram na thread visível
+  }
+  return out
+}
+
+/** Pares solicitante→resposta-do-agente para o tempo médio de resposta. */
+function buildResponseGaps(thread: ThreadEvent[]): ResponseGap[] {
+  const msgs = thread
+    .filter((t) => t.kind === 'message' && !t.isPrivate)
+    .sort((a, b) => (a.occurredAt < b.occurredAt ? -1 : 1))
+  const gaps: ResponseGap[] = []
+  let pendingClient: string | null = null
+  for (const m of msgs) {
+    if (m.authorType === 'client') {
+      if (!pendingClient) pendingClient = m.occurredAt
+    } else if (m.authorType === 'agent') {
+      if (pendingClient) { gaps.push({ from: pendingClient, to: m.occurredAt }); pendingClient = null }
+    }
+  }
+  return gaps
+}
+
 export function normalizeTicket(t: HelpDeskTicket): NormalizedTicket | null {
   if (!t.ID) return null
   const subject = (t.subject ?? '').trim() || 'Sem título'
   const { description, thread } = buildThread(t.events)
   const { publicCount, agentCount } = countMessages(t.events)
+  const threadEvents = buildThreadEvents(t.events)
+  const responseGaps = buildResponseGaps(threadEvents)
 
   return {
     externalId: t.ID,
@@ -147,6 +266,8 @@ export function normalizeTicket(t: HelpDeskTicket): NormalizedTicket | null {
     firstResponseAt: firstAgentResponseDate(t.events),
     publicMessageCount: publicCount,
     agentReplyCount: agentCount,
+    thread: threadEvents,
+    responseGaps,
     updatedAt: t.updatedAt ?? t.lastMessageAt ?? null,
     rating: extractRating(t),
   }

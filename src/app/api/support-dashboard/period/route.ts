@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const { data: tickets, error } = await supabase
     .from('support_tickets')
-    .select('id, status, opened_at, resolved_at, first_response_at, first_response_deadline, resolution_deadline, sla_breach_resolution, sla_breach_first_response, first_response_business_minutes, resolution_business_minutes, public_message_count, agent_reply_count, accounts!inner(csm_owner_id)')
+    .select('id, status, opened_at, resolved_at, first_response_at, first_response_deadline, resolution_deadline, sla_breach_resolution, sla_breach_first_response, first_response_business_minutes, resolution_business_minutes, avg_response_minutes, avg_response_business_minutes, public_message_count, agent_reply_count, accounts!inner(csm_owner_id)')
     .gte('opened_at', dateFrom)
     .lte('opened_at', dateTo)
 
@@ -40,6 +40,14 @@ export async function GET(request: Request) {
   const avgResolutionBusinessMinutes = avg(resolved
     .filter(t => typeof t.resolution_business_minutes === 'number')
     .map(t => t.resolution_business_minutes))
+
+  // Tempo médio de RESPOSTA (solicitante→agente) — corrido e útil (pré-calc por chamado)
+  const avgResponseMinutes = avg(all
+    .filter(t => typeof t.avg_response_minutes === 'number')
+    .map(t => t.avg_response_minutes))
+  const avgResponseBusinessMinutes = avg(all
+    .filter(t => typeof t.avg_response_business_minutes === 'number')
+    .map(t => t.avg_response_business_minutes))
 
   // Média de INTERAÇÕES (mensagens públicas) necessárias para resolver.
   // Considera só chamados com contagem já processada (>0) — evita "0" falso de chamados
@@ -89,6 +97,8 @@ export async function GET(request: Request) {
     avg_resolution_minutes: avgResolutionMinutes != null ? Math.round(avgResolutionMinutes) : null,
     avg_first_response_business_minutes: avgFirstResponseBusinessMinutes != null ? Math.round(avgFirstResponseBusinessMinutes) : null,
     avg_resolution_business_minutes: avgResolutionBusinessMinutes != null ? Math.round(avgResolutionBusinessMinutes) : null,
+    avg_response_minutes: avgResponseMinutes != null ? Math.round(avgResponseMinutes) : null,
+    avg_response_business_minutes: avgResponseBusinessMinutes != null ? Math.round(avgResponseBusinessMinutes) : null,
     avg_interactions_resolved: avgInteractionsResolved != null ? Math.round(avgInteractionsResolved * 10) / 10 : null,
     fcr_pct: fcrPct,
     fcr_count: fcrCount,

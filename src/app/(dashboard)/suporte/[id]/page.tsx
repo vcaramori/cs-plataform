@@ -49,6 +49,14 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     // Non-fatal
   }
 
+  // Conversa completa importada do HelpDesk (RLS sem policies → leitura via admin; o acesso
+  // ao chamado já foi validado por RLS acima). Renderizada em scroll único no detalhe.
+  const { data: threadEvents } = await admin
+    .from('helpdesk_thread_events')
+    .select('*')
+    .eq('ticket_id', id)
+    .order('occurred_at', { ascending: true })
+
   return (
     // Escape the dashboard padding container and fill the entire available area
     <div className="flex flex-col min-h-0 w-full h-full max-h-full overflow-hidden">
@@ -56,6 +64,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         ticket={ticket as any}
         events={events ?? []}
         messages={(messages ?? []) as any}
+        threadEvents={(threadEvents ?? []) as any}
         csatResponse={csatResponse ?? null}
         agents={agents}
         currentUserId={user.id}

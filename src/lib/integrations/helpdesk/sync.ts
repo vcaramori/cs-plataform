@@ -124,6 +124,22 @@ async function upsertTicket(
     businessMinutes(ctx, accountId, openedAt, n.resolvedAt),
   ])
 
+  // Tempo médio de resposta (solicitante→agente): corrido + útil (horário comercial).
+  let avgRespMin: number | null = null
+  let avgRespBusinessMin: number | null = null
+  if (n.responseGaps.length) {
+    const corrido = n.responseGaps
+      .map((g) => (new Date(g.to).getTime() - new Date(g.from).getTime()) / 60000)
+      .filter((v) => v >= 0)
+    if (corrido.length) avgRespMin = Math.round(corrido.reduce((a, b) => a + b, 0) / corrido.length)
+    const biz: number[] = []
+    for (const g of n.responseGaps) {
+      const b = await businessMinutes(ctx, accountId, g.from, g.to)
+      if (b != null) biz.push(b)
+    }
+    if (biz.length) avgRespBusinessMin = Math.round(biz.reduce((a, b) => a + b, 0) / biz.length)
+  }
+
   // cast: colunas first_response_business_minutes/etc. ainda não estão em database.types.
   const { data: saved, error } = await (admin.from('support_tickets') as any)
     .upsert(
@@ -144,6 +160,8 @@ async function upsertTicket(
         resolution_business_minutes: resBusiness,
         public_message_count: n.publicMessageCount,
         agent_reply_count: n.agentReplyCount,
+        avg_response_minutes: avgRespMin,
+        avg_response_business_minutes: avgRespBusinessMin,
         external_ticket_id: n.externalId,
         source: 'helpdesk',
       },
@@ -184,6 +202,31 @@ async function upsertTicket(
     )
     if (csatErr) result.errors.push(`CSAT ${n.externalId}: ${csatErr.message}`)
     else result.csat++
+  }
+
+  // Conversa completa (mensagens + logs): apaga e reinsere por chamado (idempotente).
+  try {
+    await (admin as any).from('helpdesk_thread_events').delete().eq('ticket_id', saved.id)
+    if (n.thread.length) {
+      const rows = n.thread.map((ev) => ({
+        ticket_id: saved.id,
+        external_event_id: ev.externalEventId,
+        kind: ev.kind,
+        author_type: ev.authorType,
+        author_name: ev.authorName,
+        author_email: ev.authorEmail,
+        body_html: ev.bodyHtml,
+        body_text: ev.bodyText,
+        is_private: ev.isPrivate,
+        attachments: ev.attachments,
+        metadata: ev.metadata,
+        occurred_at: ev.occurredAt,
+      }))
+      const { error: thErr } = await (admin as any).from('helpdesk_thread_events').insert(rows)
+      if (thErr) console.error(`[HelpDesk Sync] thread insert (ticket ${n.externalId}):`, thErr.message)
+    }
+  } catch (e) {
+    console.error(`[HelpDesk Sync] thread persist (ticket ${n.externalId}):`, e)
   }
 }
 

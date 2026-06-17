@@ -8,7 +8,7 @@ import {
 } from 'recharts'
 import {
   TicketCheck, AlertTriangle, Clock, CheckCircle2, Download,
-  Users, Building2, RefreshCw, ShieldCheck, Star
+  Users, Building2, RefreshCw, ShieldCheck, Star, Mail
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -43,6 +43,8 @@ interface PeriodData {
   avg_resolution_minutes: number | null
   avg_first_response_business_minutes: number | null
   avg_resolution_business_minutes: number | null
+  avg_response_minutes: number | null
+  avg_response_business_minutes: number | null
   avg_interactions_resolved: number | null
   fcr_pct: number | null
   fcr_count: number
@@ -280,8 +282,28 @@ export function SupportDashboardClient() {
           </Card>
         </div>
 
-        {/* Eficiência de resolução — interações e FCR */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Eficiência de resolução — tempo de resposta, interações e FCR */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[50px] -mr-10 -mt-10" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">Tempo Médio de Resposta</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-4xl font-black text-blue-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_response_minutes ?? null)}</p>
+                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Corrido</span>
+                </div>
+                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">
+                  Útil (SLA): <span className="text-blue-500/80">{loading ? '—' : formatMinutes(periodData?.avg_response_business_minutes ?? null)}</span>
+                </p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">Solicitante → resposta do agente</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-blue-500/10 text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
+                <Mail className="w-6 h-6" />
+              </div>
+            </div>
+          </Card>
+
           <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-plannera-orange/5 blur-[50px] -mr-10 -mt-10" />
             <div className="flex items-center justify-between">
