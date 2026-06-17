@@ -556,6 +556,7 @@ type Contract = {
 | Mai/2026 | Novo componente `HealthBreakdownCard` exibindo as 4 barras de progresso (coluna direita) |
 | Mai/2026 | Cron diário `/api/cron/health-score-daily` recalcula health_score_v2 para todos os clientes ativos |
 | Mai/2026 | Modal `HealthScoreDetailsModal` mostra breakdown v2 quando disponível (abaixo do gráfico histórico) |
+| Jun/2026 | **Fix "Erro ao salvar contrato"**: o schema de `POST/PATCH /api/contracts` usava o campo `discount_value_brl`, mas a coluna real é `discount_fixed_amount`. Com `.default(0)` no POST, todo insert tentava gravar coluna inexistente → 500 e **nenhum contrato salvava** (tabela vazia). Corrigido o nome do campo; PATCH passou a remover `null`s antes de validar (front pode mandar o contrato cru). |
 | Jun/2026 | **Success Plan — cadastro acessível**: painel na conta ganha botão "Nova Meta" **sempre visível** (+ CTA no empty state) abrindo o `AddIndicatorModal`; "Abrir Plano Completo" deixa de exigir indicadores. Corrige o beco sem saída (não havia como cadastrar o 1º indicador). |
 | Jun/2026 | **Curadoria de risco**: confirmar/marcar falso positivo (+ motivo) no AlertCenter e no Cockpit de Risco (`/risco`); salvo em `risk_curation_feedback` e injetado no contexto da IA (predictive-risk + RAG) para não repetir o erro. |
 | Jun/2026 | **Timeline sem duplicação**: interações geradas a partir de um esforço (`time_entry_id` setado, `source='effort_sync'`) deixam de aparecer como item separado — o esforço (time_entry) já é o registro. Interações avulsas (upload de transcrição/manuais) seguem normais. |

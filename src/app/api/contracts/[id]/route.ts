@@ -5,7 +5,16 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { syncContractLinks } from '@/lib/contracts/links'
 import { backfillResponsesForInstance } from '@/lib/nps/instance'
 
-const UpdateSchema = z.object({
+// Premissa: o front pode mandar o contrato cru (campos null vindos do banco). null = "não
+// alterar" → removemos nulls antes de validar, evitando 400 em campos optional não-nullable.
+const stripNulls = (raw: unknown) => {
+  if (!raw || typeof raw !== 'object') return raw
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) if (v !== null) out[k] = v
+  return out
+}
+
+const UpdateSchema = z.preprocess(stripNulls, z.object({
   mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
   start_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
   renewal_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
@@ -19,7 +28,7 @@ const UpdateSchema = z.object({
   discount_percentage: z.number().min(0).max(100).optional(),
   discount_duration_months: z.number().int().min(0).optional(),
   discount_type: z.enum(['percentage', 'fixed']).optional(),
-  discount_value_brl: z.number().min(0).optional(),
+  discount_fixed_amount: z.number().min(0).optional(),
   fine_amount: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
   fidelity_months: z.preprocess(v => (v === '' || v === null ? undefined : parseInt(String(v), 10)), z.number().int().min(0).optional()),
   progressive_discounts: z.array(z.object({
@@ -30,7 +39,7 @@ const UpdateSchema = z.object({
   description: z.string().optional(),
   notes: z.string().optional(),
   instance_url: z.string().optional().nullable(),
-})
+}))
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

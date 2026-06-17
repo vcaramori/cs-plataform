@@ -169,6 +169,12 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🐛 Fix salvar contrato + indicadores de suporte globais + RAG reprocessado (2026-06-17)
+
+- **Erro ao salvar contrato (raiz)**: o schema de `POST /api/contracts` gravava o campo **`discount_value_brl`** (com `.default(0)`, sempre presente), mas a coluna real é **`discount_fixed_amount`** → todo insert dava erro de "coluna inexistente" e **nenhum contrato salvava** (tabela `contracts` estava vazia). Corrigido o nome do campo no [POST](src/app/api/contracts/route.ts) e no [PATCH](src/app/api/contracts/[id]/route.ts); o PATCH também passou a **remover `null`s** antes de validar (o front pode mandar o contrato cru com campos null do banco → `null` = "não alterar", evitando 400 em `optional()` não-nullable).
+- **Indicadores de suporte globais (área)**: o Painel Tático passou a computar os indicadores via **admin client** (área-global) para qualquer usuário **interno**, em vez de depender do escopo RLS do viewer — [period](src/app/api/support-dashboard/period/route.ts), [operational](src/app/api/support-dashboard/operational/route.ts), [by-agent](src/app/api/support-dashboard/by-agent/route.ts), [by-client](src/app/api/support-dashboard/by-client/route.ts) (guarda: nega usuário externo).
+- **RAG reprocessado**: os 105 chamados HelpDesk que faltavam foram **vetorizados** (305/305 no RAG). Lembrete: o sync real **vetoriza automaticamente a cada importação** (`storeEmbeddings` no `upsertTicket`) — não precisa de passo separado; só os backfills via script é que haviam pulado.
+
 ### 🗄️ Anexos re-hospedados + SLA padrão p/ métricas + fix CSAT + UI da thread (2026-06-17)
 
 - **Re-hospedagem no Supabase Storage**: anexos e imagens inline dos chamados deixaram de depender do CDN externo (`cdn.livechat-files.com`). O sync baixa cada arquivo e sobe no bucket público `helpdesk-attachments` (migration [20260617160000](supabase/migrations/20260617160000_helpdesk_attachments_bucket.sql)), passando a usar a URL do Storage. Dedupe por sha256 (logos repetidos sobem 1×). Helper [rehost.ts](src/lib/integrations/helpdesk/rehost.ts); integrado no [sync.ts](src/lib/integrations/helpdesk/sync.ts). Reprocesso aplicado às threads já importadas.

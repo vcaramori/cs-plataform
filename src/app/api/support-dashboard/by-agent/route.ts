@@ -1,25 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: Request) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Indicador de ÁREA: todos os agentes (global) para usuários internos.
+  const { data: prof } = await supabase.from('profiles').select('user_type').eq('id', user.id).maybeSingle()
+  if ((prof as any)?.user_type === 'external') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const db = getSupabaseAdminClient() as any
 
   const { searchParams } = new URL(request.url)
   const dateFrom = searchParams.get('date_from') ?? new Date(Date.now() - 30 * 86400000).toISOString()
   const dateTo = searchParams.get('date_to') ?? new Date().toISOString()
 
-  const { data: tickets, error } = await supabase
+  const { data: tickets, error } = await db
     .from('support_tickets')
-    .select('id, status, assigned_to, opened_at, resolved_at, first_response_at, sla_breach_resolution, sla_breach_first_response, first_response_deadline, resolution_deadline, accounts!inner(csm_owner_id)')
+    .select('id, status, assigned_to, opened_at, resolved_at, first_response_at, sla_breach_resolution, sla_breach_first_response, first_response_deadline, resolution_deadline')
     .gte('opened_at', dateFrom)
     .lte('opened_at', dateTo)
     .not('assigned_to', 'is', null)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data: csatData } = await supabase
+  const { data: csatData } = await db
     .from('csat_responses')
     .select('score, ticket_id')
     .gte('answered_at', dateFrom)

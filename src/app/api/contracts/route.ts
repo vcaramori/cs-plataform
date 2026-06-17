@@ -21,7 +21,7 @@ const ContractSchema = z.object({
   discount_percentage: z.number().min(0).max(100).optional().default(0),
   discount_duration_months: z.number().int().min(0).optional().default(0),
   discount_type: z.enum(['percentage', 'fixed']).default('percentage'),
-  discount_value_brl: z.number().min(0).optional().default(0),
+  discount_fixed_amount: z.number().min(0).optional().default(0),
   notes: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   instance_url: z.string().optional().nullable(),

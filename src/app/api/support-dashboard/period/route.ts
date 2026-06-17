@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: Request) {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Indicador de ÁREA: usuários internos veem o total global (não só suas contas).
+  const { data: prof } = await supabase.from('profiles').select('user_type').eq('id', user.id).maybeSingle()
+  if ((prof as any)?.user_type === 'external') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const db = getSupabaseAdminClient() as any
 
   const { searchParams } = new URL(request.url)
   const dateFrom = searchParams.get('date_from') ?? new Date(Date.now() - 30 * 86400000).toISOString()
   const dateTo = searchParams.get('date_to') ?? new Date().toISOString()
 
-  const { data: tickets, error } = await supabase
+  const { data: tickets, error } = await db
     .from('support_tickets')
     .select('id, status, opened_at, resolved_at, first_response_at, first_response_deadline, resolution_deadline, sla_breach_resolution, sla_breach_first_response, first_response_business_minutes, resolution_business_minutes, avg_response_minutes, avg_response_business_minutes, public_message_count, agent_reply_count, accounts!inner(csm_owner_id)')
     .gte('opened_at', dateFrom)
@@ -67,18 +72,18 @@ export async function GET(request: Request) {
   const resCompliant = withSLA.filter(t => !t.sla_breach_resolution).length
 
   // CSAT
-  const { data: csatData } = await supabase
+  const { data: csatData } = await db
     .from('csat_responses')
     .select('score')
     .gte('answered_at', dateFrom)
     .lte('answered_at', dateTo)
 
   const avgCsat = csatData && csatData.length > 0
-    ? csatData.reduce((s, r) => s + r.score, 0) / csatData.length
+    ? csatData.reduce((s: number, r: any) => s + r.score, 0) / csatData.length
     : null
 
   // Reopened
-  const { data: reopenEvents } = await supabase
+  const { data: reopenEvents } = await db
     .from('sla_events')
     .select('id')
     .eq('event_type', 'reopened')
