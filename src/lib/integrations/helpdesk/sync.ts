@@ -10,6 +10,30 @@ import {
   type NormalizedTicket,
   type AccountIndex,
 } from './map'
+import { getBusinessMinutesBetween } from '@/lib/support/business-hours'
+import { getBusinessHoursForAccount } from '@/lib/support/sla-policies'
+import type { BusinessHours } from '@/lib/supabase/types'
+
+/** Contexto de horário comercial (SLA) para calcular tempos úteis por conta. */
+interface BusinessCtx {
+  timezone: string
+  getHours: (accountId: string) => Promise<BusinessHours[]>
+}
+
+/** Minutos úteis (horário comercial) entre dois instantes, null se faltar alguma ponta. */
+async function businessMinutes(
+  ctx: BusinessCtx,
+  accountId: string,
+  fromIso: string | null,
+  toIso: string | null
+): Promise<number | null> {
+  if (!fromIso || !toIso) return null
+  const from = new Date(fromIso)
+  const to = new Date(toIso)
+  if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) return null
+  const hours = await ctx.getHours(accountId)
+  return Math.round(getBusinessMinutesBetween(from, to, ctx.timezone, hours))
+}
 
 /**
  * Orquestra a sincronização HelpDesk → support_tickets (+ csat_responses).
@@ -83,7 +107,8 @@ async function loadAccountIndex(): Promise<AccountIndex> {
 async function upsertTicket(
   n: NormalizedTicket,
   accountId: string,
-  result: SyncResult
+  result: SyncResult,
+  ctx: BusinessCtx
 ): Promise<void> {
   const admin = getSupabaseAdminClient()
 
@@ -93,8 +118,14 @@ async function upsertTicket(
     .eq('external_ticket_id', n.externalId)
     .maybeSingle()
 
-  const { data: saved, error } = await admin
-    .from('support_tickets')
+  const openedAt = n.openedAt ?? new Date().toISOString()
+  const [frBusiness, resBusiness] = await Promise.all([
+    businessMinutes(ctx, accountId, openedAt, n.firstResponseAt),
+    businessMinutes(ctx, accountId, openedAt, n.resolvedAt),
+  ])
+
+  // cast: colunas first_response_business_minutes/etc. ainda não estão em database.types.
+  const { data: saved, error } = await (admin.from('support_tickets') as any)
     .upsert(
       {
         account_id: accountId,
@@ -105,10 +136,14 @@ async function upsertTicket(
         priority: n.priority,
         category: n.category,
         requester_email: n.requesterEmail,
-        opened_at: n.openedAt ?? new Date().toISOString(),
+        opened_at: openedAt,
         resolved_at: n.resolvedAt,
         closed_at: n.closedAt,
         first_response_at: n.firstResponseAt,
+        first_response_business_minutes: frBusiness,
+        resolution_business_minutes: resBusiness,
+        public_message_count: n.publicMessageCount,
+        agent_reply_count: n.agentReplyCount,
         external_ticket_id: n.externalId,
         source: 'helpdesk',
       },
@@ -181,6 +216,27 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
   const cfg = await getIntegrationConfig()
   const fallbackAccountId = cfg.fallback_account_id || env.helpdesk.fallbackAccountId || ''
 
+  // Contexto de horário comercial p/ tempos úteis (TMP/TMR em SLA). Timezone da política
+  // global; horas por conta cacheadas (global + override da conta).
+  const admin = getSupabaseAdminClient()
+  const { data: slaPolicy } = await admin
+    .from('sla_policies')
+    .select('timezone')
+    .eq('is_global', true)
+    .eq('is_active', true)
+    .maybeSingle()
+  const hoursCache = new Map<string, BusinessHours[]>()
+  const businessCtx: BusinessCtx = {
+    timezone: slaPolicy?.timezone || 'America/Sao_Paulo',
+    getHours: async (accId: string) => {
+      const cached = hoursCache.get(accId)
+      if (cached) return cached
+      const hrs = await getBusinessHoursForAccount(accId)
+      hoursCache.set(accId, hrs)
+      return hrs
+    },
+  }
+
   let page = 1
   let totalPages = 1
   outer: do {
@@ -216,7 +272,7 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
       }
 
       try {
-        await upsertTicket(n, accountId, result)
+        await upsertTicket(n, accountId, result, businessCtx)
       } catch (err) {
         result.errors.push(
           `Ticket ${n.externalId}: ${err instanceof Error ? err.message : 'erro desconhecido'}`

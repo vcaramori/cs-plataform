@@ -23,6 +23,8 @@ export interface NormalizedTicket {
   resolvedAt: string | null
   closedAt: string | null
   firstResponseAt: string | null  // 1ª resposta de um AGENTE (não privada)
+  publicMessageCount: number       // mensagens públicas (cliente+agente) = interações
+  agentReplyCount: number          // respostas públicas do agente (FCR = 1)
   updatedAt: string | null
   rating: { score: number; comment: string | null } | null
 }
@@ -94,6 +96,22 @@ function firstAgentResponseDate(events: HelpDeskEvent[] | undefined): string | n
   return null
 }
 
+/** Conta mensagens públicas (total e do agente) — base de "interações" e FCR. */
+function countMessages(events: HelpDeskEvent[] | undefined): { publicCount: number; agentCount: number } {
+  if (!events) return { publicCount: 0, agentCount: 0 }
+  let publicCount = 0
+  let agentCount = 0
+  for (const e of events) {
+    if (e.type !== 'message') continue
+    const me = e as HelpDeskMessageEvent
+    if (me.message && me.message.isPrivate !== true) {
+      publicCount++
+      if (me.author?.type === 'agent') agentCount++
+    }
+  }
+  return { publicCount, agentCount }
+}
+
 /** Concatena os textos das mensagens públicas da thread. */
 function buildThread(events: HelpDeskEvent[] | undefined): { description: string; thread: string } {
   if (!events) return { description: '', thread: '' }
@@ -111,6 +129,7 @@ export function normalizeTicket(t: HelpDeskTicket): NormalizedTicket | null {
   if (!t.ID) return null
   const subject = (t.subject ?? '').trim() || 'Sem título'
   const { description, thread } = buildThread(t.events)
+  const { publicCount, agentCount } = countMessages(t.events)
 
   return {
     externalId: t.ID,
@@ -126,6 +145,8 @@ export function normalizeTicket(t: HelpDeskTicket): NormalizedTicket | null {
     resolvedAt: lastStatusDate(t.events, 'solved'),
     closedAt: lastStatusDate(t.events, 'closed'),
     firstResponseAt: firstAgentResponseDate(t.events),
+    publicMessageCount: publicCount,
+    agentReplyCount: agentCount,
     updatedAt: t.updatedAt ?? t.lastMessageAt ?? null,
     rating: extractRating(t),
   }

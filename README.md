@@ -169,6 +169,15 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 📊 Indicadores de atendimento: tempo útil (SLA), interações e FCR (2026-06-17)
+
+Novos indicadores no Painel Tático de Suporte ([SupportDashboardClient.tsx](src/app/(dashboard)/suporte/dashboard/SupportDashboardClient.tsx) + [period/route.ts](src/app/api/support-dashboard/period/route.ts)):
+
+- **TMP/TMR corrido vs útil (SLA)**: além do tempo de relógio (corrido), os cards de 1ª resposta e resolução mostram o tempo em **horário comercial** (`getBusinessMinutesBetween` + `business_hours` + timezone da política SLA — Seg–Sex 9–18, America/Sao_Paulo). Pré-calculado no sync ([sync.ts](src/lib/integrations/helpdesk/sync.ts)) em `first_response_business_minutes`/`resolution_business_minutes`.
+- **Média de interações p/ resolução**: média de **mensagens públicas** (cliente+agente) nos chamados resolvidos — `public_message_count`, contado dos `events` do HelpDesk em [map.ts](src/lib/integrations/helpdesk/map.ts).
+- **Resolvido na 1ª resposta (FCR)**: % de chamados encerrados (resolved/closed) com **exatamente 1 resposta de agente** — `agent_reply_count`.
+- Colunas novas via migration [20260617120000](supabase/migrations/20260617120000_support_tickets_response_metrics.sql). Guarda anti-zero: interações/FCR só consideram chamados já processados (contagem >0) → mostram "—" (não 0 falso) até o **reprocessamento** dos 305 históricos. **Reprocessamento adiado** (agrupar com outras pendências): resetar `historical_done` e rodar Sincronizar.
+
 ### 🐛 Sync HelpDesk gravava 0 chamados (constraint mismatch) (2026-06-16)
 
 O sync histórico do HelpDesk mostrava *"Sync historical: 0 processados, 0 CSAT, 8 pulados"* — deveria trazer todos. **Causa raiz:** o upsert escrevia `support_tickets.source='helpdesk'` e `status='in-progress'`, mas os CHECK constraints da tabela só aceitavam `source ∈ (csv,manual,email)` e `status='in_progress'` (underscore). Resultado: **todos os 305 chamados resolvíveis falhavam no upsert** (caíam em `result.errors`, que o toast não exibia) e só os 8 sem cliente apareciam como "pulados". O toast usava `created` como "processados", mascarando 305 erros.
