@@ -169,6 +169,13 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🗄️ Anexos re-hospedados + SLA padrão p/ métricas + fix CSAT + UI da thread (2026-06-17)
+
+- **Re-hospedagem no Supabase Storage**: anexos e imagens inline dos chamados deixaram de depender do CDN externo (`cdn.livechat-files.com`). O sync baixa cada arquivo e sobe no bucket público `helpdesk-attachments` (migration [20260617160000](supabase/migrations/20260617160000_helpdesk_attachments_bucket.sql)), passando a usar a URL do Storage. Dedupe por sha256 (logos repetidos sobem 1×). Helper [rehost.ts](src/lib/integrations/helpdesk/rehost.ts); integrado no [sync.ts](src/lib/integrations/helpdesk/sync.ts). Reprocesso aplicado às threads já importadas.
+- **Premissa SLA padrão**: as métricas em horário comercial passam a resolver a política **por conta** com fallback à **SLA Padrão (global)** quando a conta não tem política própria — `getPolicyForAccount` (timezone) + `getBusinessHoursForAccount` ([sync.ts](src/lib/integrations/helpdesk/sync.ts)). Hoje só existe a política global, então os valores não mudam; o código fica correto quando houver políticas por conta.
+- **Fix CSAT não aparecia**: `csat_responses` só tinha policy para o CSM dono da conta → super_admin (0 contas) lia NULL e a tela mostrava "Aguardando avaliação" (e o dashboard zerava o CSAT), apesar da avaliação ter sido importada certa. Nova policy [20260617180000](supabase/migrations/20260617180000_csat_responses_internal_read.sql): usuário **interno** lê todo CSAT.
+- **UI da thread**: largura da mensagem em **90%** da área de conteúdo; imagens de anexo (incl. respostas do agente que vinham só como anexo) agora aparecem **inline (imagem colada) + link do anexo**.
+
 ### 💬 Conversa completa do chamado (thread HelpDesk) + tempo médio de resposta (2026-06-17)
 
 A tela de detalhe do chamado ([TicketDetailClient.tsx](src/app/(dashboard)/suporte/[id]/components/TicketDetailClient.tsx)) passou a renderizar a **conversa importada do HelpDesk** igual à ferramenta de origem: cada mensagem separada por **ator** (cliente/agente), **logs de status/atribuição/avaliação** intercalados, **imagens inline** e **anexos** — tudo num **scroll único**.

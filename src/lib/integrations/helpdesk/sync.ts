@@ -11,13 +11,19 @@ import {
   type AccountIndex,
 } from './map'
 import { getBusinessMinutesBetween } from '@/lib/support/business-hours'
-import { getBusinessHoursForAccount } from '@/lib/support/sla-policies'
+import { getBusinessHoursForAccount, getPolicyForAccount } from '@/lib/support/sla-policies'
 import type { BusinessHours } from '@/lib/supabase/types'
+import { makeRehoster, type Rehoster } from './rehost'
 
-/** Contexto de horário comercial (SLA) para calcular tempos úteis por conta. */
+/**
+ * Contexto de horário comercial (SLA) para calcular tempos úteis por conta + re-hospedagem.
+ * Premissa: quando a conta não tem política de SLA própria, `getTimezone`/`getHours` caem na
+ * política/horário PADRÃO (global) — via getPolicyForAccount/getBusinessHoursForAccount.
+ */
 interface BusinessCtx {
-  timezone: string
+  getTimezone: (accountId: string) => Promise<string>
   getHours: (accountId: string) => Promise<BusinessHours[]>
+  rehoster: Rehoster
 }
 
 /** Minutos úteis (horário comercial) entre dois instantes, null se faltar alguma ponta. */
@@ -31,8 +37,8 @@ async function businessMinutes(
   const from = new Date(fromIso)
   const to = new Date(toIso)
   if (isNaN(from.getTime()) || isNaN(to.getTime()) || to <= from) return null
-  const hours = await ctx.getHours(accountId)
-  return Math.round(getBusinessMinutesBetween(from, to, ctx.timezone, hours))
+  const [tz, hours] = await Promise.all([ctx.getTimezone(accountId), ctx.getHours(accountId)])
+  return Math.round(getBusinessMinutesBetween(from, to, tz, hours))
 }
 
 /**
@@ -206,6 +212,11 @@ async function upsertTicket(
 
   // Conversa completa (mensagens + logs): apaga e reinsere por chamado (idempotente).
   try {
+    // Re-hospeda anexos e imagens inline no Storage (durabilidade: não depende do CDN).
+    for (const ev of n.thread) {
+      ev.bodyHtml = await ctx.rehoster.rehostHtml(ev.bodyHtml)
+      for (const att of ev.attachments) att.url = await ctx.rehoster.rehostUrl(att.url, att.type)
+    }
     await (admin as any).from('helpdesk_thread_events').delete().eq('ticket_id', saved.id)
     if (n.thread.length) {
       const rows = n.thread.map((ev) => ({
@@ -259,18 +270,23 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
   const cfg = await getIntegrationConfig()
   const fallbackAccountId = cfg.fallback_account_id || env.helpdesk.fallbackAccountId || ''
 
-  // Contexto de horário comercial p/ tempos úteis (TMP/TMR em SLA). Timezone da política
-  // global; horas por conta cacheadas (global + override da conta).
-  const admin = getSupabaseAdminClient()
-  const { data: slaPolicy } = await admin
-    .from('sla_policies')
-    .select('timezone')
-    .eq('is_global', true)
-    .eq('is_active', true)
-    .maybeSingle()
+  // Contexto p/ tempos úteis (TMP/TMR/resposta em SLA) + re-hospedagem de anexos.
+  // Premissa: sem política/horário próprio da conta → cai no SLA PADRÃO (global), via
+  // getPolicyForAccount/getBusinessHoursForAccount. Tudo cacheado por conta.
+  const tzCache = new Map<string, string>()
   const hoursCache = new Map<string, BusinessHours[]>()
   const businessCtx: BusinessCtx = {
-    timezone: slaPolicy?.timezone || 'America/Sao_Paulo',
+    getTimezone: async (accId: string) => {
+      const cached = tzCache.get(accId)
+      if (cached) return cached
+      let tz = 'America/Sao_Paulo'
+      try {
+        const policy = await getPolicyForAccount(accId) // conta OU padrão global (fallback)
+        if (policy?.timezone) tz = policy.timezone
+      } catch { /* fallback default */ }
+      tzCache.set(accId, tz)
+      return tz
+    },
     getHours: async (accId: string) => {
       const cached = hoursCache.get(accId)
       if (cached) return cached
@@ -278,6 +294,7 @@ export async function runHelpDeskSync(): Promise<SyncResult> {
       hoursCache.set(accId, hrs)
       return hrs
     },
+    rehoster: makeRehoster(),
   }
 
   let page = 1

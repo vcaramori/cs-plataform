@@ -403,14 +403,28 @@ function fmtBytes(b: number | null) {
 
 function ThreadAttachments({ files }: { files: ThreadEventRow['attachments'] }) {
   if (!files?.length) return null
+  const images = files.filter(f => (f.type ?? '').toLowerCase().startsWith('image/'))
   return (
-    <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 space-y-1">
-      <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-1"><Paperclip className="w-3 h-3" /> Anexos</p>
-      {files.map((f, i) => (
-        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs underline underline-offset-2 hover:opacity-80 break-all">
-          <FileText className="w-3 h-3 shrink-0" /> {f.name}{f.size ? <span className="opacity-50 no-underline">· {fmtBytes(f.size)}</span> : null}
-        </a>
-      ))}
+    <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 space-y-2">
+      {/* Imagens "coladas" renderizadas inline (mesmo quando vieram só como anexo) */}
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {images.map((f, i) => (
+            <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="block">
+              <img src={f.url} alt={f.name} loading="lazy" className="max-h-72 max-w-full rounded-lg border border-black/10 dark:border-white/10 hover:opacity-90 transition-opacity" />
+            </a>
+          ))}
+        </div>
+      )}
+      {/* Lista de anexos (inclui as imagens, como link) */}
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-1"><Paperclip className="w-3 h-3" /> Anexos</p>
+        {files.map((f, i) => (
+          <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs underline underline-offset-2 hover:opacity-80 break-all">
+            <FileText className="w-3 h-3 shrink-0" /> {f.name}{f.size ? <span className="opacity-50 no-underline">· {fmtBytes(f.size)}</span> : null}
+          </a>
+        ))}
+      </div>
     </div>
   )
 }
@@ -466,7 +480,7 @@ function HelpDeskThread({ events }: { events: ThreadEventRow[] }) {
               isNote ? 'bg-amber-100 border-warning-200' : isAgent ? 'bg-indigo-50 border-indigo-200' : 'bg-surface-background border-border-divider')}>
               {isNote ? <Lock className="w-3 h-3 text-amber-600" /> : isAgent ? <Mail className="w-3.5 h-3.5 text-indigo-600" /> : <User className="w-3.5 h-3.5 text-content-secondary" />}
             </div>
-            <div className={cn('flex-1 max-w-2xl flex flex-col', isAgent && 'items-end')}>
+            <div className={cn('flex-1 max-w-[90%] flex flex-col', isAgent && 'items-end')}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn('text-xs font-semibold', isAgent ? 'text-indigo-500 dark:text-indigo-400 uppercase tracking-tight' : 'text-content-primary')}>
                   {who ? (isAgent ? who : `Cliente (${who})`) : (isAgent ? 'Agente' : 'Cliente')}
