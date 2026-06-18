@@ -260,8 +260,12 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...contract, account_id: initialData.id }),
       })
-      if (!res.ok) throw new Error('Erro ao salvar contrato')
-      const saved = await res.json()
+      const saved = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        // Surface o motivo real da API (validação Zod ou erro do banco) em vez de genérico.
+        const detail = typeof saved?.error === 'string' ? saved.error : saved?.error ? JSON.stringify(saved.error) : ''
+        throw new Error(detail ? `Erro ao salvar contrato: ${detail}` : 'Erro ao salvar contrato')
+      }
       const contractId = contract.id ?? saved.id
 
       // Salvar SLA do contrato se customizado
@@ -277,7 +281,11 @@ export function AccountForm({ initialData, mode = 'create' }: AccountFormProps) 
             levels: contract.sla_levels ?? DEFAULT_SLA_LEVELS,
           }),
         })
-        if (!slaRes.ok) throw new Error('Erro ao salvar SLA do contrato')
+        if (!slaRes.ok) {
+          const sErr = await slaRes.json().catch(() => ({}))
+          const d = typeof sErr?.error === 'string' ? sErr.error : ''
+          throw new Error(d ? `Erro ao salvar SLA do contrato: ${d}` : 'Erro ao salvar SLA do contrato')
+        }
       }
 
       toast.success('Contrato salvo!')
