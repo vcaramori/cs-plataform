@@ -4,27 +4,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDateRange } from '@/hooks/useDateRange'
 import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import {
-  TicketCheck, AlertTriangle, Clock, CheckCircle2, Download,
-  Users, Building2, RefreshCw, ShieldCheck, Star, Mail
+  TicketCheck, AlertTriangle, Clock, CheckCircle2, Download, Inbox,
+  Users, Building2, RefreshCw, ShieldCheck, Star, Mail, MessageSquare, TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { PageContainer } from '@/components/ui/page-container'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
-import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
-import { motion } from 'framer-motion'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+
+// ─── Tipos ──────────────────────────────────────────────────────────────────
 
 interface OperationalData {
   open_now: number
@@ -32,7 +26,6 @@ interface OperationalData {
   sla_attention: number
   awaiting_close: number
 }
-
 interface PeriodData {
   tickets_received: number
   tickets_resolved: number
@@ -51,17 +44,14 @@ interface PeriodData {
   closed_count: number
   avg_csat: number | null
 }
-
 interface AgentRow {
   agent_id: string
   received: number
   resolved: number
-  fr_compliance_pct: number | null
   res_compliance_pct: number | null
   avg_csat: number | null
   avg_resolution_minutes: number | null
 }
-
 interface ClientRow {
   account_id: string
   account_name: string
@@ -71,418 +61,337 @@ interface ClientRow {
   avg_resolution_minutes: number | null
   avg_csat: number | null
 }
+interface TrendPoint { date: string; received: number; resolved: number }
 
-function formatMinutes(mins: number | null) {
-  if (mins === null) return '—'
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtMin(mins: number | null | undefined): string {
+  if (mins == null) return '—'
   if (mins < 60) return `${mins}m`
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`
+  const h = Math.floor(mins / 60), m = mins % 60
+  if (h < 24) return m ? `${h}h ${m}m` : `${h}h`
+  const d = Math.floor(h / 24), rh = h % 24
+  return rh ? `${d}d ${rh}h` : `${d}d`
+}
+const fmtDay = (iso: string) => { const [, m, d] = iso.split('-'); return `${d}/${m}` }
+const complianceTone = (pct: number | null | undefined) =>
+  pct == null ? 'text-content-secondary' : pct >= 90 ? 'text-emerald-500' : pct >= 70 ? 'text-amber-500' : 'text-red-500'
+const csatTone = (v: number | null | undefined) =>
+  v == null ? 'text-content-secondary' : v >= 4 ? 'text-emerald-500' : v >= 3 ? 'text-amber-500' : 'text-red-500'
+
+type Tone = 'indigo' | 'emerald' | 'amber' | 'red' | 'blue' | 'orange' | 'slate'
+const toneMap: Record<Tone, { text: string; bg: string; bar: string }> = {
+  indigo: { text: 'text-indigo-500', bg: 'bg-indigo-500/10', bar: 'bg-indigo-500' },
+  emerald: { text: 'text-emerald-500', bg: 'bg-emerald-500/10', bar: 'bg-emerald-500' },
+  amber: { text: 'text-amber-500', bg: 'bg-amber-500/10', bar: 'bg-amber-500' },
+  red: { text: 'text-red-500', bg: 'bg-red-500/10', bar: 'bg-red-500' },
+  blue: { text: 'text-blue-500', bg: 'bg-blue-500/10', bar: 'bg-blue-500' },
+  orange: { text: 'text-plannera-orange', bg: 'bg-plannera-orange/10', bar: 'bg-plannera-orange' },
+  slate: { text: 'text-content-primary', bg: 'bg-content-secondary/10', bar: 'bg-content-secondary' },
 }
 
-function CompliancePill({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-content-secondary font-mono font-extrabold text-[10px]">——</span>
-  const color = value >= 90 ? 'text-emerald-600 dark:text-emerald-400' : value >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive dark:text-red-400'
-  return <span className={cn('font-mono font-extrabold text-[10px]', color)}>{value}%</span>
+function SectionTitle({ children, accent = 'bg-plannera-primary' }: { children: React.ReactNode; accent?: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className={cn('w-1.5 h-5 rounded-full', accent)} />
+      <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-content-secondary">{children}</h2>
+    </div>
+  )
 }
+
+const CARD = 'rounded-2xl border border-border-divider bg-surface-card p-5 flex flex-col h-full'
+
+function HeroTile({ label, value, sub, tone, icon: Icon, valueClass }: {
+  label: string; value: React.ReactNode; sub?: React.ReactNode; tone: Tone; icon: React.ElementType; valueClass?: string
+}) {
+  const t = toneMap[tone]
+  return (
+    <div className={CARD}>
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/70">{label}</p>
+        <div className={cn('p-2 rounded-xl', t.bg, t.text)}><Icon className="w-4 h-4" /></div>
+      </div>
+      <p className={cn('text-3xl font-black tracking-tighter tabular-nums leading-none', valueClass ?? t.text)}>{value}</p>
+      {sub && <p className="mt-2 text-[11px] font-medium text-content-secondary">{sub}</p>}
+    </div>
+  )
+}
+
+function StatTile({ label, value, tone, icon: Icon, status }: {
+  label: string; value: React.ReactNode; tone: Tone; icon: React.ElementType; status?: string
+}) {
+  const t = toneMap[tone]
+  return (
+    <div className="rounded-2xl border border-border-divider bg-surface-card p-4 flex items-center gap-4">
+      <div className={cn('p-2.5 rounded-xl shrink-0', t.bg, t.text)}><Icon className="w-5 h-5" /></div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/70 truncate">{label}</p>
+        <p className={cn('text-2xl font-black tracking-tighter tabular-nums leading-tight', t.text)}>{value}</p>
+        {status && <p className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/50 truncate">{status}</p>}
+      </div>
+    </div>
+  )
+}
+
+function TimeTile({ label, corrido, util, compliancePct, tone, icon: Icon, hint }: {
+  label: string; corrido: number | null; util: number | null; compliancePct?: number | null; tone: Tone; icon: React.ElementType; hint?: string
+}) {
+  const t = toneMap[tone]
+  return (
+    <div className={CARD}>
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/70">{label}</p>
+        <div className={cn('p-2 rounded-xl', t.bg, t.text)}><Icon className="w-4 h-4" /></div>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <p className={cn('text-3xl font-black tracking-tighter tabular-nums leading-none', t.text)}>{fmtMin(corrido)}</p>
+        <span className="text-[9px] font-black uppercase tracking-widest text-content-secondary/40">corrido</span>
+      </div>
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-widest text-content-secondary/60">
+        Útil (SLA): <span className={t.text}>{fmtMin(util)}</span>
+      </p>
+      {compliancePct != null ? (
+        <div className="mt-auto pt-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Compliance SLA</span>
+            <span className={cn('text-[11px] font-black tabular-nums', complianceTone(compliancePct))}>{compliancePct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-content-secondary/10 overflow-hidden">
+            <div className={cn('h-full rounded-full', compliancePct >= 90 ? 'bg-emerald-500' : compliancePct >= 70 ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${Math.min(100, compliancePct)}%` }} />
+          </div>
+        </div>
+      ) : hint ? (
+        <p className="mt-auto pt-4 text-[9px] font-bold uppercase tracking-widest text-content-secondary/40">{hint}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function CsatPill({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-content-secondary/30 font-black text-xs">——</span>
+  return (
+    <span className={cn('inline-flex items-center gap-1 font-black text-xs tabular-nums', csatTone(value))}>
+      <Star className="w-3.5 h-3.5 fill-current" />{value}
+    </span>
+  )
+}
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 
 export function SupportDashboardClient() {
   const { dateFrom, dateTo } = useDateRange('30d')
   const [operational, setOperational] = useState<OperationalData | null>(null)
-  const [periodData, setPeriodData] = useState<PeriodData | null>(null)
+  const [period, setPeriod] = useState<PeriodData | null>(null)
   const [agents, setAgents] = useState<AgentRow[]>([])
   const [clients, setClients] = useState<ClientRow[]>([])
+  const [trend, setTrend] = useState<TrendPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
     const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
-
-    const [op, pd, ag, cl] = await Promise.all([
+    const [op, pd, ag, cl, tr] = await Promise.all([
       fetch('/api/support-dashboard/operational').then(r => r.json()),
       fetch(`/api/support-dashboard/period?${qs}`).then(r => r.json()),
       fetch(`/api/support-dashboard/by-agent?${qs}`).then(r => r.json()),
       fetch(`/api/support-dashboard/by-client?${qs}`).then(r => r.json()),
+      fetch(`/api/support-dashboard/trend?${qs}`).then(r => r.json()),
     ])
-
-    setOperational(op)
-    setPeriodData(pd)
-    setAgents(ag.agents ?? [])
-    setClients(cl.clients ?? [])
+    setOperational(op); setPeriod(pd)
+    setAgents(ag.agents ?? []); setClients(cl.clients ?? []); setTrend(tr.series ?? [])
     setLoading(false)
   }, [dateFrom, dateTo])
 
   useEffect(() => { load() }, [load])
 
-  const handleExport = () => {
-    window.open(`/api/support-reports/export?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`)
-  }
+  const handleExport = () => window.open(`/api/support-reports/export?date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`)
+
+  const backlog = operational?.open_now ?? 0
+  const resolutionRate = period && period.tickets_received > 0 ? Math.round((period.tickets_resolved / period.tickets_received) * 100) : null
 
   return (
     <PageContainer>
-      <ModuleHeader
-        title="Painel Tático de Suporte"
-        subtitle="Métricas de Atendimento, Compliance de SLA e Satisfação do Cliente"
-        iconName="TicketCheck"
-      />
+      <ModuleHeader title="Painel de Suporte" subtitle="Indicadores da área — atendimento, SLA e satisfação" iconName="TicketCheck" />
 
-      {/* Linha dedicada de Filtros e Ações (Padrão NPS) */}
-      <div className="flex flex-wrap items-center gap-4 bg-surface-card border border-border-divider p-3.5 rounded-2xl shadow-sm mb-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-plannera-orange/60" />
+      <div className="flex flex-wrap items-center gap-3 bg-surface-card border border-border-divider p-3 rounded-2xl mb-8">
         <DateRangePicker />
         <div className="flex-1" />
-        <Button size="sm" onClick={handleExport} className="h-10 bg-success hover:bg-emerald-600 text-white rounded-xl px-5 shadow-md active:scale-95 transition-all gap-2 text-[10px] font-black uppercase tracking-widest border-none">
-          <Download className="w-4 h-4" />
-          Relatório XLSX
+        <Button size="sm" onClick={handleExport} className="h-9 bg-success hover:bg-emerald-600 text-white rounded-xl px-4 gap-2 text-[10px] font-black uppercase tracking-widest border-none">
+          <Download className="w-4 h-4" /> Relatório XLSX
         </Button>
       </div>
 
-      {/* Camada 1 — KPIs Operacionais — Premium StatCards */}
-      <section className="relative">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-2 h-6 bg-plannera-primary rounded-full shadow-[0_0_15px_rgba(var(--plannera-primary),0.4)]" />
-          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Real-Time Operations</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCardPremium 
-            title="Chamados Abertos"
-            value={operational?.open_now ?? 0}
-            iconName="TicketCheck"
-            colorVariant="sop"
-            status="Em fila de triagem"
-          />
-          <StatCardPremium 
-            title="SLA Vencido"
-            value={operational?.sla_breached ?? 0}
-            iconName="AlertTriangle"
-            colorVariant="destructive"
-            status="Ação crítica imediata"
-          />
-          <StatCardPremium 
-            title="SLA em Atenção"
-            value={operational?.sla_attention ?? 0}
-            iconName="Clock"
-            colorVariant="orange"
-            status="Janela de risco"
-          />
-          <StatCardPremium 
-            title="Aguard. Fechamento"
-            value={operational?.awaiting_close ?? 0}
-            iconName="CheckCircle2"
-            colorVariant="emerald"
-            status="Validação pendente"
-          />
-          <StatCardPremium 
-            title="CSAT Médio"
-            value={periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—'}
-            iconName="Star"
-            colorVariant="orange"
-            status="Satisfação do Período"
-          />
+      {/* Hero — indicadores-chave do período */}
+      <section className="mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <HeroTile label="CSAT Médio" tone="amber" icon={Star}
+            value={period?.avg_csat != null ? `${period.avg_csat}/5` : '—'} valueClass={csatTone(period?.avg_csat)}
+            sub="Satisfação do cliente no período" />
+          <HeroTile label="Compliance SLA" tone="emerald" icon={ShieldCheck}
+            value={period?.sla_resolution_compliance_pct != null ? `${period.sla_resolution_compliance_pct}%` : '—'}
+            valueClass={complianceTone(period?.sla_resolution_compliance_pct)}
+            sub={`Resolução · 1ª resposta: ${period?.sla_first_response_compliance_pct != null ? period.sla_first_response_compliance_pct + '%' : '—'}`} />
+          <HeroTile label="TMR (útil)" tone="indigo" icon={CheckCircle2}
+            value={fmtMin(period?.avg_resolution_business_minutes)}
+            sub={`Corrido: ${fmtMin(period?.avg_resolution_minutes)}`} />
+          <HeroTile label="Resolvido na 1ª Resposta" tone="blue" icon={TicketCheck}
+            value={period?.fcr_pct != null ? `${period.fcr_pct}%` : '—'}
+            sub={`${period?.fcr_count ?? 0} de ${period?.closed_count ?? 0} encerrados`} />
         </div>
       </section>
 
-      {/* Camada 2 — KPIs do período + gráficos */}
-      <section className="space-y-8">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-2 h-6 bg-success rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)]" />
-          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Performance Summary</h2>
+      {/* Pulso operacional — agora */}
+      <section className="mb-8">
+        <SectionTitle accent="bg-blue-500">Operação agora</SectionTitle>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatTile label="Chamados Abertos" tone="blue" icon={TicketCheck} value={operational?.open_now ?? 0} status="Em fila / andamento" />
+          <StatTile label="SLA Vencido" tone="red" icon={AlertTriangle} value={operational?.sla_breached ?? 0} status="Ação imediata" />
+          <StatTile label="SLA em Atenção" tone="amber" icon={Clock} value={operational?.sla_attention ?? 0} status="Janela de risco" />
+          <StatTile label="Aguardando Fechamento" tone="emerald" icon={CheckCircle2} value={operational?.awaiting_close ?? 0} status="Validação pendente" />
         </div>
+      </section>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            { label: 'Recebidos', value: periodData?.tickets_received, icon: TicketCheck, color: 'text-plannera-primary' },
-            { label: 'Resolvidos', value: periodData?.tickets_resolved, icon: CheckCircle2, color: 'text-success' },
-            { label: 'Compliance SLA', value: periodData?.sla_resolution_compliance_pct != null ? `${periodData.sla_resolution_compliance_pct}%` : '—', icon: ShieldCheck, color: 'text-plannera-orange' },
-            { label: 'CSAT Médio', value: periodData?.avg_csat != null ? `${periodData.avg_csat}/5` : '—', icon: Star, color: 'text-amber-400' },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-surface-card border border-border-divider p-8 rounded-2xl shadow-lg hover:border-plannera-primary/20 transition-all group overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-1 h-full bg-border-divider group-hover:bg-plannera-primary transition-colors" />
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/40 group-hover:text-content-secondary transition-opacity">{label}</p>
-                <Icon className={cn("w-5 h-5 opacity-20 group-hover:opacity-100 transition-all group-hover:scale-110", color)} />
-              </div>
-              <p className="text-4xl font-black text-content-primary tracking-tighter leading-none tabular-nums">{loading ? '—' : (value ?? 0)}</p>
-            </div>
-          ))}
+      {/* Velocidade & SLA */}
+      <section className="mb-8">
+        <SectionTitle accent="bg-indigo-500">Velocidade & SLA</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <TimeTile label="TMP — 1ª Resposta" tone="indigo" icon={Clock}
+            corrido={period?.avg_first_response_minutes ?? null} util={period?.avg_first_response_business_minutes ?? null}
+            compliancePct={period?.sla_first_response_compliance_pct ?? null} />
+          <TimeTile label="TMR — Resolução" tone="emerald" icon={CheckCircle2}
+            corrido={period?.avg_resolution_minutes ?? null} util={period?.avg_resolution_business_minutes ?? null}
+            compliancePct={period?.sla_resolution_compliance_pct ?? null} />
+          <TimeTile label="Tempo Médio de Resposta" tone="blue" icon={Mail}
+            corrido={period?.avg_response_minutes ?? null} util={period?.avg_response_business_minutes ?? null}
+            hint="Solicitante → resposta do agente" />
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -mr-10 -mt-10" />
-            <div className="flex items-center justify-between mb-10">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">TMP — 1ª Resposta</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-indigo-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_first_response_minutes ?? null)}</p>
-                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Corrido</span>
-                </div>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">
-                  Útil (SLA): <span className="text-indigo-500/80">{loading ? '—' : formatMinutes(periodData?.avg_first_response_business_minutes ?? null)}</span>
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl bg-indigo-500/10 text-indigo-500 shadow-inner group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6" />
-              </div>
+      {/* Volume & tendência */}
+      <section className="mb-8">
+        <SectionTitle accent="bg-plannera-orange">Volume & Tendência</SectionTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Stats à esquerda */}
+          <div className="grid grid-cols-2 gap-4 content-start">
+            <StatTile label="Recebidos" tone="slate" icon={Inbox} value={period?.tickets_received ?? 0} status={resolutionRate != null ? `${resolutionRate}% resolvidos` : undefined} />
+            <StatTile label="Resolvidos" tone="emerald" icon={CheckCircle2} value={period?.tickets_resolved ?? 0} />
+            <StatTile label="Em aberto (backlog)" tone="blue" icon={TicketCheck} value={backlog} />
+            <StatTile label="Reabertos" tone="amber" icon={RefreshCw} value={period?.reopened ?? 0} />
+            <StatTile label="Interações p/ resolução" tone="orange" icon={MessageSquare} value={period?.avg_interactions_resolved ?? '—'} status="Mensagens (média)" />
+          </div>
+          {/* Gráfico à direita (2 colunas) */}
+          <div className={cn(CARD, 'lg:col-span-2')}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary/70">Recebidos x Resolvidos por dia</p>
+              <TrendingUp className="w-4 h-4 text-plannera-orange" />
             </div>
-            {periodData && (
-              <div className="h-[140px] w-full">
+            {loading ? (
+              <div className="h-[220px] w-full animate-pulse bg-surface-background rounded-xl" />
+            ) : trend.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center text-[11px] font-black uppercase tracking-widest text-content-secondary/40">Sem dados no período</div>
+            ) : (
+              <div className="h-[220px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{ name: 'Média', value: periodData.avg_first_response_minutes ?? 0 }]}>
-                    <XAxis dataKey="name" hide />
-                    <YAxis hide />
-                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
-                    <Bar dataKey="value" fill="url(#colorIndigo)" radius={[12, 12, 12, 12]} barSize={80} />
+                  <AreaChart data={trend} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="colorIndigo" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={1}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.2}/>
-                      </linearGradient>
+                      <linearGradient id="gRec" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.5} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0.05} /></linearGradient>
+                      <linearGradient id="gRes" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.5} /><stop offset="95%" stopColor="#10b981" stopOpacity={0.05} /></linearGradient>
                     </defs>
-                  </BarChart>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-divider)" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={fmtDay} tick={{ fontSize: 10, fill: 'var(--content-secondary)' }} axisLine={false} tickLine={false} minTickGap={24} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--content-secondary)' }} axisLine={false} tickLine={false} allowDecimals={false} width={28} />
+                    <Tooltip
+                      labelFormatter={(l) => fmtDay(String(l))}
+                      contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: 12, fontSize: 11, fontWeight: 700 }}
+                      formatter={(v: any, n: any) => [v, n === 'received' ? 'Recebidos' : 'Resolvidos']}
+                    />
+                    <Area type="monotone" dataKey="received" stroke="#6366f1" strokeWidth={2} fill="url(#gRec)" />
+                    <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} fill="url(#gRes)" />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </Card>
+          </div>
+        </div>
+      </section>
 
-          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-success/5 blur-[50px] -mr-10 -mt-10" />
-            <div className="flex items-center justify-between mb-10">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">TMR — Resolução</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-success tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_resolution_minutes ?? null)}</p>
-                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Corrido</span>
-                </div>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">
-                  Útil (SLA): <span className="text-success/80">{loading ? '—' : formatMinutes(periodData?.avg_resolution_business_minutes ?? null)}</span>
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl bg-success/10 text-success shadow-inner group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
+      {/* Distribuição — clientes & agentes */}
+      <section>
+        <SectionTitle accent="bg-plannera-orange">Distribuição</SectionTitle>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {/* Clientes */}
+          <div className="rounded-2xl border border-border-divider bg-surface-card overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-border-divider">
+              <Building2 className="w-4 h-4 text-plannera-orange" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Top Clientes por Volume</p>
             </div>
-            {periodData && (
-              <div className="h-[140px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[{ name: 'Média', value: periodData.avg_resolution_minutes ?? 0 }]}>
-                    <XAxis dataKey="name" hide />
-                    <YAxis hide />
-                    <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border-divider)', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }} />
-                    <Bar dataKey="value" fill="url(#colorEmerald)" radius={[12, 12, 12, 12]} barSize={80} />
-                    <defs>
-                      <linearGradient id="colorEmerald" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
-                      </linearGradient>
-                    </defs>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+            {loading ? <div className="h-40 animate-pulse bg-surface-background m-3 rounded-xl" /> : clients.length === 0 ? (
+              <div className="p-10 text-center text-[11px] font-black uppercase tracking-widest text-content-secondary/40">Sem dados no período</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-border-divider h-10">
+                    <TableHead className="pl-5 text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Cliente</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Tickets</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Críticos</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">SLA</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">TMR</TableHead>
+                    <TableHead className="text-right pr-5 text-[9px] font-black uppercase tracking-widest text-content-secondary/50">CSAT</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...clients].sort((a, b) => b.tickets - a.tickets).slice(0, 8).map(c => (
+                    <TableRow key={c.account_id} onClick={() => (window.location.href = `/accounts/${c.account_id}`)}
+                      className="hover:bg-plannera-orange/[0.03] border-border-divider cursor-pointer h-12">
+                      <TableCell className="pl-5 max-w-[180px]"><span className="text-xs font-bold text-content-primary truncate block">{c.account_name}</span></TableCell>
+                      <TableCell className="text-right text-xs font-black tabular-nums text-content-primary">{c.tickets}</TableCell>
+                      <TableCell className="text-right">{c.critical_tickets > 0 ? <span className="text-[11px] font-black text-red-500 tabular-nums">{c.critical_tickets}</span> : <span className="text-content-secondary/30 text-xs">0</span>}</TableCell>
+                      <TableCell className={cn('text-right text-[11px] font-black tabular-nums', complianceTone(c.res_compliance_pct))}>{c.res_compliance_pct != null ? `${c.res_compliance_pct}%` : '—'}</TableCell>
+                      <TableCell className="text-right text-[11px] font-bold tabular-nums text-content-secondary">{fmtMin(c.avg_resolution_minutes)}</TableCell>
+                      <TableCell className="text-right pr-5"><CsatPill value={c.avg_csat} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </Card>
-        </div>
+          </div>
 
-        {/* Eficiência de resolução — tempo de resposta, interações e FCR */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[50px] -mr-10 -mt-10" />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">Tempo Médio de Resposta</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-blue-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : formatMinutes(periodData?.avg_response_minutes ?? null)}</p>
-                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Corrido</span>
-                </div>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">
-                  Útil (SLA): <span className="text-blue-500/80">{loading ? '—' : formatMinutes(periodData?.avg_response_business_minutes ?? null)}</span>
-                </p>
-                <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">Solicitante → resposta do agente</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-blue-500/10 text-blue-500 shadow-inner group-hover:scale-110 transition-transform">
-                <Mail className="w-6 h-6" />
-              </div>
+          {/* Agentes */}
+          <div className="rounded-2xl border border-border-divider bg-surface-card overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-border-divider">
+              <Users className="w-4 h-4 text-plannera-primary" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Desempenho por Agente</p>
             </div>
-          </Card>
-
-          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-plannera-orange/5 blur-[50px] -mr-10 -mt-10" />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">Interações p/ Resolução</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-plannera-orange tracking-tighter leading-none tabular-nums">{loading ? '—' : (periodData?.avg_interactions_resolved ?? '—')}</p>
-                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">Média de mensagens</span>
-                </div>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">Mensagens públicas (cliente + agente) por chamado resolvido</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-plannera-orange/10 text-plannera-orange shadow-inner group-hover:scale-110 transition-transform">
-                <RefreshCw className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
-
-          <Card variant="glass" className="p-10 rounded-2xl border-border-divider bg-surface-card/60 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] -mr-10 -mt-10" />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-content-secondary/50 mb-2">Resolvido na 1ª Resposta</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-emerald-500 tracking-tighter leading-none tabular-nums">{loading ? '—' : (periodData?.fcr_pct != null ? `${periodData.fcr_pct}%` : '—')}</p>
-                  <span className="text-[10px] font-black text-content-secondary/20 uppercase tracking-widest">FCR</span>
-                </div>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-content-secondary/40">
-                  {loading ? '—' : `${periodData?.fcr_count ?? 0} de ${periodData?.closed_count ?? 0} encerrados com 1 resposta`}
-                </p>
-              </div>
-              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* Camada 3 — Por Agente */}
-      <section className="space-y-8">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-2 h-6 bg-plannera-primary rounded-full shadow-[0_0_15px_rgba(var(--plannera-primary),0.4)]" />
-          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Expert Performance</h2>
-        </div>
-
-        {loading ? (
-          <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
-        ) : agents.length === 0 ? (
-          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-60">
-            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem registros para o horizonte selecionado</p>
-          </Card>
-        ) : (
-          <Card variant="glass" className="rounded-2xl overflow-hidden border border-border-divider bg-surface-card/80 backdrop-blur-xl shadow-2xl">
-            <Table>
-              <TableHeader className="bg-surface-background/50">
-                <TableRow className="hover:bg-transparent border-border-divider h-16">
-                  <TableHead className="pl-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Agente Especialista</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Fluxo</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Sucesso</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Compliance</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">TMR Médio</TableHead>
-                  <TableHead className="text-right pr-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Rating CSAT</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agents.map(a => (
-                  <TableRow key={a.agent_id} className="hover:bg-plannera-primary/[0.02] border-border-divider group transition-all h-24">
-                    <TableCell className="pl-10">
-                      <div className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-2xl bg-plannera-primary/5 border border-plannera-primary/10 flex items-center justify-center text-[12px] font-black text-plannera-primary group-hover:scale-110 transition-transform shadow-inner">
-                          {a.agent_id.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[12px] font-black uppercase tracking-tight text-content-primary group-hover:text-plannera-primary transition-colors">
-                            {a.agent_id.split('-')[0] || 'Agente'}
-                          </span>
-                          <span className="text-[9px] font-black text-content-secondary/30 uppercase tracking-widest">{a.agent_id.slice(0, 8)}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{a.received}</TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-success tabular-nums">{a.resolved}</TableCell>
-                    <TableCell className="text-right"><CompliancePill value={a.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-60 group-hover:opacity-100 tabular-nums">{formatMinutes(a.avg_resolution_minutes)}</TableCell>
-                    <TableCell className="text-right pr-10">
-                      {a.avg_csat != null
-                        ? <div className="flex items-center justify-end gap-2">
-                            <div className={cn(
-                              "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
-                              a.avg_csat >= 4 ? 'bg-success/10 border-success-500/20 text-success' : a.avg_csat >= 3 ? 'bg-warning/10 border-warning-500/20 text-warning' : 'bg-destructive/10 border-destructive/20 text-destructive'
-                            )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", a.avg_csat >= 4 ? 'text-success' : 'text-current opacity-60')} />
-                              {a.avg_csat}
-                            </div>
-                          </div>
-                        : <span className="text-content-secondary font-black text-[12px] opacity-10">——</span>}
-                    </TableCell>
+            {loading ? <div className="h-40 animate-pulse bg-surface-background m-3 rounded-xl" /> : agents.length === 0 ? (
+              <div className="p-10 text-center text-[11px] font-black uppercase tracking-widest text-content-secondary/40">Sem agentes atribuídos no período</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-border-divider h-10">
+                    <TableHead className="pl-5 text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Agente</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Receb.</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">Resolv.</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">SLA</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase tracking-widest text-content-secondary/50">TMR</TableHead>
+                    <TableHead className="text-right pr-5 text-[9px] font-black uppercase tracking-widest text-content-secondary/50">CSAT</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
-      </section>
-
-      {/* Camada 4 — Por Cliente */}
-      <section className="space-y-8">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-2 h-6 bg-plannera-orange rounded-full shadow-[0_0_15px_rgba(247,148,30,0.4)]" />
-          <h2 className="text-[12px] font-black uppercase tracking-[0.3em] text-content-primary">Client Engagement Health</h2>
+                </TableHeader>
+                <TableBody>
+                  {[...agents].sort((a, b) => b.resolved - a.resolved).slice(0, 8).map(a => (
+                    <TableRow key={a.agent_id} className="hover:bg-plannera-primary/[0.03] border-border-divider h-12">
+                      <TableCell className="pl-5 max-w-[180px]"><span className="text-xs font-bold text-content-primary truncate block">{a.agent_id.split('-')[0] || 'Agente'}</span></TableCell>
+                      <TableCell className="text-right text-xs font-black tabular-nums text-content-primary">{a.received}</TableCell>
+                      <TableCell className="text-right text-xs font-black tabular-nums text-emerald-500">{a.resolved}</TableCell>
+                      <TableCell className={cn('text-right text-[11px] font-black tabular-nums', complianceTone(a.res_compliance_pct))}>{a.res_compliance_pct != null ? `${a.res_compliance_pct}%` : '—'}</TableCell>
+                      <TableCell className="text-right text-[11px] font-bold tabular-nums text-content-secondary">{fmtMin(a.avg_resolution_minutes)}</TableCell>
+                      <TableCell className="text-right pr-5"><CsatPill value={a.avg_csat} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
-
-        {loading ? (
-          <div className="h-48 w-full animate-pulse bg-surface-card rounded-2xl border border-border-divider" />
-        ) : clients.length === 0 ? (
-          <Card variant="glass" className="rounded-2xl p-20 text-center border-dashed border-2 border-border-divider bg-surface-card/20 grayscale opacity-60">
-            <p className="text-[11px] font-black uppercase tracking-[0.4em] text-content-secondary">Sem dados de engajamento no período</p>
-          </Card>
-        ) : (
-          <Card variant="glass" className="rounded-2xl overflow-hidden border border-border-divider bg-surface-card/80 backdrop-blur-xl shadow-2xl">
-            <Table>
-              <TableHeader className="bg-surface-background/50">
-                <TableRow className="hover:bg-transparent border-border-divider h-16">
-                  <TableHead className="pl-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Cliente Corporativo</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Tickets</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Críticos</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Compliance</TableHead>
-                  <TableHead className="text-right text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">TMR Médio</TableHead>
-                  <TableHead className="text-right pr-10 text-[10px] font-black uppercase tracking-[0.25em] text-content-secondary/60">Rating CSAT</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.sort((a, b) => b.tickets - a.tickets).map(c => (
-                  <TableRow
-                    key={c.account_id}
-                    onClick={() => window.location.href = `/accounts/${c.account_id}`}
-                    className="hover:bg-plannera-orange/[0.02] border-border-divider group transition-all cursor-pointer h-24"
-                  >
-                    <TableCell className="pl-10">
-                      <div className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-2xl bg-plannera-orange/5 border border-plannera-orange/10 flex items-center justify-center text-[12px] font-black text-plannera-orange group-hover:rotate-6 transition-transform shadow-inner">
-                          {c.account_name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <span className="text-[12px] font-black uppercase tracking-tight text-content-primary group-hover:text-plannera-orange transition-colors">
-                          {c.account_name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-primary tabular-nums">{c.tickets}</TableCell>
-                    <TableCell className="text-right">
-                      {c.critical_tickets > 0
-                        ? <div className="flex justify-end">
-                            <div className="px-3 py-1 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 font-black text-[11px] animate-pulse shadow-sm">
-                              {c.critical_tickets} ATENÇÃO
-                            </div>
-                          </div>
-                        : <span className="text-content-secondary font-black text-[14px] opacity-10 tabular-nums">0</span>}
-                    </TableCell>
-                    <TableCell className="text-right"><CompliancePill value={c.res_compliance_pct} /></TableCell>
-                    <TableCell className="text-right font-black text-[14px] text-content-secondary opacity-60 group-hover:opacity-100 tabular-nums">{formatMinutes(c.avg_resolution_minutes)}</TableCell>
-                    <TableCell className="text-right pr-10">
-                      {c.avg_csat != null
-                        ? <div className="flex items-center justify-end gap-2">
-                            <div className={cn(
-                              "px-3 py-1.5 rounded-2xl border font-black text-[12px] flex items-center gap-2 tabular-nums shadow-sm",
-                              c.avg_csat >= 4 ? 'bg-success/10 border-success-500/20 text-success' : c.avg_csat >= 3 ? 'bg-warning/10 border-warning-500/20 text-warning' : 'bg-destructive/10 border-destructive/20 text-destructive'
-                            )}>
-                              <Star className={cn("w-3.5 h-3.5 fill-current", c.avg_csat >= 4 ? 'text-success' : 'text-current opacity-60')} />
-                              {c.avg_csat}
-                            </div>
-                          </div>
-                        : <span className="text-content-secondary font-black text-[12px] opacity-10">——</span>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
       </section>
     </PageContainer>
   )

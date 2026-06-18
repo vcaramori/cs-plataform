@@ -169,6 +169,15 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🎨 Painel de Suporte reconstruído (2026-06-18)
+
+Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app/(dashboard)/suporte/dashboard/SupportDashboardClient.tsx)) — antes os cards tinham tamanhos/posições inconsistentes, ornamento pesado e fraca hierarquia. Layout **híbrido** (executivo + operacional), com cards uniformes por linha e seções por intenção:
+- **Hero** (4 indicadores-chave): CSAT, Compliance SLA, TMR útil, FCR.
+- **Operação agora**: Abertos, SLA Vencido, SLA Atenção, Aguardando Fechamento.
+- **Velocidade & SLA**: TMP, TMR e Tempo de Resposta — cada um com corrido vs útil e **barra de compliance**.
+- **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
+- **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
+
 ### 🐛 Fix salvar contrato + indicadores de suporte globais + RAG reprocessado (2026-06-17)
 
 - **Erro ao salvar contrato (raiz)**: o schema de `POST /api/contracts` gravava o campo **`discount_value_brl`** (com `.default(0)`, sempre presente), mas a coluna real é **`discount_fixed_amount`** → todo insert dava erro de "coluna inexistente" e **nenhum contrato salvava** (tabela `contracts` estava vazia). Corrigido o nome do campo no [POST](src/app/api/contracts/route.ts) e no [PATCH](src/app/api/contracts/[id]/route.ts); o PATCH também passou a **remover `null`s** antes de validar (o front pode mandar o contrato cru com campos null do banco → `null` = "não alterar", evitando 400 em `optional()` não-nullable).
