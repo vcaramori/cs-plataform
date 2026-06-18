@@ -36,6 +36,9 @@ export async function GET(request: Request) {
       fallback_account_id: cfg.fallback_account_id ?? '',
       store_unmatched: cfg.store_unmatched ?? false,
       has_oauth_client: !!cfg.oauth_client_id,
+      oauth_audience: cfg.oauth_audience ?? '',
+      oauth_metadata_url: cfg.oauth_metadata_url ?? '',
+      api_base_url: cfg.api_base_url ?? '',
     },
     registered: !!oauth.registered_client?.client_id,
     metadata_discovered: !!oauth.metadata,
@@ -69,6 +72,9 @@ export async function POST(request: Request) {
       if (typeof body.store_unmatched === 'boolean') patch.store_unmatched = body.store_unmatched
       if (typeof body.oauth_client_id === 'string') patch.oauth_client_id = body.oauth_client_id.trim()
       if (typeof body.oauth_client_secret === 'string') patch.oauth_client_secret = body.oauth_client_secret.trim()
+      if (typeof body.oauth_audience === 'string') patch.oauth_audience = body.oauth_audience.trim()
+      if (typeof body.oauth_metadata_url === 'string') patch.oauth_metadata_url = body.oauth_metadata_url.trim()
+      if (typeof body.api_base_url === 'string') patch.api_base_url = body.api_base_url.trim()
       await saveReadAiConfig(patch, user.id)
       return NextResponse.json({ success: true })
     }

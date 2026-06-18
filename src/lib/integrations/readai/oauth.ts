@@ -20,23 +20,19 @@ import { getReadAiConfig } from './integration-config'
  * registration) ou informado manualmente pelo admin (readai_integration).
  *
  * AUDIENCE: para que o access token seja aceito pela REST API (/v1/meetings), o ORY pode
- * exigir audience. Deixe READAI_OAUTH_AUDIENCE em branco (default) para preservar o fluxo
- * de login verificado; se /v1/meetings rejeitar o token por audience, defina a env com
- * 'https://api.read.ai/v1/meetings'. Confirme no 1º login real de um CSM.
+ * exigir audience. Configurável no banco (readai_integration.oauth_audience) — NADA em env.
+ * Vazio (default) preserva o fluxo de login verificado; se /v1/meetings rejeitar o token por
+ * audience, preencha no admin com 'https://api.read.ai/v1/meetings'.
  */
 
 const OAUTH_KEY = 'readai_oauth'
 const DEFAULT_REGISTRATION_ENDPOINT = 'https://api.read.ai/oauth/register'
 export const READAI_SCOPES = 'openid email profile offline_access meeting:read mcp:execute'
 
-/** Audience opcional p/ a REST API (ver nota acima). Vazio = não enviar (default seguro). */
-const OAUTH_AUDIENCE = (process.env.READAI_OAUTH_AUDIENCE ?? '').trim()
-
-const DISCOVERY_URLS = [
-  process.env.READAI_OAUTH_METADATA_URL,
+const BASE_DISCOVERY_URLS = [
   'https://authn.read.ai/.well-known/oauth-authorization-server',
   'https://authn.read.ai/.well-known/openid-configuration',
-].filter((u): u is string => !!u)
+]
 
 // Protected Resource Metadata (RFC 9728): aponta para o(s) authorization_server(s).
 const PROTECTED_RESOURCE_URLS = [
@@ -143,7 +139,10 @@ export async function getOAuthMetadata(force = false): Promise<OAuthMetadata> {
     if (store.metadata?.authorization_endpoint && store.metadata?.token_endpoint) return store.metadata
   }
   // 1) Descoberta direta no(s) .well-known do authorization server.
-  for (const url of DISCOVERY_URLS) {
+  //    Override opcional do banco (readai_integration.oauth_metadata_url) — nada em env.
+  const cfg = await getReadAiConfig()
+  const discoveryUrls = [cfg.oauth_metadata_url?.trim(), ...BASE_DISCOVERY_URLS].filter((u): u is string => !!u)
+  for (const url of discoveryUrls) {
     const md = await fetchMetadataFrom(url)
     if (md) { await writeStore({ metadata: md }); return md }
   }
@@ -231,6 +230,7 @@ export function readaiRedirectUri(req?: Request): string {
 export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: string; redirectUri: string }): Promise<string> {
   const meta = await getOAuthMetadata()
   const client = await getRegisteredClient(opts.redirectUri)
+  const cfg = await getReadAiConfig()
   const url = new URL(meta.authorization_endpoint)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('client_id', client.client_id)
@@ -239,7 +239,8 @@ export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: st
   url.searchParams.set('state', opts.state)
   url.searchParams.set('code_challenge', opts.codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
-  if (OAUTH_AUDIENCE) url.searchParams.set('audience', OAUTH_AUDIENCE) // ORY: audience da REST API (opcional)
+  const audience = (cfg.oauth_audience ?? '').trim() // ORY: audience da REST API (opcional, do banco)
+  if (audience) url.searchParams.set('audience', audience)
   return url.toString()
 }
 
@@ -249,9 +250,11 @@ export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: st
 async function tokenRequest(params: Record<string, string>, redirectUri: string): Promise<OAuthTokens> {
   const meta = await getOAuthMetadata()
   const client = await getRegisteredClient(redirectUri)
+  const cfg = await getReadAiConfig()
   const body = new URLSearchParams({ ...params, client_id: client.client_id })
   if (client.client_secret) body.set('client_secret', client.client_secret)
-  if (OAUTH_AUDIENCE) body.set('audience', OAUTH_AUDIENCE) // ORY: mesma audience pedida no authorize
+  const audience = (cfg.oauth_audience ?? '').trim() // ORY: mesma audience pedida no authorize (do banco)
+  if (audience) body.set('audience', audience)
   const res = await fetch(meta.token_endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },

@@ -10,7 +10,15 @@ import { toast } from 'sonner'
 import { Loader2, Video, Play, CheckCircle2, AlertCircle, Users, Webhook, Copy, Check } from 'lucide-react'
 
 interface Status {
-  config: { enabled: boolean; fallback_account_id: string; store_unmatched: boolean; has_oauth_client: boolean }
+  config: {
+    enabled: boolean
+    fallback_account_id: string
+    store_unmatched: boolean
+    has_oauth_client: boolean
+    oauth_audience: string
+    oauth_metadata_url: string
+    api_base_url: string
+  }
   registered: boolean
   metadata_discovered: boolean
   connected_users: number
@@ -28,6 +36,9 @@ export function ReadAiSettingsTab() {
   const [signingKeys, setSigningKeys] = useState('')
   const [webhookCsm, setWebhookCsm] = useState('')
   const [copied, setCopied] = useState(false)
+  const [audience, setAudience] = useState('')
+  const [metadataUrl, setMetadataUrl] = useState('')
+  const [apiBaseUrl, setApiBaseUrl] = useState('')
 
   async function load() {
     setLoading(true)
@@ -37,6 +48,9 @@ export function ReadAiSettingsTab() {
       setStatus(j)
       setFallback(j?.config?.fallback_account_id ?? '')
       setWebhookCsm(j?.webhook?.default_csm_id ?? '')
+      setAudience(j?.config?.oauth_audience ?? '')
+      setMetadataUrl(j?.config?.oauth_metadata_url ?? '')
+      setApiBaseUrl(j?.config?.api_base_url ?? '')
     } catch {
       toast.error('Erro ao carregar status')
     } finally {
@@ -193,6 +207,31 @@ export function ReadAiSettingsTab() {
         </div>
         <Button onClick={() => saveConfig({ oauth_client_id: clientId, oauth_client_secret: clientSecret })} disabled={busy === 'config' || !clientId} variant="outline" className="gap-2">
           {busy === 'config' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar app OAuth
+        </Button>
+      </Card>
+
+      {/* Avançado (opcional) — overrides OAuth/REST, tudo no banco (nada em env) */}
+      <Card className="p-6 space-y-4">
+        <h3 className="font-bold text-content-primary text-sm">Avançado (opcional)</h3>
+        <p className="text-xs text-content-secondary">
+          Tudo guardado no banco — nada em variáveis de ambiente. Deixe em branco para usar os padrões corretos.
+        </p>
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">OAuth audience da REST API</Label>
+          <Input value={audience} onChange={e => setAudience(e.target.value)} placeholder="só se /v1/meetings recusar o token — ex.: https://api.read.ai/v1/meetings" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">OAuth metadata URL (.well-known)</Label>
+            <Input value={metadataUrl} onChange={e => setMetadataUrl(e.target.value)} placeholder="(opcional) override do authorization server" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">REST API base URL</Label>
+            <Input value={apiBaseUrl} onChange={e => setApiBaseUrl(e.target.value)} placeholder="(opcional) default https://api.read.ai/v1" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+          </div>
+        </div>
+        <Button onClick={() => saveConfig({ oauth_audience: audience, oauth_metadata_url: metadataUrl, api_base_url: apiBaseUrl })} disabled={busy === 'config'} variant="outline" className="gap-2">
+          {busy === 'config' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar avançado
         </Button>
       </Card>
 
