@@ -22,6 +22,23 @@ export interface ReadAiIntegrationConfig {
   /** App OAuth criado manualmente (opcional). Vazio = usa dynamic client registration. */
   oauth_client_id?: string
   oauth_client_secret?: string
+  /**
+   * Webhooks nativos (PUSH). signing key(s) em base64 — uma por webhook criado no Read.ai
+   * (suporta rotação). Quando vazio, a rota aceita sem verificar (para o "Send test" do setup).
+   */
+  webhook_signing_keys?: string[]
+  /** CSM (UUID) usado quando o owner.email do webhook não casar com nenhum usuário. */
+  webhook_default_csm_id?: string
+  /**
+   * Avançado (opcional). Tudo configurável aqui no banco — nada em env.
+   * oauth_audience: só preencha se a REST API (/v1/meetings) recusar o token por audience
+   *   (ex.: 'https://api.read.ai/v1/meetings'). Vazio = não envia (preserva o login).
+   * oauth_metadata_url: override do .well-known do authorization server.
+   * api_base_url: override da base da REST API (default 'https://api.read.ai/v1').
+   */
+  oauth_audience?: string
+  oauth_metadata_url?: string
+  api_base_url?: string
 }
 
 export async function getReadAiConfig(): Promise<ReadAiIntegrationConfig> {

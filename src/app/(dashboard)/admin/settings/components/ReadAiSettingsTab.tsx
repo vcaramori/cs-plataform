@@ -7,14 +7,23 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SectionHeader } from '@/components/ui/section-header'
 import { toast } from 'sonner'
-import { Loader2, Video, Play, CheckCircle2, AlertCircle, Users } from 'lucide-react'
+import { Loader2, Video, Play, CheckCircle2, AlertCircle, Users, Webhook, Copy, Check } from 'lucide-react'
 
 interface Status {
-  config: { enabled: boolean; fallback_account_id: string; store_unmatched: boolean; has_oauth_client: boolean }
+  config: {
+    enabled: boolean
+    fallback_account_id: string
+    store_unmatched: boolean
+    has_oauth_client: boolean
+    oauth_audience: string
+    oauth_metadata_url: string
+    api_base_url: string
+  }
   registered: boolean
   metadata_discovered: boolean
   connected_users: number
   sync_state: { historical_done?: boolean; last_sync_at?: string } | null
+  webhook: { url: string; signing_keys_count: number; default_csm_id: string }
 }
 
 export function ReadAiSettingsTab() {
@@ -24,6 +33,12 @@ export function ReadAiSettingsTab() {
   const [fallback, setFallback] = useState('')
   const [clientId, setClientId] = useState('')
   const [clientSecret, setClientSecret] = useState('')
+  const [signingKeys, setSigningKeys] = useState('')
+  const [webhookCsm, setWebhookCsm] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [audience, setAudience] = useState('')
+  const [metadataUrl, setMetadataUrl] = useState('')
+  const [apiBaseUrl, setApiBaseUrl] = useState('')
 
   async function load() {
     setLoading(true)
@@ -32,11 +47,34 @@ export function ReadAiSettingsTab() {
       const j = await r.json()
       setStatus(j)
       setFallback(j?.config?.fallback_account_id ?? '')
+      setWebhookCsm(j?.webhook?.default_csm_id ?? '')
+      setAudience(j?.config?.oauth_audience ?? '')
+      setMetadataUrl(j?.config?.oauth_metadata_url ?? '')
+      setApiBaseUrl(j?.config?.api_base_url ?? '')
     } catch {
       toast.error('Erro ao carregar status')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function copyWebhookUrl() {
+    if (!status?.webhook?.url) return
+    try {
+      await navigator.clipboard.writeText(status.webhook.url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error('Não foi possível copiar')
+    }
+  }
+
+  async function saveWebhook() {
+    const j = await action(
+      { action: 'save_webhook', webhook_signing_keys: signingKeys, webhook_default_csm_id: webhookCsm },
+      'webhook'
+    )
+    if (j?.success) { toast.success('Webhook salvo'); setSigningKeys(''); load() }
   }
   useEffect(() => { load() }, [])
 
@@ -85,8 +123,8 @@ export function ReadAiSettingsTab() {
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-2"><Video className="w-4 h-4 text-plannera-orange" /><h3 className="font-bold text-content-primary text-sm">Como funciona</h3></div>
         <p className="text-xs text-content-secondary">
-          O Read.ai usa OAuth (sem token estático). Cada CSM conecta o próprio Read.ai na tela inicial (card &quot;Read.ai&quot; → &quot;Conectar&quot;, login no navegador uma vez).
-          Depois, o job horário traz as reuniões — passadas e novas — com transcrição completa, cria o esforço e indexa no RAG. A plataforma se auto-registra no Read.ai (dynamic client registration); só preencha o app OAuth manual abaixo se preferir gerenciar você mesmo.
+          Há dois caminhos. <strong>Webhooks (recomendado)</strong>: o Read.ai empurra cada reunião para a nossa URL assim que o relatório fica pronto — sem login, sem token expirando. Configure uma vez (abaixo).
+          {' '}<strong>OAuth (opcional)</strong>: cada CSM conecta o próprio Read.ai na tela inicial (card &quot;Read.ai&quot; → &quot;Conectar&quot;) e o job horário puxa o histórico. Os dois alimentam timeline + esforço + RAG e deduplicam pela mesma reunião.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="flex items-center gap-2">
@@ -101,6 +139,56 @@ export function ReadAiSettingsTab() {
             <Users className="w-4 h-4 text-content-secondary" /> {status?.connected_users ?? 0} CSM(s) conectado(s)
           </div>
         </div>
+      </Card>
+
+      {/* Webhooks (recomendado) */}
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Webhook className="w-4 h-4 text-plannera-orange" />
+          <h3 className="font-bold text-content-primary text-sm">Webhooks (recomendado)</h3>
+          {status && status.webhook.signing_keys_count > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" /> {status.webhook.signing_keys_count} signing key(s)
+            </span>
+          )}
+        </div>
+        <ol className="text-xs text-content-secondary list-decimal pl-4 space-y-1">
+          <li>No Read.ai, abra <span className="font-mono">app.read.ai/analytics/integrations/webhooks</span> (aba <strong>Workspace</strong> para todo o time) e clique &quot;Create webhook&quot;.</li>
+          <li>Cole a URL abaixo como destino e copie a <strong>signing key</strong> gerada.</li>
+          <li>Cole a signing key aqui e salve. Use &quot;Send test request&quot; no Read.ai para validar.</li>
+        </ol>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">URL do webhook (cole no Read.ai)</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={status?.webhook.url ?? ''} className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+            <Button type="button" variant="outline" size="icon" onClick={copyWebhookUrl} className="shrink-0">
+              {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">Signing key(s) — uma por linha</Label>
+            <textarea
+              value={signingKeys}
+              onChange={e => setSigningKeys(e.target.value)}
+              placeholder="cole a signing key (base64) gerada no Read.ai"
+              rows={2}
+              className="w-full bg-surface-background/50 border border-border-divider rounded-xl font-mono text-xs p-2.5 resize-y"
+            />
+            <p className="text-[9px] text-content-secondary/70">Guardada no banco (não exibida depois). Várias linhas = rotação/múltiplos webhooks.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">CSM padrão (UUID) — owner não identificado</Label>
+            <Input value={webhookCsm} onChange={e => setWebhookCsm(e.target.value)} placeholder="(opcional) UUID de um usuário CSM" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+            <p className="text-[9px] text-content-secondary/70">Usado quando o e-mail do dono da reunião não casa com nenhum usuário.</p>
+          </div>
+        </div>
+        <Button onClick={saveWebhook} disabled={busy === 'webhook'} className="bg-plannera-orange hover:bg-plannera-orange/90 gap-2">
+          {busy === 'webhook' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar webhook
+        </Button>
       </Card>
 
       {/* App OAuth manual (opcional) */}
@@ -119,6 +207,31 @@ export function ReadAiSettingsTab() {
         </div>
         <Button onClick={() => saveConfig({ oauth_client_id: clientId, oauth_client_secret: clientSecret })} disabled={busy === 'config' || !clientId} variant="outline" className="gap-2">
           {busy === 'config' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar app OAuth
+        </Button>
+      </Card>
+
+      {/* Avançado (opcional) — overrides OAuth/REST, tudo no banco (nada em env) */}
+      <Card className="p-6 space-y-4">
+        <h3 className="font-bold text-content-primary text-sm">Avançado (opcional)</h3>
+        <p className="text-xs text-content-secondary">
+          Tudo guardado no banco — nada em variáveis de ambiente. Deixe em branco para usar os padrões corretos.
+        </p>
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">OAuth audience da REST API</Label>
+          <Input value={audience} onChange={e => setAudience(e.target.value)} placeholder="só se /v1/meetings recusar o token — ex.: https://api.read.ai/v1/meetings" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">OAuth metadata URL (.well-known)</Label>
+            <Input value={metadataUrl} onChange={e => setMetadataUrl(e.target.value)} placeholder="(opcional) override do authorization server" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">REST API base URL</Label>
+            <Input value={apiBaseUrl} onChange={e => setApiBaseUrl(e.target.value)} placeholder="(opcional) default https://api.read.ai/v1" className="bg-surface-background/50 border-border-divider rounded-xl font-mono text-xs" />
+          </div>
+        </div>
+        <Button onClick={() => saveConfig({ oauth_audience: audience, oauth_metadata_url: metadataUrl, api_base_url: apiBaseUrl })} disabled={busy === 'config'} variant="outline" className="gap-2">
+          {busy === 'config' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar avançado
         </Button>
       </Card>
 

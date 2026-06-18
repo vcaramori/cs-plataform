@@ -70,7 +70,8 @@ async function syncUser(
   idx: AccountIndex,
   state: SyncState,
   res: ReadAiSyncResult,
-  fallbackAccountId: string | null
+  fallbackAccountId: string | null,
+  apiBaseUrl?: string
 ) {
   const token = await getValidAccessToken(userId)
   if (!token) throw new ReadAiAuthError('Sem token válido — reconectar')
@@ -82,7 +83,7 @@ async function syncUser(
   let cursor: string | undefined
   let pages = 0
   do {
-    const { meetings, hasMore, nextCursor } = await listMeetings(token, { cursor, startDatetimeGte: startGte, limit: 10 })
+    const { meetings, hasMore, nextCursor } = await listMeetings(token, { cursor, startDatetimeGte: startGte, limit: 10, baseUrl: apiBaseUrl })
     for (const m of meetings) {
       if (!m.id) { res.skipped++; continue }
       const accountId = resolveMeetingAccount(m, idx) ?? fallbackAccountId
@@ -113,11 +114,12 @@ export async function runReadAiSync(): Promise<ReadAiSyncResult> {
     getReadAiConfig(),
   ])
   const fallbackAccountId = cfg.store_unmatched && cfg.fallback_account_id ? cfg.fallback_account_id : null
+  const apiBaseUrl = cfg.api_base_url?.trim() || undefined
 
   for (const userId of userIds) {
     res.users++
     try {
-      await syncUser(userId, idx, state, res, fallbackAccountId)
+      await syncUser(userId, idx, state, res, fallbackAccountId, apiBaseUrl)
     } catch (e) {
       if (e instanceof ReadAiAuthError) res.errors.push(`Usuário ${userId}: token inválido — reconectar`)
       else res.errors.push(`Usuário ${userId}: ${e instanceof Error ? e.message : 'erro'}`)

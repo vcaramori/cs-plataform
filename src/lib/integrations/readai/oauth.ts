@@ -5,34 +5,46 @@ import { getReadAiConfig } from './integration-config'
 /**
  * OAuth 2.1 do Read.ai (Authorization Code + PKCE + offline refresh).
  *
- * Fatos confirmados nos docs oficiais (jun/2026):
- *  - NÃO há token estático/pessoal hoje (planejado p/ GA). Só OAuth 2.1.
- *  - Dynamic client registration: POST https://api.read.ai/oauth/register
+ * Endpoints CONFIRMADOS empiricamente (jun/2026) — o servidor de autorização é o ORY
+ * Hydra em authn.read.ai (NÃO api.read.ai, que era o erro anterior que dava 404):
+ *  - Authorization Server metadata: https://authn.read.ai/.well-known/oauth-authorization-server
+ *  - authorize: https://authn.read.ai/oauth2/auth   (302 → tela de login da Read.ai)
+ *  - token:     https://authn.read.ai/oauth2/token
+ *  - register:  https://api.read.ai/oauth/register  (dynamic client registration — testado OK)
+ *  - Protected Resource (RFC 9728): https://api.read.ai/.well-known/oauth-protected-resource/mcp
  *  - Scopes: openid email profile offline_access meeting:read mcp:execute
- *  - Audiences: https://api.read.ai/v1/meetings e https://api.read.ai/mcp
  *  - Access token expira em ~10min; refresh token é single-use e ROTACIONA a cada uso.
  *
- * Os endpoints authorize/token são descobertos em runtime (.well-known) e cacheados em
- * app_settings.readai_oauth — endpoint exato não pôde ser confirmado offline; por isso
- * descoberta defensiva com fallbacks e logs. O client OAuth é auto-registrado (dynamic
- * client registration) ou informado manualmente pelo admin (readai_integration).
+ * Descoberta defensiva (.well-known direto + protected-resource → authorization_servers),
+ * cacheada em app_settings.readai_oauth. O client OAuth é auto-registrado (dynamic client
+ * registration) ou informado manualmente pelo admin (readai_integration).
+ *
+ * AUDIENCE: para que o access token seja aceito pela REST API (/v1/meetings), o ORY pode
+ * exigir audience. Configurável no banco (readai_integration.oauth_audience) — NADA em env.
+ * Vazio (default) preserva o fluxo de login verificado; se /v1/meetings rejeitar o token por
+ * audience, preencha no admin com 'https://api.read.ai/v1/meetings'.
  */
 
 const OAUTH_KEY = 'readai_oauth'
 const DEFAULT_REGISTRATION_ENDPOINT = 'https://api.read.ai/oauth/register'
 export const READAI_SCOPES = 'openid email profile offline_access meeting:read mcp:execute'
 
-const DISCOVERY_URLS = [
-  process.env.READAI_OAUTH_METADATA_URL,
-  'https://api.read.ai/.well-known/oauth-authorization-server',
-  'https://api.read.ai/.well-known/openid-configuration',
-  'https://api.read.ai/oauth/.well-known/oauth-authorization-server',
+const BASE_DISCOVERY_URLS = [
+  'https://authn.read.ai/.well-known/oauth-authorization-server',
+  'https://authn.read.ai/.well-known/openid-configuration',
+]
+
+// Protected Resource Metadata (RFC 9728): aponta para o(s) authorization_server(s).
+const PROTECTED_RESOURCE_URLS = [
+  'https://api.read.ai/.well-known/oauth-protected-resource/mcp',
+  'https://api.read.ai/.well-known/oauth-protected-resource',
 ].filter((u): u is string => !!u)
 
-// Defaults best-guess (sobrescritos pela descoberta quando disponível).
+// Defaults confirmados (sobrescritos pela descoberta quando disponível).
 const FALLBACK_METADATA: OAuthMetadata = {
-  authorization_endpoint: 'https://api.read.ai/oauth/authorize',
-  token_endpoint: 'https://api.read.ai/oauth/token',
+  issuer: 'https://authn.read.ai/',
+  authorization_endpoint: 'https://authn.read.ai/oauth2/auth',
+  token_endpoint: 'https://authn.read.ai/oauth2/token',
   registration_endpoint: DEFAULT_REGISTRATION_ENDPOINT,
 }
 
@@ -81,31 +93,64 @@ async function writeStore(patch: Partial<OAuthStore>): Promise<void> {
 // ---------------------------------------------------------------------------
 // Descoberta de metadata (com cache).
 // ---------------------------------------------------------------------------
+async function fetchMetadataFrom(url: string): Promise<OAuthMetadata | null> {
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    if (!res.ok) return null
+    const j = (await res.json()) as Partial<OAuthMetadata>
+    if (j.authorization_endpoint && j.token_endpoint) {
+      return {
+        issuer: j.issuer,
+        authorization_endpoint: j.authorization_endpoint,
+        token_endpoint: j.token_endpoint,
+        registration_endpoint: j.registration_endpoint ?? DEFAULT_REGISTRATION_ENDPOINT,
+      }
+    }
+  } catch {
+    // tenta o próximo candidato
+  }
+  return null
+}
+
+/** RFC 9728: protected-resource → authorization_servers[] → AS metadata. */
+async function discoverViaProtectedResource(): Promise<OAuthMetadata | null> {
+  for (const prUrl of PROTECTED_RESOURCE_URLS) {
+    try {
+      const res = await fetch(prUrl, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+      if (!res.ok) continue
+      const pr = (await res.json()) as { authorization_servers?: string[] }
+      for (const as of pr.authorization_servers ?? []) {
+        const base = as.replace(/\/$/, '')
+        for (const wk of ['/.well-known/oauth-authorization-server', '/.well-known/openid-configuration']) {
+          const md = await fetchMetadataFrom(`${base}${wk}`)
+          if (md) return md
+        }
+      }
+    } catch {
+      // próximo candidato
+    }
+  }
+  return null
+}
+
 export async function getOAuthMetadata(force = false): Promise<OAuthMetadata> {
   if (!force) {
     const store = await readStore()
     if (store.metadata?.authorization_endpoint && store.metadata?.token_endpoint) return store.metadata
   }
-  for (const url of DISCOVERY_URLS) {
-    try {
-      const res = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' })
-      if (!res.ok) continue
-      const j = (await res.json()) as Partial<OAuthMetadata>
-      if (j.authorization_endpoint && j.token_endpoint) {
-        const metadata: OAuthMetadata = {
-          issuer: j.issuer,
-          authorization_endpoint: j.authorization_endpoint,
-          token_endpoint: j.token_endpoint,
-          registration_endpoint: j.registration_endpoint ?? DEFAULT_REGISTRATION_ENDPOINT,
-        }
-        await writeStore({ metadata })
-        return metadata
-      }
-    } catch {
-      // tenta o próximo candidato
-    }
+  // 1) Descoberta direta no(s) .well-known do authorization server.
+  //    Override opcional do banco (readai_integration.oauth_metadata_url) — nada em env.
+  const cfg = await getReadAiConfig()
+  const discoveryUrls = [cfg.oauth_metadata_url?.trim(), ...BASE_DISCOVERY_URLS].filter((u): u is string => !!u)
+  for (const url of discoveryUrls) {
+    const md = await fetchMetadataFrom(url)
+    if (md) { await writeStore({ metadata: md }); return md }
   }
-  console.warn('[Read.ai OAuth] Descoberta de metadata falhou; usando defaults best-guess. Confirme os endpoints contra uma chamada real.')
+  // 2) Descoberta RFC 9728 via protected-resource metadata.
+  const viaPr = await discoverViaProtectedResource()
+  if (viaPr) { await writeStore({ metadata: viaPr }); return viaPr }
+
+  console.warn('[Read.ai OAuth] Descoberta falhou; usando endpoints confirmados (authn.read.ai).')
   return FALLBACK_METADATA
 }
 
@@ -185,6 +230,7 @@ export function readaiRedirectUri(req?: Request): string {
 export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: string; redirectUri: string }): Promise<string> {
   const meta = await getOAuthMetadata()
   const client = await getRegisteredClient(opts.redirectUri)
+  const cfg = await getReadAiConfig()
   const url = new URL(meta.authorization_endpoint)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('client_id', client.client_id)
@@ -193,6 +239,8 @@ export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: st
   url.searchParams.set('state', opts.state)
   url.searchParams.set('code_challenge', opts.codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
+  const audience = (cfg.oauth_audience ?? '').trim() // ORY: audience da REST API (opcional, do banco)
+  if (audience) url.searchParams.set('audience', audience)
   return url.toString()
 }
 
@@ -202,8 +250,11 @@ export async function buildAuthorizeUrl(opts: { state: string; codeChallenge: st
 async function tokenRequest(params: Record<string, string>, redirectUri: string): Promise<OAuthTokens> {
   const meta = await getOAuthMetadata()
   const client = await getRegisteredClient(redirectUri)
+  const cfg = await getReadAiConfig()
   const body = new URLSearchParams({ ...params, client_id: client.client_id })
   if (client.client_secret) body.set('client_secret', client.client_secret)
+  const audience = (cfg.oauth_audience ?? '').trim() // ORY: mesma audience pedida no authorize (do banco)
+  if (audience) body.set('audience', audience)
   const res = await fetch(meta.token_endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },

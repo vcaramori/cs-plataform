@@ -7,10 +7,11 @@
  * limit máx 10, filtros start_datetime_gte/lte, expand=[summary,action_items,topics,metrics,transcript].
  *
  * NOTA: a URL base/headers exatos do REST devem ser confirmados em recon (o MCP é OAuth;
- * confirma o formato dos dados, não o endpoint). Ajustável por env READAI_API_BASE_URL.
+ * confirma o formato dos dados, não o endpoint). A base é configurável no banco
+ * (readai_integration.api_base_url) e passada por parâmetro — NADA em env.
  */
 
-const BASE = process.env.READAI_API_BASE_URL || 'https://api.read.ai/v1'
+const DEFAULT_BASE = 'https://api.read.ai/v1'
 
 export interface ReadAiParticipant {
   name: string | null
@@ -77,9 +78,10 @@ export function normalizeApiTranscript(m: ReadAiMeeting): string | null {
 
 export async function listMeetings(
   token: string,
-  opts: { cursor?: string; startDatetimeGte?: string; limit?: number; expand?: string[] } = {}
+  opts: { cursor?: string; startDatetimeGte?: string; limit?: number; expand?: string[]; baseUrl?: string } = {}
 ): Promise<ListResult> {
-  const url = new URL(`${BASE}/meetings`)
+  const base = (opts.baseUrl?.trim() || DEFAULT_BASE).replace(/\/$/, '')
+  const url = new URL(`${base}/meetings`)
   url.searchParams.set('limit', String(opts.limit ?? 10))
   if (opts.cursor) url.searchParams.set('cursor', opts.cursor)
   if (opts.startDatetimeGte) url.searchParams.set('start_datetime_gte', opts.startDatetimeGte)
@@ -108,8 +110,8 @@ export async function listMeetings(
 }
 
 /** Valida um access token fazendo uma chamada mínima. Lança ReadAiAuthError se inválido. */
-export async function validateToken(token: string): Promise<boolean> {
-  await listMeetings(token, { limit: 1, expand: [] })
+export async function validateToken(token: string, baseUrl?: string): Promise<boolean> {
+  await listMeetings(token, { limit: 1, expand: [], baseUrl })
   return true
 }
 
