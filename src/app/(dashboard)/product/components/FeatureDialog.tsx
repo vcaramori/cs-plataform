@@ -127,7 +127,7 @@ export function FeatureDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-lg">
+      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-plannera-orange" />
@@ -143,24 +143,26 @@ export function FeatureDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Nome da Funcionalidade *</Label>
-              <Input
-                {...register('name')}
-                placeholder="Ex: Dashboards Customizados"
-                className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
-              />
-              {errors.name && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.name.message}</p>}
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Nome da Funcionalidade *</Label>
+                <Input
+                  {...register('name')}
+                  placeholder="Ex: Dashboards Customizados"
+                  className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
+                />
+                {errors.name && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.name.message}</p>}
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Módulo / Categoria *</Label>
-              <Input
-                {...register('module')}
-                placeholder="Ex: Analytics"
-                className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
-              />
-              {errors.module && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.module.message}</p>}
+              <div className="space-y-2">
+                <Label className="text-content-secondary/60 text-[10px] font-bold uppercase tracking-widest ml-1">Módulo / Categoria *</Label>
+                <Input
+                  {...register('module')}
+                  placeholder="Ex: Analytics"
+                  className="bg-surface-background/50 border-border-divider text-foreground placeholder:text-content-secondary/30 h-11 rounded-xl focus:border-plannera-orange"
+                />
+                {errors.module && <p className="text-red-500 text-[10px] uppercase font-bold">{errors.module.message}</p>}
+              </div>
             </div>
 
             <div className="space-y-2">
