@@ -14,14 +14,21 @@ const stripNulls = (raw: unknown) => {
   return out
 }
 
+// Coerce numérico robusto: '', null, undefined e não-numéricos viram undefined.
+const num = (v: unknown): number | undefined => {
+  if (v === '' || v === null || v === undefined) return undefined
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/\s/g, '').replace(',', '.'))
+  return Number.isNaN(n) ? undefined : n
+}
+
 const UpdateSchema = z.preprocess(stripNulls, z.object({
-  mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().positive().optional()),
+  mrr: z.preprocess(num, z.number().positive().optional()),
   start_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
   renewal_date: z.string().optional().or(z.literal('')).transform(v => (v === '' || !v ? null : v)),
   service_type: z.string().optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).optional(),
-  contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
-  csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
+  contracted_hours_monthly: z.preprocess(num, z.number().min(0).optional()),
+  csm_hour_cost: z.preprocess(num, z.number().min(0).optional()),
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).optional(),
   pricing_type: z.enum(['standard', 'custom']).optional(),
   pricing_explanation: z.string().optional().nullable(),
@@ -29,8 +36,8 @@ const UpdateSchema = z.preprocess(stripNulls, z.object({
   discount_duration_months: z.number().int().min(0).optional(),
   discount_type: z.enum(['percentage', 'fixed']).optional(),
   discount_fixed_amount: z.number().min(0).optional(),
-  fine_amount: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional()),
-  fidelity_months: z.preprocess(v => (v === '' || v === null ? undefined : parseInt(String(v), 10)), z.number().int().min(0).optional()),
+  fine_amount: z.preprocess(num, z.number().min(0).optional()),
+  fidelity_months: z.preprocess(num, z.number().int().min(0).optional()),
   progressive_discounts: z.array(z.object({
     label: z.string(),
     discount: z.number(),

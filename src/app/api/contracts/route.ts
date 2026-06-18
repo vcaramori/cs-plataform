@@ -5,16 +5,24 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { syncContractLinks } from '@/lib/contracts/links'
 import { backfillResponsesForInstance } from '@/lib/nps/instance'
 
+// Coerce numérico robusto: '', null, undefined e valores não-numéricos viram undefined
+// (deixando .default()/.optional() agir) — evita NaN quando o campo não vem no payload.
+const num = (v: unknown): number | undefined => {
+  if (v === '' || v === null || v === undefined) return undefined
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/\s/g, '').replace(',', '.'))
+  return Number.isNaN(n) ? undefined : n
+}
+
 const ContractSchema = z.object({
   account_id: z.string().uuid(),
   contract_code: z.string().optional().nullable(),
-  mrr: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().nonnegative('MRR deve ser positivo')),
+  mrr: z.preprocess(num, z.number().nonnegative('MRR deve ser positivo')),
   start_date: z.string().optional().or(z.literal('')).nullable().transform(v => (v === "" || !v ? null : v)),
   renewal_date: z.string().optional().or(z.literal('')).nullable().transform(v => (v === "" || !v ? null : v)),
   service_type: z.string().optional(),
   status: z.enum(['active', 'at-risk', 'churned', 'in-negotiation']).default('active'),
-  contracted_hours_monthly: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
-  csm_hour_cost: z.preprocess(v => (v === '' || v === null ? undefined : parseFloat(String(v))), z.number().min(0).optional().default(0)),
+  contracted_hours_monthly: z.preprocess(num, z.number().min(0).optional().default(0)),
+  csm_hour_cost: z.preprocess(num, z.number().min(0).optional().default(0)),
   contract_type: z.enum(['initial', 'additive', 'migration', 'renewal']).default('initial'),
   pricing_type: z.enum(['standard', 'custom']).default('standard'),
   pricing_explanation: z.string().optional().nullable(),
