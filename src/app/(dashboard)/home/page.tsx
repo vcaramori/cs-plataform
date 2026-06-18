@@ -11,6 +11,7 @@ import { PortfolioHealthCard } from '@/app/(dashboard)/dashboard/components/Port
 import { HomePrioritiesClient } from './components/HomePrioritiesClient'
 
 import { Office365CalendarContainer } from './components/Office365CalendarContainer'
+import { ReadAiConnectCard } from './components/ReadAiConnectCard'
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return 'Bom dia'
@@ -106,6 +107,7 @@ export default async function HomePage() {
         {/* Agenda (ocupa 1/3) — fixa ao rolar a coluna longa de ações */}
         <div className="flex flex-col gap-4 self-start lg:sticky lg:top-6">
           <Office365CalendarContainer isLeadership={leadership} csms={csms} />
+          <ReadAiConnectCard />
         </div>
       </div>
     </PageContainer>

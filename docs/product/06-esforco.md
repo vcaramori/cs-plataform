@@ -17,6 +17,25 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 
 ---
 
+## Read.ai — reuniões viram esforço automaticamente (2026-06-18)
+
+As reuniões gravadas no **Read.ai** entram **automaticamente** na plataforma: cada CSM conecta o próprio Read.ai **uma vez** (card "Read.ai" na home → **Conectar** → login no navegador) e o sistema passa a importar suas reuniões — **passadas e novas** — sem ação manual.
+
+Cada reunião importada gera, de forma idempotente (dedup pela reunião):
+
+- **Esforço** (`time_entries`, `activity_type='meeting'`, horas = **duração da reunião**, data = data da reunião) — conta para o esforço/custo do CSM como qualquer lançamento.
+- **Interação** na timeline da conta com a **transcrição completa** (`interactions.raw_transcript`) + resumo.
+- **Vetorização no RAG** (`storeEmbeddings('interaction', …)`, resumo + transcrição) → as reuniões ficam pesquisáveis no Perguntar/360°.
+- **Tarefas** a partir dos *action items* da reunião (`csm_tasks`).
+
+**Como conecta (OAuth, sem token):** o Read.ai não tem token estático — o acesso é **OAuth 2.1** (Authorization Code + PKCE, *dynamic client registration*, access token de ~10min com refresh **rotativo**). As credenciais ficam **criptografadas** por CSM (`user_integrations`) e o token é renovado em background. Nada hardcoded.
+
+**Vínculo com a conta:** resolve pelo **domínio do participante externo** → tags/website da conta, com fallback pelo **nome no título**. Reuniões internas/sem cliente são **puladas** (ou enviadas a uma conta padrão, se configurado no admin).
+
+**Administração:** `/admin/settings` → aba **Read.ai** (ligar/desligar, conta padrão, app OAuth manual opcional, diagnóstico e "Rodar sincronização agora"). Backfill do histórico roda em ciclos pelo job horário. Implementação em [src/lib/integrations/readai/](../../src/lib/integrations/readai/) (`oauth.ts`, `tokens.ts`, `client.ts`, `ingest.ts`, `sync.ts`).
+
+---
+
 ## 1.1 Regras de Negócio
 
 | Regra | Descrição |
@@ -145,4 +164,5 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 | Jun/2026 | **Carga histórica de esforços**: painel "Carga histórica" (cola um bloco com várias reuniões → a IA separa por data e registra cada esforço com a data real, vetorizado no RAG). `parseHistoricalEfforts` (multi-entrada) + `persistHistoricalEffort` + `POST /api/time-entries/bulk` (preview/commit). Tarefas criadas por padrão, mas **respeita** instrução de "não registrar atividades" por reunião (`skip_tasks`), com toggle no preview. |
 | Jun/2026 | **Fix carga histórica em textos longos + validação no preview**: textos grandes davam *"IA retornou formato inválido"* porque a resposta truncava no teto padrão de 2048 tokens (o prompt ecoa o `raw_text` fiel de cada reunião → saída ≥ tamanho do texto colado). (1) `parse-historical-efforts.ts`: teto elevado para **32768 tokens**, **salvage** de JSON truncado (`salvageEntries` recupera as reuniões completas e descarta só a última cortada, sinaliza `truncated`) e erro acionável. (2) **Validação antes do commit** (`validate-historical.ts`): o preview retorna `warnings` (truncamento, data inválida/futura, duplicata por conteúdo); a UI mostra banners + badges e um checkbox **"Importar"** por reunião (erros/duplicatas desmarcados por padrão) — só sobe o que estiver marcado. |
 | Jun/2026 | **Cascade — cobertura de oportunidades + risco zerado**: a cascade passou a remover também `opportunity_signals` (+ embeddings + recompute de demanda do item) — o módulo de Oportunidades é posterior e não era coberto. E ao remover a ÚLTIMA fonte da conta (sem interações/tickets), o risco preditivo agora é **zerado** (avaliação neutra que supera a `at-risk` antiga + resolve alertas de churn/playbook sem base) — antes o `runPredictiveRiskAnalysis` não inseria nada quando não havia dados, deixando o risco "preso" a um evento removido. |
+| Jun/2026 | **Read.ai → esforço automático**: reuniões do Read.ai entram sozinhas como esforço (`activity_type='meeting'`, horas = duração) + interação com transcrição completa + RAG + tarefas (action items). Conexão por **OAuth 2.1** por CSM (sem token estático; credenciais criptografadas, refresh em background). Vínculo à conta por domínio do participante/título. Admin em `/admin/settings` → Read.ai. Implementação em `src/lib/integrations/readai/` (`oauth.ts`, `tokens.ts`, `ingest.ts`, `sync.ts`). |
 | Jun/2026 | **Integridade na exclusão/edição** (`src/lib/effort/effort-cascade.ts`): um esforço alimenta `interactions`, `wishlist_signals`, `embeddings` (RAG) e `csm_tasks` sugeridas. A FK `interactions.time_entry_id` é CASCADE, mas wishlist/embeddings são polimórficos (sem FK) e viravam **órfãos** ao deletar. Agora a exclusão é **em cascata** e precedida de um **diálogo de confirmação** (`EffortEditModal`) que lista o raio de impacto via `GET .../deletion-preview`. Tarefas já iniciadas/concluídas e eventos de onboarding são **preservados** (desvinculados). Na **edição**, re-vetoriza o RAG da interação e realoca os sinais de wishlist quando a conta muda. **Sem triggers** — limpeza centralizada na aplicação. Órfãos legados foram removidos do banco. |
