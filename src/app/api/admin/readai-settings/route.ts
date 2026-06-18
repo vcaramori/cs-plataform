@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getReadAiConfig, saveReadAiConfig } from '@/lib/integrations/readai/integration-config'
 import { listConnectedUserIds } from '@/lib/integrations/readai/tokens'
 import { runReadAiSync } from '@/lib/integrations/readai/sync'
+import { appBaseUrl } from '@/lib/integrations/readai/oauth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
@@ -17,8 +18,8 @@ async function requireAdmin() {
   return user
 }
 
-/** Status (nunca devolve segredos de OAuth). */
-export async function GET() {
+/** Status (nunca devolve segredos de OAuth nem as signing keys cruas). */
+export async function GET(request: Request) {
   const user = await requireAdmin()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -40,6 +41,11 @@ export async function GET() {
     metadata_discovered: !!oauth.metadata,
     connected_users: connectedUsers,
     sync_state: stateRow?.value ?? null,
+    webhook: {
+      url: `${appBaseUrl(request)}/api/integrations/readai/webhook`,
+      signing_keys_count: (cfg.webhook_signing_keys ?? []).filter(Boolean).length,
+      default_csm_id: cfg.webhook_default_csm_id ?? '',
+    },
   })
 }
 
@@ -63,6 +69,23 @@ export async function POST(request: Request) {
       if (typeof body.store_unmatched === 'boolean') patch.store_unmatched = body.store_unmatched
       if (typeof body.oauth_client_id === 'string') patch.oauth_client_id = body.oauth_client_id.trim()
       if (typeof body.oauth_client_secret === 'string') patch.oauth_client_secret = body.oauth_client_secret.trim()
+      await saveReadAiConfig(patch, user.id)
+      return NextResponse.json({ success: true })
+    }
+
+    if (action === 'save_webhook') {
+      const patch: Record<string, unknown> = {}
+      // signing_keys: aceita string única (linhas/vírgulas) ou array; vazio = limpa.
+      if (body.webhook_signing_keys !== undefined) {
+        const raw = body.webhook_signing_keys
+        const keys = (Array.isArray(raw) ? raw : String(raw).split(/[\n,]+/))
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+        patch.webhook_signing_keys = keys
+      }
+      if (typeof body.webhook_default_csm_id === 'string') {
+        patch.webhook_default_csm_id = body.webhook_default_csm_id.trim()
+      }
       await saveReadAiConfig(patch, user.id)
       return NextResponse.json({ success: true })
     }

@@ -19,7 +19,10 @@ Para permitir **carga de contexto histórico** (interações antigas) e melhorar
 
 ## Read.ai — reuniões viram esforço automaticamente (2026-06-18)
 
-As reuniões gravadas no **Read.ai** entram **automaticamente** na plataforma: cada CSM conecta o próprio Read.ai **uma vez** (card "Read.ai" na home → **Conectar** → login no navegador) e o sistema passa a importar suas reuniões — **passadas e novas** — sem ação manual.
+As reuniões gravadas no **Read.ai** entram **automaticamente** na plataforma. Há **dois caminhos** (ambos sem token hardcoded, ambos alimentam esforço + timeline + RAG e deduplicam pela mesma reunião):
+
+- **Webhooks (recomendado):** um admin configura **uma vez** um webhook de **workspace** em `app.read.ai/analytics/integrations/webhooks` apontando para a URL da plataforma (copiável no admin) e cola a *signing key*. O Read.ai **empurra** cada reunião assim que o relatório fica pronto — sem login por CSM, sem token expirando. O CSM dono é resolvido pelo **e-mail do owner** da reunião (com CSM padrão de fallback).
+- **OAuth (opcional):** cada CSM conecta o próprio Read.ai **uma vez** (card "Read.ai" na home → **Conectar** → login no navegador) e o job horário puxa suas reuniões — **passadas e novas** — para o backfill do histórico.
 
 Cada reunião importada gera, de forma idempotente (dedup pela reunião):
 
@@ -28,11 +31,13 @@ Cada reunião importada gera, de forma idempotente (dedup pela reunião):
 - **Vetorização no RAG** (`storeEmbeddings('interaction', …)`, resumo + transcrição) → as reuniões ficam pesquisáveis no Perguntar/360°.
 - **Tarefas** a partir dos *action items* da reunião (`csm_tasks`).
 
-**Como conecta (OAuth, sem token):** o Read.ai não tem token estático — o acesso é **OAuth 2.1** (Authorization Code + PKCE, *dynamic client registration*, access token de ~10min com refresh **rotativo**). As credenciais ficam **criptografadas** por CSM (`user_integrations`) e o token é renovado em background. Nada hardcoded.
+**Webhook (PUSH):** o Read.ai assina cada entrega com **HMAC-SHA256** (`X-Read-Signature`); a plataforma verifica contra a *signing key* (base64) salva no admin. O payload (`session_id`, `transcript.speaker_blocks`, `action_items`, `owner`, participantes…) é mapeado para a mesma ingestão do OAuth. Re-entregas (retry do Read.ai) só atualizam a mesma reunião. Rota [api/integrations/readai/webhook](../../src/app/api/integrations/readai/webhook/route.ts) + lib `webhook.ts`.
+
+**OAuth (PULL):** o Read.ai não tem token estático — o acesso é **OAuth 2.1** (Authorization Code + PKCE, *dynamic client registration*, access token de ~10min com refresh **rotativo**) no authorization server **`authn.read.ai`** (ORY Hydra). As credenciais ficam **criptografadas** por CSM (`user_integrations`) e o token é renovado em background. Nada hardcoded.
 
 **Vínculo com a conta:** resolve pelo **domínio do participante externo** → tags/website da conta, com fallback pelo **nome no título**. Reuniões internas/sem cliente são **puladas** (ou enviadas a uma conta padrão, se configurado no admin).
 
-**Administração:** `/admin/settings` → aba **Read.ai** (ligar/desligar, conta padrão, app OAuth manual opcional, diagnóstico e "Rodar sincronização agora"). Backfill do histórico roda em ciclos pelo job horário. Implementação em [src/lib/integrations/readai/](../../src/lib/integrations/readai/) (`oauth.ts`, `tokens.ts`, `client.ts`, `ingest.ts`, `sync.ts`).
+**Administração:** `/admin/settings` → aba **Read.ai** (card **Webhooks** com URL + signing key + CSM padrão; ligar/desligar; conta padrão; app OAuth manual opcional; diagnóstico e "Rodar sincronização agora"). Backfill do histórico roda em ciclos pelo job horário. Implementação em [src/lib/integrations/readai/](../../src/lib/integrations/readai/) (`webhook.ts`, `oauth.ts`, `tokens.ts`, `client.ts`, `ingest.ts`, `sync.ts`).
 
 ---
 

@@ -22,6 +22,13 @@ export interface ReadAiIntegrationConfig {
   /** App OAuth criado manualmente (opcional). Vazio = usa dynamic client registration. */
   oauth_client_id?: string
   oauth_client_secret?: string
+  /**
+   * Webhooks nativos (PUSH). signing key(s) em base64 — uma por webhook criado no Read.ai
+   * (suporta rotação). Quando vazio, a rota aceita sem verificar (para o "Send test" do setup).
+   */
+  webhook_signing_keys?: string[]
+  /** CSM (UUID) usado quando o owner.email do webhook não casar com nenhum usuário. */
+  webhook_default_csm_id?: string
 }
 
 export async function getReadAiConfig(): Promise<ReadAiIntegrationConfig> {
