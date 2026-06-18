@@ -38,9 +38,8 @@ export default function LoginPage() {
       attempts++
     }
 
-    // Vai para a raiz, que roteia conforme permissão (/home com home.view, senão /dashboard)
-    router.push('/')
-    router.refresh()
+    // Vai para a raiz via hard reload para bypassar o cache de redirect do App Router
+    window.location.href = '/'
   }
 
   return (
