@@ -127,7 +127,7 @@ export function FeatureDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-3xl">
+      <DialogContent className="bg-surface-card border-border-divider text-foreground max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-plannera-orange" />
