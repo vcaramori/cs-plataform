@@ -23,6 +23,7 @@ interface Status {
   metadata_discovered: boolean
   connected_users: number
   sync_state: { historical_done?: boolean; last_sync_at?: string } | null
+  oauth_debug: { at?: string; step?: string; reason?: string; cookiePresent?: boolean; stateMatches?: boolean; hasRefreshToken?: boolean; redirectUri?: string } | null
   webhook: { url: string; signing_keys_count: number; default_csm_id: string }
 }
 
@@ -139,6 +140,15 @@ export function ReadAiSettingsTab() {
             <Users className="w-4 h-4 text-content-secondary" /> {status?.connected_users ?? 0} CSM(s) conectado(s)
           </div>
         </div>
+        {status?.oauth_debug && (
+          <div className={`text-[11px] rounded-lg p-2.5 border ${status.oauth_debug.step === 'success' ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400' : 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400'}`}>
+            <span className="font-bold">Último OAuth:</span> {status.oauth_debug.step}
+            {status.oauth_debug.reason ? ` — ${status.oauth_debug.reason}` : ''}
+            {status.oauth_debug.step === 'invalid_state' ? ` (cookie: ${status.oauth_debug.cookiePresent ? 'presente' : 'ausente'}, state confere: ${status.oauth_debug.stateMatches ? 'sim' : 'não'})` : ''}
+            {status.oauth_debug.step === 'success' ? ` (refresh token: ${status.oauth_debug.hasRefreshToken ? 'sim' : 'NÃO'})` : ''}
+            {status.oauth_debug.at ? ` · ${new Date(status.oauth_debug.at).toLocaleString('pt-BR')}` : ''}
+          </div>
+        )}
       </Card>
 
       {/* Webhooks (recomendado) */}

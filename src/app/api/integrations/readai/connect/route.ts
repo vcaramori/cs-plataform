@@ -29,11 +29,12 @@ export async function GET(request: Request) {
 
   const res = NextResponse.redirect(authorizeUrl)
   // state|verifier — só precisa sobreviver ao round-trip (10 min basta).
+  // path '/' (não restrito) p/ garantir envio no retorno cross-site (SameSite=Lax, top-level GET).
   res.cookies.set(COOKIE, `${state}.${verifier}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/api/integrations/readai',
+    path: '/',
     maxAge: 600,
   })
   return res

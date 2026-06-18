@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   const { data: oauthRow } = await admin.from('app_settings').select('value').eq('key', 'readai_oauth').maybeSingle()
   const oauth = (oauthRow?.value ?? {}) as { registered_client?: { client_id?: string }; metadata?: unknown }
   const { data: stateRow } = await admin.from('app_settings').select('value').eq('key', 'readai_sync_state').maybeSingle()
+  const { data: debugRow } = await admin.from('app_settings').select('value').eq('key', 'readai_oauth_debug').maybeSingle()
   const connectedUsers = (await listConnectedUserIds()).length
 
   return NextResponse.json({
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     metadata_discovered: !!oauth.metadata,
     connected_users: connectedUsers,
     sync_state: stateRow?.value ?? null,
+    oauth_debug: debugRow?.value ?? null,
     webhook: {
       url: `${appBaseUrl(request)}/api/integrations/readai/webhook`,
       signing_keys_count: (cfg.webhook_signing_keys ?? []).filter(Boolean).length,
