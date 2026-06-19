@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getReadAiConfig, saveReadAiConfig } from '@/lib/integrations/readai/integration-config'
 import { listConnectedUserIds } from '@/lib/integrations/readai/tokens'
 import { runReadAiSync } from '@/lib/integrations/readai/sync'
+import { listRecentImports } from '@/lib/integrations/readai/import-log'
 import { appBaseUrl } from '@/lib/integrations/readai/oauth'
 
 export const dynamic = 'force-dynamic'
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
   const { data: stateRow } = await admin.from('app_settings').select('value').eq('key', 'readai_sync_state').maybeSingle()
   const { data: debugRow } = await admin.from('app_settings').select('value').eq('key', 'readai_oauth_debug').maybeSingle()
   const connectedUsers = (await listConnectedUserIds()).length
+  const importLog = await listRecentImports(50)
 
   return NextResponse.json({
     config: {
@@ -46,6 +48,7 @@ export async function GET(request: Request) {
     connected_users: connectedUsers,
     sync_state: stateRow?.value ?? null,
     oauth_debug: debugRow?.value ?? null,
+    import_log: importLog,
     webhook: {
       url: `${appBaseUrl(request)}/api/integrations/readai/webhook`,
       signing_keys_count: (cfg.webhook_signing_keys ?? []).filter(Boolean).length,
@@ -99,6 +102,17 @@ export async function POST(request: Request) {
     }
 
     if (action === 'run_sync') {
+      const result = await runReadAiSync()
+      return NextResponse.json({ success: true, result })
+    }
+
+    if (action === 'reset_sync') {
+      // Força histórico completo: zera o estado de sync de TODOS os usuários e re-sincroniza.
+      const admin = getSupabaseAdminClient()
+      await admin.from('app_settings').upsert(
+        { key: 'readai_sync_state', value: {} as unknown as never, description: 'Estado de sync Read.ai por usuário', updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      )
       const result = await runReadAiSync()
       return NextResponse.json({ success: true, result })
     }

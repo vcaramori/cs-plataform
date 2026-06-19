@@ -178,6 +178,16 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
 
+### 🎥 Read.ai — importação confiável: histórico ao conectar, log visível e merge anti-duplicação (2026-06-19)
+
+O OAuth conectava mas **nada importava** — `runReadAiSync` nunca disparava (cron não rodou e o botão não foi usado), sem nenhum log que revelasse isso; e um backfill duplicaria os ~105 esforços de reunião já lançados à mão. Resolvido:
+
+- **Histórico ao conectar**: o callback redireciona para `/home?readai=connected` e o card dispara `POST /api/integrations/readai/sync` (backfill **completo** do próprio CSM, `force`); novas reuniões seguem pelo cron horário. Botão **"Importar minhas reuniões"** no card. Novo `runReadAiSyncForUser(userId,{source,force})` em [sync.ts](src/lib/integrations/readai/sync.ts).
+- **Log de importações visível**: nova tabela `readai_import_log` (migração) + [import-log.ts](src/lib/integrations/readai/import-log.ts); cada reunião é registrada (`created|updated|merged|skipped|error|possible_duplicate` + motivo). Card **"Histórico de importações"** no admin ([ReadAiSettingsTab.tsx](src/app/(dashboard)/admin/settings/components/ReadAiSettingsTab.tsx)). Erros de auth viram entrada acionável (ex.: "verifique o OAuth audience"), tornando visível o caso `/v1/meetings`.
+- **Forçar histórico**: botão **"Forçar histórico completo"** (action `reset_sync` zera `readai_sync_state` e re-sincroniza todos).
+- **Merge anti-duplicação** em [ingest.ts](src/lib/integrations/readai/ingest.ts): antes de criar, procura um esforço de reunião manual (mesma conta+data, `type='meeting'`, sem `external_meeting_id`). **1 candidato** → enriquece a interação/esforço existente (transcrição, resumo, participantes, vincula `external_meeting_id`) **preservando as horas lançadas à mão**; **vários** → cria e marca `possible_duplicate` no log para revisão; **0** → cria normal.
+- Webhook e sync compartilham a ingestão e ambos logam. Sem mudança de env.
+
 ### 📅 Calendário (Microsoft 365) configurável no banco — zero env (2026-06-19)
 
 "Conectar Calendário" falhava com `NEXT_PUBLIC_MS_CLIENT_ID não configurada no servidor` — a integração dependia de 4 variáveis de env (`NEXT_PUBLIC_MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `NEXT_PUBLIC_MS_TENANT_ID`, `NEXT_PUBLIC_BASE_URL`) que não estavam na Vercel. Movida para o banco, no mesmo padrão do Read.ai:

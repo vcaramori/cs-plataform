@@ -7,7 +7,18 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { SectionHeader } from '@/components/ui/section-header'
 import { toast } from 'sonner'
-import { Loader2, Video, Play, CheckCircle2, AlertCircle, Users, Webhook, Copy, Check } from 'lucide-react'
+import { Loader2, Video, Play, CheckCircle2, AlertCircle, Users, Webhook, Copy, Check, History, RotateCcw } from 'lucide-react'
+
+interface ImportLogRow {
+  id: string
+  created_at: string
+  source: string
+  action: 'created' | 'updated' | 'merged' | 'skipped' | 'error' | 'possible_duplicate'
+  title: string | null
+  detail: string | null
+  meeting_date: string | null
+  account_name: string | null
+}
 
 interface Status {
   config: {
@@ -24,7 +35,17 @@ interface Status {
   connected_users: number
   sync_state: { historical_done?: boolean; last_sync_at?: string } | null
   oauth_debug: { at?: string; step?: string; reason?: string; cookiePresent?: boolean; stateMatches?: boolean; hasRefreshToken?: boolean; redirectUri?: string } | null
+  import_log: ImportLogRow[]
   webhook: { url: string; signing_keys_count: number; default_csm_id: string }
+}
+
+const ACTION_STYLE: Record<ImportLogRow['action'], { label: string; cls: string }> = {
+  created: { label: 'nova', cls: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' },
+  merged: { label: 'mesclada', cls: 'text-blue-600 dark:text-blue-400 bg-blue-500/10' },
+  updated: { label: 'atualizada', cls: 'text-sky-600 dark:text-sky-400 bg-sky-500/10' },
+  skipped: { label: 'pulada', cls: 'text-content-secondary bg-border-divider/40' },
+  possible_duplicate: { label: 'possível duplicata', cls: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' },
+  error: { label: 'erro', cls: 'text-red-600 dark:text-red-400 bg-red-500/10' },
 }
 
 export function ReadAiSettingsTab() {
@@ -103,13 +124,30 @@ export function ReadAiSettingsTab() {
     if (j?.success) { toast.success('Configuração salva'); setClientSecret(''); load() }
   }
 
+  function summarize(r: any): string {
+    return `${r.users} CSM(s) · ${r.created} novas · ${r.merged} mescladas · ${r.updated} atualizadas · ${r.skipped} puladas${r.possibleDuplicates ? ` · ${r.possibleDuplicates} poss. duplicatas` : ''}`
+  }
+
   async function runSync() {
     toast.info('Sincronizando reuniões… pode levar alguns minutos no 1º backfill')
     const j = await action({ action: 'run_sync' }, 'sync')
     if (j?.success) {
       const r = j.result
       const errCount = r.errors?.length ?? 0
-      toast.success(`Sync: ${r.users} CSM(s) · ${r.created} novas · ${r.updated} atualizadas · ${r.skipped} puladas${errCount ? ` · ${errCount} erros` : ''}`)
+      toast.success(`Sync: ${summarize(r)}${errCount ? ` · ${errCount} erros` : ''}`)
+      if (errCount) toast.error(`${errCount} erro(s). Ex.: ${r.errors[0]}`, { duration: 8000 })
+      load()
+    }
+  }
+
+  async function forceHistory() {
+    if (!window.confirm('Forçar a reimportação do histórico COMPLETO de todos os CSMs conectados? Reuniões já lançadas como esforço são mescladas (não duplicadas).')) return
+    toast.info('Reimportando histórico completo… pode levar alguns minutos.')
+    const j = await action({ action: 'reset_sync' }, 'force')
+    if (j?.success) {
+      const r = j.result
+      const errCount = r.errors?.length ?? 0
+      toast.success(`Histórico: ${summarize(r)}${errCount ? ` · ${errCount} erros` : ''}`)
       if (errCount) toast.error(`${errCount} erro(s). Ex.: ${r.errors[0]}`, { duration: 8000 })
       load()
     }
@@ -278,14 +316,49 @@ export function ReadAiSettingsTab() {
             {status.sync_state.historical_done ? ' · carga histórica concluída' : ''}
           </p>
         )}
-        <div className="flex justify-between items-center pt-4 border-t border-border-divider">
+        <div className="flex flex-wrap justify-between items-center gap-2 pt-4 border-t border-border-divider">
           <Button onClick={() => saveConfig({ fallback_account_id: fallback })} disabled={busy === 'config'} variant="outline" className="gap-2">
             {busy === 'config' && <Loader2 className="w-4 h-4 animate-spin" />} Salvar conta padrão
           </Button>
-          <Button onClick={runSync} disabled={busy === 'sync'} className="bg-plannera-orange hover:bg-plannera-orange/90 gap-2">
-            {busy === 'sync' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Rodar sincronização agora
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={forceHistory} disabled={!!busy} variant="outline" className="gap-2">
+              {busy === 'force' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Forçar histórico completo
+            </Button>
+            <Button onClick={runSync} disabled={!!busy} className="bg-plannera-orange hover:bg-plannera-orange/90 gap-2">
+              {busy === 'sync' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Rodar sincronização agora
+            </Button>
+          </div>
         </div>
+      </Card>
+
+      {/* Histórico de importações */}
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <History className="w-4 h-4 text-plannera-orange" />
+          <h3 className="font-bold text-content-primary text-sm">Histórico de importações</h3>
+          <span className="ml-auto text-[11px] text-content-secondary">{status?.import_log?.length ?? 0} recentes</span>
+        </div>
+        {!status?.import_log?.length ? (
+          <p className="text-xs text-content-secondary">Nenhuma importação registrada ainda. Conecte o Read.ai (ou clique &quot;Rodar sincronização agora&quot;) e o resultado de cada reunião aparece aqui — inclusive o que foi pulado, mesclado ou deu erro.</p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto rounded-xl border border-border-divider divide-y divide-border-divider">
+            {status.import_log.map((row) => {
+              const st = ACTION_STYLE[row.action] ?? ACTION_STYLE.skipped
+              return (
+                <div key={row.id} className="flex items-start gap-3 p-2.5 text-xs">
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${st.cls}`}>{st.label}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-content-primary truncate">{row.title || '(sem título)'}</p>
+                    <p className="text-[10px] text-content-secondary">
+                      {row.account_name ? `${row.account_name} · ` : ''}{row.meeting_date ?? ''}{row.detail ? ` · ${row.detail}` : ''}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-content-secondary/70">{new Date(row.created_at).toLocaleString('pt-BR')}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </Card>
     </div>
   )

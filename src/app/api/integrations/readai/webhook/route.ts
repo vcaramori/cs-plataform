@@ -8,6 +8,8 @@ import {
 } from '@/lib/integrations/readai/webhook'
 import { ingestReadAiMeeting } from '@/lib/integrations/readai/ingest'
 import { loadAccountIndex, resolveMeetingAccount } from '@/lib/integrations/readai/sync'
+import { meetingDateISO } from '@/lib/integrations/readai/client'
+import { logReadAiImport } from '@/lib/integrations/readai/import-log'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: 'skipped', reason: 'integration_disabled' })
   }
 
+  const meetingDate = meetingDateISO(payload.start_time ? Date.parse(payload.start_time) : undefined)
   try {
     const meeting = webhookPayloadToMeeting(payload)
 
@@ -68,20 +71,24 @@ export async function POST(request: Request) {
     const fallbackAccountId = cfg.store_unmatched && cfg.fallback_account_id ? cfg.fallback_account_id : null
     const accountId = resolveMeetingAccount(meeting, idx) ?? fallbackAccountId
     if (!accountId) {
+      await logReadAiImport({ source: 'webhook', externalMeetingId: payload.session_id, title: payload.title ?? null, meetingDate, action: 'skipped', detail: 'sem conta resolvida (reunião interna/sem cliente)' })
       return NextResponse.json({ status: 'skipped', reason: 'no_account_match', session_id: payload.session_id })
     }
 
     // 4) CSM dono (owner.email → auth.users) + fallback configurável.
     const csmId = (await resolveCsmIdByEmail(payload.owner?.email)) ?? cfg.webhook_default_csm_id ?? null
     if (!csmId) {
+      await logReadAiImport({ source: 'webhook', accountId, externalMeetingId: payload.session_id, title: payload.title ?? null, meetingDate, action: 'skipped', detail: `CSM não identificado (owner: ${payload.owner?.email ?? '—'}); defina um CSM padrão no admin` })
       return NextResponse.json({ status: 'skipped', reason: 'no_csm_resolved', session_id: payload.session_id })
     }
 
     const result = await ingestReadAiMeeting(meeting, accountId, csmId)
-    return NextResponse.json({ status: result, session_id: payload.session_id })
+    await logReadAiImport({ source: 'webhook', userId: csmId, externalMeetingId: result.externalMeetingId, accountId: result.accountId, title: result.title, meetingDate, action: result.action, detail: result.detail ?? null })
+    return NextResponse.json({ status: result.action, session_id: payload.session_id })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'erro'
     console.error('[Read.ai webhook] Falha ao ingerir:', message)
+    await logReadAiImport({ source: 'webhook', externalMeetingId: payload.session_id, title: payload.title ?? null, meetingDate, action: 'error', detail: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
