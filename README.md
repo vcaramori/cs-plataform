@@ -186,6 +186,8 @@ Os crons horários de **chamados (HelpDesk)** e **Read.ai** rodavam por **GitHub
 - **GitHub Actions** ([readai-sync.yml](.github/workflows/readai-sync.yml), [helpdesk-sync.yml](.github/workflows/helpdesk-sync.yml)): agendamento removido; ficam só como **disparo manual** (`workflow_dispatch`).
 - Verificado em produção: `trigger_vercel_cron('/api/cron/readai-sync')` → `net._http_response` **HTTP 200** `{success:true,...}`; sem segredo → **401**. A REST do Read.ai respondeu (245 reuniões: 71 criadas, 8 mescladas, 4 possíveis duplicatas) — **sem necessidade de audience**.
 
+> **Refresher do token HelpDesk continua no GitHub Actions** ([helpdesk-token-refresh.yml](.github/workflows/helpdesk-token-refresh.yml)): ele faz login com **navegador (Playwright)** no app.helpdesk.com para pegar o token (dura ~5 dias) e o envia para a plataforma. Isso **não** roda em pg_cron/serverless (precisa de browser) — é a exceção legítima. Depende dos secrets `HELPDESK_EMAIL`, `HELPDESK_PASSWORD`, `CSPLATAFORM_BASE_URL` e `HELPDESK_API_SECRET` (= `app_settings.helpdesk_integration.secret`). Se o token expirar e o refresher não rodar, o cron de HelpDesk volta a dar 401 mesmo funcionando — então mantenha esses secrets corretos.
+>
 > Achado à parte: o cron `cron-auto-assign-tickets` (a cada 5 min) está retornando **404** ("Requested function was not found") — a Edge Function correspondente não está publicada. É um problema separado (deploy de Edge Function), não relacionado a este fix.
 
 ### 🎥 Read.ai — importação confiável: histórico ao conectar, log visível e merge anti-duplicação (2026-06-19)
