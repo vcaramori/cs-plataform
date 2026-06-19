@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { escalateSLAViolations } from "@/lib/support/sla-escalation";
 
 /**
@@ -11,8 +12,7 @@ import { escalateSLAViolations } from "@/lib/support/sla-escalation";
 export async function POST(request: NextRequest) {
   try {
     // Verify API secret for cron job security
-    const apiSecret = request.headers.get("x-api-secret");
-    if (apiSecret !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
       return NextResponse.json(
         { error: "Unauthorized: Invalid API secret" },
         { status: 401 }

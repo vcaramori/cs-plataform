@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { analyzeUnanalyzedReplies } from '@/lib/support/sentiment-analysis';
 
 const supabase = createClient(
@@ -8,8 +9,7 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   // Verify API secret for cron security
-  const apiSecret = request.headers.get('x-api-secret');
-  if (apiSecret !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401 }

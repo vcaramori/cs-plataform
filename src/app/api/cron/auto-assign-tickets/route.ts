@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { autoAssignTickets } from "@/lib/support/auto-assign";
 
 /**
@@ -11,8 +12,7 @@ import { autoAssignTickets } from "@/lib/support/auto-assign";
 export async function POST(request: NextRequest) {
   try {
     // Verify API secret for cron job security
-    const apiSecret = request.headers.get("x-api-secret");
-    if (apiSecret !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
       return NextResponse.json(
         { error: "Unauthorized: Invalid API secret" },
         { status: 401 }

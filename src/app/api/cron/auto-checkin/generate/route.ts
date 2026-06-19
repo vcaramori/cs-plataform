@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateText } from '@/lib/llm/gateway'
 import { loadInstruction } from '@/lib/ai/load-instruction'
@@ -16,8 +17,7 @@ const SILENCE_THRESHOLDS: Record<string, number> = {
 
 export async function POST(request: Request) {
   // Check API Secret for internal cron auth
-  const secret = request.headers.get('x-api-secret')
-  if (secret !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

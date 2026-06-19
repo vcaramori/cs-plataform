@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { runAutomatedAccountAnalysis } from '@/lib/ai/automated-account-analysis'
 
@@ -14,8 +15,7 @@ export const maxDuration = 300 // 5 minutes max on Vercel Pro
  * Auth: x-api-secret header (server-to-server)
  */
 export async function POST(request: Request) {
-  const authHeader = request.headers.get('x-api-secret')
-  if (authHeader !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

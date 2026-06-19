@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateAlertsForAccounts } from '@/lib/alerts/generate'
 
@@ -6,8 +7,7 @@ export const maxDuration = 300 // Allow up to 5 minutes for cron jobs on Vercel
 
 export async function POST(request: Request) {
   // Check API Secret for internal cron auth
-  const secret = request.headers.get('x-api-secret')
-  if (secret !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

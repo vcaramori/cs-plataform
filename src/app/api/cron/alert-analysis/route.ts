@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AdvancedAlertsService } from '@/lib/alerts/advanced-alerts-service'
 
@@ -6,8 +7,7 @@ export const maxDuration = 300
 
 export async function POST(request: Request) {
   // Check API Secret
-  const authHeader = request.headers.get('x-api-secret')
-  if (authHeader !== process.env.API_SECRET) {
+  if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
