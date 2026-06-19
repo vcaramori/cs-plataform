@@ -178,6 +178,16 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
 
+### ⏰ Crons HelpDesk + Read.ai migrados para o Supabase (pg_cron) — fim do erro 401 (2026-06-19)
+
+Os crons horários de **chamados (HelpDesk)** e **Read.ai** rodavam por **GitHub Actions** e davam **401**: o endpoint valida o `x-api-secret` contra `app_settings.helpdesk_integration.secret`, mas esse segredo **não existia no banco** (e os env `API_SECRET`/`CRON_SECRET` foram removidos). Em vez de depender de secrets no GitHub, movemos o agendamento para **dentro do Supabase**, como os outros 12 crons do projeto já fazem:
+
+- **pg_cron + pg_net** (migração [20260619210000_supabase_cron_syncs.sql](supabase/migrations/20260619210000_supabase_cron_syncs.sql)): função `public.trigger_vercel_cron(path)` lê o **segredo** e a **URL base** do `app_settings` e faz `net.http_post` para o endpoint da Vercel. Jobs: `helpdesk-sync-hourly` (`0 * * * *`) e `readai-sync-hourly` (`15 * * * *`). **Tudo no banco** — zero GitHub, zero env. Segredo único em `app_settings.helpdesk_integration.secret` (editável em Configurações → HelpDesk; rotacionar lá atualiza o cron automaticamente).
+- **GitHub Actions** ([readai-sync.yml](.github/workflows/readai-sync.yml), [helpdesk-sync.yml](.github/workflows/helpdesk-sync.yml)): agendamento removido; ficam só como **disparo manual** (`workflow_dispatch`).
+- Verificado em produção: `trigger_vercel_cron('/api/cron/readai-sync')` → `net._http_response` **HTTP 200** `{success:true,...}`; sem segredo → **401**. A REST do Read.ai respondeu (245 reuniões: 71 criadas, 8 mescladas, 4 possíveis duplicatas) — **sem necessidade de audience**.
+
+> Achado à parte: o cron `cron-auto-assign-tickets` (a cada 5 min) está retornando **404** ("Requested function was not found") — a Edge Function correspondente não está publicada. É um problema separado (deploy de Edge Function), não relacionado a este fix.
+
 ### 🎥 Read.ai — importação confiável: histórico ao conectar, log visível e merge anti-duplicação (2026-06-19)
 
 O OAuth conectava mas **nada importava** — `runReadAiSync` nunca disparava (cron não rodou e o botão não foi usado), sem nenhum log que revelasse isso; e um backfill duplicaria os ~105 esforços de reunião já lançados à mão. Resolvido:

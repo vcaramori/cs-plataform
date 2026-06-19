@@ -1,11 +1,12 @@
-name: Read.ai Sync (hourly)
+name: Read.ai Sync (manual)
 
-# Aciona o endpoint que sincroniza as reuniões do Read.ai de todos os agentes
-# conectados. GitHub Actions (não cron da Vercel, que no Hobby é só diário).
+# O agendamento horário foi movido para o Supabase (pg_cron + pg_net → endpoint da
+# Vercel), com o segredo lido do banco (app_settings) — ver migração
+# 20260619210000_supabase_cron_syncs.sql. Este workflow fica só como disparo MANUAL.
+# Para funcionar manualmente, os secrets CSPLATAFORM_BASE_URL e HELPDESK_API_SECRET
+# (= app_settings.helpdesk_integration.secret) precisam estar configurados no repo.
 
 on:
-  schedule:
-    - cron: '15 * * * *' # de hora em hora (desfasado do HelpDesk em :00)
   workflow_dispatch: {}
 
 jobs:
