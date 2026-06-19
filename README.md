@@ -178,6 +178,15 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
 
+### 🔐 Chave-mestra de criptografia movida para o banco (auto-provisionada, zero env) (2026-06-19)
+
+Conectar o Read.ai por OAuth falhava ao **salvar** o token com `[Crypto] ENCRYPTION_KEY must be a 64-char hex string` — a `ENCRYPTION_KEY` não estava na Vercel (o fluxo OAuth em si funcionava: cookie/state ok, redirect_uri correto, troca do code OK). Em vez de exigir mais uma variável de ambiente, a chave-mestra agora vive **no banco**, seguindo a premissa de config 100% no banco:
+
+- [crypto/encryption.ts](src/lib/crypto/encryption.ts): `encrypt`/`decrypt` agora **assíncronos** e leem a chave de `app_settings.encryption_key`, com **auto-provisão** — (1) banco; (2) `ENCRYPTION_KEY` de env é *adotada* no banco se presente (migração/dev); (3) senão gera uma nova (32 bytes) e persiste (gravação race-safe via `ignoreDuplicates`). Cacheada por instância.
+- Removidos os gates que exigiam `ENCRYPTION_KEY` em env (Microsoft `getAuthorizationUrl`, admin de chaves LLM). Todos os chamadores de `encrypt`/`decrypt` passaram a `await` (Read.ai, Microsoft 365, chaves LLM).
+- A chave existente do `.env` foi semeada no banco, então **nada do que já estava cifrado quebra** (a chave Groq do LLM segue válida). `ENCRYPTION_KEY` em env passou a ser **opcional**.
+- Trade-off aceito (decisão de produto): a chave-mestra co-reside com os dados cifrados — quem tiver acesso total ao banco consegue decifrá-los. Em troca: zero env e fim do bug "esqueci de setar na Vercel".
+
 ### 🎥 Read.ai — Webhooks nativos (PUSH) + correção dos endpoints OAuth reais (2026-06-18)
 
 O botão "Conectar Read.ai" caía em `api.read.ai/oauth/authorize` → `{"detail":"Not Found"}` porque os endpoints OAuth tinham sido **adivinhados**. Recon empírico (RFC 9728) revelou que o authorization server real é o **ORY Hydra em `authn.read.ai`** — e adicionamos um segundo caminho de ingestão, **Webhooks (PUSH)**, que é o mecanismo estável que a Zapier usa por baixo dos panos. Agora há **dois caminhos** que alimentam timeline + esforço + RAG e deduplicam pela mesma reunião:

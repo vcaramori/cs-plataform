@@ -7,7 +7,7 @@ export async function GET() {
   if (isAuthError(auth)) return auth
 
   try {
-    const url = getAuthorizationUrl(auth.user.id)
+    const url = await getAuthorizationUrl(auth.user.id)
     return NextResponse.redirect(url)
   } catch (error) {
     console.error('[Microsoft Auth] Login error:', error)

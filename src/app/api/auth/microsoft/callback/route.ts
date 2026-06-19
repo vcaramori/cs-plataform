@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
   let userId: string
   try {
-    userId = decrypt(state)
+    userId = await decrypt(state)
   } catch (err) {
     console.error('[Microsoft Auth] Invalid state parameter:', err)
     return NextResponse.json({ error: 'Invalid state parameter' }, { status: 400 })
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   try {
     const tokens = await exchangeCodeForTokens(code)
-    const encryptedRefreshToken = encrypt(tokens.refreshToken)
+    const encryptedRefreshToken = await encrypt(tokens.refreshToken)
 
     // user_integrations ainda não consta nos tipos gerados do Supabase → cast (padrão do projeto)
     const supabase = getSupabaseAdminClient() as any

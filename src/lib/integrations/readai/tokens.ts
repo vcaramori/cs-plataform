@@ -24,11 +24,11 @@ export async function saveOAuthTokens(userId: string, tokens: OAuthTokens): Prom
   const row: Record<string, unknown> = {
     user_id: userId,
     provider: PROVIDER,
-    access_token: encrypt(tokens.access_token),
+    access_token: await encrypt(tokens.access_token),
     updated_at: new Date().toISOString(),
   }
   // refresh token rotaciona — só sobrescreve quando o provedor mandou um novo.
-  if (tokens.refresh_token) row.refresh_token = encrypt(tokens.refresh_token)
+  if (tokens.refresh_token) row.refresh_token = await encrypt(tokens.refresh_token)
   if (expiresAt) row.token_expires_at = expiresAt
   await (admin as any).from('user_integrations').upsert(row, { onConflict: 'user_id,provider' })
 }
@@ -83,12 +83,12 @@ export async function getValidAccessToken(userId: string): Promise<string | null
   const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0
   const stillValid = row.access_token && expiresAt - Date.now() > EXPIRY_SKEW_MS
   if (stillValid) {
-    try { return decrypt(row.access_token!) } catch { /* cai no refresh */ }
+    try { return await decrypt(row.access_token!) } catch { /* cai no refresh */ }
   }
 
   // Renova usando o refresh token (rotaciona — persistir o novo imediatamente).
   let refresh: string
-  try { refresh = decrypt(row.refresh_token) } catch { return null }
+  try { refresh = await decrypt(row.refresh_token) } catch { return null }
   try {
     const tokens = await refreshAccessToken(refresh)
     await saveOAuthTokens(userId, tokens)

@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
     if (row && row.value && (row.value as Record<string, string>)[provider]) {
       try {
-        apiKey = decrypt((row.value as Record<string, string>)[provider])
+        apiKey = await decrypt((row.value as Record<string, string>)[provider])
       } catch {
         return NextResponse.json({ error: 'Failed to decrypt saved key' }, { status: 500 })
       }

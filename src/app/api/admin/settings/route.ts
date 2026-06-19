@@ -192,18 +192,11 @@ export async function POST(request: Request) {
 
       const existingKeys = (existingRow?.value as Record<string, string>) ?? {}
 
-      const hasEncryptionKey = process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length === 64
-
       for (const provider of LLM_PROVIDERS) {
         const newKey = keysObj[provider]
         if (newKey && newKey.trim().length > 0) {
-          if (!hasEncryptionKey) {
-            return NextResponse.json(
-              { error: 'ENCRYPTION_KEY não configurada no servidor. Defina uma chave hex de 64 caracteres na variável de ambiente.' },
-              { status: 500 }
-            )
-          }
-          encryptedKeys[provider] = encrypt(newKey)
+          // chave-mestra auto-provisionada no banco (ver crypto/encryption.ts)
+          encryptedKeys[provider] = await encrypt(newKey)
         } else if (existingKeys[provider]) {
           encryptedKeys[provider] = existingKeys[provider]
         }

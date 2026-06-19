@@ -7,20 +7,16 @@ const TENANT_ID = process.env.NEXT_PUBLIC_MS_TENANT_ID || 'common'
 // URL for OAuth Callback (can be env var, using NEXT_PUBLIC_BASE_URL)
 const REDIRECT_URI = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/microsoft/callback` : 'http://localhost:3000/api/auth/microsoft/callback'
 
-export function getAuthorizationUrl(userId: string) {
+export async function getAuthorizationUrl(userId: string) {
   // Mensagens específicas para facilitar o diagnóstico de config no Vercel
   if (!CLIENT_ID) throw new Error('NEXT_PUBLIC_MS_CLIENT_ID não configurada no servidor')
   if (!CLIENT_SECRET) throw new Error('MS_CLIENT_SECRET não configurada no servidor')
-  const encKey = process.env.ENCRYPTION_KEY
-  if (!encKey || encKey.length !== 64) {
-    throw new Error('ENCRYPTION_KEY ausente/ inválida (precisa de 64 chars hex) no servidor')
-  }
   if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_BASE_URL) {
     throw new Error('NEXT_PUBLIC_BASE_URL não configurada (redirect_uri ficaria como localhost)')
   }
 
   const scope = 'offline_access Calendars.Read'
-  const state = encrypt(userId) // basic protection to ensure callback matches user
+  const state = await encrypt(userId) // basic protection to ensure callback matches user
 
   const url = new URL(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`)
   url.searchParams.set('client_id', CLIENT_ID)
@@ -106,7 +102,7 @@ export async function getUserAccessToken(userId: string): Promise<string | null>
   }
 
   try {
-    const refreshToken = decrypt(integration.refresh_token)
+    const refreshToken = await decrypt(integration.refresh_token)
     const tokens = await getAccessTokenFromRefreshToken(refreshToken)
 
     // Update refresh token if Microsoft sent a new one
@@ -114,7 +110,7 @@ export async function getUserAccessToken(userId: string): Promise<string | null>
       await supabase
         .from('user_integrations')
         .update({
-          refresh_token: encrypt(tokens.refreshToken),
+          refresh_token: await encrypt(tokens.refreshToken),
           updated_at: new Date().toISOString()
         })
         .eq('id', integration.id)

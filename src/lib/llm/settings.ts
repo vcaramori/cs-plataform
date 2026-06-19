@@ -85,7 +85,7 @@ export async function getLLMSettings(): Promise<LLMSettings> {
       const encrypted = encryptedKeys[provider]
       if (encrypted && typeof encrypted === 'string' && encrypted.includes(':')) {
         try {
-          apiKeys[provider] = decrypt(encrypted)
+          apiKeys[provider] = await decrypt(encrypted)
         } catch {
           // Decryption failed — key might be corrupt, use env fallback
         }
