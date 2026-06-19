@@ -29,11 +29,11 @@ export async function POST(request: Request) {
   let errors: string[] = []
 
   try {
-    // Buscar contas ativas
+    // Contas elegíveis (accounts.contract_status NÃO existe — quebrava o cron com 500;
+    // "ativo" mora em contracts.status. Mantém só o opt-out de check-in automático).
     const { data: accounts } = await supabase
       .from('accounts')
       .select('id, name, segment, csm_owner_id, health_score')
-      .eq('contract_status', 'active')
       .eq('opt_out_auto_checkin', false)
 
     if (!accounts || accounts.length === 0) {

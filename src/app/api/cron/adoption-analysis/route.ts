@@ -17,11 +17,11 @@ export async function POST(request: Request) {
   const errors: string[] = []
 
   try {
-    // Fetch all active accounts
+    // Processa todas as contas (accounts.contract_status NÃO existe — o conceito de
+    // "ativo" mora em contracts.status; filtrar pela coluna inexistente quebrava o cron com 500).
     const { data: accounts, error: accountsError } = await (supabase as any)
       .from('accounts')
-      .select('id, name, contract_status')
-      .eq('contract_status', 'active')
+      .select('id, name')
 
     if (accountsError || !accounts) {
       const msg = accountsError?.message || 'Failed to fetch accounts'
