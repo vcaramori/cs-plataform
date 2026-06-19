@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['pdf-parse', '@google/genai'],
+  serverExternalPackages: ['pdf-parse', '@google/genai', 'node-ical'],
   typescript: {
     ignoreBuildErrors: false,
   },

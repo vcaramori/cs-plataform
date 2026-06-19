@@ -3,6 +3,7 @@ import { requireApiAuth, isAuthError } from '@/lib/auth/require-auth'
 import { isLeadershipRole } from '@/lib/auth/roles'
 import { getUserAccessToken } from '@/lib/microsoft/auth'
 import { getDailyEvents } from '@/lib/microsoft/calendar'
+import { getIcsUrl, fetchIcsEvents } from '@/lib/calendar/ics'
 
 export async function GET(request: Request) {
   const auth = await requireApiAuth()
@@ -22,17 +23,30 @@ export async function GET(request: Request) {
   const date = queryDate ? new Date(queryDate) : new Date()
 
   try {
+    // 1) Microsoft 365 (Graph), se o usuário tiver conectado por OAuth.
     const accessToken = await getUserAccessToken(targetUserId)
-    
-    if (!accessToken) {
-      return NextResponse.json({ status: 'not_connected', events: [] })
+    if (accessToken) {
+      const events = await getDailyEvents(accessToken, date)
+      return NextResponse.json({ status: 'connected', source: 'microsoft', events })
     }
 
-    const events = await getDailyEvents(accessToken, date)
-    
-    return NextResponse.json({ status: 'connected', events })
+    // 2) Fallback: feed ICS publicado (sem Azure/admin).
+    const icsUrl = await getIcsUrl(targetUserId)
+    if (icsUrl) {
+      const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0)
+      const dayEnd = new Date(date); dayEnd.setHours(23, 59, 59, 999)
+      try {
+        const events = await fetchIcsEvents(icsUrl, dayStart, dayEnd)
+        return NextResponse.json({ status: 'connected', source: 'ics', events })
+      } catch (e) {
+        console.error('[Calendar API] ICS fetch error:', e)
+        return NextResponse.json({ status: 'error', source: 'ics', events: [], error: 'Falha ao ler o feed ICS (link inválido ou indisponível).' })
+      }
+    }
+
+    return NextResponse.json({ status: 'not_connected', events: [] })
   } catch (error) {
     console.error('[Calendar API] Error fetching events:', error)
-    return NextResponse.json({ error: 'Erro ao buscar eventos do Office 365' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao buscar eventos do calendário' }, { status: 500 })
   }
 }
