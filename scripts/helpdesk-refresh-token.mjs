@@ -63,23 +63,57 @@ const page = await context.newPage()
 try {
   // Navegar para o app dispara o redirect OAuth para accounts.livechat.com (login).
   await page.goto('https://app.helpdesk.com/', { waitUntil: 'domcontentloaded', timeout: 60000 })
+  await page.waitForTimeout(2500)
 
-  // Preenche e-mail (a tela pode ser de uma etapa ou e-mail→senha).
-  await fillIfPresent(page, ['input[type="email"]', 'input[name="email"]', '#email'], EMAIL)
-  // Se houver um "Continuar/Next" antes da senha, clica.
+  // A tela atual é um formulário ÚNICO (e-mail + senha juntos, botão "Log in with email").
+  // Preenche o e-mail de forma robusta (vários seletores + label/placeholder) e VERIFICA.
+  const emailFilled =
+    (await fillIfPresent(page, [
+      'input[autocomplete="username"]',
+      'input[autocomplete="email"]',
+      'input[type="email"]',
+      'input[name="email"]',
+      'input[name="username"]',
+      'input[name="login"]',
+      'input[placeholder*="email" i]',
+      'input[placeholder*="e-mail" i]',
+      'input[placeholder*="work-email" i]',
+      '#email',
+    ], EMAIL)) ||
+    (await page.getByLabel(/business e-?mail|e-?mail/i).first().fill(EMAIL).then(() => true).catch(() => false))
+  if (!emailFilled) {
+    // Último recurso: primeiro input visível que não seja senha/oculto.
+    const first = page.locator('input:not([type="password"]):not([type="hidden"]):visible').first()
+    if (await first.count().catch(() => 0)) await first.fill(EMAIL).catch(() => {})
+  }
+
+  // Se houver fluxo de duas etapas (e-mail → Continuar → senha), clica em Continuar.
   await clickIfPresent(page, [
     'button:has-text("Continue")',
     'button:has-text("Continuar")',
     'button:has-text("Next")',
   ])
-  await page.waitForTimeout(1500)
+  await page.waitForTimeout(1200)
 
   await fillIfPresent(
     page,
-    ['input[type="password"]', 'input[name="password"]', '#password'],
+    ['input[type="password"]', 'input[name="password"]', '#password', 'input[autocomplete="current-password"]'],
     PASSWORD
   )
+
+  // Garante que o e-mail realmente ficou preenchido antes de submeter.
+  const emailVal = await page
+    .locator('input[type="email"], input[name="email"], input[autocomplete="username"], input[name="username"]')
+    .first()
+    .inputValue()
+    .catch(() => '')
+  if (!emailVal) {
+    await page.getByLabel(/business e-?mail|e-?mail/i).first().fill(EMAIL).catch(() => {})
+  }
+
   await clickIfPresent(page, [
+    'button:has-text("Log in with email")',
+    'button:has-text("Entrar com e-mail")',
     'button[type="submit"]',
     'button:has-text("Sign in")',
     'button:has-text("Log in")',
