@@ -178,6 +178,14 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
 
+### 📅 Calendário (Microsoft 365) configurável no banco — zero env (2026-06-19)
+
+"Conectar Calendário" falhava com `NEXT_PUBLIC_MS_CLIENT_ID não configurada no servidor` — a integração dependia de 4 variáveis de env (`NEXT_PUBLIC_MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `NEXT_PUBLIC_MS_TENANT_ID`, `NEXT_PUBLIC_BASE_URL`) que não estavam na Vercel. Movida para o banco, no mesmo padrão do Read.ai:
+
+- **Config no banco**: credenciais do app Azure AD (Client ID/Secret/Tenant) em `app_settings.microsoft_integration`, editáveis na nova aba **Configurações → Calendário (Microsoft)** ([MicrosoftSettingsTab.tsx](src/app/(dashboard)/admin/settings/components/MicrosoftSettingsTab.tsx) + [route](src/app/api/admin/microsoft-settings/route.ts)). O secret nunca é devolvido pelo GET; em branco no save = mantém o atual. Nova lib [microsoft/config.ts](src/lib/microsoft/config.ts) resolve banco → fallback env → defaults.
+- **redirect_uri sem env**: derivado de `NEXT_PUBLIC_APP_URL`/origem do request (não mais `NEXT_PUBLIC_BASE_URL`), exibido na tela para registrar no Azure → Authentication. [microsoft/auth.ts](src/lib/microsoft/auth.ts) (`getAuthorizationUrl`/`exchangeCodeForTokens` recebem o redirect e leem a config do banco); rotas [login](src/app/api/auth/microsoft/login/route.ts)/[callback](src/app/api/auth/microsoft/callback/route.ts) atualizadas. Callback agora propaga o motivo do erro (`?ms_auth=error&reason=`).
+- Sem migração nova: config em `app_settings` (KV). Depende da chave-mestra de criptografia já no banco (ver abaixo).
+
 ### 🔐 Chave-mestra de criptografia movida para o banco (auto-provisionada, zero env) (2026-06-19)
 
 Conectar o Read.ai por OAuth falhava ao **salvar** o token com `[Crypto] ENCRYPTION_KEY must be a 64-char hex string` — a `ENCRYPTION_KEY` não estava na Vercel (o fluxo OAuth em si funcionava: cookie/state ok, redirect_uri correto, troca do code OK). Em vez de exigir mais uma variável de ambiente, a chave-mestra agora vive **no banco**, seguindo a premissa de config 100% no banco:

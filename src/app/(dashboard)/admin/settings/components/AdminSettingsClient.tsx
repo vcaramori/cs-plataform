@@ -14,6 +14,7 @@ import { AIContextSettingsTab } from './AIContextSettingsTab'
 import { SecuritySettingsTab } from './SecuritySettingsTab'
 import { HelpDeskSettingsTab } from './HelpDeskSettingsTab'
 import { ReadAiSettingsTab } from './ReadAiSettingsTab'
+import { MicrosoftSettingsTab } from './MicrosoftSettingsTab'
 
 const TABS = [
   { value: 'health', label: 'Health Score' },
@@ -26,6 +27,7 @@ const TABS = [
   { value: 'security', label: 'Segurança' },
   { value: 'helpdesk', label: 'HelpDesk' },
   { value: 'readai', label: 'Read.ai' },
+  { value: 'microsoft', label: 'Calendário (Microsoft)' },
 ]
 
 export function AdminSettingsClient() {
@@ -67,6 +69,7 @@ export function AdminSettingsClient() {
         <TabsContent value="security"><SecuritySettingsTab /></TabsContent>
         <TabsContent value="helpdesk"><HelpDeskSettingsTab /></TabsContent>
         <TabsContent value="readai"><ReadAiSettingsTab /></TabsContent>
+        <TabsContent value="microsoft"><MicrosoftSettingsTab /></TabsContent>
       </Tabs>
     </PageContainer>
   )

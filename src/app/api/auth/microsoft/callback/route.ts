@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { exchangeCodeForTokens } from '@/lib/microsoft/auth'
+import { appBaseUrl, microsoftRedirectUri } from '@/lib/microsoft/config'
 import { encrypt, decrypt } from '@/lib/crypto/encryption'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tokens = await exchangeCodeForTokens(code)
+    const tokens = await exchangeCodeForTokens(code, microsoftRedirectUri(request))
     const encryptedRefreshToken = await encrypt(tokens.refreshToken)
 
     // user_integrations ainda não consta nos tipos gerados do Supabase → cast (padrão do projeto)
@@ -44,12 +45,11 @@ export async function GET(request: Request) {
       throw new Error('Database error saving integration')
     }
 
-    // Redirect back to Home with a success parameter
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    return NextResponse.redirect(`${baseUrl}/home?ms_auth=success`)
+    // Redirect back to Home with a success parameter (base derivada do request — sem env)
+    return NextResponse.redirect(`${appBaseUrl(request)}/home?ms_auth=success`)
   } catch (error) {
     console.error('[Microsoft Auth] Callback error:', error)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    return NextResponse.redirect(`${baseUrl}/home?ms_auth=error`)
+    const reason = error instanceof Error ? error.message : 'erro'
+    return NextResponse.redirect(`${appBaseUrl(request)}/home?ms_auth=error&reason=${encodeURIComponent(reason)}`)
   }
 }

@@ -1,46 +1,44 @@
 import { encrypt, decrypt } from '@/lib/crypto/encryption'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { getMicrosoftConfig } from './config'
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_MS_CLIENT_ID
-const CLIENT_SECRET = process.env.MS_CLIENT_SECRET
-const TENANT_ID = process.env.NEXT_PUBLIC_MS_TENANT_ID || 'common'
-// URL for OAuth Callback (can be env var, using NEXT_PUBLIC_BASE_URL)
-const REDIRECT_URI = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/microsoft/callback` : 'http://localhost:3000/api/auth/microsoft/callback'
+const SCOPE = 'offline_access Calendars.Read'
 
-export async function getAuthorizationUrl(userId: string) {
-  // Mensagens específicas para facilitar o diagnóstico de config no Vercel
-  if (!CLIENT_ID) throw new Error('NEXT_PUBLIC_MS_CLIENT_ID não configurada no servidor')
-  if (!CLIENT_SECRET) throw new Error('MS_CLIENT_SECRET não configurada no servidor')
-  if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_BASE_URL) {
-    throw new Error('NEXT_PUBLIC_BASE_URL não configurada (redirect_uri ficaria como localhost)')
-  }
+/**
+ * Gera a URL de autorização da Microsoft. Credenciais vêm do banco (Configurações →
+ * Calendário) e o redirect_uri é derivado do request — nada em env.
+ */
+export async function getAuthorizationUrl(userId: string, redirectUri: string) {
+  const { client_id, client_secret, tenant_id } = await getMicrosoftConfig()
+  if (!client_id) throw new Error('Client ID da Microsoft não configurado (Configurações → Calendário)')
+  if (!client_secret) throw new Error('Client Secret da Microsoft não configurado (Configurações → Calendário)')
 
-  const scope = 'offline_access Calendars.Read'
   const state = await encrypt(userId) // basic protection to ensure callback matches user
 
-  const url = new URL(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`)
-  url.searchParams.set('client_id', CLIENT_ID)
+  const url = new URL(`https://login.microsoftonline.com/${tenant_id}/oauth2/v2.0/authorize`)
+  url.searchParams.set('client_id', client_id)
   url.searchParams.set('response_type', 'code')
-  url.searchParams.set('redirect_uri', REDIRECT_URI)
+  url.searchParams.set('redirect_uri', redirectUri)
   url.searchParams.set('response_mode', 'query')
-  url.searchParams.set('scope', scope)
+  url.searchParams.set('scope', SCOPE)
   url.searchParams.set('state', state)
 
   return url.toString()
 }
 
-export async function exchangeCodeForTokens(code: string) {
-  if (!CLIENT_ID || !CLIENT_SECRET) throw new Error('MS_CLIENT_ID or MS_CLIENT_SECRET not configured')
+export async function exchangeCodeForTokens(code: string, redirectUri: string) {
+  const { client_id, client_secret, tenant_id } = await getMicrosoftConfig()
+  if (!client_id || !client_secret) throw new Error('Credenciais Microsoft não configuradas (Configurações → Calendário)')
 
   const params = new URLSearchParams()
-  params.append('client_id', CLIENT_ID)
-  params.append('client_secret', CLIENT_SECRET)
-  params.append('scope', 'offline_access Calendars.Read')
+  params.append('client_id', client_id)
+  params.append('client_secret', client_secret)
+  params.append('scope', SCOPE)
   params.append('code', code)
-  params.append('redirect_uri', REDIRECT_URI)
+  params.append('redirect_uri', redirectUri)
   params.append('grant_type', 'authorization_code')
 
-  const response = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+  const response = await fetch(`https://login.microsoftonline.com/${tenant_id}/oauth2/v2.0/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString()
@@ -60,15 +58,16 @@ export async function exchangeCodeForTokens(code: string) {
 }
 
 export async function getAccessTokenFromRefreshToken(refreshToken: string) {
-  if (!CLIENT_ID || !CLIENT_SECRET) throw new Error('MS_CLIENT_ID or MS_CLIENT_SECRET not configured')
+  const { client_id, client_secret, tenant_id } = await getMicrosoftConfig()
+  if (!client_id || !client_secret) throw new Error('Credenciais Microsoft não configuradas (Configurações → Calendário)')
 
   const params = new URLSearchParams()
-  params.append('client_id', CLIENT_ID)
-  params.append('client_secret', CLIENT_SECRET)
+  params.append('client_id', client_id)
+  params.append('client_secret', client_secret)
   params.append('refresh_token', refreshToken)
   params.append('grant_type', 'refresh_token')
 
-  const response = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+  const response = await fetch(`https://login.microsoftonline.com/${tenant_id}/oauth2/v2.0/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString()
