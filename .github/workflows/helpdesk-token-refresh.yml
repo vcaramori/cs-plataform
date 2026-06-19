@@ -1,11 +1,13 @@
 name: HelpDesk Token Refresh
 
-# Renova o Bearer token do HelpDesk (dura ~5 dias) via login automatizado e o
-# envia para a cs-plataform. Roda a cada 3 dias e pode ser disparado manualmente.
+# Renova o Bearer token do HelpDesk (dura ~5 dias) via login automatizado (Playwright)
+# e o grava na plataforma (POST /api/integrations/helpdesk/token, autenticado pelo
+# segredo em app_settings.helpdesk_integration.secret = HELPDESK_API_SECRET).
+# Roda DIARIAMENTE (token dura ~5 dias → margem grande) e pode ser disparado manualmente.
 
 on:
   schedule:
-    - cron: '0 6 */3 * *' # a cada 3 dias, 06:00 UTC
+    - cron: '0 6 * * *' # diário, 06:00 UTC
   workflow_dispatch: {}
 
 jobs:
