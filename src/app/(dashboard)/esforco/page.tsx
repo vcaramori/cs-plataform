@@ -2,15 +2,20 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { Coffee } from 'lucide-react'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { PageContainer } from '@/components/ui/page-container'
 import { EsforcoClient, Entry } from './components/EsforcoClient'
-import { AutoCheckInQueue } from './components/AutoCheckInQueue'
 
 export default async function EsforcoPage() {
   const supabase = await getSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Journal GLOBAL (visão de back-office): usuários internos veem o esforço de todo o time
+  // — a RLS (time_entries_internal_view_all = is_internal_user) já garante isso; externos
+  // ficam restritos pela policy de escopo. Ordena por DATA do evento (não logged_at): senão
+  // imports em massa do Read.ai (logged_at recente, date histórica) afundavam os lançamentos
+  // do período e o journal aparecia vazio.
   const [{ data: accounts }, { data: entries }] = await Promise.all([
     supabase
       .from('accounts')
@@ -19,10 +24,23 @@ export default async function EsforcoPage() {
     supabase
       .from('time_entries')
       .select('*, accounts(name)')
-      .eq('csm_id', user.id)
+      .order('date', { ascending: false })
       .order('logged_at', { ascending: false })
-      .limit(50),
+      .limit(500),
   ])
+
+  // Nome do CSM por lançamento (a visão é global) — full_name não é sensível; usa admin
+  // p/ não depender da RLS de profiles.
+  const csmIds = [...new Set((entries ?? []).map((e: any) => e.csm_id).filter(Boolean))]
+  const nameById = new Map<string, string>()
+  if (csmIds.length > 0) {
+    const admin = getSupabaseAdminClient() as any
+    const { data: profs } = await admin.from('profiles').select('id, full_name').in('id', csmIds)
+    for (const p of (profs ?? []) as Array<{ id: string; full_name: string | null }>) {
+      if (p.full_name) nameById.set(p.id, p.full_name)
+    }
+  }
+  const initialEntries = ((entries ?? []) as any[]).map((e) => ({ ...e, csm_name: nameById.get(e.csm_id) ?? null })) as Entry[]
 
   return (
     <PageContainer>
@@ -39,12 +57,10 @@ export default async function EsforcoPage() {
         </p>
       </div>
 
-      <AutoCheckInQueue />
-
       <Suspense>
         <EsforcoClient
           accounts={accounts ?? []}
-          initialEntries={(entries ?? []) as Entry[]}
+          initialEntries={initialEntries}
         />
       </Suspense>
     </PageContainer>

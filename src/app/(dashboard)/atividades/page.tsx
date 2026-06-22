@@ -4,6 +4,7 @@ import { getModulePermission } from '@/lib/auth/get-module-permission'
 import { PageContainer } from '@/components/ui/page-container'
 import { CheckSquare } from 'lucide-react'
 import { AtividadesClient } from './components/AtividadesClient'
+import { AutoCheckInQueue } from './components/AutoCheckInQueue'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,8 @@ export default async function AtividadesPage() {
           Hub central de tarefas do CSM — criadas manualmente ou automaticamente pela plataforma.
         </p>
       </div>
+
+      <AutoCheckInQueue />
 
       <AtividadesClient userId={user.id} canViewTeam={canViewTeam} />
     </PageContainer>

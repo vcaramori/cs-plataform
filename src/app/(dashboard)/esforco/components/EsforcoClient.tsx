@@ -34,6 +34,7 @@ export type Entry = {
   date: string
   logged_at: string
   accounts: { name: string } | null
+  csm_name?: string | null
   file_urls?: string[] | null
 }
 

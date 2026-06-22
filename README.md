@@ -71,7 +71,7 @@ Branch estável criada para consolidação de features de alta densidade e de in
 |-------|--------|----|---------|----|---------|
 | **23.1** | Playbook Governance — Campos de auditoria e comentários em tasks | 3 | ✅ | ✅ | migrations, PlaybookWidget, PlaybookHistoryModal, types |
 | **14.2** | Playbook Trigger Alert — Health < 50 → alerta acionável | 3 | ✅ | ✅ | AlertService.checkPlaybookTrigger, AlertCenter "Iniciar Playbook", migration |
-| **15.1** | Auto Check-in por Silêncio — Geração IA + Fila de Aprovação | 8 | ✅ | ✅ | 2 crons (generate/send), auto_checkin_queue table, AutoCheckInQueue UI, /esforço |
+| **15.1** | Auto Check-in por Silêncio — Geração IA + Fila de Aprovação | 8 | ✅ | ✅ | 2 crons (generate/send), auto_checkin_queue table, AutoCheckInQueue UI em **/atividades** |
 | **Playbook Builder** | Drag-drop canvas ReactFlow | 5 | ✅ API salva JSON | ✅ | `/playbooks/builder` com ReactFlow funcional — drag, connect, salvar |
 | | **TOTAL** | **19 SP** | **✅** | **✅ 100%** | |
 
@@ -177,6 +177,13 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Velocidade & SLA**: TMP, TMR e Tempo de Resposta — cada um com corrido vs útil e **barra de compliance**.
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
+
+### 🧾 Esforço — journal volta a aparecer + fila de check-ins movida p/ Atividades (2026-06-22)
+
+Dois ajustes na tela **/esforço**:
+
+- **Journal vazio (reuniões do Read.ai não apareciam):** a página buscava os 50 lançamentos mais recentes por **`logged_at`** (data de importação), mas o `EsforcoClient` filtra pela **`date` do evento** dentro do período. Os imports em massa do Read.ai (logged_at recente, `date` histórica de 2024–2026) afundavam o top-50 e o filtro de mês escondia tudo → journal vazio mesmo com 100+ lançamentos. Agora a query ordena por **`date` desc** (limit 500) e mostra **visão global** (removido o filtro `csm_id = user.id`; a RLS `time_entries_internal_view_all` já permite, e é o modelo documentado p/ usuários internos). Adicionada coluna **CSM** na tabela ([page.tsx](src/app/(dashboard)/esforco/page.tsx), [EsforcoTable.tsx](src/app/(dashboard)/esforco/components/EsforcoTable.tsx)).
+- **Fila "Check-ins Pendentes de Aprovação" movida** de /esforço para **/atividades** (é tarefa a fazer, não registro de esforço) — `AutoCheckInQueue` agora vive em [atividades](src/app/(dashboard)/atividades/page.tsx).
 
 ### 📊 Analytics de Adoção reconciliado ao modelo real (feature_adoption) (2026-06-22)
 

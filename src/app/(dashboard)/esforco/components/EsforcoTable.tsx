@@ -51,6 +51,7 @@ export function EsforcoTable({
               <TableHeader className="bg-surface-background/30">
                 <TableRow className="hover:bg-transparent border-b border-border-divider">
                   <TableHead className="pl-6 h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Logo / Conta</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">CSM</TableHead>
                   <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Tipo</TableHead>
                   <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Detalhamento Analítico</TableHead>
                   <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-center">Horas</TableHead>
@@ -71,6 +72,11 @@ export function EsforcoTable({
                       <TableCell className="pl-6">
                         <span className="text-[12px] font-black uppercase tracking-tight text-content-primary opacity-60 group-hover:opacity-100 transition-opacity">
                           {e.accounts?.name ?? '—'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[11px] font-medium tracking-tight text-content-secondary">
+                          {e.csm_name ?? '—'}
                         </span>
                       </TableCell>
                       <TableCell>
