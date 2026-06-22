@@ -178,6 +178,17 @@ Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app
 - **Volume & Tendência**: Recebidos/Resolvidos/Backlog/Reabertos/Interações + **gráfico de área diário** (recebidos x resolvidos) — novo endpoint [/api/support-dashboard/trend](src/app/api/support-dashboard/trend/route.ts) (admin/área, guarda interno).
 - **Distribuição**: tabelas compactas de Top Clientes e Agentes (linhas h-12, ordenadas, top 8).
 
+### 📊 Analytics de Adoção reconciliado ao modelo real (feature_adoption) (2026-06-22)
+
+A camada de analytics de Adoção (`AdoptionService` → rotas `/api/adoption/*` + `/api/features/dependency-graph`, o cron `adoption-analysis`, o componente de adoção do **health-score** e o filtro de `/api/accounts`) lia um **schema fantasma** que nunca existiu (`account_feature_adoption`, `adoption_analysis`, `features`, `feature_blockers`, `feature_dependencies`) → cron falhava em 100% das contas, 4 rotas davam 500, e o health-score caía sempre no default 50. Reconciliado ao **modelo real** (`feature_adoption.status` + fórmula do dashboard `/adoption`):
+
+- **Fonte única** [account-adoption.ts](src/lib/adoption/account-adoption.ts) `computeAccountAdoption`: Score = `(in_use + partial·0.5)/(total − na)×100`, counts, perFeature, blockers, `hasData`.
+- **Health-score** ([weighted-score.ts](src/lib/health/weighted-score.ts)) e **filtro de contas** ([accounts/route.ts](src/app/api/accounts/route.ts)) passam a usar o modelo real (health mantém 50 neutro sem dados).
+- **AdoptionService** reescrito ([adoption-service.ts](src/lib/adoption/adoption-service.ts)): heatmap = estado atual por feature; blockers = bloqueios reais (`blocker_category`/`reason` mapeados aos enums do schema); forecast por IA sobre o histórico de snapshots; dependency-graph vazio (sem tabela de origem). Shapes batem com os Zod schemas das rotas.
+- Nova tabela **`adoption_analysis`** (snapshot diário por conta) + cron reescrito: upsert idempotente por dia, tendência vs. snapshot anterior. Validado em produção com 1 conta semeada (`total 3 · adotadas 1 · pct 50`) e **revertido**.
+
+> ⚠️ **Pré-requisito de dados (descoberto aqui):** `product_features`, `plan_features` e `feature_adoption` estão **vazias** — o catálogo de produto nunca foi cadastrado. O analytics está correto e **acende sozinho** quando: (1) o catálogo de features e o mapeamento plano↔feature forem preenchidos (Configurações → Produtos/Planos/Features), e (2) os CSMs marcarem o status de adoção por feature (aba Adoção da conta). Sem isso, todas as telas de adoção e o componente de adoção do health-score ficam neutros/zerados — por design.
+
 ### ⏰ Crons HelpDesk + Read.ai migrados para o Supabase (pg_cron) — fim do erro 401 (2026-06-19)
 
 Os crons horários de **chamados (HelpDesk)** e **Read.ai** rodavam por **GitHub Actions** e davam **401**: o endpoint valida o `x-api-secret` contra `app_settings.helpdesk_integration.secret`, mas esse segredo **não existia no banco** (e os env `API_SECRET`/`CRON_SECRET` foram removidos). Em vez de depender de secrets no GitHub, movemos o agendamento para **dentro do Supabase**, como os outros 12 crons do projeto já fazem:

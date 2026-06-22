@@ -116,6 +116,8 @@ Adoption Score = ((in_use + partial × 0.5) / total_aplicável) × 100
 
 - `na` (não aplicável) é excluído do denominador
 - Exibido no health grid como gauge "Adoção"
+- **Fonte única** (jun/2026): `computeAccountAdoption` ([src/lib/adoption/account-adoption.ts](../../src/lib/adoption/account-adoption.ts)) sobre `feature_adoption` — usado pelo health-score, filtro de contas, telas de Adoção e cron `adoption-analysis` (snapshot diário em `adoption_analysis`). Antes o código lia uma tabela inexistente (`account_feature_adoption`) e o health caía sempre em 50.
+- **Pré-requisito de dados:** as telas/score só mostram adoção quando o catálogo (`product_features`), o mapeamento `plan_features` e o status por feature (`feature_adoption`) estiverem preenchidos. Hoje estão vazios → adoção neutra/zerada por design.
 
 ### 2.2.3 Financial Engine
 
