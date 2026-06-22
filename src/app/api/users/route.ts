@@ -63,6 +63,7 @@ export async function GET() {
         user_type: (profile as any)?.user_type || 'internal',
         is_super_admin: !!(profile as any)?.is_super_admin || profile?.role === 'super_admin',
         avatar_url: (profile as any)?.avatar_url || null,
+        default_onboarding_effort: !!(profile as any)?.default_onboarding_effort,
       }
     })
 
@@ -143,7 +144,7 @@ export async function PUT(request: Request) {
   try {
     const admin = getSupabaseAdminClient()
     const body = await request.json()
-    const { id, role, is_active, full_name, avatar_url, is_super_admin } = body
+    const { id, role, is_active, full_name, avatar_url, is_super_admin, default_onboarding_effort } = body
 
     if (!id) {
       return NextResponse.json({ error: 'ID do usuario e obrigatorio' }, { status: 400 })
@@ -177,6 +178,7 @@ export async function PUT(request: Request) {
         updateData.role = 'csm'
       }
     }
+    if (default_onboarding_effort !== undefined) updateData.default_onboarding_effort = default_onboarding_effort
 
     const { data, error } = await admin
       .from('profiles')
@@ -195,6 +197,7 @@ export async function PUT(request: Request) {
       role: data.role,
       is_active: data.is_active,
       is_super_admin: (data as any).is_super_admin ?? false,
+      default_onboarding_effort: (data as any).default_onboarding_effort ?? false,
     })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

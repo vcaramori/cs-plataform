@@ -96,6 +96,7 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
     is_super_admin: (data as any).is_super_admin ?? false,
     custom_role_id: customRoleId,
     custom_role_permissions,
+    default_onboarding_effort: !!(data as any).default_onboarding_effort,
     created_at: data.created_at || '',
     updated_at: data.updated_at || '',
   }

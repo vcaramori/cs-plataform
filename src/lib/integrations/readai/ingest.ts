@@ -141,16 +141,37 @@ export async function ingestReadAiMeeting(
   // ---------------------------------------------------------------------------
   // 3) CREATE: novo time_entry (esforço) + interaction (transcrição) linkados.
   // ---------------------------------------------------------------------------
+  
+  // Verifica se o usuário tem a flag de esforço de onboarding por padrão
+  const { data: profile } = await admin.from('profiles').select('default_onboarding_effort').eq('id', userId).single()
+  const isOnboardingEffort = profile?.default_onboarding_effort ?? false
+
+  let onboardingContractId: string | null = null
+  if (isOnboardingEffort) {
+    const { data: contract } = await admin
+      .from('contracts')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('onboarding_status', 'in-progress')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
+    if (contract) {
+      onboardingContractId = contract.id
+    }
+  }
+
   const { data: teRow, error: teErr } = await admin
     .from('time_entries')
     .insert({
       account_id: accountId,
       csm_id: userId,
-      activity_type: 'meeting',
+      activity_type: onboardingContractId ? 'onboarding' : 'meeting',
       natural_language_input: transcript ?? summary ?? title,
       parsed_hours: hours,
       parsed_description: summary ?? title,
       date,
+      ...(onboardingContractId && { psa_sync_status: 'pending' }),
     })
     .select('id')
     .single()
@@ -162,7 +183,7 @@ export async function ingestReadAiMeeting(
     .insert({
       account_id: accountId,
       csm_id: userId,
-      type: 'meeting',
+      type: onboardingContractId ? 'onboarding' : 'meeting',
       source: 'readai',
       date,
       direct_hours: hours,
@@ -180,6 +201,28 @@ export async function ingestReadAiMeeting(
   const interactionId = intRow.id
 
   await admin.from('time_entries').update({ interaction_id: interactionId }).eq('id', timeEntryId)
+
+  if (onboardingContractId) {
+    try {
+      const { recordOnboardingEffort } = await import('@/lib/effort/log-effort')
+      const authUser = await admin.auth.admin.getUserById(userId)
+      const userEmail = authUser.data?.user?.email ?? 'sem-email@plannera.com.br'
+      
+      await recordOnboardingEffort({
+        timeEntryId,
+        contractId: onboardingContractId,
+        accountId,
+        accountName,
+        userId,
+        userEmail,
+        hours,
+        date,
+        description: summary ?? title,
+      })
+    } catch (e) {
+      console.error('[readai] Falha ao registrar esforço de onboarding:', e)
+    }
+  }
 
   // Tarefas dos action items (só na criação → não duplica em re-sync)
   const actions = extractActionItems(m)

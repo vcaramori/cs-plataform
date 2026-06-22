@@ -701,6 +701,7 @@ export type Profile = {
   is_super_admin: boolean
   custom_role_id: string | null
   custom_role_permissions: import('@/lib/auth/permission-schema').ModulePermission[] | null
+  default_onboarding_effort: boolean
   created_at: string
   updated_at: string
 }

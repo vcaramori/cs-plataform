@@ -26,6 +26,7 @@ type User = {
   user_type: string
   avatar_url?: string | null
   is_super_admin?: boolean
+  default_onboarding_effort?: boolean
 }
 
 interface UserCardProps {
@@ -39,6 +40,7 @@ interface UserCardProps {
   onRoleChange: (userId: string, newRole: string) => void
   onToggleActive: (userId: string, currentStatus: boolean) => void
   onToggleSuperAdmin: (userId: string, current: boolean) => void
+  onToggleOnboardingEffort: (userId: string, current: boolean) => void
   onAvatarChange?: (userId: string, url: string) => void
 }
 
@@ -53,6 +55,7 @@ export function UserCard({
   onRoleChange,
   onToggleActive,
   onToggleSuperAdmin,
+  onToggleOnboardingEffort,
   onAvatarChange,
 }: UserCardProps) {
   const displayRole = editedRole || user.role
@@ -100,6 +103,7 @@ export function UserCard({
   }
   // Visual "Acesso Total" passa a refletir a flag (override), não o role legado.
   const isSuperAdmin = !!user.is_super_admin
+  const isOnboardingEffort = !!user.default_onboarding_effort
   const initials = user.full_name !== 'N/A'
     ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email[0].toUpperCase()
@@ -220,6 +224,21 @@ export function UserCard({
             <Switch
               checked={isSuperAdmin}
               onCheckedChange={() => onToggleSuperAdmin(user.id, isSuperAdmin)}
+              className="scale-90"
+            />
+          </div>
+        )}
+        {canEdit && (
+          <div className="flex items-center gap-2 border-l border-border-divider/50 pl-4 h-8">
+            <span className={cn(
+              'text-[9px] font-bold uppercase tracking-wider',
+              isOnboardingEffort ? 'text-indigo-500' : 'text-content-secondary/60'
+            )} title="Esforço gerado por integrações será classificado como Implantação automaticamente.">
+              Onboarding
+            </span>
+            <Switch
+              checked={isOnboardingEffort}
+              onCheckedChange={() => onToggleOnboardingEffort(user.id, isOnboardingEffort)}
               className="scale-90"
             />
           </div>

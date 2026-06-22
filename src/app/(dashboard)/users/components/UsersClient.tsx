@@ -24,6 +24,7 @@ type User = {
   user_type: string
   avatar_url?: string | null
   is_super_admin?: boolean
+  default_onboarding_effort?: boolean
 }
 
 type CustomRole = {
@@ -139,6 +140,22 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
     }
   }
 
+  async function handleToggleOnboardingEffort(userId: string, current: boolean) {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, default_onboarding_effort: !current } : u))
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, default_onboarding_effort: !current }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao alterar esforço de onboarding')
+      toast.success(current ? 'Esforço de Onboarding desativado' : 'Esforço de Onboarding ativado')
+    } catch (e: any) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, default_onboarding_effort: current } : u))
+      toast.error(e.message)
+    }
+  }
+
   function handleUserCreated(newUser: User) {
     setUsers(prev => [...prev, newUser])
   }
@@ -230,6 +247,7 @@ export function UsersClient({ initialUsers, roles, currentUserRole, currentUserI
                         onRoleChange={handleRoleChange}
                         onToggleActive={handleToggleActive}
                         onToggleSuperAdmin={handleToggleSuperAdmin}
+                        onToggleOnboardingEffort={handleToggleOnboardingEffort}
                         onAvatarChange={handleAvatarChange}
                       />
                     </motion.div>
