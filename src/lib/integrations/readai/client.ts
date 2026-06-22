@@ -2,9 +2,10 @@
  * Cliente da Read.ai REST API (https://api.read.ai/v1).
  * Auth: Bearer com o token PESSOAL de cada agente (Read.ai não tem token de workspace).
  *
- * Shape confirmado via MCP nesta sessão: GET /v1/meetings retorna
+ * Shape confirmado na doc oficial (API Reference): GET /v1/meetings retorna
  * { data: Meeting[], has_more, ... }, paginação por cursor = id do último item,
- * limit máx 10, filtros start_datetime_gte/lte, expand=[summary,action_items,topics,metrics,transcript].
+ * filtro de data `start_time_ms.gte` (epoch ms) e campos enriquecidos via `expand[]=`
+ * (notação de array): summary, action_items, topics, metrics, transcript.
  *
  * NOTA: a URL base/headers exatos do REST devem ser confirmados em recon (o MCP é OAuth;
  * confirma o formato dos dados, não o endpoint). A base é configurável no banco
@@ -51,7 +52,11 @@ interface SpeakerBlock { speaker?: { name?: string } | string; words?: string; t
 
 /**
  * Normaliza a transcrição (shape variável) para texto legível "Nome: fala".
- * Aceita transcript.speaker_blocks[], transcript.segments[], array direto ou string.
+ * REST API (GET /v1/meetings com expand[]=transcript):
+ *   transcript = { speakers[], turns[]{ speaker.name, text }, text } → usa `text` (já
+ *   formatado "Nome: fala") ou, na falta, constrói a partir de turns[].
+ * Webhook: transcript.speaker_blocks[]/segments[] com { speaker, words }.
+ * Também aceita array direto ou string crua.
  * Vazio → null (para nunca sobrescrever uma transcrição boa por uma vazia).
  */
 export function normalizeApiTranscript(m: ReadAiMeeting): string | null {
@@ -59,17 +64,21 @@ export function normalizeApiTranscript(m: ReadAiMeeting): string | null {
   if (!t) return null
   if (typeof t === 'string') return t.trim() || null
 
+  const obj = t as { text?: unknown; turns?: SpeakerBlock[]; speaker_blocks?: SpeakerBlock[]; segments?: SpeakerBlock[] }
+
+  // 1) REST: `text` já traz a transcrição completa formatada.
+  if (typeof obj.text === 'string' && obj.text.trim()) return obj.text.trim()
+
+  // 2) Blocos: turns[] (REST) ou speaker_blocks[]/segments[] (webhook) ou array direto.
   const blocks: SpeakerBlock[] = Array.isArray(t)
     ? (t as SpeakerBlock[])
-    : ((t as { speaker_blocks?: SpeakerBlock[]; segments?: SpeakerBlock[] }).speaker_blocks
-        ?? (t as { segments?: SpeakerBlock[] }).segments
-        ?? [])
+    : (obj.turns ?? obj.speaker_blocks ?? obj.segments ?? [])
   if (!Array.isArray(blocks) || blocks.length === 0) return null
 
   const lines: string[] = []
   for (const b of blocks) {
     const speaker = typeof b.speaker === 'string' ? b.speaker : b.speaker?.name
-    const words = (b.words ?? b.text ?? '').toString().trim()
+    const words = (b.text ?? b.words ?? '').toString().trim()
     if (!words) continue
     lines.push(speaker ? `${speaker}: ${words}` : words)
   }
@@ -84,10 +93,20 @@ export async function listMeetings(
   const url = new URL(`${base}/meetings`)
   url.searchParams.set('limit', String(opts.limit ?? 10))
   if (opts.cursor) url.searchParams.set('cursor', opts.cursor)
-  if (opts.startDatetimeGte) url.searchParams.set('start_datetime_gte', opts.startDatetimeGte)
-  for (const e of opts.expand ?? DEFAULT_EXPAND) url.searchParams.append('expand', e)
+  // Filtro de data da API: `start_time_ms.gte` (epoch ms) — usado no sync incremental.
+  if (opts.startDatetimeGte) {
+    const gteMs = Date.parse(opts.startDatetimeGte)
+    if (Number.isFinite(gteMs)) url.searchParams.set('start_time_ms.gte', String(gteMs))
+  }
+  // `expand` usa notação de array (expand[]=transcript&expand[]=summary...). Anexado LITERAL
+  // ao final — NÃO via searchParams, que percent-encoda os [] e alguns parsers rejeitam.
+  const expands = opts.expand ?? DEFAULT_EXPAND
+  let finalUrl = url.toString()
+  if (expands.length) {
+    finalUrl += (finalUrl.includes('?') ? '&' : '?') + expands.map((e) => `expand[]=${encodeURIComponent(e)}`).join('&')
+  }
 
-  const res = await fetch(url.toString(), {
+  const res = await fetch(finalUrl, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
     cache: 'no-store',
   })

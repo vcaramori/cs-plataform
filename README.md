@@ -169,6 +169,16 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🎙️ Read.ai — transcrição completa enfim importada (fix do contrato REST) (2026-06-22)
+
+As reuniões importavam **só metadados** (título, data, duração, conta) — **transcrição, resumo e action items vinham vazios** (`raw_transcript = null` em 361/361 interações). Raiz: o cliente REST estava em desacordo com a doc oficial em dois pontos:
+
+- **`expand` ignorado**: pedíamos os campos enriquecidos como `expand=transcript&expand=summary…`, mas a API exige **notação de array** `expand[]=transcript`. Sem os colchetes a API simplesmente não expande nada (por isso só sobravam os campos-base + participantes). Corrigido em [client.ts](src/lib/integrations/readai/client.ts) `listMeetings` — os `expand[]` são anexados **literais** à query (não via `URLSearchParams`, que percent-encoda os `[]`).
+- **Shape da transcrição**: `normalizeApiTranscript` procurava `transcript.speaker_blocks`/`words` (formato do **webhook**), mas a REST retorna `transcript.text` (texto completo "Nome: fala") + `transcript.turns[]`. O normalizador agora usa `text` direto (e cai em `turns[]` → `speaker_blocks[]` → string, cobrindo REST **e** webhook).
+- Bônus: o filtro incremental usava `start_datetime_gte` (ignorado) → trocado pelo `start_time_ms.gte` (epoch ms) da doc, evitando re-varrer todo o histórico a cada cron.
+
+Backfill executado em produção: re-sync forçado (reset do `readai_sync_state`) reprocessou o histórico e **populou as transcrições/resumos** nas interações existentes (ingest idempotente por `external_meeting_id`). O modal "Detalhes do Esforço" passa a mostrar a transcrição real.
+
 ### 🗂️ Ordenação Global e Melhorias de Suporte (2026-06-22)
 
 Adicionada a capacidade genérica de ordenação de colunas (`useTableSort`) em toda a plataforma.
@@ -264,7 +274,7 @@ O botão "Conectar Read.ai" caía em `api.read.ai/oauth/authorize` → `{"detail
 A integração Read.ai foi **finalizada**: cada CSM conecta o próprio Read.ai **uma vez** (login no navegador) e, daí em diante, o sistema importa **automaticamente** as reuniões — **passadas e novas** — com a **transcrição completa**, vinculando à conta do cliente.
 
 - **OAuth 2.1 (sem token estático)**: o Read.ai **não tem** token pessoal hoje (só planejado p/ GA) — o acesso é OAuth 2.1 (Authorization Code + PKCE, **dynamic client registration**, access token de ~10min, refresh **rotativo single-use**). O CSM clica **"Conectar Read.ai"** no card da home → login no Read.ai → o sistema guarda as credenciais **criptografadas** (`user_integrations`, AES-256-GCM) e **renova o token em background** de forma transparente. Nada hardcoded: o client OAuth é auto-registrado ou informado no admin. Novo módulo [oauth.ts](src/lib/integrations/readai/oauth.ts); rotas [connect](src/app/api/integrations/readai/connect/route.ts)/[callback](src/app/api/integrations/readai/callback/route.ts); credenciais em [tokens.ts](src/lib/integrations/readai/tokens.ts) (`getValidAccessToken` renova+rotaciona).
-- **Transcrição completa**: o sync agora pede `expand=transcript` e grava a transcrição em `interactions.raw_transcript` (antes era `null` — bug central). Normalização defensiva "Falante: fala" em [client.ts](src/lib/integrations/readai/client.ts) (`normalizeApiTranscript`).
+- **Transcrição completa**: o sync pede `expand[]=transcript` e grava em `interactions.raw_transcript`; normalização "Falante: fala" em [client.ts](src/lib/integrations/readai/client.ts) (`normalizeApiTranscript`). *(O contrato exato do `expand[]`/shape da transcrição foi corrigido em 2026-06-22 — ver entrada no topo.)*
 - **Esforço automático**: cada reunião também vira um **lançamento de esforço** (`time_entries`, `activity_type='meeting'`, horas = duração da reunião) linkado à interação. Action items viram tarefas (`csm_tasks`). Ingestão idempotente (dedup por `external_meeting_id`) espelhando `persistHistoricalEffort` — [ingest.ts](src/lib/integrations/readai/ingest.ts).
 - **RAG**: cada reunião é **vetorizada** (`storeEmbeddings('interaction', …)`, resumo + transcrição no chunk) — antes não havia passo de RAG no Read.ai.
 - **Resolução de conta**: reusa o índice do HelpDesk (domínio do participante externo / tags / nome no título) — [sync.ts](src/lib/integrations/readai/sync.ts) `resolveMeetingAccount`. Reuniões internas/sem cliente são puladas (ou vão p/ conta padrão se configurado).
