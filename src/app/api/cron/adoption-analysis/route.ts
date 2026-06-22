@@ -1,140 +1,87 @@
 import { NextResponse } from 'next/server'
-import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
+import { verifyHelpDeskRequest } from '@/lib/integrations/helpdesk/auth'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
-import { AdoptionService } from '@/lib/adoption/adoption-service'
+import { computeAccountAdoption } from '@/lib/adoption/account-adoption'
 
 export const maxDuration = 300
 
+/**
+ * Snapshot diário de adoção por conta (modelo real: feature_adoption).
+ * Grava em adoption_analysis (upsert idempotente por conta+dia), com a tendência
+ * comparada ao último snapshot anterior. Pula contas sem dados de adoção.
+ */
 export async function POST(request: Request) {
-  // Check API Secret
   if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = getSupabaseAdminClient()
-  let processedCount = 0
-  let errorCount = 0
+  const supabase = getSupabaseAdminClient() as any
+  const analysisDate = new Date().toISOString().split('T')[0]
+  let processed = 0
+  let skipped = 0
   const errors: string[] = []
 
-  // A camada de ANALYTICS de adoção (heatmap/forecast/blockers do AdoptionService) foi
-  // escrita contra um schema que NÃO existe neste banco (account_feature_adoption,
-  // adoption_analysis, features, feature_blockers, feature_dependencies). A adoção real
-  // do produto vive em `feature_adoption`. Enquanto esse schema de analytics não for
-  // provisionado, o cron pula graciosamente (em vez de falhar em todas as contas).
-  // Auto-retoma sozinho quando as tabelas existirem.
-  const { error: schemaProbe } = await (supabase as any)
-    .from('account_feature_adoption')
-    .select('id')
-    .limit(1)
-  if (schemaProbe) {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      reason: 'Schema de analytics de adoção não provisionado (account_feature_adoption ausente).',
-      processedCount: 0,
-    })
-  }
-
   try {
-    // Processa todas as contas (accounts.contract_status NÃO existe — o conceito de
-    // "ativo" mora em contracts.status; filtrar pela coluna inexistente quebrava o cron com 500).
-    const { data: accounts, error: accountsError } = await (supabase as any)
-      .from('accounts')
-      .select('id, name')
-
+    const { data: accounts, error: accountsError } = await supabase.from('accounts').select('id, name')
     if (accountsError || !accounts) {
-      const msg = accountsError?.message || 'Failed to fetch accounts'
-      console.error('[Adoption Analysis Cron] Error:', msg)
-      return NextResponse.json({ error: msg }, { status: 500 })
+      return NextResponse.json({ error: accountsError?.message || 'Failed to fetch accounts' }, { status: 500 })
     }
 
-
-    const service = new AdoptionService(supabase)
-
-    // Process accounts in batches
-    const batchSize = 10
+    const batchSize = 20
     for (let i = 0; i < accounts.length; i += batchSize) {
       const batch = accounts.slice(i, i + batchSize)
-
-      const batchResults = await Promise.allSettled(
+      await Promise.all(
         batch.map(async (account: any) => {
           try {
-            // Get adoption heatmap
-            const heatmap = await service.getAdoptionHeatmap(account.id, 90)
+            const adoption = await computeAccountAdoption(account.id, supabase)
+            if (!adoption.hasData) { skipped++; return }
 
-            // Store adoption analysis
-            await (supabase as any)
+            // Tendência vs. último snapshot ANTERIOR (antes de hoje).
+            const { data: prev } = await supabase
               .from('adoption_analysis')
-              .insert([
-                {
-                  account_id: account.id,
-                  analysis_date: new Date().toISOString().split('T')[0],
-                  feature_count_total: heatmap.summary.featuresTotal,
-                  feature_count_adopted: heatmap.summary.featuresAdopted,
-                  overall_adoption_pct: heatmap.summary.overallAdoptionPct,
-                  adoption_trend: heatmap.summary.adoptionTrend,
-                  flagged_blockers: heatmap.data.slice(0, 3).map((f: any) => f.featureName),
-                },
-              ])
-
-            // Detect blockers
-            const blockers = await service.detectBlockersAI(account.id)
-
-            // Store blockers
-            for (const blocker of blockers) {
-              await (supabase as any)
-                .from('feature_blockers')
-                .upsert(
-                  [
-                    {
-                      account_id: account.id,
-                      feature_id: blocker.featureId,
-                      blocker_type: blocker.blockerType,
-                      severity: blocker.severity,
-                      description: blocker.description,
-                      root_cause_analysis: blocker.rootCauseAnalysis,
-                      detection_source: 'system_inference',
-                    },
-                  ],
-                  {
-                    onConflict: 'account_id,feature_id,detection_source',
-                  }
-                )
+              .select('overall_adoption_pct')
+              .eq('account_id', account.id)
+              .lt('analysis_date', analysisDate)
+              .order('analysis_date', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            let trend: string | null = null
+            if (prev) {
+              const delta = adoption.overallAdoptionPct - prev.overall_adoption_pct
+              trend = delta > 5 ? 'accelerating' : delta < -5 ? 'declining' : 'stable'
             }
 
-            processedCount++
-            return { accountId: account.id, success: true }
-          } catch (error: any) {
-            errorCount++
-            const errorMsg = `Account ${account.id}: ${error.message}`
-            errors.push(errorMsg)
-            console.error('[Adoption Analysis Cron]', errorMsg)
-            throw error
+            const { error: upErr } = await supabase.from('adoption_analysis').upsert(
+              {
+                account_id: account.id,
+                analysis_date: analysisDate,
+                feature_count_total: adoption.featuresTotal,
+                feature_count_adopted: adoption.featuresAdopted,
+                overall_adoption_pct: adoption.overallAdoptionPct,
+                adoption_trend: trend,
+              },
+              { onConflict: 'account_id,analysis_date' }
+            )
+            if (upErr) { errors.push(`Account ${account.id}: ${upErr.message}`); return }
+            processed++
+          } catch (e: any) {
+            errors.push(`Account ${account.id}: ${e?.message ?? 'erro'}`)
           }
         })
       )
-
-      // Log batch results
-      const batchSuccessCount = batchResults.filter((r) => r.status === 'fulfilled').length
-      console.log(
-        `[Adoption Analysis Cron] Batch ${Math.floor(i / batchSize) + 1}: ${batchSuccessCount}/${batch.length} successful`
-      )
     }
 
-    const result = {
+    return NextResponse.json({
       success: true,
-      processedCount,
-      errorCount,
-      errors: errors.slice(0, 10), // Return first 10 errors
-      message: `Processed ${processedCount} accounts, ${errorCount} errors`,
-    }
-
-    return NextResponse.json(result, { status: 200 })
+      analysis_date: analysisDate,
+      processed,
+      skipped,
+      total_accounts: accounts.length,
+      errors: errors.slice(0, 10),
+      message: `Snapshot de adoção: ${processed} contas com dados, ${skipped} sem dados${errors.length ? `, ${errors.length} erros` : ''}`,
+    })
   } catch (error: any) {
-    console.error('[Adoption Analysis Cron] Fatal error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Fatal error in adoption analysis cron' },
-      { status: 500 }
-    )
+    console.error('[Adoption Analysis Cron] Fatal:', error)
+    return NextResponse.json({ error: error.message || 'Fatal error' }, { status: 500 })
   }
 }

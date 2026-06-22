@@ -164,29 +164,32 @@ export async function GET(request: Request) {
     })
   }
 
-  // Filtro de adoção: média de adoption_pct por conta (account_feature_adoption)
+  // Filtro de adoção: Score de Adoção real por conta — (in_use + partial·0.5)/(total − na)
+  // sobre feature_adoption (mesma fórmula do dashboard de Adoção / computeAccountAdoption).
   if (parsed.data.adoption_min !== undefined || parsed.data.adoption_max !== undefined) {
     const ids = filtered.map((a: any) => a.id)
     if (ids.length > 0) {
-      // cast: account_feature_adoption ainda não está em database.types (ver TECH_DEBT #8)
       const { data: adoptionRows } = await (supabase as any)
-        .from('account_feature_adoption')
-        .select('account_id, adoption_pct')
+        .from('feature_adoption')
+        .select('account_id, status')
         .in('account_id', ids)
 
-      const agg = new Map<string, { sum: number; n: number }>()
+      const agg = new Map<string, { in_use: number; partial: number; na: number; total: number }>()
       for (const r of (adoptionRows as any[]) || []) {
-        const cur = agg.get(r.account_id) ?? { sum: 0, n: 0 }
-        cur.sum += Number(r.adoption_pct) || 0
-        cur.n += 1
+        const cur = agg.get(r.account_id) ?? { in_use: 0, partial: 0, na: 0, total: 0 }
+        cur.total += 1
+        if (r.status === 'in_use') cur.in_use += 1
+        else if (r.status === 'partial') cur.partial += 1
+        else if (r.status === 'na') cur.na += 1
         agg.set(r.account_id, cur)
       }
 
       filtered = filtered.filter((a: any) => {
         const e = agg.get(a.id)
-        const avg = e && e.n > 0 ? e.sum / e.n : 0
-        if (parsed.data.adoption_min !== undefined && avg < parsed.data.adoption_min) return false
-        if (parsed.data.adoption_max !== undefined && avg > parsed.data.adoption_max) return false
+        const applicable = e ? e.total - e.na : 0
+        const pct = e && applicable > 0 ? ((e.in_use + e.partial * 0.5) / applicable) * 100 : 0
+        if (parsed.data.adoption_min !== undefined && pct < parsed.data.adoption_min) return false
+        if (parsed.data.adoption_max !== undefined && pct > parsed.data.adoption_max) return false
         return true
       })
     }

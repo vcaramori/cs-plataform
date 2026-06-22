@@ -1,365 +1,211 @@
 import { generateText } from '@/lib/llm/gateway'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
+import { safeParseLLMJson } from '@/lib/llm/safe-json'
+import { computeAccountAdoption, type AdoptionStatus } from './account-adoption'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-interface AdoptionTrendData {
-  date: string
-  adoptionPct: number
-}
+/**
+ * Analytics de adoção sobre o modelo REAL (`feature_adoption`).
+ * Reescrito (jun/2026): o schema antigo (account_feature_adoption, adoption_analysis,
+ * features, feature_blockers, feature_dependencies) nunca existiu neste banco. Tudo aqui
+ * usa `computeAccountAdoption` (feature_adoption + fórmula do portfólio) e o snapshot
+ * diário em `adoption_analysis` (para tendência/forecast).
+ */
 
 interface AdoptionForecast {
+  forecastDays: number
   baselineAdoptionPct: number
   forecastedAdoptionPct: number
   forecastedDate: string
   confidence: number
-  trend: 'accelerating' | 'stable' | 'declining'
+  forecastTrend: 'accelerating' | 'stable' | 'declining'
   recommendations: string[]
+  methodology?: string
 }
 
 interface FeatureBlocker {
   blockerId: string
   featureId: string
   featureName: string
-  blockerType: string
+  blockerType: 'technical' | 'training' | 'organizational' | 'business' | 'other'
   severity: 'low' | 'medium' | 'high' | 'critical'
   description: string
-  rootCauseAnalysis?: {
-    factors: string[]
-    recommendations: string[]
-  }
+  rootCauseAnalysis?: { factors: string[]; recommendations: string[] }
   detectedAt: string
+  detectionSource: 'usage_metrics' | 'support_tickets' | 'interview' | 'system_inference'
 }
+
+const STATUS_PCT: Record<AdoptionStatus, number> = { in_use: 100, partial: 50, blocked: 0, not_started: 0, na: 0 }
+const today = () => new Date().toISOString().split('T')[0]
+
+// blocker_category (real) → blockerType (schema)
+const BLOCKER_TYPE: Record<string, FeatureBlocker['blockerType']> = {
+  data_integration: 'technical',
+  product_roadmap: 'business',
+  people_process: 'organizational',
+  governance: 'organizational',
+  no_strategic_relevance: 'business',
+  other: 'other',
+}
+const PRIORITY_SEVERITY: Record<string, FeatureBlocker['severity']> = { high: 'high', medium: 'medium', low: 'low' }
 
 export class AdoptionService {
   private supabase: SupabaseClient
-
   constructor(supabaseClient: SupabaseClient) {
     this.supabase = supabaseClient
   }
 
-  /**
-   * Get adoption heatmap data for an account (7d, 30d, 90d window)
-   */
-  async getAdoptionHeatmap(accountId: string, daysBack: number = 90) {
-    const { data: adoptionData, error } = await this.supabase
-      .from('account_feature_adoption')
-      .select(
-        `
-        id,
-        feature_id,
-        adoption_status,
-        adoption_pct,
-        updated_at,
-        features:feature_id(id, name)
-      `
-      )
+  /** Tendência a partir dos 2 últimos snapshots diários (adoption_analysis). */
+  private async trend(accountId: string): Promise<'accelerating' | 'stable' | 'declining'> {
+    const { data } = await this.supabase
+      .from('adoption_analysis')
+      .select('overall_adoption_pct')
       .eq('account_id', accountId)
-      .order('updated_at', { ascending: false })
+      .order('analysis_date', { ascending: false })
+      .limit(2)
+    const rows = (data as any[]) ?? []
+    if (rows.length < 2) return 'stable'
+    const delta = rows[0].overall_adoption_pct - rows[1].overall_adoption_pct
+    if (delta > 5) return 'accelerating'
+    if (delta < -5) return 'declining'
+    return 'stable'
+  }
 
-    if (error) throw new Error(`Failed to fetch adoption data: ${error.message}`)
+  /** Heatmap = estado ATUAL por feature (o modelo real não tem série temporal). */
+  async getAdoptionHeatmap(accountId: string, daysBack: number = 90) {
+    const adoption = await computeAccountAdoption(accountId, this.supabase)
+    const { data: account } = await this.supabase.from('accounts').select('name').eq('id', accountId).maybeSingle()
+    const d = today()
 
-    // Group by feature and calculate historical adoption percentages
-    const heatmapData = adoptionData.reduce((acc: any, row: any) => {
-      const featureId = row.feature_id
-      if (!acc[featureId]) {
-        acc[featureId] = {
-          featureId,
-          featureName: row.features?.name || 'Unknown',
-          adoptionHistory: [],
-        }
-      }
-      acc[featureId].adoptionHistory.push({
-        date: new Date(row.updated_at).toISOString().split('T')[0],
-        adoptionPct: row.adoption_pct,
-      })
-      return acc
-    }, {})
+    const data = adoption.features.map((f) => ({
+      featureId: f.featureId,
+      featureName: f.name,
+      adoptionHistory: [{ date: d, adoptionPct: STATUS_PCT[f.status] }],
+    }))
 
-    // Get account name
-    const { data: account } = await this.supabase
-      .from('accounts')
-      .select('name, health_score')
-      .eq('id', accountId)
-      .single()
-
-    // Calculate summary
-    const adoptionHistory = Object.values(heatmapData) as any[]
-    const overallAdoptionPct =
-      adoptionHistory.length > 0
-        ? Math.round(
-            adoptionHistory.reduce((sum: number, h: any) => {
-              const latest = h.adoptionHistory[0]?.adoptionPct || 0
-              return sum + latest
-            }, 0) / adoptionHistory.length
-          )
-        : 0
-
-    // Determine trend
-    const trend = this.calculateTrend(adoptionHistory)
-    const topFeatures = adoptionHistory
-      .sort((a: any, b: any) => (b.adoptionHistory[0]?.adoptionPct || 0) - (a.adoptionHistory[0]?.adoptionPct || 0))
-      .slice(0, 3)
-      .map((f: any) => f.featureName)
-    const bottomFeatures = adoptionHistory
-      .sort((a: any, b: any) => (a.adoptionHistory[0]?.adoptionPct || 0) - (b.adoptionHistory[0]?.adoptionPct || 0))
-      .slice(0, 3)
-      .map((f: any) => f.featureName)
-
+    const byPctDesc = [...adoption.features].sort((a, b) => STATUS_PCT[b.status] - STATUS_PCT[a.status])
     return {
       accountId,
-      accountName: account?.name || 'Unknown',
-      data: Object.values(heatmapData),
+      accountName: account?.name || 'Conta',
+      data,
       summary: {
-        overallAdoptionPct,
-        adoptionTrend: trend,
-        featuresAdopted: adoptionHistory.filter((h: any) => (h.adoptionHistory[0]?.adoptionPct || 0) >= 80).length,
-        featuresTotal: adoptionHistory.length,
-        topFeatures,
-        bottomFeatures,
+        overallAdoptionPct: adoption.overallAdoptionPct,
+        adoptionTrend: await this.trend(accountId),
+        featuresAdopted: adoption.featuresAdopted,
+        featuresTotal: adoption.featuresTotal,
+        topFeatures: byPctDesc.slice(0, 3).map((f) => f.name),
+        bottomFeatures: byPctDesc.slice(-3).reverse().map((f) => f.name),
       },
       timeRange: {
-        startDate: new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
+        startDate: new Date(Date.now() - daysBack * 86400000).toISOString().split('T')[0],
+        endDate: d,
       },
     }
   }
 
-  /**
-   * Forecast adoption for next 90 days using Claude
-   */
+  /** Forecast sobre o histórico de adoption_analysis (snapshots diários). */
   async forecastAdoption(accountId: string, forecastDays: number = 90): Promise<AdoptionForecast> {
-    // Get historical adoption data
-    const { data: adoptionHistory } = await this.supabase
+    const { data: history } = await this.supabase
       .from('adoption_analysis')
-      .select('analysis_date, overall_adoption_pct, adoption_trend')
+      .select('analysis_date, overall_adoption_pct')
       .eq('account_id', accountId)
       .order('analysis_date', { ascending: false })
       .limit(30)
+    const rows = (history as any[]) ?? []
 
-    if (!adoptionHistory || adoptionHistory.length === 0) {
+    const forecastedDate = new Date(Date.now() + forecastDays * 86400000).toISOString().split('T')[0]
+
+    // Sem histórico suficiente: usa o estado atual como baseline, sem extrapolar.
+    if (rows.length < 2) {
+      const current = await computeAccountAdoption(accountId, this.supabase)
+      const baseline = current.hasData ? current.overallAdoptionPct : 0
       return {
-        baselineAdoptionPct: 0,
-        forecastedAdoptionPct: 0,
-        forecastedDate: new Date(Date.now() + forecastDays * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-        confidence: 0.3,
-        trend: 'stable',
-        recommendations: ['Insufficient historical data for accurate forecast'],
+        forecastDays, baselineAdoptionPct: baseline, forecastedAdoptionPct: baseline,
+        forecastedDate, confidence: 0.3, forecastTrend: 'stable',
+        recommendations: current.hasData ? ['Histórico insuficiente para projeção — colete mais snapshots diários.'] : ['Sem dados de adoção registrados para esta conta.'],
+        methodology: 'baseline (histórico insuficiente)',
       }
     }
 
-    const baselineAdoptionPct = adoptionHistory[0].overall_adoption_pct
-    const historicalTrend = adoptionHistory.map((h: any) => h.overall_adoption_pct).slice(0, 10)
+    const baseline = rows[0].overall_adoption_pct
+    const series = rows.map((r) => r.overall_adoption_pct).slice(0, 10)
 
     try {
-      const prompt = `Based on the historical adoption trend (${historicalTrend.join(', ')}%), forecast the adoption percentage for the next ${forecastDays} days.
-
-Also estimate:
-1. Confidence level (0-1)
-2. Trend (accelerating, stable, declining)
-3. Top 3 recommendations to improve adoption
-
-Provide JSON response: {forecastedAdoptionPct, confidence, trend, recommendations}`
-
+      const prompt = `Histórico de % de adoção (mais recente primeiro): ${series.join(', ')}%.
+Projete a % de adoção em ${forecastDays} dias. Responda em JSON:
+{"forecastedAdoptionPct": number 0-100, "confidence": number 0-1, "forecastTrend": "accelerating"|"stable"|"declining", "recommendations": string[]}`
       const response = await generateText(prompt, {
         systemInstruction: await buildSystemInstruction('adoption_forecast'),
-        maxOutputTokens: 500,
-        responseMimeType: 'application/json',
-        disableThinking: true,
+        maxOutputTokens: 500, responseMimeType: 'application/json', disableThinking: true,
       })
-
-      const jsonMatch = response.result.match(/\{[\s\S]*\}/)
-      const forecast = jsonMatch ? JSON.parse(jsonMatch[0]) : null
-
+      const f = safeParseLLMJson<{ forecastedAdoptionPct?: number; confidence?: number; forecastTrend?: string; recommendations?: string[] }>(response.result)
+      const clampPct = (n: unknown) => Math.max(0, Math.min(100, Math.round(Number(n) || baseline)))
+      const trend = (['accelerating', 'stable', 'declining'] as const).includes(f?.forecastTrend as any) ? (f!.forecastTrend as AdoptionForecast['forecastTrend']) : 'stable'
       return {
-        baselineAdoptionPct,
-        forecastedAdoptionPct: forecast?.forecastedAdoptionPct || baselineAdoptionPct,
-        forecastedDate: new Date(Date.now() + forecastDays * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-        confidence: forecast?.confidence || 0.5,
-        trend: forecast?.trend || 'stable',
-        recommendations: forecast?.recommendations || [],
+        forecastDays,
+        baselineAdoptionPct: baseline,
+        forecastedAdoptionPct: f ? clampPct(f.forecastedAdoptionPct) : baseline,
+        forecastedDate,
+        confidence: Math.max(0, Math.min(1, Number(f?.confidence) || 0.5)),
+        forecastTrend: trend,
+        recommendations: Array.isArray(f?.recommendations) ? f!.recommendations!.slice(0, 5) : [],
+        methodology: 'IA sobre histórico de snapshots',
       }
-    } catch (error) {
-      console.error('[AdoptionService] Forecast error:', error)
+    } catch {
       return {
-        baselineAdoptionPct,
-        forecastedAdoptionPct: baselineAdoptionPct,
-        forecastedDate: new Date(Date.now() + forecastDays * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0],
-        confidence: 0.3,
-        trend: 'stable',
-        recommendations: ['Error in forecast, please try again later'],
+        forecastDays, baselineAdoptionPct: baseline, forecastedAdoptionPct: baseline,
+        forecastedDate, confidence: 0.3, forecastTrend: 'stable',
+        recommendations: ['Erro na projeção — tente novamente mais tarde.'], methodology: 'fallback',
       }
     }
   }
 
-  /**
-   * Get feature blockers for an account with root cause analysis
-   */
+  /** Bloqueios REAIS: features com status='blocked' em feature_adoption. */
   async getFeatureBlockers(accountId: string): Promise<FeatureBlocker[]> {
-    const { data: blockers, error } = await this.supabase
-      .from('feature_blockers')
-      .select(
-        `
-        id,
-        feature_id,
-        blocker_type,
-        severity,
-        description,
-        root_cause_analysis,
-        detected_at,
-        features:feature_id(name)
-      `
-      )
+    const adoption = await computeAccountAdoption(accountId, this.supabase)
+    // updated_at por feature para detectedAt
+    const { data: rows } = await this.supabase
+      .from('feature_adoption')
+      .select('feature_id, updated_at, priority_level')
       .eq('account_id', accountId)
-      .is('resolved_at', null)
-      .order('severity', { ascending: false })
+      .eq('status', 'blocked')
+    const meta = new Map<string, { updated_at: string | null; priority_level: string | null }>(
+      ((rows as any[]) ?? []).map((r) => [r.feature_id, { updated_at: r.updated_at, priority_level: r.priority_level }])
+    )
 
-    if (error) throw new Error(`Failed to fetch blockers: ${error.message}`)
-
-    return blockers.map((b: any) => ({
-      blockerId: b.id,
-      featureId: b.feature_id,
-      featureName: b.features?.name || 'Unknown',
-      blockerType: b.blocker_type,
-      severity: b.severity,
-      description: b.description,
-      rootCauseAnalysis: b.root_cause_analysis,
-      detectedAt: b.detected_at,
-    }))
-  }
-
-  /**
-   * Detect blockers using Claude and feature usage metrics
-   */
-  async detectBlockersAI(accountId: string): Promise<FeatureBlocker[]> {
-    // Get adoption data and tickets
-    const { data: lowAdoption } = await this.supabase
-      .from('account_feature_adoption')
-      .select(
-        `
-        id,
-        feature_id,
-        adoption_status,
-        adoption_pct,
-        blockers_identified,
-        features:feature_id(name)
-      `
-      )
-      .eq('account_id', accountId)
-      .lt('adoption_pct', 20)
-
-    const { data: tickets } = await this.supabase
-      .from('support_tickets')
-      .select('id, title, description, category')
-      .eq('account_id', accountId)
-      .in('status', ['open', 'in-progress'])
-      .limit(10)
-
-    // Use Claude to analyze and suggest blockers
-    const blockers: FeatureBlocker[] = []
-
-    for (const adoption of lowAdoption || []) {
-      try {
-        const blockerPrompt = `Feature "${(adoption.features as any)?.name}" has only ${adoption.adoption_pct}% adoption.
-Recent support tickets: ${tickets?.map((t) => t.title).join(', ') || 'None'}
-
-Analyze what might be blocking adoption. Provide JSON:
-{type: 'technical'|'training'|'organizational'|'business', factors: [], recommendations: []}`
-
-        const blockerResponse = await generateText(blockerPrompt, {
-          systemInstruction: await buildSystemInstruction('adoption_blockers'),
-          maxOutputTokens: 300,
-          responseMimeType: 'application/json',
-          disableThinking: true,
-        })
-
-        const jsonMatch = blockerResponse.result.match(/\{[\s\S]*\}/)
-        const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
-
-        blockers.push({
-          blockerId: adoption.id,
-          featureId: adoption.feature_id,
-          featureName: (adoption.features as any)?.name || 'Unknown',
-          blockerType: analysis.type || 'other',
-          severity: adoption.adoption_pct < 10 ? 'critical' : 'high',
-          description: `Low adoption detected: ${adoption.adoption_pct}%`,
-          rootCauseAnalysis: {
-            factors: analysis.factors || [],
-            recommendations: analysis.recommendations || [],
-          },
-          detectedAt: new Date().toISOString(),
-        })
-      } catch (error) {
-        console.error('[AdoptionService] Blocker detection error:', error)
+    return adoption.blockers.map((b) => {
+      const m = meta.get(b.featureId)
+      const factors = [b.blockerReason].filter((x): x is string => !!x)
+      const recommendations = [b.actionPlan].filter((x): x is string => !!x)
+      return {
+        blockerId: b.featureId, // 1 bloqueio por (conta,feature) — feature_id (uuid) é estável
+        featureId: b.featureId,
+        featureName: b.featureName,
+        blockerType: BLOCKER_TYPE[b.blockerCategory ?? 'other'] ?? 'other',
+        severity: PRIORITY_SEVERITY[m?.priority_level ?? ''] ?? 'medium',
+        description: b.blockerReason || `Bloqueio em ${b.featureName}`,
+        rootCauseAnalysis: factors.length || recommendations.length ? { factors, recommendations } : undefined,
+        detectedAt: m?.updated_at ?? new Date().toISOString(),
+        detectionSource: 'system_inference',
       }
-    }
+    })
+  }
 
-    return blockers
+  /** Mantido por compat — hoje os bloqueios já são dados reais; delega a getFeatureBlockers. */
+  async detectBlockersAI(accountId: string): Promise<FeatureBlocker[]> {
+    return this.getFeatureBlockers(accountId)
   }
 
   /**
-   * Get feature dependency graph (DAG)
+   * Grafo de dependências: não há tabela de dependências neste banco. Retorna vazio
+   * (a UI mostra grafo vazio em vez de quebrar). Inclui a adoção atual por feature.
    */
   async getFeatureDependencies(accountId?: string) {
-    // Get all features
-    const { data: features } = await this.supabase
-      .from('features')
-      .select('id, name, category, launch_date, tier')
-      .eq('is_active', true)
-
-    // Get dependencies
-    const { data: dependencies } = await this.supabase
-      .from('feature_dependencies')
-      .select('feature_id, depends_on_id, relationship_type')
-
-    // Get account adoption data if provided
-    let accountAdoption: Record<string, number> = {}
+    let accountAdoption: Record<string, number> | undefined
     if (accountId) {
-      const { data: adoption } = await this.supabase
-        .from('account_feature_adoption')
-        .select('feature_id, adoption_pct')
-        .eq('account_id', accountId)
-
-      accountAdoption = adoption?.reduce((acc: any, a: any) => {
-        acc[a.feature_id] = a.adoption_pct
-        return acc
-      }, {})
+      const adoption = await computeAccountAdoption(accountId, this.supabase)
+      accountAdoption = Object.fromEntries(adoption.features.map((f) => [f.featureId, STATUS_PCT[f.status]]))
     }
-
-    return {
-      features: features || [],
-      dependencies: (dependencies || []).map((d: any) => ({
-        fromFeatureId: d.feature_id,
-        toFeatureId: d.depends_on_id,
-        relationshipType: d.relationship_type,
-      })),
-      accountAdoption: accountAdoption || undefined,
-    }
-  }
-
-  /**
-   * Calculate adoption trend
-   */
-  private calculateTrend(
-    adoptionHistory: any[]
-  ): 'accelerating' | 'stable' | 'declining' {
-    if (adoptionHistory.length === 0) return 'stable'
-
-    const recentValues = adoptionHistory
-      .slice(0, Math.min(5, adoptionHistory.length))
-      .map((h: any) => h.adoptionHistory[0]?.adoptionPct || 0)
-
-    if (recentValues.length < 2) return 'stable'
-
-    const trend = recentValues[0] - recentValues[recentValues.length - 1]
-
-    if (trend > 5) return 'accelerating'
-    if (trend < -5) return 'declining'
-    return 'stable'
+    return { features: [], dependencies: [], accountAdoption }
   }
 }

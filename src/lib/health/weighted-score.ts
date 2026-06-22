@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { computeAccountAdoption } from '@/lib/adoption/account-adoption'
 import type { HealthBreakdown } from '@/lib/supabase/types'
 
 export type WeightedScoreResult = {
@@ -80,30 +81,19 @@ export async function calcNPSScore(accountId: string): Promise<number> {
 }
 
 /**
- * Calcula o Adoption Score: % de features adotadas sobre o total acompanhado.
- * Fonte real: account_feature_adoption (adoption_status). A tabela
- * adoption_metrics é genérica (metric_name/value) e NÃO guarda esse JSONB —
- * o código antigo lia um shape inexistente e caía sempre no default 50.
- * Retorna 50 quando não há dados de adoção para a conta.
+ * Calcula o Adoption Score a partir do modelo REAL (`feature_adoption`), via a fonte
+ * única `computeAccountAdoption`: Score = (in_use + partial·0.5) / (total − na) × 100,
+ * mesma fórmula do dashboard de Adoção. Retorna 50 (neutro) quando a conta não tem
+ * dados de adoção registrados.
  */
 export async function calcAdoptionScore(accountId: string): Promise<number> {
   const supabase = getSupabaseAdminClient()
-
-  // cast: account_feature_adoption ainda não consta em database.types (ver TECH_DEBT #8)
-  const { data, error } = await (supabase as any)
-    .from('account_feature_adoption')
-    .select('adoption_status')
-    .eq('account_id', accountId)
-
-  if (error || !data || data.length === 0) {
+  const adoption = await computeAccountAdoption(accountId, supabase as any)
+  if (!adoption.hasData) {
     console.warn(`[Adoption Score] Sem dados de adoção para a conta ${accountId}`)
     return 50.0
   }
-
-  const total = data.length
-  const active = data.filter((r: any) => r.adoption_status === 'adopted').length
-  const score = (active / total) * 100
-  return Math.round(Math.max(0, Math.min(100, score)) * 100) / 100
+  return adoption.overallAdoptionPct
 }
 
 /**
