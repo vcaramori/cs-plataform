@@ -71,7 +71,10 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
           .single()
 
         if (insErr) {
-          errors.push(`[${account.id}] ${alert.type}: ${insErr.message}`)
+          // Violação da unicidade diária (alerta do tipo já criado hoje) = idempotência,
+          // não erro: pula em silêncio (ex.: cron reexecutado no mesmo dia).
+          const dup = insErr.code === '23505' || /duplicate key|proactive_alerts_daily_uniq/i.test(insErr.message ?? '')
+          if (!dup) errors.push(`[${account.id}] ${alert.type}: ${insErr.message}`)
           continue
         }
         created++

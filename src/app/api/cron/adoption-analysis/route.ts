@@ -16,6 +16,25 @@ export async function POST(request: Request) {
   let errorCount = 0
   const errors: string[] = []
 
+  // A camada de ANALYTICS de adoção (heatmap/forecast/blockers do AdoptionService) foi
+  // escrita contra um schema que NÃO existe neste banco (account_feature_adoption,
+  // adoption_analysis, features, feature_blockers, feature_dependencies). A adoção real
+  // do produto vive em `feature_adoption`. Enquanto esse schema de analytics não for
+  // provisionado, o cron pula graciosamente (em vez de falhar em todas as contas).
+  // Auto-retoma sozinho quando as tabelas existirem.
+  const { error: schemaProbe } = await (supabase as any)
+    .from('account_feature_adoption')
+    .select('id')
+    .limit(1)
+  if (schemaProbe) {
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      reason: 'Schema de analytics de adoção não provisionado (account_feature_adoption ausente).',
+      processedCount: 0,
+    })
+  }
+
   try {
     // Processa todas as contas (accounts.contract_status NÃO existe — o conceito de
     // "ativo" mora em contracts.status; filtrar pela coluna inexistente quebrava o cron com 500).

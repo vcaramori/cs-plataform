@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyHelpDeskRequest } from "@/lib/integrations/helpdesk/auth"
+import { safeParseLLMJson } from '@/lib/llm/safe-json'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateText } from '@/lib/llm/gateway'
 import { loadInstruction } from '@/lib/ai/load-instruction'
@@ -154,14 +155,12 @@ Retorne EXATAMENTE neste formato JSON:
         })
         const responseText = result.result
 
-        // Parse JSON response
-        const match = responseText.match(/\{[\s\S]*\}/)
-        if (!match) {
+        // Parse JSON (robusto: conserta escapes/control chars inválidos da IA)
+        const emailContent = safeParseLLMJson<{ subject?: string; body?: string }>(responseText)
+        if (!emailContent?.subject || !emailContent?.body) {
           errors.push(`Account ${account.id}: Failed to parse Gemini response`)
           continue
         }
-
-        const emailContent = JSON.parse(match[0])
 
         // 7. Insert into queue with 4-hour approval deadline
         const approvalDeadline = new Date()
