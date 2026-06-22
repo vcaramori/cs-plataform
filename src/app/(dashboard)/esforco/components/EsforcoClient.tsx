@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { toast } from 'sonner'
-import { useDateRange } from '@/hooks/useDateRange'
 import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { EsforcoKPIs } from './EsforcoKPIs'
 import { EsforcoTable } from './EsforcoTable'
@@ -46,7 +45,6 @@ export function EsforcoClient({
   initialEntries: Entry[]
 }) {
   const router = useRouter()
-  const { dateFrom, dateTo } = useDateRange('mtd')
   const [text, setText] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null)
@@ -55,6 +53,10 @@ export function EsforcoClient({
   const [fileUrls, setFileUrls] = useState<string[]>([])
   const [eventDate, setEventDate] = useState<string>('') // vazio = hoje/IA (carga histórica usa data real)
   const [isOnboarding, setIsOnboarding] = useState(false) // tag "ação de onboarding" (sem rodar o projeto)
+
+  // O filtro de data vive na URL e o SERVIDOR já traz tudo do intervalo. Ao trocar o
+  // filtro (router.push → re-render do server component), ressincroniza a lista local.
+  useEffect(() => { setEntries(initialEntries) }, [initialEntries])
 
   async function handleSubmit() {
     if (!text.trim()) {
@@ -113,11 +115,6 @@ export function EsforcoClient({
     setSelectedEntry(updated)
   }
 
-  const filteredEntries = entries.filter(e => {
-    const d = new Date(e.date ?? e.logged_at)
-    return d >= new Date(dateFrom) && d <= new Date(dateTo)
-  })
-
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <DateRangePicker />
@@ -143,10 +140,10 @@ export function EsforcoClient({
         {/* Carga histórica de esforços (IA separa por data) */}
         <HistoricalImportPanel accounts={accounts} />
 
-        {/* History Area */}
+        {/* History Area — o servidor já trouxe tudo do intervalo selecionado */}
         <EsforcoTable
-          entries={filteredEntries}
-          totalHours={filteredEntries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
+          entries={entries}
+          totalHours={entries.reduce((acc, e) => acc + Number(e.parsed_hours), 0)}
           onSelectEntry={(e: Entry) => setSelectedEntry(e)}
           activityLabels={activityLabels}
         />
