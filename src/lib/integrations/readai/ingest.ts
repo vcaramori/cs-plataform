@@ -28,7 +28,7 @@ export interface IngestOutcome {
   externalMeetingId: string
 }
 
-interface ExistingInteraction { id: string; time_entry_id: string | null }
+interface ExistingInteraction { id: string; time_entry_id: string | null; raw_transcript: string | null; summary: string | null }
 
 export async function ingestReadAiMeeting(
   m: ReadAiMeeting,
@@ -72,7 +72,7 @@ export async function ingestReadAiMeeting(
   // ---------------------------------------------------------------------------
   const { data: existing } = await admin
     .from('interactions')
-    .select('id, time_entry_id')
+    .select('id, time_entry_id, raw_transcript, summary')
     .eq('external_meeting_id', m.id)
     .maybeSingle()
   const prior = (existing ?? null) as ExistingInteraction | null
@@ -88,7 +88,12 @@ export async function ingestReadAiMeeting(
       if (transcript) tePatch.natural_language_input = transcript
       await admin.from('time_entries').update(tePatch).eq('id', prior.time_entry_id)
     }
-    await embed(prior.id)
+    // Re-vetoriza só quando o conteúdo de fato mudou (transcrição/resumo novos ou alterados).
+    // Evita re-embeddar todo o histórico a cada ciclo — crucial no backfill (não estoura o maxDuration).
+    const contentChanged =
+      (!!transcript && transcript !== prior.raw_transcript) ||
+      (!!summary && summary !== prior.summary)
+    if (contentChanged) await embed(prior.id)
     return { action: 'updated', accountId, title, externalMeetingId }
   }
 
