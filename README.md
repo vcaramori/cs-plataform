@@ -177,7 +177,7 @@ As reuniões importavam **só metadados** (título, data, duração, conta) — 
 - **Shape da transcrição**: `normalizeApiTranscript` procurava `transcript.speaker_blocks`/`words` (formato do **webhook**), mas a REST retorna `transcript.text` (texto completo "Nome: fala") + `transcript.turns[]`. O normalizador agora usa `text` direto (e cai em `turns[]` → `speaker_blocks[]` → string, cobrindo REST **e** webhook).
 - Bônus: o filtro incremental usava `start_datetime_gte` (ignorado) → trocado pelo `start_time_ms.gte` (epoch ms) da doc, evitando re-varrer todo o histórico a cada cron.
 
-Backfill executado em produção: re-sync forçado (reset do `readai_sync_state`) reprocessou o histórico e **populou as transcrições/resumos** nas interações existentes (ingest idempotente por `external_meeting_id`). O modal "Detalhes do Esforço" passa a mostrar a transcrição real.
+**Backfill resumível** (descoberto ao reprocessar): a API de lista com `expand[]` é **lenta**, então o histórico completo **não cabe** numa execução serverless (kill em 300s da Vercel) — e o estado só era salvo no fim, então cada ciclo recomeçava do topo e travava nas ~90 reuniões mais novas. Corrigido em [sync.ts](src/lib/integrations/readai/sync.ts): o **cursor de paginação é persistido a cada página** e há um **orçamento de tempo** (~240s) que devolve a execução limpa antes do kill — o próximo ciclo **retoma** de onde parou. Como o sync varre os usuários em sequência, o histórico dos 3 CSMs conectados completa ao longo de alguns ciclos (cron horário) e cada transcrição só é re-vetorizada uma vez. O modal "Detalhes do Esforço" passa a mostrar a transcrição real.
 
 ### 🗂️ Ordenação Global e Melhorias de Suporte (2026-06-22)
 

@@ -17,8 +17,11 @@ import { getIntegrationConfig } from '@/lib/integrations/helpdesk/auth'
 
 const STATE_KEY = 'readai_sync_state'
 const MAX_PAGES_PER_USER = 60 // 60*10 = 600 reuniões por ciclo (backfill em vários ciclos)
+// Orçamento de tempo por execução: retorna limpo ANTES do kill de 300s da Vercel
+// (FUNCTION_INVOCATION_TIMEOUT), salvando o cursor para retomar no próximo ciclo.
+const RUN_BUDGET_MS = 240_000
 
-interface UserState { historical_done?: boolean; last_sync_at?: string }
+interface UserState { historical_done?: boolean; last_sync_at?: string; cursor?: string }
 type SyncState = Record<string, UserState>
 
 export interface ReadAiSyncResult {
@@ -80,16 +83,19 @@ async function syncUser(
   res: ReadAiSyncResult,
   fallbackAccountId: string | null,
   apiBaseUrl: string | undefined,
-  ctx: SyncCtx
+  ctx: SyncCtx,
+  deadline: number
 ) {
   const token = await getValidAccessToken(userId)
   if (!token) throw new ReadAiAuthError('Sem token válido — reconectar')
 
   const us = state[userId] ?? {}
   const startedAt = new Date().toISOString()
-  const startGte = us.historical_done ? us.last_sync_at : undefined
+  const historicalDone = !!us.historical_done
+  // Backfill: RETOMA do cursor salvo (resumível entre ciclos). Incremental: filtra por data.
+  const startGte = historicalDone ? us.last_sync_at : undefined
 
-  let cursor: string | undefined
+  let cursor: string | undefined = historicalDone ? undefined : us.cursor
   let pages = 0
   do {
     const { meetings, hasMore, nextCursor } = await listMeetings(token, { cursor, startDatetimeGte: startGte, limit: 10, baseUrl: apiBaseUrl })
@@ -118,10 +124,25 @@ async function syncUser(
     }
     cursor = hasMore ? nextCursor : undefined
     pages++
+    // Persiste o progresso da paginação a CADA página. A API do Read.ai é lenta em
+    // requests de lista com expand[] (transcrição), então o histórico não cabe numa
+    // única execução; salvar o cursor garante que o próximo ciclo RETOME daqui em vez
+    // de reprocessar sempre as primeiras páginas (que travaria o backfill no início).
+    if (!historicalDone) {
+      state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at }
+      await writeState(state)
+    }
+    if (Date.now() > deadline) break // devolve limpo antes do kill de 300s; retoma no próximo ciclo
   } while (cursor && pages < MAX_PAGES_PER_USER)
 
-  // historical_done só quando esgotou as páginas (não parou por limite).
-  state[userId] = { historical_done: pages < MAX_PAGES_PER_USER ? true : us.historical_done, last_sync_at: startedAt }
+  if (historicalDone || !cursor) {
+    // Incremental, ou backfill que varreu até o fim (sem mais páginas) → histórico
+    // completo; avança o relógio e limpa o cursor.
+    state[userId] = { historical_done: true, last_sync_at: startedAt }
+  } else {
+    // Parou por orçamento de tempo / teto de páginas → mantém o cursor para retomar.
+    state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at }
+  }
 }
 
 /** Loga o erro de auth de forma acionável (caso clássico: audience da REST API). */
@@ -144,11 +165,13 @@ export async function runReadAiSync(): Promise<ReadAiSyncResult> {
   const fallbackAccountId = cfg.store_unmatched && cfg.fallback_account_id ? cfg.fallback_account_id : null
   const apiBaseUrl = cfg.api_base_url?.trim() || undefined
   const ctx: SyncCtx = { runId: randomUUID(), source: 'cron' }
+  const deadline = Date.now() + RUN_BUDGET_MS
 
   for (const userId of userIds) {
+    if (Date.now() > deadline) break // sem orçamento p/ começar outro usuário — segue no próximo ciclo
     res.users++
     try {
-      await syncUser(userId, idx, state, res, fallbackAccountId, apiBaseUrl, ctx)
+      await syncUser(userId, idx, state, res, fallbackAccountId, apiBaseUrl, ctx, deadline)
     } catch (e) {
       if (e instanceof ReadAiAuthError) { res.errors.push(`Usuário ${userId}: token inválido — reconectar`); await logAuthError(ctx, userId) }
       else res.errors.push(`Usuário ${userId}: ${e instanceof Error ? e.message : 'erro'}`)
@@ -175,11 +198,11 @@ export async function runReadAiSyncForUser(
   const apiBaseUrl = cfg.api_base_url?.trim() || undefined
   const ctx: SyncCtx = { runId: randomUUID(), source: opts.source }
 
-  if (opts.force) state[userId] = { historical_done: false, last_sync_at: undefined }
+  if (opts.force) state[userId] = { historical_done: false, last_sync_at: undefined, cursor: undefined }
 
   res.users = 1
   try {
-    await syncUser(userId, idx, state, res, fallbackAccountId, apiBaseUrl, ctx)
+    await syncUser(userId, idx, state, res, fallbackAccountId, apiBaseUrl, ctx, Date.now() + RUN_BUDGET_MS)
   } catch (e) {
     if (e instanceof ReadAiAuthError) { res.errors.push('Token inválido/recusado — reconectar ou verificar audience'); await logAuthError(ctx, userId) }
     else res.errors.push(e instanceof Error ? e.message : 'erro')
