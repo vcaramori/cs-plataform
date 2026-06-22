@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Clock, History } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, SortableTableHead } from '@/components/ui/table'
 import { format } from 'date-fns'
+import { useTableSort } from '@/hooks/useTableSort'
 import { Entry } from './EsforcoClient'
 
 interface EsforcoTableProps {
@@ -21,6 +22,10 @@ export function EsforcoTable({
   onSelectEntry,
   activityLabels
 }: EsforcoTableProps) {
+  const { sortedData, requestSort, sortConfig } = useTableSort(entries, {
+    key: 'date',
+    direction: 'desc'
+  })
   return (
     <Card variant="glass" className="border-border-divider shadow-2xl rounded-2xl overflow-hidden bg-surface-card">
       <CardHeader className="p-6 border-b border-border-divider bg-surface-background/50">
@@ -50,17 +55,17 @@ export function EsforcoTable({
             <Table>
               <TableHeader className="bg-surface-background/30">
                 <TableRow className="hover:bg-transparent border-b border-border-divider">
-                  <TableHead className="pl-6 h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Logo / Conta</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">CSM</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Tipo</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Detalhamento Analítico</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-center">Horas</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-right pr-6">Data</TableHead>
+                  <SortableTableHead sortKey="accounts.name" currentSort={sortConfig} onSort={requestSort} className="pl-6 h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Logo / Conta</SortableTableHead>
+                  <SortableTableHead sortKey="csm_name" currentSort={sortConfig} onSort={requestSort} className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">CSM</SortableTableHead>
+                  <SortableTableHead sortKey="activity_type" currentSort={sortConfig} onSort={requestSort} className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Tipo</SortableTableHead>
+                  <SortableTableHead sortKey="parsed_description" currentSort={sortConfig} onSort={requestSort} className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary">Detalhamento Analítico</SortableTableHead>
+                  <SortableTableHead sortKey="parsed_hours" currentSort={sortConfig} onSort={requestSort} className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-center">Horas</SortableTableHead>
+                  <SortableTableHead sortKey="date" currentSort={sortConfig} onSort={requestSort} className="h-12 text-[10px] font-black uppercase tracking-[0.3em] text-content-secondary text-right pr-6">Data</SortableTableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode='popLayout'>
-                  {entries.map((e, index) => (
+                  {sortedData.map((e, index) => (
                     <motion.tr
                       key={e.id}
                       initial={{ opacity: 0, x: -20 }}

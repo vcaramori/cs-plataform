@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, SortableTableHead } from '@/components/ui/table'
 import { Search, Plus, TrendingUp, TrendingDown, Minus, AlertTriangle, Building2, Pencil, BrainCircuit } from 'lucide-react'
+import { useTableSort } from '@/hooks/useTableSort'
 import type { Account, Contract } from '@/lib/supabase/types'
 import type { Database } from '@/lib/supabase/database.types'
 
@@ -126,9 +127,24 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
       const matchSegment = segmentFilter === 'all' || a.segment === segmentFilter
       return matchSearch && matchSegment && matchesUrlFilter(a)
     })
-    .sort((a, b) => activeSort === 'mrr'
-      ? calculateAccountMetrics(b).totalMRR - calculateAccountMetrics(a).totalMRR
-      : 0)
+    .map(a => {
+      const metrics = calculateAccountMetrics(a)
+      return {
+        ...a,
+        _computed_mrr: metrics.totalMRR,
+        _computed_active_contracts: metrics.activeContracts.length,
+        _computed_renewal: metrics.nearestRenewal?.renewal_date ? new Date(metrics.nearestRenewal.renewal_date).getTime() : 0,
+        _metrics: metrics // pass it along so we don't recalculate in render
+      }
+    })
+
+  const defaultSortKey = activeSort === 'mrr' ? '_computed_mrr' : null
+  const defaultSortDirection = activeSort === 'mrr' ? 'desc' : null
+
+  const { sortedData, requestSort, sortConfig } = useTableSort(filtered, {
+    key: defaultSortKey,
+    direction: defaultSortDirection
+  })
 
   const FILTER_LABELS: Record<string, string> = {
     'at-risk': 'Em risco',
@@ -214,20 +230,20 @@ export function AccountsTable({ accounts }: { accounts: AccountWithContracts[] }
               <TableHeader>
                 <TableRow>
                   <TableHead className="pl-6 w-12"></TableHead>
-                  <TableHead className="text-[11px]">Cliente</TableHead>
-                  <TableHead className="text-[11px]">Indústria</TableHead>
-                  <TableHead className="text-[11px]">Segmento</TableHead>
-                  <TableHead className="text-right text-[11px]">MRR</TableHead>
-                  <TableHead className="text-center text-[11px]">Qtd</TableHead>
-                  <TableHead className="text-[11px]">Renovação</TableHead>
-                  <TableHead className="text-center text-[11px]">Saúde</TableHead>
-                  <TableHead className="text-center pr-6 text-[11px]">Trend</TableHead>
+                  <SortableTableHead sortKey="name" currentSort={sortConfig} onSort={requestSort} className="text-[11px]">Cliente</SortableTableHead>
+                  <SortableTableHead sortKey="industry" currentSort={sortConfig} onSort={requestSort} className="text-[11px]">Indústria</SortableTableHead>
+                  <SortableTableHead sortKey="segment" currentSort={sortConfig} onSort={requestSort} className="text-[11px]">Segmento</SortableTableHead>
+                  <SortableTableHead sortKey="_computed_mrr" currentSort={sortConfig} onSort={requestSort} className="text-right text-[11px]">MRR</SortableTableHead>
+                  <SortableTableHead sortKey="_computed_active_contracts" currentSort={sortConfig} onSort={requestSort} className="text-center text-[11px]">Qtd</SortableTableHead>
+                  <SortableTableHead sortKey="_computed_renewal" currentSort={sortConfig} onSort={requestSort} className="text-[11px]">Renovação</SortableTableHead>
+                  <SortableTableHead sortKey="health_score" currentSort={sortConfig} onSort={requestSort} className="text-center text-[11px]">Saúde</SortableTableHead>
+                  <SortableTableHead sortKey="health_trend" currentSort={sortConfig} onSort={requestSort} className="text-center pr-6 text-[11px]">Trend</SortableTableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <AnimatePresence mode='popLayout'>
-                  {filtered.map((account, index) => {
-                    const { activeContracts, totalMRR, nearestRenewal } = calculateAccountMetrics(account)
+                  {sortedData.map((account, index) => {
+                    const { activeContracts, totalMRR, nearestRenewal } = account._metrics
 
                     return (
                       <motion.tr

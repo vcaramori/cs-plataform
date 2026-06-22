@@ -1,7 +1,7 @@
 'use client'
 
 import { SupportTicket, Account } from '@/lib/supabase/types'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, SortableTableHead } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TicketCheck } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
@@ -15,6 +15,8 @@ interface SuporteTableProps {
   onSelectAll: (tickets: any[]) => void
   onSelectTicket: (id: string) => void
   onPreview: (id: string) => void
+  sortConfig?: { key: string | null; direction: 'asc' | 'desc' | null }
+  requestSort?: (key: string) => void
 }
 
 export function SuporteTable({
@@ -25,6 +27,8 @@ export function SuporteTable({
   onSelectAll,
   onSelectTicket,
   onPreview,
+  sortConfig = { key: null, direction: null },
+  requestSort = () => {},
 }: SuporteTableProps) {
   const isAllSelected = tickets.length > 0 && selectedIds.size === tickets.length
   const isIndeterminate = selectedIds.size > 0 && selectedIds.size < tickets.length
@@ -47,25 +51,28 @@ export function SuporteTable({
                 />
               </TableHead>
               {visibleColumns.client && (
-                <TableHead className="pl-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">Cliente</TableHead>
+                <SortableTableHead sortKey="accounts.name" currentSort={sortConfig} onSort={requestSort} className="pl-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">Cliente</SortableTableHead>
               )}
               {visibleColumns.title && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">Título do Chamado</TableHead>
+                <SortableTableHead sortKey="title" currentSort={sortConfig} onSort={requestSort} className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary">Título do Chamado</SortableTableHead>
               )}
               {visibleColumns.status && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Status</TableHead>
+                <SortableTableHead sortKey="status" currentSort={sortConfig} onSort={requestSort} className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Status</SortableTableHead>
               )}
               {visibleColumns.urgency && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Criticidade</TableHead>
+                <SortableTableHead sortKey="urgency_score" currentSort={sortConfig} onSort={requestSort} className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Criticidade</SortableTableHead>
               )}
               {visibleColumns.priority && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Prioridade</TableHead>
+                <SortableTableHead sortKey="priority" currentSort={sortConfig} onSort={requestSort} className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">Prioridade</SortableTableHead>
               )}
               {visibleColumns.sla && (
-                <TableHead className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">SLA Resolução</TableHead>
+                <SortableTableHead sortKey="sla_status_resolution" currentSort={sortConfig} onSort={requestSort} className="h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-center">SLA Resolução</SortableTableHead>
               )}
               {visibleColumns.opened_at && (
-                <TableHead className="pr-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-right">Abertura</TableHead>
+                <SortableTableHead sortKey="opened_at" currentSort={sortConfig} onSort={requestSort} className="pr-4 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-right">Abertura</SortableTableHead>
+              )}
+              {visibleColumns.last_response && (
+                <SortableTableHead sortKey="first_response_at" currentSort={sortConfig} onSort={requestSort} className="pr-10 h-11 text-[10px] font-bold uppercase tracking-wider text-content-secondary text-right">1ª Resposta</SortableTableHead>
               )}
             </TableRow>
           </TableHeader>

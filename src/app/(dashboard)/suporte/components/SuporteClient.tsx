@@ -22,6 +22,7 @@ import { BulkActionModal } from './BulkActionModal'
 import { FilterEditorModal } from './FilterEditorModal'
 import { TicketPreviewPanel } from './TicketPreviewPanel'
 import { usePreviewPanel } from '@/lib/hooks/usePreviewPanel'
+import { useTableSort } from '@/hooks/useTableSort'
 import { SuporteKPIs } from './SuporteKPIs'
 import { SuporteFilters } from './SuporteFilters'
 import { SuporteTable } from './SuporteTable'
@@ -98,6 +99,7 @@ export function SuporteClient({
     priority: true,
     sla: true,
     opened_at: true,
+    last_response: true,
   })
 
   // Sincronizar prop de tickets quando alterado no servidor
@@ -198,8 +200,17 @@ export function SuporteClient({
       }))
     }
 
-    return sortTickets(baseFilteredTickets)
+    return baseFilteredTickets
   })()
+
+  // Use generic table sort
+  const { sortedData: sortedFilteredTickets, requestSort, sortConfig } = useTableSort(filteredTickets, {
+    key: 'opened_at',
+    direction: 'desc'
+  })
+
+  // Calculate active tickets overall
+  const activeTicketsCount = tickets.filter(t => t.status === 'open' || t.status === 'in_progress').length
 
   // Selection handlers
   const toggleSelection = (id: string) => {
@@ -314,11 +325,16 @@ export function SuporteClient({
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all relative z-10",
+                "px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all relative z-10 flex items-center gap-2",
                 activeTab === tab ? "text-white" : "text-content-secondary hover:text-content-primary"
               )}
             >
               {tab === 'list' ? `Fila Ativa (${tickets.length})` : 'Ingestão Inteligente'}
+              {tab === 'list' && activeTicketsCount > 0 && (
+                <span className="bg-destructive/20 text-destructive text-[9px] px-1.5 py-0.5 rounded shadow-sm font-black animate-pulse">
+                  {activeTicketsCount} Ativos
+                </span>
+              )}
               {activeTab === tab && (
                 <motion.div
                   layoutId="active-tab-support"
@@ -395,6 +411,13 @@ export function SuporteClient({
                 >
                   Data Abertura
                 </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={visibleColumns.last_response}
+                  onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, last_response: !!checked }))}
+                  className="text-[10px] font-bold uppercase tracking-wider text-content-primary cursor-pointer hover:bg-surface-background dark:hover:bg-slate-800"
+                >
+                  Primeira Resposta
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -442,13 +465,15 @@ export function SuporteClient({
           />
 
           <SuporteTable
-            tickets={filteredTickets}
+            tickets={sortedFilteredTickets}
             selectedIds={selectedIds}
             previewId={previewId}
             visibleColumns={visibleColumns}
             onSelectAll={toggleSelectAll}
             onSelectTicket={toggleSelection}
             onPreview={openPreview}
+            sortConfig={sortConfig}
+            requestSort={requestSort}
           />
 
           <BulkActionBar

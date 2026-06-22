@@ -169,6 +169,13 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🗂️ Ordenação Global e Melhorias de Suporte (2026-06-22)
+
+Adicionada a capacidade genérica de ordenação de colunas (`useTableSort`) em toda a plataforma.
+- **Grids Padronizados:** Telas de **Suporte**, **Contas (Portfólio)** e **Esforço (Journal)** agora contam com o cabeçalho interativo `SortableTableHead`, permitindo ordenar qualquer dado na hora, incluindo métricas processadas (como MRR e quantidade de contratos).
+- **Tela de Suporte Aprimorada:** O painel de fila ativa agora exibe um **Badge Pulsante** de chamados em aberto ("Ativos"). Na listagem, a coluna *Data de Abertura* passou a exibir data e hora (HH:mm), e uma nova coluna **Primeira Resposta** foi incluída na grade, facilitando o acompanhamento de SLAs.
+
+
 ### 🎨 Painel de Suporte reconstruído (2026-06-18)
 
 Redesenho completo do dashboard de suporte ([SupportDashboardClient.tsx](src/app/(dashboard)/suporte/dashboard/SupportDashboardClient.tsx)) — antes os cards tinham tamanhos/posições inconsistentes, ornamento pesado e fraca hierarquia. Layout **híbrido** (executivo + operacional), com cards uniformes por linha e seções por intenção:

@@ -104,8 +104,15 @@ export const TicketListRow: React.FC<TicketListRowProps> = ({
         </TableCell>
       )}
       {visibleColumns.opened_at && (
+        <TableCell className="text-muted-foreground whitespace-nowrap text-[11px] text-right pr-4">
+          {formatDate(new Date(ticket.opened_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+        </TableCell>
+      )}
+      {visibleColumns.last_response && (
         <TableCell className="text-muted-foreground whitespace-nowrap text-[11px] text-right pr-10">
-          {formatDate(new Date(ticket.opened_at), 'dd/MM/yyyy', { locale: ptBR })}
+          {ticket.first_response_at 
+            ? formatDate(new Date(ticket.first_response_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+            : '—'}
         </TableCell>
       )}
     </TableRow>
