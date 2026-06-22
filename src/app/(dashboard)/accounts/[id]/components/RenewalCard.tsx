@@ -70,12 +70,19 @@ export function RenewalCard({ accountId, activeContract, commercialGovernance }:
   )
 }
 
-export function MRRCard({ activeContract, commercialGovernance }: {
-  activeContract?: any
+export function MRRCard({ activeContracts, commercialGovernance }: {
+  activeContracts: any[]
   commercialGovernance: CommercialGovernance[]
 }) {
-  const netMRR = calculateNetMRR(activeContract, commercialGovernance)
-  const currentDiscount = calculateCurrentDiscount(activeContract, commercialGovernance)
+  let totalNetMRR = 0
+  let totalNominalMRR = 0
+  let totalDiscount = 0
+
+  activeContracts.forEach(contract => {
+    totalNetMRR += calculateNetMRR(contract, commercialGovernance)
+    totalDiscount += calculateCurrentDiscount(contract, commercialGovernance)
+    totalNominalMRR += Number(contract.mrr) || 0
+  })
 
   return (
     <Card variant="glass" className="flex items-center gap-3 px-4 py-3 rounded-2xl border-border-divider/50 shrink-0 shadow-lg">
@@ -88,23 +95,23 @@ export function MRRCard({ activeContract, commercialGovernance }: {
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
               <Text variant="primary" className="text-xl font-black tracking-tighter tabular-nums cursor-help">
-                {formatCurrency(netMRR)}
+                {formatCurrency(totalNetMRR)}
               </Text>
             </TooltipTrigger>
-            {currentDiscount > 0 && (
+            {totalDiscount > 0 && (
               <TooltipContent side="bottom" className="bg-surface-card border-border-divider shadow-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between gap-8">
                   <Text variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">Valor Nominal</Text>
-                  <Text variant="primary" className="text-[10px] font-black">{formatCurrency(activeContract.mrr)}</Text>
+                  <Text variant="primary" className="text-[10px] font-black">{formatCurrency(totalNominalMRR)}</Text>
                 </div>
                 <div className="flex items-center justify-between gap-8">
                   <Text variant="accent" className="text-[10px] font-bold uppercase tracking-widest">Desconto Ativo</Text>
-                  <Text variant="accent" className="text-[10px] font-black">-{formatCurrency(currentDiscount)}</Text>
+                  <Text variant="accent" className="text-[10px] font-black">-{formatCurrency(totalDiscount)}</Text>
                 </div>
                 <div className="h-px bg-border-divider/50" />
                 <div className="flex items-center justify-between gap-8">
                   <Text className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Real MRR</Text>
-                  <Text className="text-[10px] font-black text-emerald-500">{formatCurrency(netMRR)}</Text>
+                  <Text className="text-[10px] font-black text-emerald-500">{formatCurrency(totalNetMRR)}</Text>
                 </div>
               </TooltipContent>
             )}

@@ -185,7 +185,7 @@ export function AccountHeader({ account, latestHealthScore, currentAdoptionScore
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
           <MeetingPrepModal accountId={account.id} accountName={account.name} />
           <MRRCard
-            activeContract={activeContract}
+            activeContracts={account.contracts?.filter((c: any) => c.status === 'active') || []}
             commercialGovernance={account.commercial_governance || []}
           />
           <RenewalCard
