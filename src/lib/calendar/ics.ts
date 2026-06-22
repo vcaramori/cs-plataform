@@ -42,7 +42,7 @@ export function normalizeIcsUrl(url: string): string {
 export async function fetchIcsEvents(icsUrl: string, dayStart: Date, dayEnd: Date): Promise<Office365Event[]> {
   const url = normalizeIcsUrl(icsUrl)
   const res = await fetch(url, {
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(45000),
     headers: { Accept: 'text/calendar, text/plain, */*' },
     cache: 'no-store',
   })
@@ -86,7 +86,7 @@ export async function fetchIcsEvents(icsUrl: string, dayStart: Date, dayEnd: Dat
 export async function validateIcsUrl(icsUrl: string): Promise<void> {
   const url = normalizeIcsUrl(icsUrl)
   if (!/^https:\/\//i.test(url)) throw new Error('O link precisa ser HTTPS (ou webcal://).')
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { Accept: 'text/calendar, */*' }, cache: 'no-store' })
+  const res = await fetch(url, { signal: AbortSignal.timeout(45000), headers: { Accept: 'text/calendar, */*' }, cache: 'no-store' })
   if (!res.ok) throw new Error(`O link respondeu HTTP ${res.status}. Confirme se está público.`)
   const text = await res.text()
   if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error('O link não retornou um calendário iCalendar (.ics) válido.')
