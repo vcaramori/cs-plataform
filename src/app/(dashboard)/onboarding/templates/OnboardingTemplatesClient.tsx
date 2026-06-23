@@ -1,14 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Trash2, Loader2, Save, Library } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Loader2, Save, Library, GripVertical } from 'lucide-react'
+import { Reorder, useDragControls } from 'framer-motion'
 import { PageContainer } from '@/components/ui/page-container'
 import { ModuleHeader } from '@/components/shared/guardians/ModuleHeader'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-type Item = { name: string; milestone_type: string; offset_days: number; duration_days: number; sort_order: number }
+type Item = { _key: string; name: string; milestone_type: string; offset_days: number; duration_days: number; sort_order: number }
 type Template = { id: string; name: string; description: string | null; project_type: string | null; is_active: boolean; items: Item[] }
 
 const TYPE_OPTS = [
@@ -23,13 +24,15 @@ export function OnboardingTemplatesClient() {
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const keyRef = useRef(0)
+  const nextKey = () => `it_${keyRef.current++}`
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/onboarding/templates')
       const data = await res.json()
-      setTemplates((Array.isArray(data) ? data : []).map((t: any) => ({ ...t, items: (t.items ?? []).map((i: any) => ({ name: i.name, milestone_type: i.milestone_type, offset_days: i.offset_days, duration_days: i.duration_days ?? 0, sort_order: i.sort_order ?? 0 })) })))
+      setTemplates((Array.isArray(data) ? data : []).map((t: any) => ({ ...t, items: (t.items ?? []).map((i: any) => ({ _key: nextKey(), name: i.name, milestone_type: i.milestone_type, offset_days: i.offset_days, duration_days: i.duration_days ?? 0, sort_order: i.sort_order ?? 0 })) })))
     } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
@@ -37,8 +40,9 @@ export function OnboardingTemplatesClient() {
   const update = (id: string, patch: Partial<Template>) => setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, ...patch } : t))
   const updateItem = (id: string, idx: number, patch: Partial<Item>) =>
     setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, items: t.items.map((it, i) => i === idx ? { ...it, ...patch } : it) } : t))
-  const addItem = (id: string) => setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, items: [...t.items, { name: '', milestone_type: 'milestone', offset_days: 0, duration_days: 0, sort_order: t.items.length + 1 }] } : t))
+  const addItem = (id: string) => setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, items: [...t.items, { _key: nextKey(), name: '', milestone_type: 'milestone', offset_days: 0, duration_days: 0, sort_order: t.items.length + 1 }] } : t))
   const removeItem = (id: string, idx: number) => setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, items: t.items.filter((_, i) => i !== idx) } : t))
+  const reorderItems = (id: string, items: Item[]) => setTemplates((ts) => ts.map((t) => t.id === id ? { ...t, items } : t))
 
   const createTemplate = async () => {
     setBusy(true)
@@ -84,27 +88,51 @@ export function OnboardingTemplatesClient() {
               </div>
               <input value={t.description ?? ''} onChange={(e) => update(t.id, { description: e.target.value })} placeholder="Descrição" className={`w-full ${inputCls}`} />
 
-              <div className="rounded-xl border border-border-divider/40 divide-y divide-border-divider/30">
-                <div className="grid grid-cols-[1fr_120px_90px_90px_32px] gap-2 px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-content-secondary/60">
-                  <span>Marco</span><span>Tipo</span><span>Offset (dias)</span><span>Duração</span><span></span>
+              <div className="rounded-xl border border-border-divider/40">
+                <div className="grid grid-cols-[24px_1fr_120px_90px_90px_32px] gap-2 px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-content-secondary/60 border-b border-border-divider/30">
+                  <span></span><span>Marco</span><span>Tipo</span><span>Offset (dias)</span><span>Duração</span><span></span>
                 </div>
-                {t.items.map((it, idx) => (
-                  <div key={idx} className="grid grid-cols-[1fr_120px_90px_90px_32px] gap-2 px-2 py-1.5 items-center">
-                    <input value={it.name} onChange={(e) => updateItem(t.id, idx, { name: e.target.value })} className={inputCls} />
-                    <select value={it.milestone_type} onChange={(e) => updateItem(t.id, idx, { milestone_type: e.target.value })} className={inputCls}>
-                      {TYPE_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                    <input type="number" value={it.offset_days} onChange={(e) => updateItem(t.id, idx, { offset_days: Number(e.target.value) })} className={inputCls} />
-                    <input type="number" value={it.duration_days} onChange={(e) => updateItem(t.id, idx, { duration_days: Number(e.target.value) })} className={inputCls} />
-                    <button onClick={() => removeItem(t.id, idx)} className="text-content-secondary/50 hover:text-rose-500 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-                <button onClick={() => addItem(t.id)} className="w-full text-[11px] text-plannera-primary hover:bg-muted/30 py-2 flex items-center justify-center gap-1"><Plus className="w-3.5 h-3.5" /> Adicionar marco</button>
+                <Reorder.Group axis="y" values={t.items} onReorder={(items) => reorderItems(t.id, items)} className="divide-y divide-border-divider/30">
+                  {t.items.map((it, idx) => (
+                    <ItemRow
+                      key={it._key}
+                      item={it}
+                      onChange={(patch) => updateItem(t.id, idx, patch)}
+                      onRemove={() => removeItem(t.id, idx)}
+                    />
+                  ))}
+                </Reorder.Group>
+                <button onClick={() => addItem(t.id)} className="w-full text-[11px] text-plannera-primary hover:bg-muted/30 py-2 flex items-center justify-center gap-1 border-t border-border-divider/30"><Plus className="w-3.5 h-3.5" /> Adicionar marco</button>
               </div>
             </Card>
           ))}
         </div>
       )}
     </PageContainer>
+  )
+}
+
+function ItemRow({ item, onChange, onRemove }: { item: Item; onChange: (patch: Partial<Item>) => void; onRemove: () => void }) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item value={item} dragListener={false} dragControls={controls} className="bg-surface-card">
+      <div className="grid grid-cols-[24px_1fr_120px_90px_90px_32px] gap-2 px-2 py-1.5 items-center">
+        <button
+          type="button"
+          onPointerDown={(e) => controls.start(e)}
+          className="cursor-grab active:cursor-grabbing text-content-secondary/40 hover:text-content-secondary touch-none flex items-center justify-center"
+          title="Arrastar para reordenar"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <input value={item.name} onChange={(e) => onChange({ name: e.target.value })} className={inputCls} />
+        <select value={item.milestone_type} onChange={(e) => onChange({ milestone_type: e.target.value })} className={inputCls}>
+          {TYPE_OPTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+        <input type="number" value={item.offset_days} onChange={(e) => onChange({ offset_days: Number(e.target.value) })} className={inputCls} />
+        <input type="number" value={item.duration_days} onChange={(e) => onChange({ duration_days: Number(e.target.value) })} className={inputCls} />
+        <button onClick={onRemove} className="text-content-secondary/50 hover:text-rose-500 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+      </div>
+    </Reorder.Item>
   )
 }
