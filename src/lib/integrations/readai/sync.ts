@@ -21,7 +21,7 @@ const MAX_PAGES_PER_USER = 60 // 60*10 = 600 reuniões por ciclo (backfill em v�
 // (FUNCTION_INVOCATION_TIMEOUT), salvando o cursor para retomar no próximo ciclo.
 const RUN_BUDGET_MS = 200_000
 
-interface UserState { historical_done?: boolean; last_sync_at?: string; cursor?: string }
+interface UserState { historical_done?: boolean; last_sync_at?: string; cursor?: string; backfill_from?: string }
 type SyncState = Record<string, UserState>
 
 export interface ReadAiSyncResult {
@@ -92,8 +92,10 @@ async function syncUser(
   const us = state[userId] ?? {}
   const startedAt = new Date().toISOString()
   const historicalDone = !!us.historical_done
-  // Backfill: RETOMA do cursor salvo (resumível entre ciclos). Incremental: filtra por data.
-  const startGte = historicalDone ? us.last_sync_at : undefined
+  // Incremental: filtra por last_sync_at. Backfill: RETOMA do cursor salvo (resumível);
+  // se houver `backfill_from`, aplica esse PISO de data (ex.: só reuniões ≥ 01/01/2026),
+  // tornando o backfill bounded — varre do mais novo ao piso e termina.
+  const startGte = historicalDone ? us.last_sync_at : us.backfill_from
 
   let cursor: string | undefined = historicalDone ? undefined : us.cursor
   let pages = 0
@@ -138,18 +140,18 @@ async function syncUser(
     // única execução; salvar o cursor garante que o próximo ciclo RETOME daqui em vez
     // de reprocessar sempre as primeiras páginas (que travaria o backfill no início).
     if (!historicalDone) {
-      state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at }
+      state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at, backfill_from: us.backfill_from }
       await writeState(state)
     }
   } while (cursor && pages < MAX_PAGES_PER_USER)
 
   if (historicalDone || !cursor) {
     // Incremental, ou backfill que varreu até o fim (sem mais páginas) → histórico
-    // completo; avança o relógio e limpa o cursor.
+    // completo; avança o relógio e limpa o cursor (e o piso de backfill).
     state[userId] = { historical_done: true, last_sync_at: startedAt }
   } else {
-    // Parou por orçamento de tempo / teto de páginas → mantém o cursor para retomar.
-    state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at }
+    // Parou por orçamento de tempo / teto de páginas → mantém cursor E piso para retomar.
+    state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at, backfill_from: us.backfill_from }
   }
 }
 
