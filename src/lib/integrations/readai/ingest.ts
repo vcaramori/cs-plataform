@@ -67,8 +67,11 @@ export async function ingestReadAiMeeting(
   const transcript = normalizeApiTranscript(m)
   const summary = (m.summary ?? null) as string | null
   const rawSentiment = typeof m.metrics?.sentiment === 'number' ? m.metrics!.sentiment! : null
-  // sentiment_score é numeric(4,3) (−9.999..9.999) — clamp defensivo p/ nunca estourar.
-  const sentiment = rawSentiment == null ? null : Math.max(-9.999, Math.min(9.999, Math.round(rawSentiment * 1000) / 1000))
+  // sentiment_score tem CHECK de faixa (−1..1) além de numeric(4,3). Fora da faixa válida →
+  // NULL (não arrisca violar o CHECK nem estourar). Dentro → arredonda a 3 casas.
+  const sentiment = rawSentiment != null && rawSentiment >= -1 && rawSentiment <= 1
+    ? Math.round(rawSentiment * 1000) / 1000
+    : null
   const meta = {
     participants: m.participants ?? [],
     owner: m.owner ?? null,
