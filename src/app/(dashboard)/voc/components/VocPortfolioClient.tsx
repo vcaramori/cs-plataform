@@ -1,14 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import {
-  Smile, Frown, AlertTriangle, ThumbsUp, MessageSquare, Star, TicketCheck, ChevronRight,
-} from 'lucide-react'
+import { Smile, Frown, ThumbsUp, MessageSquare, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,33 +16,11 @@ import { StatCardPremium } from '@/components/shared/guardians/StatCardPremium'
 import { DateRangePicker } from '@/components/ui/DateRangePicker'
 import { useDateRange } from '@/hooks/useDateRange'
 import { cn } from '@/lib/utils'
-import type { PortfolioVoc, Polarity, VocSource } from '@/lib/voc/portfolio-voc'
+import type { PortfolioVoc, Polarity } from '@/lib/voc/portfolio-voc'
+import { POLARITY_META, SOURCE_META, indexColor, dominantPolarity, fmtDate } from './voc-ui'
+import { SignalsDrawer, type DrawerState } from './SignalsDrawer'
 
-const SOURCE_META: Record<VocSource, { label: string; icon: typeof MessageSquare }> = {
-  interaction: { label: 'Interações', icon: MessageSquare },
-  nps: { label: 'NPS', icon: Star },
-  support: { label: 'Suporte', icon: TicketCheck },
-}
-
-const POLARITY_META: Record<Polarity, { label: string; emoji: string; text: string; bg: string; dot: string }> = {
-  positive: { label: 'Positivo', emoji: '👍', text: 'text-emerald-500', bg: 'bg-emerald-500/15', dot: 'bg-emerald-500' },
-  neutral: { label: 'Neutro', emoji: '💭', text: 'text-content-secondary', bg: 'bg-content-secondary/15', dot: 'bg-content-secondary/40' },
-  negative: { label: 'Negativo', emoji: '👎', text: 'text-red-500', bg: 'bg-red-500/15', dot: 'bg-red-500' },
-}
-
-function indexColor(idx: number) {
-  if (idx > 30) return 'emerald'
-  if (idx < -30) return 'demand'
-  return 'orange'
-}
-
-function dominantPolarity(a: { positive: number; neutral: number; negative: number }): Polarity {
-  if (a.negative >= a.positive && a.negative >= a.neutral) return 'negative'
-  if (a.positive >= a.neutral) return 'positive'
-  return 'neutral'
-}
-
-function TermList({ items, variant }: { items: Array<{ label: string; count: number }>; variant: 'pain' | 'praise' }) {
+function TermList({ items, variant, onPick }: { items: Array<{ label: string; count: number }>; variant: 'pain' | 'praise'; onPick: (label: string) => void }) {
   if (items.length === 0) {
     return (
       <div className="py-6 text-center border border-dashed border-border-divider rounded-xl">
@@ -55,9 +32,11 @@ function TermList({ items, variant }: { items: Array<{ label: string; count: num
   return (
     <ul className="space-y-2">
       {items.map((it, i) => (
-        <li key={`${it.label}-${i}`} className="flex justify-between items-center p-3 bg-surface-background rounded-xl border border-border-divider/50">
-          <span className="text-sm font-medium text-content-primary truncate">{it.label}</span>
-          <span className={cn('text-xs font-extrabold tabular-nums', color)}>{it.count}x</span>
+        <li key={`${it.label}-${i}`}>
+          <button onClick={() => onPick(it.label)} className="w-full flex justify-between items-center p-3 bg-surface-background rounded-xl border border-border-divider/50 hover:border-plannera-orange/40 hover:bg-surface-card transition-colors text-left">
+            <span className="text-sm font-medium text-content-primary truncate">{it.label}</span>
+            <span className={cn('text-xs font-extrabold tabular-nums', color)}>{it.count}x</span>
+          </button>
         </li>
       ))}
     </ul>
@@ -67,6 +46,7 @@ function TermList({ items, variant }: { items: Array<{ label: string; count: num
 export default function VocPortfolioClient() {
   const { dateFrom, dateTo, label } = useDateRange('30d')
   const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
+  const [drawer, setDrawer] = useState<DrawerState | null>(null)
 
   const { data, isLoading } = useQuery<PortfolioVoc>({
     queryKey: ['voc-portfolio', dateFrom, dateTo],
@@ -94,18 +74,23 @@ export default function VocPortfolioClient() {
     <div className="space-y-8">
       <DateRangePicker />
 
-      {/* KPIs */}
+      {/* KPIs — cada um abre os sinais que o compõem */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <StatCardPremium title="Índice de Sentimento" value={kpis.sentiment_index} iconName="Activity" colorVariant={indexColor(kpis.sentiment_index)} status="-100 a +100" />
-        <StatCardPremium title="Sinais Analisados" value={kpis.volume} iconName="MessageSquare" colorVariant="default" status={`Período: ${label}`} />
-        <StatCardPremium title="% Positivo" value={kpis.positive_pct} suffix="%" iconName="ThumbsUp" colorVariant="emerald" status="Da voz captada" />
-        <StatCardPremium title="% Negativo" value={kpis.negative_pct} suffix="%" iconName="ThumbsDown" colorVariant="destructive" status="Da voz captada" />
-        <StatCardPremium title="Contas em Alerta" value={kpis.accounts_at_risk} iconName="AlertTriangle" colorVariant="demand" status="Sentimento negativo" />
+        <StatCardPremium title="Índice de Sentimento" value={kpis.sentiment_index} iconName="Activity" colorVariant={indexColor(kpis.sentiment_index)} status="-100 a +100"
+          onClick={() => setDrawer({ kind: 'filter', title: 'Todos os sinais', subtitle: 'Compõem o índice de sentimento', filter: {} })} />
+        <StatCardPremium title="Sinais Analisados" value={kpis.volume} iconName="MessageSquare" colorVariant="default" status={`Período: ${label}`}
+          onClick={() => setDrawer({ kind: 'filter', title: 'Todos os sinais', filter: {} })} />
+        <StatCardPremium title="% Positivo" value={kpis.positive_pct} suffix="%" iconName="ThumbsUp" colorVariant="emerald" status="Da voz captada"
+          onClick={() => setDrawer({ kind: 'filter', title: 'Sinais positivos', filter: { polarity: 'positive' } })} />
+        <StatCardPremium title="% Negativo" value={kpis.negative_pct} suffix="%" iconName="ThumbsDown" colorVariant="destructive" status="Da voz captada"
+          onClick={() => setDrawer({ kind: 'filter', title: 'Sinais negativos', filter: { polarity: 'negative' } })} />
+        <StatCardPremium title="Contas em Alerta" value={kpis.accounts_at_risk} iconName="AlertTriangle" colorVariant="demand" status="Sentimento negativo"
+          onClick={() => setDrawer({ kind: 'filter', title: 'Voz negativa', subtitle: 'Sinais que puxam contas para o alerta', filter: { polarity: 'negative' } })} />
       </div>
 
-      {/* Tendência */}
+      {/* Tendência — clique num dia abre os sinais daquele dia */}
       <div className="space-y-4">
-        <SectionHeader title="Tendência de Sentimento" subtitle={`Média diária de todas as fontes — ${label}`} />
+        <SectionHeader title="Tendência de Sentimento" subtitle={`Média diária de todas as fontes — ${label} · clique num dia`} />
         <Card>
           <CardContent className="p-5">
             {trend.length === 0 ? (
@@ -115,7 +100,7 @@ export default function VocPortfolioClient() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={trend}>
+                <AreaChart data={trend} onClick={(e: any) => { const d = e?.activeLabel; if (d) setDrawer({ kind: 'filter', title: `Sinais de ${fmtDate(String(d))}`, filter: { day: String(d) } }) }} style={{ cursor: 'pointer' }}>
                   <defs>
                     <linearGradient id="vocSentiment" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f7941e" stopOpacity={0.3} />
@@ -150,11 +135,11 @@ export default function VocPortfolioClient() {
                   const pol = dominantPolarity(a)
                   const total = a.positive + a.neutral + a.negative
                   return (
-                    <Link key={a.account_id} href={`/accounts/${a.account_id}`} className="block group">
+                    <Link key={a.account_id} href={`/voc/${a.account_id}`} className="block group">
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
+                        transition={{ delay: Math.min(i * 0.03, 0.4) }}
                         className="flex items-center gap-3 p-3 rounded-xl border border-border-divider hover:border-plannera-operations/40 hover:bg-surface-background transition-colors"
                       >
                         <div className={cn('p-2 rounded-lg shrink-0', POLARITY_META[pol].bg)}>
@@ -189,7 +174,7 @@ export default function VocPortfolioClient() {
         </div>
 
         <div className="space-y-4">
-          <SectionHeader title="Distribuição por Fonte" subtitle="De onde vem a voz" />
+          <SectionHeader title="Distribuição por Fonte" subtitle="De onde vem a voz · clique para ver" />
           <Card>
             <CardContent className="p-5 space-y-4">
               {by_source.length === 0 ? (
@@ -201,9 +186,9 @@ export default function VocPortfolioClient() {
                   const Icon = SOURCE_META[s.source].icon
                   const total = s.positive + s.neutral + s.negative
                   return (
-                    <div key={s.source} className="space-y-1.5">
+                    <button key={s.source} onClick={() => setDrawer({ kind: 'filter', title: `Fonte: ${SOURCE_META[s.source].label}`, filter: { source: s.source } })} className="w-full space-y-1.5 text-left group">
                       <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-content-primary">
+                        <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-content-primary group-hover:text-plannera-orange transition-colors">
                           <Icon className="w-3.5 h-3.5 text-content-secondary" /> {SOURCE_META[s.source].label}
                         </span>
                         <span className="text-[10px] font-bold text-content-secondary">{total}</span>
@@ -213,7 +198,7 @@ export default function VocPortfolioClient() {
                           <div key={p} className={cn('h-full', POLARITY_META[p].dot)} style={{ width: `${(s[p] / total) * 100}%` }} title={`${POLARITY_META[p].label}: ${s[p]}`} />
                         ))}
                       </div>
-                    </div>
+                    </button>
                   )
                 })
               )}
@@ -222,7 +207,7 @@ export default function VocPortfolioClient() {
         </div>
       </div>
 
-      {/* Top Dores / Elogios */}
+      {/* Top Dores / Elogios — clique num termo abre os sinais daquele tema */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="space-y-4">
           <SectionHeader title="Top Dores" subtitle="Tags (NPS) + keywords (suporte) de sinais negativos" />
@@ -231,7 +216,7 @@ export default function VocPortfolioClient() {
               <Frown className="w-4 h-4 text-red-500" />
               <h3 className="text-[11px] font-black uppercase tracking-widest text-content-primary">O que dói</h3>
             </div>
-            <TermList items={top_pains} variant="pain" />
+            <TermList items={top_pains} variant="pain" onPick={(t) => setDrawer({ kind: 'filter', title: `Dor: ${t}`, filter: { theme: t, polarity: 'negative' } })} />
           </CardContent></Card>
         </div>
         <div className="space-y-4">
@@ -241,14 +226,14 @@ export default function VocPortfolioClient() {
               <ThumbsUp className="w-4 h-4 text-emerald-500" />
               <h3 className="text-[11px] font-black uppercase tracking-widest text-content-primary">O que encanta</h3>
             </div>
-            <TermList items={top_praises} variant="praise" />
+            <TermList items={top_praises} variant="praise" onPick={(t) => setDrawer({ kind: 'filter', title: `Elogio: ${t}`, filter: { theme: t, polarity: 'positive' } })} />
           </CardContent></Card>
         </div>
       </div>
 
-      {/* Citações */}
+      {/* Citações — clique abre a evidência (como foi avaliado) */}
       <div className="space-y-4">
-        <SectionHeader title="Citações & Vozes" subtitle="Trechos reais de interações e NPS no período" />
+        <SectionHeader title="Citações & Vozes" subtitle="Trechos reais · clique para ver a evidência" />
         <Card>
           <CardContent className="p-5">
             {quotes.length === 0 ? (
@@ -258,27 +243,29 @@ export default function VocPortfolioClient() {
               </div>
             ) : (
               <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-2 custom-scrollbar">
-                {quotes.map((q, i) => (
-                  <Link key={i} href={`/accounts/${q.account_id}`} className="block group">
+                {quotes.map((q) => (
+                  <button key={q.id} onClick={() => setDrawer({ kind: 'signal', signal: q })} className="w-full text-left group">
                     <div className="flex items-start gap-4 p-4 bg-surface-background rounded-xl border border-border-divider hover:bg-surface-card transition-colors">
                       <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', POLARITY_META[q.polarity].bg)}>
                         <span className="text-xl">{POLARITY_META[q.polarity].emoji}</span>
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-sm text-content-primary font-medium leading-relaxed">"{q.excerpt}"</p>
+                        <p className="text-sm text-content-primary font-medium leading-relaxed line-clamp-3">&quot;{q.excerpt}&quot;</p>
                         <p className="text-[10px] font-bold text-content-secondary uppercase tracking-widest opacity-70">
-                          {q.account_name} · {SOURCE_META[q.source].label} · {new Date(q.date).toLocaleDateString('pt-BR')}
+                          {q.account_name} · {SOURCE_META[q.source].label} · {fmtDate(q.date)}
                         </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-content-secondary/40 group-hover:text-content-secondary shrink-0 mt-1" />
                     </div>
-                  </Link>
+                  </button>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <SignalsDrawer state={drawer} onClose={() => setDrawer(null)} dateFrom={dateFrom} dateTo={dateTo} />
     </div>
   )
 }

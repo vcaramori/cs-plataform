@@ -1,5 +1,19 @@
 # Plano de Implementação — Módulo de VOC | Voz do Cliente (Revisado)
 
+> **Atualização (2026-06-23) — Redesenho de usabilidade: tudo clicável + evidência + CSAT + visão por conta (Fase 1)**
+>
+> O dashboard deixou de ser "morto ao clique". Agora **todo número é uma porta**: KPIs, barras de fonte, termos de dor/encanto, dias da tendência e citações abrem um **Drawer de Sinais** (a lista que compõe o número), e cada sinal expande no **Cartão de Evidência** — mostrando **como foi avaliado**: origem (Read.ai? IA nossa? nota direta do cliente?), nota + escala, texto-fonte, keywords/confiança e link para a fonte.
+>
+> - **Núcleo único** `buildVocSignals` em [`portfolio-voc.ts`](../../src/lib/voc/portfolio-voc.ts) (reusado por portfólio, conta e drill-down). Cada `VocSignal` carrega um payload `evidence`.
+> - **5ª fonte: CSAT** (`csat_responses`, nota 1-5 → −1..1) — antes 100% ignorada (era a maior fonte recente de voz).
+> - **Sentimento da agenda (Read.ai)** é rotulado explicitamente como "Avaliado pelo Read.ai" na evidência (vs. "Avaliado por IA" das interações manuais).
+> - **Interações filtradas pela DATA do evento** (não pela data de import) — corrige reuniões antigas recém-importadas aparecendo no período errado.
+> - **Visão por conta**: nova rota [`/voc/[accountId]`](../../src/app/(dashboard)/voc/[accountId]/page.tsx) (tendência, fontes, dores/encantos e feed completo da conta); as linhas do portfólio passam a apontar para ela.
+> - **Novos endpoints (só leitura, sem IA):** `GET /api/voc/signals` (drill-down) e `GET /api/voc/account/[id]`.
+> - **Componentes:** [`SignalsDrawer`](../../src/app/(dashboard)/voc/components/SignalsDrawer.tsx), [`SignalEvidence`](../../src/app/(dashboard)/voc/components/SignalEvidence.tsx), `voc-ui.tsx`.
+>
+> **Fases seguintes (planejadas):** Fase 2 — enriquecimento assíncrono (sentimento do comentário NPS, temas+citações de reuniões, taxonomia de temas, métricas do Read.ai via webhook) **só em cron batched/idempotente** (lição do incidente de Disk-IO). Fase 3 — taxonomia visível + ações (criar tarefa de uma dor, marcar falso-positivo) + tie-ins com health/RAG.
+
 > **Atualização (2026-05-29) — Virada para Dashboard de Portfólio + correção de schema**
 >
 > A tela `/voc` deixou de ser per-CSM (contas do usuário logado) e passou a ser um **dashboard de portfólio de Voz do Cliente**, no mesmo padrão visual do novo `/adoption`.

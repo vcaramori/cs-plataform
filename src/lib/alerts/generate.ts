@@ -1,5 +1,6 @@
 import { AlertService } from './alert-service'
 import { evaluateDerivedCatalog } from './catalog-alerts'
+import { notifyTeamsWebhook, TeamsAlertPayload } from './teams-notifier'
 
 export interface GenerateResult {
   processed: number
@@ -28,6 +29,7 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
   const service = new AlertService(supabase)
   let created = 0
   const errors: string[] = []
+  const newAlertsForTeams: TeamsAlertPayload[] = []
 
   for (const account of accounts) {
     try {
@@ -79,6 +81,17 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
         }
         created++
 
+        if (account.csm_owner_id) {
+          newAlertsForTeams.push({
+            alert_id: inserted.id,
+            alert_type: alert.type,
+            severity: alert.severity,
+            message: alert.message,
+            csm_email: account.csm_owner_id, // temporarily hold ID, map to email later
+            account_id: account.id,
+          })
+        }
+
         // Alerta nativo (sem entidade): cria tarefa sugerida e vincula como entidade tratada
         if (!alert.linked_entity_id && account.csm_owner_id) {
           const recommendation = alert.metadata?.recommendation as string | undefined
@@ -106,6 +119,30 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
       }
     } catch (e: any) {
       errors.push(`Account ${account.id}: ${e?.message ?? 'erro'}`)
+    }
+  }
+
+  // Notificar Teams via Power Automate (Webhook global)
+  if (newAlertsForTeams.length > 0) {
+    try {
+      const uniqueCsmIds = [...new Set(newAlertsForTeams.map(a => a.csm_email))]
+      const emailMap = new Map<string, string>()
+      
+      for (const id of uniqueCsmIds) {
+        const { data: { user } } = await supabase.auth.admin.getUserById(id)
+        if (user?.email) emailMap.set(id, user.email)
+      }
+
+      const payload = newAlertsForTeams.map(a => ({
+        ...a,
+        csm_email: emailMap.get(a.csm_email) || '',
+      })).filter(a => !!a.csm_email)
+
+      if (payload.length > 0) {
+        await notifyTeamsWebhook(payload)
+      }
+    } catch (err: any) {
+      console.error('[Generate Alerts] Erro ao preparar notificação do Teams:', err?.message)
     }
   }
 

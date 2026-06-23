@@ -169,6 +169,17 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🗣️ Voz do Cliente — redesenho de usabilidade: tudo clicável + evidência + CSAT + visão por conta (Fase 1) (2026-06-23)
+
+O `/voc` era um painel **morto ao clique** (KPIs/fontes/temas/tendência não abriam nada) e **subaproveitava os dados**. Fase 1 do redesenho (100% leitura, **zero IA nova** — seguro após o incidente de Disk-IO):
+
+- **Todo número é uma porta:** KPIs, barras de fonte, termos de dor/encanto, dias da tendência e citações abrem um **Drawer de Sinais** (a lista por trás do número); cada sinal expande no **Cartão de Evidência** — *como foi avaliado*: origem (**"Avaliado pelo Read.ai"** vs IA nossa vs nota direta do cliente), nota + escala, texto-fonte, keywords/confiança e link p/ a fonte. Componentes: [SignalsDrawer](src/app/(dashboard)/voc/components/SignalsDrawer.tsx), [SignalEvidence](src/app/(dashboard)/voc/components/SignalEvidence.tsx).
+- **5ª fonte: CSAT** (`csat_responses`, nota 1-5 → −1..1) — antes **100% ignorada** (e é a maior fonte recente de voz: 41 sinais/90d).
+- **Núcleo único** `buildVocSignals` em [portfolio-voc.ts](src/lib/voc/portfolio-voc.ts), reusado por portfólio, conta e drill-down; cada `VocSignal` carrega `evidence`. Interações agora filtram pela **DATA do evento** (não a de import).
+- **Visão por conta:** nova rota [/voc/[accountId]](src/app/(dashboard)/voc/[accountId]/page.tsx) (tendência, fontes, dores/encantos, feed completo); linhas do portfólio apontam para ela.
+- **Novos endpoints só-leitura:** `GET /api/voc/signals` (drill-down) e `GET /api/voc/account/[id]`.
+- **Fases seguintes:** 2 = enriquecimento assíncrono em cron (sentimento do comentário NPS, temas+citações de reuniões, taxonomia, métricas Read.ai via webhook); 3 = ações (tarefa de uma dor, falso-positivo) + tie-ins health/RAG. Detalhe em [docs/product/voc-plan.md](docs/product/voc-plan.md).
+
 ### 🎙️ Read.ai — transcrição completa enfim importada (fix do contrato REST) (2026-06-22)
 
 As reuniões importavam **só metadados** (título, data, duração, conta) — **transcrição, resumo e action items vinham vazios** (`raw_transcript = null` em 361/361 interações). Raiz: o cliente REST estava em desacordo com a doc oficial em dois pontos:

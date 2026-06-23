@@ -133,4 +133,7 @@ export const env = {
   app: {
     instanceName: process.env.NEXT_PUBLIC_INSTANCE_NAME ?? 'CS-Continuum',
   },
+  alerts: {
+    teamsWebhookUrl: process.env.TEAMS_ALERTS_WEBHOOK_URL ?? '',
+  },
 } as const
