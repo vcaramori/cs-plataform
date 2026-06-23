@@ -19,7 +19,7 @@ const STATE_KEY = 'readai_sync_state'
 const MAX_PAGES_PER_USER = 60 // 60*10 = 600 reuniões por ciclo (backfill em vários ciclos)
 // Orçamento de tempo por execução: retorna limpo ANTES do kill de 300s da Vercel
 // (FUNCTION_INVOCATION_TIMEOUT), salvando o cursor para retomar no próximo ciclo.
-const RUN_BUDGET_MS = 240_000
+const RUN_BUDGET_MS = 200_000
 
 interface UserState { historical_done?: boolean; last_sync_at?: string; cursor?: string }
 type SyncState = Record<string, UserState>
@@ -97,9 +97,15 @@ async function syncUser(
 
   let cursor: string | undefined = historicalDone ? undefined : us.cursor
   let pages = 0
+  let timedOut = false
   do {
     const { meetings, hasMore, nextCursor } = await listMeetings(token, { cursor, startDatetimeGte: startGte, limit: 10, baseUrl: apiBaseUrl })
     for (const m of meetings) {
+      // Orçamento checado POR REUNIÃO: cada uma pode levar ~30s (embed do transcript +
+      // extração de sinais por IA). Parar só entre páginas estouraria o kill de 300s no meio
+      // de uma página pesada. Se estourar aqui, NÃO avança o cursor → a página parcial é
+      // refeita no próximo ciclo (idempotente; o que já salvou pula o reprocessamento).
+      if (Date.now() > deadline) { timedOut = true; break }
       if (!m.id) { res.skipped++; continue }
       const meetingDate = meetingDateISO(m.start_time_ms)
       const accountId = resolveMeetingAccount(m, idx) ?? fallbackAccountId
@@ -122,6 +128,7 @@ async function syncUser(
         await logReadAiImport({ runId: ctx.runId, userId, source: ctx.source, externalMeetingId: m.id, title: m.title ?? null, meetingDate, action: 'error', detail: msg })
       }
     }
+    if (timedOut) break // página parcial: não avança o cursor (será refeita no próximo ciclo)
     cursor = hasMore ? nextCursor : undefined
     pages++
     // Persiste o progresso da paginação a CADA página. A API do Read.ai é lenta em
@@ -132,7 +139,6 @@ async function syncUser(
       state[userId] = { historical_done: false, cursor, last_sync_at: us.last_sync_at }
       await writeState(state)
     }
-    if (Date.now() > deadline) break // devolve limpo antes do kill de 300s; retoma no próximo ciclo
   } while (cursor && pages < MAX_PAGES_PER_USER)
 
   if (historicalDone || !cursor) {
