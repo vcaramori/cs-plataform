@@ -178,7 +178,9 @@ O `/voc` era um painel **morto ao clique** (KPIs/fontes/temas/tendência não ab
 - **Núcleo único** `buildVocSignals` em [portfolio-voc.ts](src/lib/voc/portfolio-voc.ts), reusado por portfólio, conta e drill-down; cada `VocSignal` carrega `evidence`. Interações agora filtram pela **DATA do evento** (não a de import).
 - **Visão por conta:** nova rota [/voc/[accountId]](src/app/(dashboard)/voc/[accountId]/page.tsx) (tendência, fontes, dores/encantos, feed completo); linhas do portfólio apontam para ela.
 - **Novos endpoints só-leitura:** `GET /api/voc/signals` (drill-down) e `GET /api/voc/account/[id]`.
-- **Fases seguintes:** 2 = enriquecimento assíncrono em cron (sentimento do comentário NPS, temas+citações de reuniões, taxonomia, métricas Read.ai via webhook); 3 = ações (tarefa de uma dor, falso-positivo) + tie-ins health/RAG. Detalhe em [docs/product/voc-plan.md](docs/product/voc-plan.md).
+**Fase 2 — enriquecimento assíncrono (cron `voc-enrich`, batched/idempotente, IO-safe):** novo cron [voc-enrich](src/app/api/cron/voc-enrich/route.ts) + [enrich.ts](src/lib/voc/enrich.ts) que, em lotes pequenos (concorrência 3, orçamento ~180s, idempotente por `*_analyzed_at`/`themes_extracted_at`): (a) classifica **sentimento + keywords do comentário NPS** (`nps_responses.sentiment_score/keywords`); (b) extrai **keywords do comentário CSAT**; (c) extrai **temas de dor/encanto das reuniões** → `interaction_themes` (com `polarity`). Normalização por dicionário `voc_theme_synonyms` (lento/lentidão→performance etc.). Migração `voc_phase2_enrichment`. **Nunca roda em request nem no sync do Read.ai** (lição do Disk-IO). `buildVocSignals` agora usa essas colunas e bucketiza `pains`/`praises` por sinal.
+
+**Fase 3 — ação a partir do sinal:** botão **"Criar tarefa"** no Cartão de Evidência → `POST /api/voc/action/create-task` cria uma `csm_tasks` (aparece em /atividades) com prioridade alta p/ sinais negativos. *(Falso-positivo e tie-ins health/RAG ficam como follow-up — ver [docs/product/voc-plan.md](docs/product/voc-plan.md).)*
 
 ### 🎙️ Read.ai — transcrição completa enfim importada (fix do contrato REST) (2026-06-22)
 

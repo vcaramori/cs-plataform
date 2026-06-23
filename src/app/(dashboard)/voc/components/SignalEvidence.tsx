@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ExternalLink, ArrowUpRight } from 'lucide-react'
+import { toast } from 'sonner'
+import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
@@ -18,6 +20,37 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
   const Src = SOURCE_META[signal.source].icon
   const meta = (ev.meta ?? {}) as Record<string, any>
   const participants = Array.isArray(meta.participants) ? meta.participants : null
+
+  const [saving, setSaving] = useState(false)
+  const [created, setCreated] = useState(false)
+  async function createTask() {
+    setSaving(true)
+    try {
+      const title = signal.polarity === 'negative'
+        ? `Tratar dor — ${signal.account_name}`
+        : `Follow-up Voz do Cliente — ${signal.account_name}`
+      const res = await fetch('/api/voc/action/create-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_id: signal.account_id,
+          source: signal.source,
+          source_id: signal.source_id,
+          title,
+          description: signal.excerpt ?? ev.title ?? '',
+          polarity: signal.polarity,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao criar tarefa')
+      toast.success('Tarefa criada em Atividades')
+      setCreated(true)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao criar tarefa')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -91,6 +124,19 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
           <p className="text-xs text-content-secondary">{participants.map((p: any) => p?.name ?? p?.email ?? '—').filter(Boolean).join(' · ')}</p>
         </div>
       )}
+
+      {/* Ação: criar atividade a partir do sinal */}
+      <button
+        onClick={createTask}
+        disabled={saving || created}
+        className={cn(
+          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors',
+          created ? 'bg-emerald-500/15 text-emerald-500' : 'bg-plannera-orange/10 text-plannera-orange hover:bg-plannera-orange/20 border border-plannera-orange/30'
+        )}
+      >
+        {created ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4" />}
+        {created ? 'Tarefa criada' : 'Criar tarefa'}
+      </button>
 
       {/* Rodapé: conta, data e links */}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-divider">

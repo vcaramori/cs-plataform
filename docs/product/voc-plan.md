@@ -12,7 +12,9 @@
 > - **Novos endpoints (só leitura, sem IA):** `GET /api/voc/signals` (drill-down) e `GET /api/voc/account/[id]`.
 > - **Componentes:** [`SignalsDrawer`](../../src/app/(dashboard)/voc/components/SignalsDrawer.tsx), [`SignalEvidence`](../../src/app/(dashboard)/voc/components/SignalEvidence.tsx), `voc-ui.tsx`.
 >
-> **Fases seguintes (planejadas):** Fase 2 — enriquecimento assíncrono (sentimento do comentário NPS, temas+citações de reuniões, taxonomia de temas, métricas do Read.ai via webhook) **só em cron batched/idempotente** (lição do incidente de Disk-IO). Fase 3 — taxonomia visível + ações (criar tarefa de uma dor, marcar falso-positivo) + tie-ins com health/RAG.
+> **Fase 2 — ENTREGUE (2026-06-23):** enriquecimento **assíncrono** via cron [`voc-enrich`](../../src/app/api/cron/voc-enrich/route.ts) + [`enrich.ts`](../../src/lib/voc/enrich.ts), em **lotes pequenos, concorrência 3, idempotente, orçamento ~180s** (lição do Disk-IO): (a) sentimento + keywords do comentário NPS; (b) keywords do comentário CSAT; (c) temas dor/encanto das reuniões → `interaction_themes` (com `polarity`). Normalização por dicionário `voc_theme_synonyms`. Migração `voc_phase2_enrichment`. `buildVocSignals` passou a bucketizar `pains`/`praises` por sinal. **Backfill é incremental pelo próprio cron** (não reprocessa em massa). `interactions.themes_extracted_at`/`*_analyzed_at` garantem idempotência.
+>
+> **Fase 3 — PARCIAL (2026-06-23):** ação **"Criar tarefa"** no Cartão de Evidência → `POST /api/voc/action/create-task` cria `csm_tasks` (aparece em /atividades; prioridade alta p/ sinal negativo). **Follow-up (não feito):** marcar falso-positivo (precisa ampliar o enum `risk_curation_feedback.source`) e tie-ins do índice VoC com health-score/RAG.
 
 > **Atualização (2026-05-29) — Virada para Dashboard de Portfólio + correção de schema**
 >
