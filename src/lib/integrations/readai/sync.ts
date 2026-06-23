@@ -115,7 +115,9 @@ async function syncUser(
         continue
       }
       try {
-        const r = await ingestReadAiMeeting(m, accountId, userId)
+        // Backfill em massa: NÃO extrai sinais por IA aqui (lento; estouraria a função e
+        // seguraria conexões). A transcrição/resumo são salvos; sinais ficam p/ tempo real.
+        const r = await ingestReadAiMeeting(m, accountId, userId, { extractSignals: false })
         if (r.action === 'created') res.created++
         else if (r.action === 'updated') res.updated++
         else if (r.action === 'merged') res.merged++

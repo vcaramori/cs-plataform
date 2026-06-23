@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       ingest = { skipped: true, reason: 'sem conta resolvida' }
     } else {
       try {
-        const outcome = await ingestReadAiMeeting(m, accountId, userId)
+        const outcome = await ingestReadAiMeeting(m, accountId, userId, { extractSignals: false })
         ingest = outcome
         const admin = getSupabaseAdminClient() as any
         const { data } = await admin.from('interactions').select('raw_transcript').eq('external_meeting_id', meetingId).maybeSingle()

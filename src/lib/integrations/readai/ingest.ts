@@ -49,8 +49,13 @@ async function attemptExtractSignals(interactionId: string, accountId: string, u
 export async function ingestReadAiMeeting(
   m: ReadAiMeeting,
   accountId: string,
-  userId: string
+  userId: string,
+  opts: { extractSignals?: boolean } = {}
 ): Promise<IngestOutcome> {
+  // Extração de sinais por IA roda um LLM sobre a transcrição inteira (~100s numa de 57KB):
+  // pesado demais p/ rodar SÍNCRONO no backfill em massa (estoura o tempo da função e segura
+  // conexões). Liga só na ingestão em tempo real (webhook). Default: ligado.
+  const runSignals = opts.extractSignals !== false
   const externalMeetingId = (m.id ?? '').toString()
   const title = (m.title ?? 'Reunião').toString().slice(0, 255)
   if (!m.id) return { action: 'skipped', detail: 'reunião sem id', accountId, title, externalMeetingId }
@@ -113,7 +118,7 @@ export async function ingestReadAiMeeting(
       (!!summary && summary !== prior.summary)
     if (contentChanged) {
       await embed(prior.id)
-      if (transcript && transcript !== prior.raw_transcript) {
+      if (runSignals && transcript && transcript !== prior.raw_transcript) {
         await attemptExtractSignals(prior.id, accountId, userId, transcript)
       }
     }
@@ -156,7 +161,7 @@ export async function ingestReadAiMeeting(
     if (Object.keys(tePatch).length) await admin.from('time_entries').update(tePatch).eq('id', c.time_entry_id)
 
     await embed(c.id)
-    if (transcript && transcript !== c.raw_transcript) {
+    if (runSignals && transcript && transcript !== c.raw_transcript) {
       await attemptExtractSignals(c.id, accountId, userId, transcript)
     }
     return { action: 'merged', detail: `mesclado com esforço manual (time_entry ${c.time_entry_id})`, accountId, title, externalMeetingId }
@@ -268,7 +273,7 @@ export async function ingestReadAiMeeting(
   }
 
   await embed(interactionId)
-  if (transcript) {
+  if (runSignals && transcript) {
     await attemptExtractSignals(interactionId, accountId, userId, transcript)
   }
 
