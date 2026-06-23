@@ -1,5 +1,6 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
+import { extractSignals } from '@/lib/signals/extract-signals'
 import { meetingDateISO, durationHours, normalizeApiTranscript, extractActionItems, type ReadAiMeeting } from './client'
 
 /**
@@ -30,6 +31,21 @@ export interface IngestOutcome {
 
 interface ExistingInteraction { id: string; time_entry_id: string | null; raw_transcript: string | null; summary: string | null }
 
+async function attemptExtractSignals(interactionId: string, accountId: string, userId: string, transcript?: string | null) {
+  if (!transcript || transcript.trim().length < 50) return
+  try {
+    await extractSignals({
+      text: transcript,
+      accountId,
+      sourceType: 'interaction',
+      sourceId: interactionId,
+      createdBy: userId,
+    })
+  } catch (e) {
+    console.error('[readai] Falha ao extrair sinais (wishlist/opps):', e)
+  }
+}
+
 export async function ingestReadAiMeeting(
   m: ReadAiMeeting,
   accountId: string,
@@ -45,7 +61,9 @@ export async function ingestReadAiMeeting(
   const hours = durationHours(m)
   const transcript = normalizeApiTranscript(m)
   const summary = (m.summary ?? null) as string | null
-  const sentiment = typeof m.metrics?.sentiment === 'number' ? m.metrics!.sentiment! : null
+  const rawSentiment = typeof m.metrics?.sentiment === 'number' ? m.metrics!.sentiment! : null
+  // sentiment_score é numeric(4,3) (−9.999..9.999) — clamp defensivo p/ nunca estourar.
+  const sentiment = rawSentiment == null ? null : Math.max(-9.999, Math.min(9.999, Math.round(rawSentiment * 1000) / 1000))
   const meta = {
     participants: m.participants ?? [],
     owner: m.owner ?? null,
@@ -93,7 +111,12 @@ export async function ingestReadAiMeeting(
     const contentChanged =
       (!!transcript && transcript !== prior.raw_transcript) ||
       (!!summary && summary !== prior.summary)
-    if (contentChanged) await embed(prior.id)
+    if (contentChanged) {
+      await embed(prior.id)
+      if (transcript && transcript !== prior.raw_transcript) {
+        await attemptExtractSignals(prior.id, accountId, userId, transcript)
+      }
+    }
     return { action: 'updated', accountId, title, externalMeetingId }
   }
 
@@ -133,6 +156,9 @@ export async function ingestReadAiMeeting(
     if (Object.keys(tePatch).length) await admin.from('time_entries').update(tePatch).eq('id', c.time_entry_id)
 
     await embed(c.id)
+    if (transcript && transcript !== c.raw_transcript) {
+      await attemptExtractSignals(c.id, accountId, userId, transcript)
+    }
     return { action: 'merged', detail: `mesclado com esforço manual (time_entry ${c.time_entry_id})`, accountId, title, externalMeetingId }
   }
 
@@ -242,6 +268,9 @@ export async function ingestReadAiMeeting(
   }
 
   await embed(interactionId)
+  if (transcript) {
+    await attemptExtractSignals(interactionId, accountId, userId, transcript)
+  }
 
   return possibleDuplicate
     ? { action: 'possible_duplicate', detail: `${candidates.length} esforços de reunião no mesmo dia/conta — importado à parte; revise para mesclar`, accountId, title, externalMeetingId }

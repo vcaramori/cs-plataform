@@ -143,7 +143,10 @@ export function meetingDateISO(ms?: number): string {
 /** Duração da reunião em horas (de start/end ms); fallback 1.0h. */
 export function durationHours(m: ReadAiMeeting): number {
   if (m.start_time_ms && m.end_time_ms && m.end_time_ms > m.start_time_ms) {
-    return Math.round(((m.end_time_ms - m.start_time_ms) / 3_600_000) * 100) / 100
+    const h = Math.round(((m.end_time_ms - m.start_time_ms) / 3_600_000) * 100) / 100
+    // Timestamps ruins geram durações absurdas que ESTOURAM numeric(5,2) (máx 999.99) e
+    // distorceriam o esforço; acima de 24h trata como não-confiável e cai no default.
+    return h > 24 ? 1.0 : h
   }
   return 1.0
 }
