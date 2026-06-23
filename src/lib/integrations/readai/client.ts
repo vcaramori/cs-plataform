@@ -128,6 +128,32 @@ export async function listMeetings(
   }
 }
 
+/** GET /v1/meetings/{id} (recurso único) com os mesmos campos expandidos da lista. */
+export async function getMeeting(
+  token: string,
+  id: string,
+  opts: { expand?: string[]; baseUrl?: string } = {}
+): Promise<ReadAiMeeting | null> {
+  const base = (opts.baseUrl?.trim() || DEFAULT_BASE).replace(/\/$/, '')
+  const url = new URL(`${base}/meetings/${encodeURIComponent(id)}`)
+  const expands = opts.expand ?? DEFAULT_EXPAND
+  let finalUrl = url.toString()
+  if (expands.length) {
+    finalUrl += (finalUrl.includes('?') ? '&' : '?') + expands.map((e) => `expand[]=${encodeURIComponent(e)}`).join('&')
+  }
+  const res = await fetch(finalUrl, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    cache: 'no-store',
+  })
+  if (res.status === 401 || res.status === 403) throw new ReadAiAuthError(`Read.ai token inválido/expirado (HTTP ${res.status}).`)
+  if (res.status === 404) return null
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Read.ai API ${res.status} em /meetings/${id}: ${body.slice(0, 300)}`)
+  }
+  return (await res.json()) as ReadAiMeeting
+}
+
 /** Valida um access token fazendo uma chamada mínima. Lança ReadAiAuthError se inválido. */
 export async function validateToken(token: string, baseUrl?: string): Promise<boolean> {
   await listMeetings(token, { limit: 1, expand: [], baseUrl })
