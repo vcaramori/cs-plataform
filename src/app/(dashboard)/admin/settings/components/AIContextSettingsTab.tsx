@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Brain, Save, Sparkles, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Loader2, Brain, Save, Sparkles, X, Edit3, AlignLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import { AI_INSTRUCTIONS, AI_INSTRUCTION_DOMAINS } from '@/lib/ai/instructions-catalog'
+import { AI_INSTRUCTIONS, AI_INSTRUCTION_DOMAINS, type AIInstructionDef } from '@/lib/ai/instructions-catalog'
 import { SkillDialog } from './SkillDialog'
 
 const RECOMMENDED_GLOBAL_CONTEXT = `Você é uma IA de Customer Success da Plannera (plataforma SaaS de S&OP/S&OE para indústria e MRO).
@@ -25,6 +26,10 @@ export function AIContextSettingsTab() {
   const [rules, setRules] = useState<any>(null)
   const [instructions, setInstructions] = useState<Record<string, string>>({})
   const [skills, setSkills] = useState<Skill[]>([])
+
+  // Modal State
+  const [editingInst, setEditingInst] = useState<AIInstructionDef | null>(null)
+  const [editingText, setEditingText] = useState('')
   const [glossaryRows, setGlossaryRows] = useState<{ sigla: string; sig: string }[]>([])
 
   async function loadAll() {
@@ -194,24 +199,44 @@ export function AIContextSettingsTab() {
             <p className="text-xs text-content-secondary">Sobrescreve o prompt-base de cada IA. Vazio = default do código.</p>
           </div>
           {AI_INSTRUCTION_DOMAINS.map((domain) => (
-            <div key={domain} className="space-y-2">
+            <div key={domain} className="space-y-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-content-secondary/60">{domain}</p>
-              {AI_INSTRUCTIONS.filter((i) => i.domain === domain).map((i) => (
-                <div key={i.key} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs">{i.label}</Label>
-                    <Badge variant={i.triggerType === 'auto' ? 'secondary' : 'info'} className="text-[8px]">{i.triggerType === 'auto' ? 'automático' : 'usuário'}</Badge>
-                    {instructions[i.key] && (
-                      <button className="text-[10px] text-content-secondary hover:text-red-500 inline-flex items-center gap-0.5"
-                        onClick={() => setInstructions((p) => { const n = { ...p }; delete n[i.key]; return n })}>
-                        <X className="w-3 h-3" /> limpar override
-                      </button>
-                    )}
-                  </div>
-                  <Textarea rows={2} value={instructions[i.key] ?? ''} placeholder="(usando default do código)"
-                    onChange={(e) => setInstructions((p) => ({ ...p, [i.key]: e.target.value }))} />
-                </div>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {AI_INSTRUCTIONS.filter((i) => i.domain === domain).map((i) => {
+                  const hasCustom = !!instructions[i.key]
+                  const isPlanned = i.status === 'planned'
+
+                  return (
+                    <div 
+                      key={i.key} 
+                      onClick={() => {
+                        setEditingInst(i)
+                        setEditingText(instructions[i.key] ?? '')
+                      }}
+                      className="border border-border-divider bg-surface-background/30 rounded-xl p-3 flex flex-col gap-2 cursor-pointer hover:border-plannera-orange/30 hover:bg-surface-background transition-all group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <Label className="text-xs font-semibold cursor-pointer group-hover:text-plannera-orange transition-colors">{i.label}</Label>
+                        <div className="flex flex-col gap-1 items-end">
+                          <Badge variant={i.triggerType === 'auto' ? 'secondary' : 'info'} className="text-[8px] whitespace-nowrap">{i.triggerType === 'auto' ? 'automático' : 'usuário'}</Badge>
+                          {isPlanned && <Badge variant="outline" className="text-[8px] text-content-secondary whitespace-nowrap border-dashed">planejado</Badge>}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-auto pt-1">
+                        <div className="flex items-center gap-1.5 text-content-secondary text-[10px]">
+                          {hasCustom ? (
+                            <span className="text-plannera-orange flex items-center gap-1 font-medium"><AlignLeft className="w-3 h-3"/> Customizado</span>
+                          ) : (
+                            <span className="flex items-center gap-1"><AlignLeft className="w-3 h-3"/> Padrão do código</span>
+                          )}
+                        </div>
+                        <Edit3 className="w-3.5 h-3.5 text-content-secondary group-hover:text-plannera-orange transition-colors" />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           ))}
         </CardContent>
@@ -220,6 +245,74 @@ export function AIContextSettingsTab() {
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar tudo</Button>
       </div>
+
+      <Dialog open={!!editingInst} onOpenChange={(o) => !o && setEditingInst(null)}>
+        <DialogContent className="max-w-3xl bg-surface-card border-border-divider">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-plannera-orange" />
+              Editar Prompt: {editingInst?.label}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-content-secondary">
+              Escreva as regras em Markdown. Este texto substituirá integralmente o prompt padrão desta rotina.
+              {editingInst?.status === 'planned' && (
+                <span className="ml-2 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  Esta funcionalidade está em fase de planejamento/integração.
+                </span>
+              )}
+            </p>
+            <Textarea 
+              className="font-mono text-xs p-4 resize-y bg-surface-background border-border-divider focus-visible:ring-plannera-orange" 
+              rows={16} 
+              value={editingText}
+              onChange={(e) => setEditingText(e.target.value)}
+              placeholder={editingInst?.default ?? 'Nenhum padrão cadastrado no catálogo. A IA usará o fallback embutido no código base.'}
+            />
+          </div>
+          <DialogFooter className="flex items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  if (editingInst?.default) setEditingText(editingInst.default)
+                }}
+              >
+                Copiar Padrão
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                onClick={() => setEditingText('')}
+              >
+                Limpar (Usar Padrão do Código)
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => setEditingInst(null)}>Cancelar</Button>
+              <Button onClick={() => {
+                if (editingInst) {
+                  setInstructions(p => {
+                    const n = { ...p }
+                    if (editingText.trim() === '') {
+                      delete n[editingInst.key]
+                    } else {
+                      n[editingInst.key] = editingText
+                    }
+                    return n
+                  })
+                }
+                setEditingInst(null)
+              }}>
+                Confirmar
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

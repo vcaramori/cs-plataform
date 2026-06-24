@@ -169,6 +169,14 @@ Em resposta à exigência de qualidade extrema ("não aceito mediocridade"), foi
 **UI implementada:** `/adoption`, `/cs-ops`, **AlertCenter Drawer** (Sidebar), **Power Map** (`/accounts/[id]`) — dashboards e widgets completos com todas as ações  
 **UI pendente:** Feature Dependency DAG ( mock/visualização de grafo pendente )  
 
+### 🧠 Painel de Governança de Prompts e Centralização de Instruções (2026-06-24)
+
+Redesenho da interface de configurações de IA (Aba "IA - Contexto & Regras") para facilitar o gerenciamento da "Single Source of Truth":
+- **Novo Modal Focado:** Remoção de imensas `Textareas` empilhadas em favor de Cards organizados por domínio. O clique abre um modal grande, ideal para redigir ou ler instruções complexas em Markdown.
+- **Catálogo Unificado:** Todos os textos "padrão" embutidos (fallbacks) do sistema foram migrados para o catálogo unificado em `instructions-catalog.ts`. Quando o CSM esvazia a customização de um prompt, a interface avisa exatamente o que a IA usará, e o botão **Copiar Padrão** permite partir do original para a customização.
+- **Visibilidade Planejado x Produção:** Diferenciação clara via badges visuais para identificar Prompts de IAs ativas no código *vs.* rotinas com a infraestrutura em construção (ex: *Detecção de Bloqueio de Adoção*, *Extração de VoC Lote*).
+- **Adeus Redundância:** A aba de configuração "IA & RAG" foi enxugada, mantendo apenas controles técnicos de API/Engine e retirando lógicas de contexto/interface, agora exclusivas na sua própria aba.
+
 ### 🗣️ Voz do Cliente — redesenho de usabilidade: tudo clicável + evidência + CSAT + visão por conta (Fase 1) (2026-06-23)
 
 O `/voc` era um painel **morto ao clique** (KPIs/fontes/temas/tendência não abriam nada) e **subaproveitava os dados**. Fase 1 do redesenho (100% leitura, **zero IA nova** — seguro após o incidente de Disk-IO):

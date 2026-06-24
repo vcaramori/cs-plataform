@@ -1,4 +1,3 @@
-import { env } from '@/lib/env'
 
 export interface TeamsAlertPayload {
   alert_id: string
@@ -9,11 +8,19 @@ export interface TeamsAlertPayload {
   account_id: string
 }
 
-export async function notifyTeamsWebhook(alerts: TeamsAlertPayload[]): Promise<void> {
-  const url = env.alerts.teamsWebhookUrl
-  if (!url || alerts.length === 0) return
+export async function notifyTeamsWebhook(supabase: any, alerts: TeamsAlertPayload[]): Promise<void> {
+  if (alerts.length === 0) return
 
   try {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'alerts_settings')
+      .single()
+
+    const url = data?.value?.teams_webhook_url
+    if (!url) return
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
 

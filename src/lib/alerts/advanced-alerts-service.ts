@@ -1,4 +1,5 @@
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export class AdvancedAlertsService {
@@ -173,9 +174,10 @@ export class AdvancedAlertsService {
 
       let suggestedResponse = 'Schedule check-in call to address concerns'
       try {
+        const sys = await buildSystemInstruction('sentiment_response_suggestion', 'Suggest a 1-sentence response that addresses the customer concern. Be empathetic and action-oriented.')
         const aiResponse = await generateText(
-          `Customer feedback: "${event.sentiment_text}"\n\nSuggest a 1-sentence response that addresses their concern. Be empathetic and action-oriented.`,
-          { maxOutputTokens: 200 }
+          `Customer feedback: "${event.sentiment_text}"`,
+          { systemInstruction: sys, maxOutputTokens: 200 }
         )
         suggestedResponse = aiResponse.result || suggestedResponse
       } catch (error) {

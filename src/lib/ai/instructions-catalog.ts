@@ -12,15 +12,60 @@ export interface AIInstructionDef {
   triggerType: 'user' | 'auto'
   /** opcional: default visível na UI (quando vazio, a UI mostra placeholder) */
   default?: string
+  status?: 'active' | 'planned'
 }
 
 export const AI_INSTRUCTIONS: AIInstructionDef[] = [
   // RAG / Assistente
-  { key: 'rag_system_instruction', label: 'Plannera Assistant (Perguntar)', domain: 'RAG / Assistente', triggerType: 'user' },
-  { key: 'instruction_chat', label: 'Chat Rápido', domain: 'RAG / Assistente', triggerType: 'user' },
+  { 
+    key: 'rag_system_instruction', 
+    label: 'Plannera Assistant (Perguntar)', 
+    domain: 'RAG / Assistente', 
+    triggerType: 'user',
+    default: `Você é o "Cérebro do CS", um assistente de inteligência de elite para Customer Success Managers da Plannera.
+Sua missão é realizar uma AUDITORIA EXAUSTIVA cruzando TODAS as fontes de dados disponíveis e extrair insights acionáveis.
+
+REGRAS CRÍTICAS DE IDIOMA E SEGURANÇA:
+1. RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL.
+2. É TERMINANTEMENTE PROIBIDO inventar fatos fora do contexto fornecido.
+3. Se a informação não existir, diga: "Não encontrei informações suficientes nos registros para responder a isso com precisão."
+
+INSTRUÇÕES DE SÍNTESE 360°:
+- Cruze as quatro dimensões: Journal de Esforço, Power Map, Financeiro/SLA e Health Score.
+- Priorize evidências concretas do Journal de Esforço sobre dados estruturados.
+
+CLASSIFICAÇÃO DE SAÚDE: 0-39 Vermelho (Risco Crítico) · 40-69 Amarelo (Atenção) · 70-100 Verde (Saudável)`
+  },
+  { 
+    key: 'instruction_chat', 
+    label: 'Chat Rápido', 
+    domain: 'RAG / Assistente', 
+    triggerType: 'user',
+    default: `Você é um assistente de Customer Success da Plannera.
+Responda SEMPRE em Português do Brasil. Seja conciso e direto.
+Use os dados fornecidos. Se não tiver informação suficiente, diga honestamente.
+Não invente dados. Não use caracteres não-latinos.`
+  },
 
   // Suporte
-  { key: 'instruction_review_reply', label: 'Revisor de Resposta a Ticket', domain: 'Suporte', triggerType: 'user' },
+  { 
+    key: 'instruction_review_reply', 
+    label: 'Revisor de Resposta a Ticket', 
+    domain: 'Suporte', 
+    triggerType: 'user',
+    default: `Você é o Revisor de Chamados da Plannera. Sua missão é revisar e aprimorar mensagens enviadas pela equipe de suporte, garantindo clareza, empatia, profissionalismo e consistência com o Padrão Plannera.
+
+PADRÃO PLANNERA — toda resposta deve ter:
+1. Saudação personalizada com o nome real do cliente
+2. Reconhecimento do pedido ou contexto específico do chamado
+3. Explicação objetiva ou status
+4. Próximos passos ou orientação
+5. Fechamento empático
+6. Assinatura: "Atenciosamente, [Nome do agente]\\nEquipe de Suporte – Plannera"
+
+AVALIAÇÃO DOS 5 CRITÉRIOS (0-10): Tom, Estrutura, Empatia, Clareza, Alinhamento.
+Nota final = Média Harmônica dos 5 critérios. show_alert=true se nota < 6.`
+  },
   { key: 'support_urgency', label: 'Urgência de Ticket', domain: 'Suporte', triggerType: 'auto' },
   { key: 'support_summary', label: 'Resumo de Ticket', domain: 'Suporte', triggerType: 'auto' },
   { key: 'support_categorization', label: 'Categorização de Ticket', domain: 'Suporte', triggerType: 'auto' },
@@ -32,21 +77,58 @@ export const AI_INSTRUCTIONS: AIInstructionDef[] = [
   { key: 'support_ticket_pdf', label: 'Extração de Tickets (PDF)', domain: 'Suporte', triggerType: 'user' },
 
   // Saúde / Risco
-  { key: 'instruction_shadow_score', label: 'Shadow Health Score', domain: 'Saúde / Risco', triggerType: 'auto' },
+  { 
+    key: 'instruction_shadow_score', 
+    label: 'Shadow Health Score', 
+    domain: 'Saúde / Risco', 
+    triggerType: 'auto',
+    default: `Você é um especialista em Customer Success. Analise os dados abaixo e gere um Shadow Health Score para este LOGO.
+
+CRITÉRIOS DE SCORE:
+- 80-100: Cliente saudável, engajado, poucos problemas
+- 60-79: Estável, mas com pontos de atenção
+- 40-59: Risco moderado, precisa de atenção ativa
+- 20-39: Alto risco, intervenção necessária
+- 0-19: Risco crítico de churn
+
+Retorne APENAS JSON válido com: score, trend, justification, risk_factors, confidence.`
+  },
   { key: 'predictive_risk', label: 'Risco Preditivo de Churn', domain: 'Saúde / Risco', triggerType: 'auto' },
+  { key: 'sentiment_response_suggestion', label: 'Sugestão de Resposta para Sentimento Baixo', domain: 'Saúde / Risco', triggerType: 'auto' },
 
   // Adoção
   { key: 'adoption_forecast', label: 'Forecast de Adoção', domain: 'Adoção', triggerType: 'user' },
-  { key: 'adoption_blockers', label: 'Detecção de Bloqueios de Adoção', domain: 'Adoção', triggerType: 'auto' },
+  { key: 'adoption_blockers', label: 'Detecção de Bloqueios de Adoção', domain: 'Adoção', triggerType: 'auto', status: 'planned' },
 
   // Engajamento
-  { key: 'instruction_auto_checkin', label: 'Auto Check-in', domain: 'Engajamento', triggerType: 'auto' },
+  { 
+    key: 'instruction_auto_checkin', 
+    label: 'Auto Check-in', 
+    domain: 'Engajamento', 
+    triggerType: 'auto',
+    default: `Você é um gerente de sucesso do cliente em uma plataforma SaaS. Gere um email de check-in profissional e personalizado.
+
+INSTRUÇÕES:
+1. Gere um assunto CURTO (máx 60 caracteres)
+2. Gere um corpo PROFISSIONAL (máx 200 palavras)
+3. Tom: consultivo, não vendedor
+4. Mencione o período de silêncio e sugira uma breve call de alinhamento
+
+Retorne APENAS JSON com: subject, body.`
+  },
   { key: 'meeting_prep', label: 'Preparação de Reunião', domain: 'Engajamento', triggerType: 'user' },
 
   // Interações / Esforço
   { key: 'interaction_sentiment', label: 'Sentimento de Reunião', domain: 'Interações / Esforço', triggerType: 'auto' },
   { key: 'interaction_hours', label: 'Extração de Horas', domain: 'Interações / Esforço', triggerType: 'auto' },
   { key: 'time_entry_parse', label: 'Parse de Esforço (linguagem natural)', domain: 'Interações / Esforço', triggerType: 'user' },
+  { key: 'voc_extraction', label: 'Extração de VoC (Transcrições)', domain: 'Interações / Esforço', triggerType: 'auto', status: 'planned' },
+  { key: 'voc_enrichment', label: 'Enriquecimento de VoC em Lote', domain: 'Interações / Esforço', triggerType: 'auto' },
+  { key: 'signal_extractor', label: 'Extração Unificada de Sinais', domain: 'Interações / Esforço', triggerType: 'auto' },
+
+  // Oportunidades
+  { key: 'opportunity_plan_match', label: 'Match de Plano de Oportunidade', domain: 'Oportunidades', triggerType: 'auto' },
+  { key: 'opportunity_brief', label: 'Narrativa/Brief de Oportunidade', domain: 'Oportunidades', triggerType: 'auto' },
 
   // Wishlist
   { key: 'wishlist_extractor', label: 'Extração de Pedidos', domain: 'Wishlist', triggerType: 'auto' },

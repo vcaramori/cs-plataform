@@ -1,4 +1,5 @@
 import { generateText } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { safeParseLLMJson } from '@/lib/llm/safe-json'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -18,8 +19,9 @@ const SYS = 'Você é um analista de Customer Success de uma plataforma SaaS de 
 
 async function classify(prompt: string, maxTokens = 220): Promise<any | null> {
   try {
+    const sys = await buildSystemInstruction('voc_enrichment', SYS)
     const res = await Promise.race([
-      generateText(prompt, { systemInstruction: SYS, temperature: 0.2, maxOutputTokens: maxTokens, responseMimeType: 'application/json', disableThinking: true }),
+      generateText(prompt, { systemInstruction: sys, temperature: 0.2, maxOutputTokens: maxTokens, responseMimeType: 'application/json', disableThinking: true }),
       new Promise<never>((_, rej) => setTimeout(() => rej(new Error('llm timeout')), LLM_TIMEOUT_MS)),
     ])
     if (!res?.result) return null

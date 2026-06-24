@@ -139,7 +139,7 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
       })).filter(a => !!a.csm_email)
 
       if (payload.length > 0) {
-        await notifyTeamsWebhook(payload)
+        await notifyTeamsWebhook(supabase, payload)
       }
     } catch (err: any) {
       console.error('[Generate Alerts] Erro ao preparar notificação do Teams:', err?.message)

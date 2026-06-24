@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -20,15 +20,27 @@ const DEFAULT = {
   nps_detractor_followup_days: 3,
   anomaly_zscore_threshold: 2.5,
   adoption_cliff_percent: 20,
+  teams_webhook_url: '',
 }
 
 export function AlertSettingsTab() {
   const [values, setValues] = useState(DEFAULT)
   const [saving, setSaving] = useState(false)
 
-  function set(key: keyof typeof DEFAULT, val: number) {
+  function set(key: keyof typeof DEFAULT, val: number | string) {
     setValues(v => ({ ...v, [key]: val }))
   }
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.alerts_settings) {
+          setValues(v => ({ ...v, ...data.alerts_settings }))
+        }
+      })
+      .catch(err => console.error(err))
+  }, [])
 
   async function handleSave() {
     setSaving(true)
@@ -60,6 +72,19 @@ export function AlertSettingsTab() {
     </div>
   )
 
+  const TextField = ({ k, label, placeholder = '' }: { k: keyof typeof DEFAULT; label: string; placeholder?: string }) => (
+    <div className="space-y-1.5">
+      <Label className="text-[10px] font-bold uppercase tracking-wider text-content-secondary">{label}</Label>
+      <Input
+        type="text"
+        placeholder={placeholder}
+        value={String(values[k])}
+        onChange={e => set(k, e.target.value)}
+        className="bg-surface-background/50 border-border-divider rounded-xl"
+      />
+    </div>
+  )
+
   return (
     <div className="space-y-8">
       <SectionHeader title="Alertas & Automações" />
@@ -85,6 +110,19 @@ export function AlertSettingsTab() {
           <Field k="nps_detractor_followup_days" label="Follow-up detrator em" min={1} max={14} unit="dias" />
           <Field k="anomaly_zscore_threshold" label="Z-score para anomalia" min={1} max={5} />
           <Field k="adoption_cliff_percent" label="Queda de adoção (cliff)" min={5} max={50} unit="%" />
+        </Card>
+
+        <Card className="p-6 space-y-4 md:col-span-3">
+          <h3 className="font-bold text-content-primary text-sm mb-2">Integrações (Notificações)</h3>
+          <TextField 
+            k="teams_webhook_url" 
+            label="Webhook do Power Automate (Teams)" 
+            placeholder="https://defaultf3eedc7b.../invoke?api-version=1&sp=..." 
+          />
+          <p className="text-xs text-content-secondary">
+            Gere a URL configurando o gatilho "Quando uma solicitação HTTP é recebida" no Power Automate.
+            Use "Qualquer pessoa" (Anyone) na opção "Quem pode acionar".
+          </p>
         </Card>
       </div>
 

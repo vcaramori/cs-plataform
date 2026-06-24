@@ -41,7 +41,7 @@ export async function GET() {
   const { data, error } = await (admin as any)
     .from('app_settings')
     .select('key, value')
-    .in('key', ['rag_ai_settings', 'llm_provider_keys', 'ai_global_context', 'ai_context_rules', 'sop_glossary', ...INSTRUCTION_KEYS, ...AI_INSTRUCTIONS.map((i) => i.key)])
+    .in('key', ['rag_ai_settings', 'llm_provider_keys', 'ai_global_context', 'ai_context_rules', 'sop_glossary', 'alerts_settings', ...INSTRUCTION_KEYS, ...AI_INSTRUCTIONS.map((i) => i.key)])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -107,6 +107,17 @@ export async function POST(request: Request) {
       }
       invalidateAIContextCache()
       invalidateSopGlossaryCache()
+      return NextResponse.json({ ok: true })
+    }
+
+    if (module === 'alerts') {
+      const { error } = await db.from('app_settings').upsert({
+        key: 'alerts_settings',
+        value: settings,
+        description: 'Configurações do motor de alertas e Integrações (Teams)',
+        updated_by: user.id
+      }, { onConflict: 'key' })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ ok: true })
     }
 
