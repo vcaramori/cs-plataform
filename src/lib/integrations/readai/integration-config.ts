@@ -39,6 +39,12 @@ export interface ReadAiIntegrationConfig {
   oauth_audience?: string
   oauth_metadata_url?: string
   api_base_url?: string
+  /**
+   * Piso de data do backfill histórico (ISO). Ao "Importar minhas reuniões"/conectar, o
+   * sistema importa só reuniões ≥ essa data — bounded + resumível pelo cron, sem varrer
+   * toda a história nem pesar o I/O. Vazio = 1º de janeiro do ano corrente (default no código).
+   */
+  backfill_from?: string
 }
 
 export async function getReadAiConfig(): Promise<ReadAiIntegrationConfig> {

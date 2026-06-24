@@ -208,7 +208,12 @@ export async function runReadAiSyncForUser(
   const apiBaseUrl = cfg.api_base_url?.trim() || undefined
   const ctx: SyncCtx = { runId: randomUUID(), source: opts.source }
 
-  if (opts.force) state[userId] = { historical_done: false, last_sync_at: undefined, cursor: undefined }
+  if (opts.force) {
+    // Import self-service / ao conectar = backfill BOUNDED por data (resumível pelo cron,
+    // IO-safe). Piso configurável no banco; default = 1º de janeiro do ano corrente.
+    const floor = cfg.backfill_from?.trim() || `${new Date().getUTCFullYear()}-01-01T00:00:00Z`
+    state[userId] = { historical_done: false, cursor: undefined, backfill_from: floor }
+  }
 
   res.users = 1
   try {
