@@ -15,6 +15,8 @@
 > **Fase 2 — ENTREGUE (2026-06-23):** enriquecimento **assíncrono** via cron [`voc-enrich`](../../src/app/api/cron/voc-enrich/route.ts) + [`enrich.ts`](../../src/lib/voc/enrich.ts), em **lotes pequenos, concorrência 3, idempotente, orçamento ~180s** (lição do Disk-IO): (a) sentimento + keywords do comentário NPS; (b) keywords do comentário CSAT; (c) temas dor/encanto das reuniões → `interaction_themes` (com `polarity`). Normalização por dicionário `voc_theme_synonyms`. Migração `voc_phase2_enrichment`. `buildVocSignals` passou a bucketizar `pains`/`praises` por sinal. **Backfill é incremental pelo próprio cron** (não reprocessa em massa). `interactions.themes_extracted_at`/`*_analyzed_at` garantem idempotência.
 >
 > **Fase 3 — PARCIAL (2026-06-23):** ação **"Criar tarefa"** no Cartão de Evidência → `POST /api/voc/action/create-task` cria `csm_tasks` (aparece em /atividades; prioridade alta p/ sinal negativo). **Follow-up (não feito):** marcar falso-positivo (precisa ampliar o enum `risk_curation_feedback.source`) e tie-ins do índice VoC com health-score/RAG.
+>
+> **Ajuste (2026-06-24) — "Abrir fonte" abre a origem real:** o `deep_link` deixou de apontar para a conta. Interações → `/accounts/{id}?interaction={id}` e NPS → `/accounts/{id}?nps={id}`; a [`AccountUnifiedTimeline`](../../src/app/(dashboard)/accounts/[id]/components/AccountUnifiedTimeline.tsx) lê o query param no mount e **auto-abre o modal de detalhe** (transcrição da reunião / detalhe do NPS) que originou a avaliação. Suporte/CSAT já abriam o chamado (`/suporte/{ticket_id}`). "Ver conta" continua indo para `/voc/{id}`.
 
 > **Atualização (2026-05-29) — Virada para Dashboard de Portfólio + correção de schema**
 >

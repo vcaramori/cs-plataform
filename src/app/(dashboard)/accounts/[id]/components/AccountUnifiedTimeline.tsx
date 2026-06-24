@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
 import { EffortEditModal } from '@/components/shared/EffortEditModal'
 import { NPSDetailModal } from './NPSDetailModal'
@@ -43,12 +43,29 @@ export function AccountUnifiedTimeline({
   const [selectedContract, setSelectedContract] = useState<any>(null)
   const [selectedHealthEvent, setSelectedHealthEvent] = useState<any>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const itemsPerPage = 5
 
   useEffect(() => {
     setPage(1)
   }, [filter])
+
+  // Deep-link: abrir direto o detalhe da origem (ex.: vindo de "Abrir fonte" na VOC).
+  // Lê ?interaction=<id> ou ?nps=<id> da URL e abre o modal correspondente.
+  useEffect(() => {
+    const interactionId = searchParams.get('interaction')
+    if (interactionId) {
+      const found = interactions.find((i) => i.id === interactionId)
+      if (found) { setSelectedInteraction(found); return }
+    }
+    const npsId = searchParams.get('nps')
+    if (npsId) {
+      const found = npsResponses.find((n) => n.id === npsId)
+      if (found) setSelectedNPS({ ...found, account_name: accountName || accounts[0]?.name || 'Conta Cliente' })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   // Helper: determinar tipo de evento de contrato
   const determineContractEventType = (contract: any): string => {

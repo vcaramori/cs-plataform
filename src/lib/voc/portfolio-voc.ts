@@ -239,7 +239,7 @@ export async function buildVocSignals(
         keywords: themes.map((t) => t.theme),
         confidence: null, author: null,
         meta: { interaction_type: i.type ?? null, summary: i.summary ?? null, participants: meta.participants ?? null, report_url: meta.report_url ?? null, read_score: (meta as any).read_score ?? null },
-        deep_link: `/accounts/${i.account_id}`,
+        deep_link: `/accounts/${i.account_id}?interaction=${i.id}`,
       },
     })
   }
@@ -275,7 +275,7 @@ export async function buildVocSignals(
         keywords: terms,
         confidence: null, author: null,
         meta: { segment, nps_score: Number(n.score) },
-        deep_link: `/nps`,
+        deep_link: `/accounts/${n.account_id}?nps=${n.id}`,
       },
     })
   }
