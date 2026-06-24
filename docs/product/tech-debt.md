@@ -30,7 +30,11 @@ Erros `ERROR: column ... does not exist` aparecem nos logs do Postgres (vistos v
 - `interactions.quotes` (coluna jsonb) criada por migração mas **nunca populada/usada**. Decidir: usar (citações por reunião) ou remover.
 - Normalização de temas de VoC é por **dicionário** (`voc_theme_synonyms`) — sem clustering por IA. Evolução possível (assíncrona) para agrupar temas semelhantes melhor.
 
+### Read.ai — corrida no refresh de token sob sync concorrente (2026-06-24)
+O refresh token do Read.ai é **single-use rotativo**. Se dois `runReadAiSync`/`runReadAiSyncForUser` rodam concorrentes para o mesmo CSM (ex.: cron + clique do usuário ao mesmo tempo), um consome o refresh token e o outro recebe um já inválido → `ReadAiAuthError: token inválido`. Provável causa do erro transitório visto na conta do vinicius (a UI mostra "conectado" porque só checa a existência do registro, não a validade). Mitigar: lock/serialização por usuário no sync, e/ou a UI validar o token (não só existência). Impacto: importação de um CSM pode falhar esporadicamente sob concorrência.
+
 ## ✅ Resolvidos
+- (2026-06-24) Import self-service não fazia backfill histórico bounded → agora "Importar"/conectar seta `backfill_from` (default 1º jan do ano) e o cron completa sozinho (autônomo + IO-safe).
 - (2026-06-23) Read.ai não importava transcrição — contrato REST errado (`expand[]` + shape `turns/text`). Corrigido.
 - (2026-06-23) Overflow de `numeric` (duração/sentiment) abortava ingest do Read.ai. Corrigido (clamp).
 - (2026-06-23) Backfill do Read.ai travava (estado salvo só no fim) e estourava o tempo. Corrigido (cursor por página + orçamento por reunião + piso `backfill_from`).
