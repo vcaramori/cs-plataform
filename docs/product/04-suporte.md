@@ -522,6 +522,12 @@ Mecanismo para manter a fila de suporte limpa de chamados resolvidos mas não en
 - Cada alteração chama `PATCH /api/support-tickets/[id]` imediatamente, sem precisar enviar uma resposta
 - Indicador "Salvando..." visível durante a chamada (`savingProps`)
 - O campo Status permanece no rodapé do compose, vinculado ao ciclo de vida da resposta
+- **Prioridade inclui "Bug Blocker"** (`priority='blocker'`, topo da lista) — coluna `support_tickets.priority` aceita `low|medium|high|critical|blocker` (migration `support_bug_blocker_and_resolution_notes`).
+- **Campo "Detalhamento (bug / operação)"** (`support_tickets.resolution_notes`, texto livre) — salvo ao sair do campo (onBlur) e incluído na exportação.
+
+**Layout do detalhe (2026-06-24):** o scroll acontece **apenas na área de mensagens** (a página não rola); a área de mensagens tem **fundo branco** (`bg-white dark:bg-slate-900`); no sidebar direito, **SLA + Classificação ficam fixos** no topo e só o bloco inferior (Responsável + Sentimento) rola.
+
+**Exportação XLSX (2026-06-24):** a aba "Tickets" agora exporta **todas as colunas** de `support_tickets` (rótulos amigáveis quando conhecidos, nome bruto da coluna nas demais), incluindo `resolution_notes`, além de Cliente e CSAT.
 
 **Status disponíveis no dropdown (padrão de mercado — osTicket/Zendesk/Freshdesk):**
 

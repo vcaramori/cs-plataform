@@ -47,10 +47,11 @@ const DEFAULT_FIELDS: FieldDefinition[] = [
     type: 'enum',
     operators: ['eq', 'neq', 'in', 'nin'],
     options: [
-      { value: 'low', label: 'Baixa' },
-      { value: 'medium', label: 'Média' },
-      { value: 'high', label: 'Alta' },
+      { value: 'blocker', label: 'Bug Blocker' },
       { value: 'critical', label: 'Crítica' },
+      { value: 'high', label: 'Alta' },
+      { value: 'medium', label: 'Média' },
+      { value: 'low', label: 'Baixa' },
     ],
   },
   {

@@ -8,7 +8,7 @@ export interface SupportTicket {
   title: string
   description: string
   status: 'open' | 'in_progress' | 'resolved' | 'closed'
-  priority: 'low' | 'medium' | 'high' | 'critical'
+  priority: 'low' | 'medium' | 'high' | 'critical' | 'blocker'
   category?: string
   account_id: string
   opened_at: string

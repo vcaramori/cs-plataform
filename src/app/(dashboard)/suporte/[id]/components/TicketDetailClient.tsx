@@ -95,10 +95,11 @@ const STATUSES = [
 ]
 
 const PRIORITIES = [
-  { value: 'low', label: 'Baixo' },
-  { value: 'medium', label: 'Médio' },
-  { value: 'high', label: 'Alto' },
+  { value: 'blocker', label: 'Bug Blocker' },
   { value: 'critical', label: 'Crítico' },
+  { value: 'high', label: 'Alto' },
+  { value: 'medium', label: 'Médio' },
+  { value: 'low', label: 'Baixo' },
 ]
 
 const LEVELS = [
@@ -119,6 +120,7 @@ interface Ticket {
   priority: string
   internal_level?: string | null
   category?: string | null
+  resolution_notes?: string | null
   opened_at: string
   resolved_at?: string | null
   product?: string | null
@@ -234,6 +236,7 @@ const statusCfg: Record<string, { label: string; color: string; dot: string }> =
 }
 
 const priorityCfg: Record<string, { label: string; color: string }> = {
+  blocker: { label: 'Bug Blocker', color: 'text-rose-600 font-black' },
   critical: { label: 'Crítico', color: 'text-destructive' },
   high: { label: 'Alto', color: 'text-accent' },
   medium: { label: 'Médio', color: 'text-secondary' },
@@ -681,6 +684,8 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const [editCategory, setEditCategory] = useState(normalizeCategory(ticket.category))
   const [editProduct, setEditProduct] = useState(ticket.product ?? '')
   const [editContractId, setEditContractId] = useState(ticket.contract_id ?? '')
+  const [editNotes, setEditNotes] = useState(ticket.resolution_notes ?? '')
+  const lastSavedNotes = useRef(ticket.resolution_notes ?? '')
   const [contracts, setContracts] = useState<any[]>([])
   const [savingProps, setSavingProps] = useState(false)
 
@@ -735,13 +740,17 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   }, [messages])
 
 
-  async function handleAutoSave(field: 'priority' | 'category' | 'product' | 'contract_id', value: string) {
+  async function handleAutoSave(field: 'priority' | 'category' | 'product' | 'contract_id' | 'resolution_notes', value: string) {
     setSavingProps(true)
     try {
+      // resolution_notes é texto livre: '' significa limpar (null); demais campos tratam 'none' como null.
+      const payloadValue = field === 'resolution_notes'
+        ? (value.trim() === '' ? null : value)
+        : (value === 'none' || value === '' ? null : value)
       await fetch(`/api/support-tickets/${ticket.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value === 'none' || value === '' ? null : value }),
+        body: JSON.stringify({ [field]: payloadValue }),
       })
     } catch (err) {
       console.error('[TicketDetail] Save prop error:', err)
@@ -957,7 +966,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
   const handleFileClick = () => fileInputRef.current?.click()
 
   return (
-    <PageContainer noPadding className="flex flex-col h-full min-h-0">
+    <PageContainer noPadding className="flex flex-col h-full min-h-0 overflow-hidden">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-20 border-b border-border-divider bg-surface-card px-6 py-2 shadow-sm">
@@ -1050,7 +1059,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         <div className="flex-1 min-w-0 xl:border-r border-border-divider flex flex-col min-h-0 relative">
 
           {/* Thread (scrollable) */}
-          <div ref={threadRef} className="flex-1 p-6 space-y-5 bg-surface-background overflow-y-auto custom-scrollbar">
+          <div ref={threadRef} className="flex-1 p-6 space-y-5 bg-white dark:bg-slate-900 overflow-y-auto custom-scrollbar">
 
             {/* Banner de Mesclagem */}
             {ticket.merged_into && ticket.merged_at && (
@@ -1397,10 +1406,10 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
         </div>
 
         {/* RIGHT: Sidebar ──────────────────────────────────────────── */}
-        <div className="w-full xl:w-72 xl:shrink-0 bg-surface-card border-t xl:border-t-0 xl:border-l border-border-divider overflow-y-auto custom-scrollbar">
+        <div className="w-full xl:w-72 xl:shrink-0 bg-surface-card border-t xl:border-t-0 xl:border-l border-border-divider flex flex-col min-h-0 overflow-hidden">
 
           {/* ─ SLA ───────────────────────────────────────────── */}
-          <section className="border-b border-border-divider p-4 space-y-3">
+          <section className="shrink-0 border-b border-border-divider p-4 space-y-3">
             <div className="flex items-center justify-between">
               <TooltipProvider>
                 <Tooltip>
@@ -1451,7 +1460,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
           </section>
 
           {/* ─ Classificação (auto-save) ─────────────────────── */}
-          <section className="border-b border-border-divider p-4 space-y-2.5">
+          <section className="shrink-0 border-b border-border-divider p-4 space-y-2.5">
             <div className="flex items-center justify-between">
               <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Classificação</Text>
               {savingProps && (
@@ -1510,7 +1519,22 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
                 )}
               </SelectContent>
             </Select>
+
+            {/* Detalhamento do bug/operação (texto livre, salvo ao sair do campo) */}
+            <div className="space-y-1 pt-1">
+              <Text variant="secondary" className="text-[9px] font-black uppercase tracking-[0.15em]">Detalhamento (bug / operação)</Text>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                onBlur={() => { if (editNotes !== lastSavedNotes.current) { lastSavedNotes.current = editNotes; handleAutoSave('resolution_notes', editNotes) } }}
+                placeholder="Descreva o bug identificado ou a operação realizada…"
+                className="min-h-[80px] text-[11px] bg-surface-background border-border-divider text-content-primary resize-y custom-scrollbar"
+              />
+            </div>
           </section>
+
+          {/* Bloco rolável: responsável + sentimento (a classificação acima fica fixa) */}
+          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
 
           {/* ─ Responsável ───────────────────────────────────── */}
           <section className="border-b border-border-divider p-4 space-y-3">
@@ -1608,6 +1632,7 @@ export function TicketDetailClient({ ticket: init, events: initEvents, messages:
             <Text variant="secondary" className="text-[10px] font-black uppercase tracking-[0.2em]">Análise de Sentimento</Text>
             <SentimentTimeline ticketId={ticket.id} />
           </section>
+          </div>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ export type InteractionType = 'meeting' | 'email' | 'qbr' | 'onboarding' | 'heal
 export type InteractionSource = 'readai' | 'manual' | 'csv'
 export type ActivityType = 'preparation' | 'environment-analysis' | 'strategy' | 'reporting' | 'internal-meeting' | 'other'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'reopened'
-export type TicketPriority = 'low' | 'medium' | 'high' | 'critical'
+export type TicketPriority = 'low' | 'medium' | 'high' | 'critical' | 'blocker'
 export type TicketSource = 'csv' | 'manual'
 
 export type SupportTicketMessage = {
@@ -262,6 +262,7 @@ export type SupportTicket = {
   created_at: string
   external_priority_label: string | null
   internal_level: 'critical' | 'high' | 'medium' | 'low' | null
+  resolution_notes?: string | null
   sla_policy_id: string | null
   first_response_deadline: string | null
   first_response_attention_at: string | null
