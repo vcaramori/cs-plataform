@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
 import { POLARITY_META, SOURCE_META, fmtDate } from './voc-ui'
+import { VocSourceModal } from './VocSourceModal'
 
 /**
  * Cartão de Evidência — "como este sentimento foi avaliado".
@@ -23,6 +25,14 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
 
   const [saving, setSaving] = useState(false)
   const [created, setCreated] = useState(false)
+  const [sourceOpen, setSourceOpen] = useState(false)
+  const searchParams = useSearchParams()
+  // "Abrir fonte": interação/NPS abrem o detalhe da origem num modal (sem navegar);
+  // suporte/CSAT continuam linkando para a página do chamado.
+  const opensInModal = signal.source === 'interaction' || signal.source === 'nps'
+  // "Ver conta" herda o filtro de data atual (period/from/to) da URL.
+  const qs = searchParams.toString()
+  const accountHref = `/voc/${signal.account_id}${qs ? `?${qs}` : ''}`
   async function createTask() {
     setSaving(true)
     try {
@@ -147,16 +157,24 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
               Read.ai <ExternalLink className="w-3 h-3" />
             </a>
           )}
-          {ev.deep_link && (
+          {opensInModal ? (
+            <button onClick={() => setSourceOpen(true)} className="inline-flex items-center gap-1 text-[11px] font-bold text-plannera-orange hover:underline">
+              Abrir fonte <ArrowUpRight className="w-3 h-3" />
+            </button>
+          ) : ev.deep_link ? (
             <Link href={ev.deep_link} className="inline-flex items-center gap-1 text-[11px] font-bold text-plannera-orange hover:underline">
               Abrir fonte <ArrowUpRight className="w-3 h-3" />
             </Link>
-          )}
-          <Link href={`/voc/${signal.account_id}`} className="inline-flex items-center gap-1 text-[11px] font-bold text-content-secondary hover:text-content-primary hover:underline">
+          ) : null}
+          <Link href={accountHref} className="inline-flex items-center gap-1 text-[11px] font-bold text-content-secondary hover:text-content-primary hover:underline">
             Ver conta
           </Link>
         </div>
       </div>
+
+      {opensInModal && sourceOpen && (
+        <VocSourceModal signal={signal} onClose={() => setSourceOpen(false)} />
+      )}
     </div>
   )
 }

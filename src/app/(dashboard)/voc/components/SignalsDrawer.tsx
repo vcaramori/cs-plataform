@@ -1,14 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, CalendarRange } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { calculateDateRange, type DateRangePeriod } from '@/lib/date-range'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
 import { POLARITY_META, SOURCE_META, fmtDate } from './voc-ui'
 import { SignalEvidence } from './SignalEvidence'
+
+// Presets do filtro de data local do drawer ('' = herda o período da tela).
+const DRAWER_PERIODS: Array<[string, string]> = [
+  ['', 'Período da tela'], ['today', 'Hoje'], ['7d', '7 dias'], ['30d', '30 dias'],
+  ['90d', '90 dias'], ['mtd', 'Mês atual'], ['qtd', 'Trimestre'], ['ytd', 'Ano'],
+]
 
 export type DrawerState =
   | { kind: 'filter'; title: string; subtitle?: string; filter: Record<string, string> }
@@ -56,11 +63,18 @@ export function SignalsDrawer({
   const isFilter = state?.kind === 'filter'
   const filter = isFilter ? state.filter : null
 
+  // Filtro de data LOCAL do drawer: sobrepõe o período herdado da tela quando definido.
+  const [localPeriod, setLocalPeriod] = useState<DateRangePeriod | ''>('')
+  useEffect(() => { setLocalPeriod('') }, [state])
+  const localRange = localPeriod ? calculateDateRange(localPeriod) : null
+  const effFrom = localRange ? localRange.from.toISOString() : dateFrom
+  const effTo = localRange ? localRange.to.toISOString() : dateTo
+
   const { data, isLoading } = useQuery<{ signals: VocSignal[]; total: number }>({
-    queryKey: ['voc-signals', dateFrom, dateTo, filter],
+    queryKey: ['voc-signals', effFrom, effTo, filter],
     enabled: isFilter,
     queryFn: async () => {
-      const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo, ...(filter ?? {}) })
+      const params = new URLSearchParams({ date_from: effFrom, date_to: effTo, ...(filter ?? {}) })
       const res = await fetch(`/api/voc/signals?${params.toString()}`)
       return res.json()
     },
@@ -86,6 +100,19 @@ export function SignalsDrawer({
                 {data ? ` · ${data.total} no período` : ''}
               </SheetDescription>
             </SheetHeader>
+
+            {/* Filtro de data local */}
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarRange className="w-3.5 h-3.5 text-content-secondary shrink-0" />
+              <select
+                value={localPeriod}
+                onChange={(e) => setLocalPeriod(e.target.value as DateRangePeriod | '')}
+                className="text-[11px] font-bold px-2 py-1.5 rounded-lg bg-surface-card border border-border-divider text-content-primary focus:outline-none focus:ring-1 focus:ring-plannera-primary/30"
+              >
+                {DRAWER_PERIODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              {localRange && <span className="text-[10px] font-bold uppercase tracking-widest text-content-secondary">{localRange.label}</span>}
+            </div>
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
             ) : !data || data.signals.length === 0 ? (

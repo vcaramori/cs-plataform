@@ -16,7 +16,11 @@
 >
 > **Fase 3 — PARCIAL (2026-06-23):** ação **"Criar tarefa"** no Cartão de Evidência → `POST /api/voc/action/create-task` cria `csm_tasks` (aparece em /atividades; prioridade alta p/ sinal negativo). **Follow-up (não feito):** marcar falso-positivo (precisa ampliar o enum `risk_curation_feedback.source`) e tie-ins do índice VoC com health-score/RAG.
 >
-> **Ajuste (2026-06-24) — "Abrir fonte" abre a origem real:** o `deep_link` deixou de apontar para a conta. Interações → `/accounts/{id}?interaction={id}` e NPS → `/accounts/{id}?nps={id}`; a [`AccountUnifiedTimeline`](../../src/app/(dashboard)/accounts/[id]/components/AccountUnifiedTimeline.tsx) lê o query param no mount e **auto-abre o modal de detalhe** (transcrição da reunião / detalhe do NPS) que originou a avaliação. Suporte/CSAT já abriam o chamado (`/suporte/{ticket_id}`). "Ver conta" continua indo para `/voc/{id}`.
+> **Ajuste (2026-06-24) — "Abrir fonte" abre a origem num modal, sem navegar:** interações e NPS deixaram de redirecionar (deep_link = null). Agora "Abrir fonte" abre o [`VocSourceModal`](../../src/app/(dashboard)/voc/components/VocSourceModal.tsx) **na própria tela**, buscando o registro completo em [`GET /api/voc/source`](../../src/app/api/voc/source/route.ts) (só leitura, RLS): interação → transcrição + participantes + resumo + link Read.ai; NPS → reusa o `NPSDetailModal` (nota, comentário, respostas). Suporte/CSAT continuam linkando o chamado (`/suporte/{ticket_id}`).
+>
+> **Filtro de data no drawer (2026-06-24):** o painel de lista de sinais ([`SignalsDrawer`](../../src/app/(dashboard)/voc/components/SignalsDrawer.tsx)) ganhou um seletor de período **local** (Hoje/7d/30d/90d/Mês/Trimestre/Ano) que sobrepõe o período herdado da tela — sem alterar a URL.
+>
+> **Herança do filtro (2026-06-24):** ao abrir uma conta a partir da VOC geral (lista "Sentimento por Conta" e "Ver conta"), o link carrega o `period`/`from`/`to` atuais; "Voltar ao portfólio" também preserva o filtro.
 
 > **Atualização (2026-05-29) — Virada para Dashboard de Portfólio + correção de schema**
 >

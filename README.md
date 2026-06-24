@@ -182,7 +182,7 @@ O `/voc` era um painel **morto ao clique** (KPIs/fontes/temas/tendência não ab
 
 **Fase 3 — ação a partir do sinal:** botão **"Criar tarefa"** no Cartão de Evidência → `POST /api/voc/action/create-task` cria uma `csm_tasks` (aparece em /atividades) com prioridade alta p/ sinais negativos. *(Falso-positivo e tie-ins health/RAG ficam como follow-up — ver [docs/product/voc-plan.md](docs/product/voc-plan.md).)*
 
-**Ajuste "Abrir fonte" (2026-06-24):** no Cartão de Evidência, **"Abrir fonte" abre a origem real** que gerou a avaliação (não mais a conta). Interações → `/accounts/{id}?interaction={id}` e NPS → `/accounts/{id}?nps={id}`; a `AccountUnifiedTimeline` lê o query param e auto-abre o modal de detalhe (transcrição da reunião / detalhe do NPS). Suporte/CSAT já abriam o chamado. "Ver conta" segue indo para `/voc/{id}`.
+**Ajuste "Abrir fonte" + filtros (2026-06-24):** no Cartão de Evidência, **"Abrir fonte" abre a origem num modal na própria tela** (sem redirecionar): interações e NPS abrem o `VocSourceModal` (busca o registro completo em `GET /api/voc/source`, só leitura) — interação mostra transcrição/participantes/resumo/Read.ai, NPS reusa o `NPSDetailModal`. Suporte/CSAT seguem linkando o chamado. Além disso: (a) o **drawer de sinais ganhou filtro de data local** (presets que sobrepõem o período da tela); (b) abrir uma conta a partir da VOC geral **herda o filtro de data** (period/from/to vão na URL), e "Voltar ao portfólio" o preserva.
 
 ### 🎙️ Read.ai — transcrição completa enfim importada (fix do contrato REST) (2026-06-22)
 

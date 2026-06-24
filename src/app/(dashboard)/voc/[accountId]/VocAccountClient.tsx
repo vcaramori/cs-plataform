@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -42,6 +43,10 @@ export default function VocAccountClient({ accountId }: { accountId: string }) {
   const { dateFrom, dateTo, label } = useDateRange('90d')
   const [drawer, setDrawer] = useState<DrawerState | null>(null)
   const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
+  // Preserva o filtro de data ao voltar para o portfólio.
+  const searchParams = useSearchParams()
+  const urlQs = searchParams.toString()
+  const portfolioHref = `/voc${urlQs ? `?${urlQs}` : ''}`
 
   const { data, isLoading } = useQuery<AccountVocResult>({
     queryKey: ['voc-account', accountId, dateFrom, dateTo],
@@ -55,7 +60,7 @@ export default function VocAccountClient({ accountId }: { accountId: string }) {
 
   return (
     <div className="space-y-6">
-      <Link href="/voc" className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-content-secondary hover:text-content-primary transition-colors">
+      <Link href={portfolioHref} className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-content-secondary hover:text-content-primary transition-colors">
         <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao portfólio
       </Link>
 

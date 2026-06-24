@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -47,6 +48,10 @@ export default function VocPortfolioClient() {
   const { dateFrom, dateTo, label } = useDateRange('30d')
   const qs = `date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
   const [drawer, setDrawer] = useState<DrawerState | null>(null)
+  // Ao abrir uma conta, herdar o filtro de data atual (period/from/to) da VOC geral.
+  const searchParams = useSearchParams()
+  const urlQs = searchParams.toString()
+  const accountHref = (id: string) => `/voc/${id}${urlQs ? `?${urlQs}` : ''}`
 
   const { data, isLoading } = useQuery<PortfolioVoc>({
     queryKey: ['voc-portfolio', dateFrom, dateTo],
@@ -135,7 +140,7 @@ export default function VocPortfolioClient() {
                   const pol = dominantPolarity(a)
                   const total = a.positive + a.neutral + a.negative
                   return (
-                    <Link key={a.account_id} href={`/voc/${a.account_id}`} className="block group">
+                    <Link key={a.account_id} href={accountHref(a.account_id)} className="block group">
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
