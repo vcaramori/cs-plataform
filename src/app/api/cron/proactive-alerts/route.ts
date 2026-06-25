@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     // inexistente em `accounts` — o que impedia qualquer alerta de ser gerado.)
     const { data: accounts, error: accountsError } = await supabase
       .from('accounts')
-      .select('id, health_score_v2, csm_owner_id')
+      .select('id, name, health_score_v2, csm_owner_id')
 
     if (accountsError || !accounts) {
       return NextResponse.json({ error: accountsError?.message || 'Failed to fetch accounts' }, { status: 500 })

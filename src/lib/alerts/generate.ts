@@ -10,6 +10,7 @@ export interface GenerateResult {
 
 export interface AccountForAlerts {
   id: string
+  name: string
   health_score_v2?: number | null
   csm_owner_id?: string | null
 }
@@ -30,6 +31,19 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
   let created = 0
   const errors: string[] = []
   const newAlertsForTeams: TeamsAlertPayload[] = []
+
+  const ALERT_TYPE_NAMES: Record<string, string> = {
+    churn_risk: 'Risco de Churn',
+    silent_customer: 'Cliente Silencioso',
+    renewal_upcoming: 'Renovação Próxima',
+    adoption_anomaly: 'Anomalia de Adoção',
+    expansion_signal: 'Sinal de Expansão',
+    nps_detractor_unactioned: 'Detrator NPS Sem Ação',
+    sla_breach: 'SLA Rompido',
+    stale_health_score: 'Health Score Desatualizado',
+    new_ticket: 'Novo Chamado',
+    health_score_discrepancy: 'Discrepância no Health Score'
+  }
 
   for (const account of accounts) {
     try {
@@ -82,11 +96,19 @@ export async function generateAlertsForAccounts(supabase: any, accounts: Account
         created++
 
         if (account.csm_owner_id) {
+          let detailedMessage = `[${account.name}] ${alert.message}`
+          
+          if (alert.type === 'expansion_signal' && alert.metadata?.snippet) {
+            detailedMessage += `\nTrecho identificado: "${alert.metadata.snippet}"`
+          } else if (alert.metadata?.snippet) {
+            detailedMessage += `\nDetalhes adicionais: "${alert.metadata.snippet}"`
+          }
+
           newAlertsForTeams.push({
             alert_id: inserted.id,
-            alert_type: alert.type,
+            alert_type: ALERT_TYPE_NAMES[alert.type] || alert.type,
             severity: alert.severity,
-            message: alert.message,
+            message: detailedMessage,
             csm_email: account.csm_owner_id, // temporarily hold ID, map to email later
             account_id: account.id,
           })
