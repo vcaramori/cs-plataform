@@ -224,8 +224,8 @@ export async function runVocEnrich(opts?: { budgetMs?: number }): Promise<VocEnr
   const deadline = start + (opts?.budgetMs ?? 180000)
   // Prioridade: sentimento (corrige o "VoC linear" — reuniões sem score) e citações (backfill)
   // primeiro; depois temas; NPS/CSAT são rápidos e fecham o ciclo.
-  const sentiment = await enrichInteractionSentiment(20, deadline)
-  const quotes = await enrichInteractionQuotes(15, deadline)
+  const sentiment = await enrichInteractionSentiment(40, deadline)
+  const quotes = await enrichInteractionQuotes(25, deadline)
   const interactions = await enrichInteractionThemes(10, deadline)
   const nps = await enrichNpsComments(15, deadline)
   const csat = await enrichCsatComments(15, deadline)

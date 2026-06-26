@@ -4,6 +4,16 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🧩 Voz do Cliente — correção do "VoC linear" (sentimento + temas) (2026-06-26)
+
+O VoC parecia achatado por **buracos de dados**, não por natureza: (1) **361 reuniões do Read.ai sem sentimento** (só recebiam `metrics.sentiment` do Read.ai, que vem nulo, e nunca passavam pela nossa IA → invisíveis); (2) **1865 labels de tema distintos** → "Top Dores/Elogios" fragmentadas. Correções IO-safe:
+
+- **Backfill de sentimento por IA** no cron `voc-enrich` (`enrichInteractionSentiment`) — nossa IA pontua as interações sem score; a evidência passa a rotular "Avaliado por IA".
+- **Clustering de temas por IA** — novo cron `voc-cluster-themes` (`clusterVocThemes`): embeda os labels e agrupa por similaridade → `voc_theme_synonyms` (sinônimo→canônico), consolidando os temas. Embeddings em memória (não pesa o I/O do Postgres).
+- **Backfill de citações** (`enrichInteractionQuotes`) — repreenche `interactions.quotes` (coluna criada agora — não existia no banco apesar da doc).
+
+---
+
 ## 🗣️ Voz do Cliente — Fases 2 e 3 completadas (2026-06-26)
 
 Fechadas as lacunas que faltavam das Fases 2 e 3 do redesenho de VoC (plano em [docs/product/voc-plan.md](docs/product/voc-plan.md)):

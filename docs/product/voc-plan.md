@@ -1,5 +1,10 @@
 # Plano de Implementação — Módulo de VOC | Voz do Cliente (Revisado)
 
+> **Atualização (2026-06-26) — "VoC linear" corrigido (buracos de dados).** O VoC parecia achatado porque a maior fonte (reuniões) estava invisível e os temas não agregavam:
+> - **Sentimento:** 361 reuniões do Read.ai estavam com `sentiment_score` NULL (só recebiam `metrics.sentiment` do Read.ai, que vem nulo) → `enrichInteractionSentiment` (cron `voc-enrich`) pontua via nossa IA; evidência rotula "Avaliado por IA" (`meta.sentiment_ai`).
+> - **Temas:** 1865 labels distintos (de 2016) → novo cron `voc-cluster-themes` (`clusterVocThemes`) embeda e agrupa por cosseno, populando `voc_theme_synonyms` (sinônimo→canônico). IO-safe (embeddings em memória).
+> - **Citações:** `enrichInteractionQuotes` backfilla `interactions.quotes` (coluna criada via migration — não existia no banco). Gate `quotes_extracted_at`.
+
 > **Atualização (2026-06-26) — Fases 2 e 3 COMPLETAS.** Fechadas as lacunas que faltavam:
 > - **Falso-positivo (Fase 3):** migration ampliou `risk_curation_feedback.source` p/ `voc`; `POST /api/voc/action/false-positive`; botão no Cartão de Evidência; `buildVocSignals` exclui o sinal curado (mesma curadoria do RAG).
 > - **Tie-in VoC → RAG (Fase 3):** o Perguntar (modo conta) ganha um bloco "Voz do Cliente" com dores/elogios recorrentes (de `interaction_themes`).

@@ -4,12 +4,6 @@
 
 ## 🔴 Aberto
 
-### Voz do Cliente — clustering de temas por IA (evolução, 2026-06-23)
-Normalização de temas de VoC é por **dicionário** (`voc_theme_synonyms`), sem clustering semântico por IA. Evolução assíncrona possível (cron que agrupa labels por embedding e popula o dicionário). Era **fora de escopo da v1**; o dicionário atende hoje. As demais lacunas das Fases 2 e 3 (falso-positivo, tie-ins VoC↔RAG/Health, citações, webhook) foram fechadas — ver Resolvidos.
-
-### Backfill de citações de reunião (`interactions.quotes`) (2026-06-26)
-O cron `voc-enrich` passou a extrair citações, mas só processa interações com `themes_extracted_at` nulo → as ~2010 interações já extraídas **não** ganham citações retroativamente. Opcional: resetar `themes_extracted_at` de um lote bounded para repreencher (re-roda extração de temas; respeitar o orçamento de IO). Forward-only é o comportamento atual.
-
 ### IA — `sentiment_response_suggestion` sem consumidor (2026-06-25)
 O único call site dessa instrução era o `advanced-alerts-service` (removido — ver Resolvidos). A instrução continua no catálogo, mas **não é mais chamada**. Decidir: remover do catálogo ou religar a uma sugestão de resposta no caminho de alertas que funciona (`proactive_alerts`).
 
@@ -21,6 +15,11 @@ O refresh token do Read.ai é single-use rotativo; cron + clique concorrentes pa
 
 ## ✅ Resolvidos
 
+- (2026-06-26) **"VoC linear" corrigido — buracos de dados de sentimento e temas.** Diagnóstico cruzando dados reais: (a) **361 interações (reuniões Read.ai) com `sentiment_score` NULL** — só recebiam `metrics.sentiment` do Read.ai (que vem nulo) e nunca passavam pela nossa IA → invisíveis no VoC, achatando trend/índice; (b) **1865 labels de tema distintos** (de 2016) → "Top Dores/Elogios" fragmentadas, sem agregação. Correções (IO-safe, batched):
+  - **Backfill de sentimento por IA** — `enrichInteractionSentiment` no cron `voc-enrich`: nossa IA pontua interações sem score (contrato número puro −1..1); marca `meta.sentiment_ai` p/ a evidência rotular "Avaliado por IA" (em vez de "pelo Read.ai").
+  - **Clustering de temas por IA** — `clusterVocThemes` + novo cron `voc-cluster-themes`: embeda os labels e agrupa por cosseno → grava sinônimo→canônico em `voc_theme_synonyms` (consolida os temas). Embeddings em memória; só lê labels e escreve sinônimos (não toca o disco do Postgres em massa).
+  - **Backfill de citações** — `enrichInteractionQuotes` (gate `quotes_extracted_at`): repreenche `interactions.quotes` independente da extração de temas (não re-roda tema). Resolve a limitação "forward-only".
+  - **Coluna `interactions.quotes` criada** (migration) — era citada na doc como existente mas **nunca foi criada** no banco; corrigiu regressão (o `buildVocSignals` passou a selecioná-la). Inclui `quotes_extracted_at`.
 - (2026-06-26) **Voz do Cliente — Fases 2 e 3 completadas** (lacunas que faltavam da entrega original):
   - **Falso-positivo de VoC (Fase 3):** migration ampliou `risk_curation_feedback.source` p/ incluir `voc`; endpoint `POST /api/voc/action/false-positive`; botão "Marcar falso-positivo" no Cartão de Evidência; `buildVocSignals` exclui sinais curados (mesma curadoria que o RAG respeita).
   - **Tie-in VoC → RAG (Fase 3):** o Perguntar (modo conta) recebe um bloco "Voz do Cliente" com dores/elogios recorrentes (de `interaction_themes`).
