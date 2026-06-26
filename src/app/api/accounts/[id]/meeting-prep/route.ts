@@ -90,15 +90,12 @@ Recent Tickets: ${tickets?.map(t => t.title).join('; ') || 'None'}
 Latest NPS: ${npsResponses?.[0]?.score || 'N/A'} - ${npsResponses?.[0]?.comment || ''}
     `.trim()
 
-    const prompt = `Generate 3-5 talking points for a meeting with a customer account.
+    const prompt = `Gere de 3 a 5 talking points para uma reunião de Customer Success com a conta abaixo.
 
-Context:
+Contexto:
 ${context}
 
-Generate ONLY a JSON array of talking points, no markdown:
-["point 1", "point 2", "point 3"]
-
-Each point should be 1-2 sentences, specific to the account context, and actionable.`
+Retorne APENAS o array JSON de talking points, sem markdown, sem objeto, sem texto fora do array. Cada ponto: 1-2 frases, específico ao contexto e acionável. Forma exata: ["ponto 1", "ponto 2", "ponto 3"]`
 
     const { result: talkingPointsText } = await generateText(prompt, {
       systemInstruction: await buildSystemInstruction('meeting_prep'),

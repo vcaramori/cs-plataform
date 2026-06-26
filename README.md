@@ -4,6 +4,18 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🧠 Governança de Prompts de IA — reescrita + correção de precedência (2026-06-25)
+
+Auditamos e reescrevemos **todas as 28 interações de IA em uso** sob a ótica de um CSM sênior de B2B enterprise, com verificação adversarial de que cada reescrita **preserva o contrato de saída** que o call site parseia.
+
+- **Playbook completo:** [docs/product/16-ia-prompts.md](docs/product/16-ia-prompts.md) — por interação: o que faz, prompt anterior, diagnóstico e prompt aplicado; + apêndices (contexto do RAG, regras numéricas, pacote de agentes).
+- **Catálogo é a fonte de verdade:** os `default` de [src/lib/ai/instructions-catalog.ts](src/lib/ai/instructions-catalog.ts) agora são os prompts ricos (antes, prompts ricos no *call site* ficavam **encobertos** pelo default curto e nunca rodavam — bug de precedência corrigido).
+- **Limpeza:** removidas as 2 entradas `planned` (`adoption_blockers`, `voc_extraction`) — a tela /admin/settings → "IA — Contexto & Regras" lista só IA em uso.
+- **Type B refatorado:** 13 call sites tiveram a instrução movida do *user prompt* para o system instruction (editável); user prompt ficou só com os dados → admin controla 100% pela tela.
+- **Bug de produção corrigido:** 6 overrides em `app_settings` foram limpos — incluindo um prompt "VoC Extraction" de 4669 chars aplicado a 3 tarefas com contratos diferentes, que **quebrava** `interaction_sentiment` (sentimento caía para 0.0) e `signal_extractor` (sinais perdidos).
+
+---
+
 ## 🤖 CS Agents Pack — Squad de Especialistas de IA
 
 **Status:** ✅ Installado e disponível para todas as LLMs do projeto (v1.0)

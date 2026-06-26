@@ -7,12 +7,8 @@ import { extractSignals } from '@/lib/signals/extract-signals'
 
 async function analyzeSentiment(text: string): Promise<number> {
   try {
-    const prompt = `Analise o sentimento desta transcrição de reunião de Customer Success.
-      Retorne APENAS um número entre -1.0 (muito negativo) e 1.0 (muito positivo).
-      Considere: reclamações, elogios, nível de engajamento, problemas mencionados, satisfação geral.
-      Exemplos: cliente satisfeito = 0.7, neutro = 0.0, cliente insatisfeito = -0.6, churn risk = -0.9
-
-      Transcrição: ${text.slice(0, 4000)}`
+    const prompt = `Transcrição da reunião/interação a avaliar:
+${text.slice(0, 4000)}`
 
     const { result: raw, provider } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('interaction_sentiment'), allowFallback: true })
     const score = parseFloat(raw.trim())

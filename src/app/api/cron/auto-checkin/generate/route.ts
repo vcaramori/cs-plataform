@@ -128,25 +128,12 @@ export async function POST(request: Request) {
         )
         const prompt = `${baseInstruction}
 
-Contexto:
+Contexto desta conta:
 - Nome da conta: ${account.name}
 - Dias sem interação: ${thresholdDays}
 - Health Score: ${account.health_score || 'não calculado'}
 - Últimas interações: ${interactions?.map((i: any) => i.title).join(', ') || 'nenhuma'}
-- NPS recente: ${npsResponses?.[0]?.score || 'não respondido'}
-
-Instruções:
-1. Gere um assunto CURTO (máx 60 caracteres)
-2. Gere um corpo PROFISSIONAL (máx 200 palavras)
-3. Tom: consultivo, não vendedor
-4. Mencione o período de silêncio e sugira uma breve call de alinhamento
-5. Não use placeholders - personalize de verdade
-
-Retorne EXATAMENTE neste formato JSON:
-{
-  "subject": "assunto aqui",
-  "body": "corpo aqui"
-}`
+- NPS recente: ${npsResponses?.[0]?.score || 'não respondido'}`
 
         const result = await generateText(prompt, {
           maxOutputTokens: 500,

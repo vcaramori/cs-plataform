@@ -25,39 +25,7 @@ export async function POST(request: Request) {
   // -------------------------------------------------------------------------
   // Prompt Gemini — extrai tickets do texto livre (e-mail, cópia de chamado, etc.)
   // -------------------------------------------------------------------------
-  const prompt = `
-Você é um assistente especializado em extrair tickets de suporte a partir de textos livres.
-
-O texto abaixo é um cópia-e-cola de um chamado de suporte. Pode conter toda a thread de e-mail,
-histórico de mensagens, eventos automáticos (como mudança de status, regras automáticas, pesquisas
-de satisfação), assinaturas de e-mail e outras informações irrelevantes.
-
-Sua tarefa:
-1. Identificar quantos chamados/problemas de cliente REAIS existem no texto.
-   - Mensagens automáticas (pesquisa de satisfação, notificações de sistema, atribuição de agente) NÃO são tickets.
-   - O histórico de respostas de um MESMO problema é 1 único ticket.
-2. Para cada chamado real, extraia:
-   - title: título claro e conciso do problema (máx 120 chars)
-   - description: descrição detalhada do problema, baseada no texto original do cliente
-   - status: EXATAMENTE um de: "open", "in-progress", "resolved", "closed"
-     (use "resolved" se o chamado foi marcado como resolvido no texto)
-   - priority: EXATAMENTE um de: "low", "medium", "high", "critical"
-   - category: categoria em 1-2 palavras (ex: "dúvida", "bug", "financeiro", "acesso", "melhoria")
-   - account_name: nome do cliente/empresa se identificado no texto (pode ser null)
-   - opened_at: data de abertura no formato YYYY-MM-DD (use a data mais antiga do texto, ou null)
-
-Retorne APENAS um JSON array. Exemplos corretos de retorno:
-[
-  {
-    "title": "Solicitação de cálculo de ticket médio",
-    "description": "Cliente solicita a adição de um indicador 'ticket médio' calculado como receita total dividida pelo volume total.",
-    "status": "resolved",
-    "priority": "low",
-    "category": "melhoria",
-    "account_name": null,
-    "opened_at": "2026-04-02"
-  }
-]
+  const prompt = `Extraia os tickets do texto abaixo seguindo as regras e o contrato de saída definidos. Responda APENAS com o JSON array.
 
 Texto do chamado:
 """

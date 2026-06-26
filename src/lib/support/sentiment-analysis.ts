@@ -31,15 +31,9 @@ export async function analyzeSentiment(text: string): Promise<SentimentResult> {
       console.warn('Sentiment analysis timeout reached');
     }, timeout);
 
-    const prompt = `Analise o sentimento do seguinte texto em PT-BR. Retorne APENAS um JSON válido (sem markdown, sem explicações):
-{
-  "sentiment": "positive"|"neutral"|"negative",
-  "score": número entre 0 e 1 (0 = extremamente negativo, 0.5 = neutro, 1 = extremamente positivo),
-  "keywords": [lista de palavras-chave que indicam o sentimento],
-  "confidence": número entre 0 e 1 indicando confiança da análise
-}
+    const prompt = `Retorne APENAS o JSON no formato {"sentiment":"positive"|"neutral"|"negative","score":0..1,"keywords":[...],"confidence":0..1}.
 
-Texto para analisar:
+Texto para analisar (PT-BR):
 ${text}`;
 
     const response = await Promise.race([

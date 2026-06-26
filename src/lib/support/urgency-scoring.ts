@@ -44,16 +44,8 @@ Descrição Inicial: ${ticket.description}
 Histórico da Conversa:
 ${history}
 
-Analise a urgência deste ticket considerando:
-1. Impacto no negócio (S&OP/S&OE).
-2. Frustração ou tom do cliente.
-3. Se há um "bloqueador" crítico mencionado.
-
-Responda estritamente em JSON no seguinte formato:
-{
-  "score": "high" | "medium" | "low",
-  "reasoning": "Sua explicação curta aqui"
-}
+Classifique a urgência deste ticket e responda APENAS com o JSON no formato exato:
+{"score":"high"|"medium"|"low","reasoning":"explicação curta aqui"}
 `
 
   const systemInstruction = `Você é um analista sênior de Customer Success especializado em S&OP. Sua missão é classificar a urgência de tickets de suporte para priorização da equipe.`

@@ -16,25 +16,14 @@ export async function classifyTicketIntent(
   originalDescription: string,
   newMessage: string
 ): Promise<TicketIntent> {
-  const prompt = `
-Você é um triador inteligente de central de suporte. Seu papel é classificar a intenção de um novo e-mail recebido em relação a um ticket já existente.
-
-TICKET ORIGINAL:
+  const prompt = `TICKET ORIGINAL:
 Assunto: ${subject}
 Descrição: ${originalDescription}
 
 NOVA MENSAGEM:
 ${newMessage}
 
----
-CATEGORIAS:
-1. "gratitude": O cliente está apenas agradecendo, confirmando que o problema foi resolvido ou encerrando a conversa de forma educada (ex: "Obrigado", "Funcionou!", "Pode fechar").
-2. "new_issue": O cliente está trazendo um problema TOTALMENTE NOVO e diferente do assunto original (ex: resolvido o login, ele começa a perguntar de faturamento).
-3. "follow_up": O cliente ainda tem dúvidas sobre o mesmo assunto, está fornecendo evidências extras ou está pedindo para reabrir pois o problema persistiu.
-
-INSTRUÇÃO:
-Responda APENAS com uma das palavras-chave: gratitude, new_issue ou follow_up.
-`
+Responda apenas com um destes tokens, exatamente: gratitude, new_issue ou follow_up.`
 
   try {
     const { result } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('support_intent'), temperature: 0 })

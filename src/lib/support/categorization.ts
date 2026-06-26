@@ -41,21 +41,14 @@ export async function categorizeTicketAutomatically(
     }
   }
 
-  const prompt = `Analyze the following support ticket and categorize it into ONE of these categories: ${PREDEFINED_CATEGORIES.join(', ')}.
+  const prompt = `Categorize este ticket de suporte.
 
-Ticket Title: ${title}
+Título do ticket: ${title}
 
-Ticket Description:
+Descrição do ticket:
 ${description}
 
-Respond in JSON format with exactly these fields:
-{
-  "category": "one of the categories above",
-  "confidence": 0.0 to 1.0,
-  "reasoning": "brief explanation in Portuguese"
-}
-
-Focus on accuracy. If unsure, lower the confidence score.`
+Responda SOMENTE com o objeto JSON no formato: {"category": "<uma das 5 categorias>", "confidence": 0.0 a 1.0, "reasoning": "explicação breve em português"}`
 
   try {
     const response = await generateText(prompt, {

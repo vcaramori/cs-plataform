@@ -19,12 +19,7 @@ const InteractionSchema = z.object({
 async function extractHoursFromTranscript(transcript: string): Promise<number> {
   try {
     const { result } = await generateText(
-      `Analise esta transcrição de reunião e estime a duração em horas (número decimal, ex: 1.5).
-      Procure por timestamps, menções de horário de início/fim, ou duração explícita.
-      Se não encontrar, estime pelo volume de texto (considere ~130 palavras por minuto de fala).
-      Retorne APENAS o número, sem texto adicional.
-
-      Transcrição: ${transcript.slice(0, 3000)}`,
+      `Transcrição: ${transcript.slice(0, 3000)}`,
       { systemInstruction: await buildSystemInstruction('interaction_hours'), temperature: 0 }
     )
     const hours = parseFloat(result.trim())

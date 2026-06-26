@@ -59,16 +59,12 @@ export async function generateTicketSummary(
     }
 
     // Build prompt
-    const prompt = `Você é um assistente de suporte. Resuma MUITO BREVEMENTE (1-2 frases, máximo 150 caracteres) este ticket de suporte em português.
-
-Título: ${ticket.title}
+    const prompt = `Título: ${ticket.title}
 Descrição: ${ticket.description}
 Categoria: ${ticket.category || 'Não categorizado'}
 Prioridade: ${ticket.priority}
 Status: ${ticket.status}
-${replyContext}
-
-Forneça APENAS o resumo, sem explicações adicionais. Máximo 150 caracteres.`
+${replyContext}`
 
     const response = await generateText(prompt, {
       systemInstruction: await buildSystemInstruction('support_summary'),

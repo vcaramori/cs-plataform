@@ -32,28 +32,12 @@ export async function POST(request: Request) {
 
     // Call Gemini to parse
     const prompt = `
-      Você é um assistente de extração de dados especializado em transformar conversas, e-mails ou relatórios de clientes em tickets de suporte estruturados.
-
-      Leia o texto abaixo, que foi extraído de um PDF, e extraia os seguintes dados no estrito formato JSON.
-      Retorne um array contendo os tickets encontrados (mesmo que haja só 1). Se o texto abordar vários problemas diferentes, tente dividi-los em tickets separados.
-
-      Lembre-se das restrições de schema:
-      - status: deve ser EXATAMENTE um dos seguintes: "open", "in-progress", "resolved", "closed". Default para "open".
-      - priority: deve ser EXATAMENTE um dos seguintes: "low", "medium", "high", "critical". Escolha com sabedoria.
-      - category: defina em 1 palavra curta (ex: "financeiro", "dúvida", "bug", "acesso").
-      - title: Resumo claro do problema.
-      - description: Detalhamento do problema baseado no texto original.
-      - account_name: Nome do cliente se ele se identificar (opcional).
-
-      Retorne APENAS um JSON array de objetos. Exemplo:
-      [
-        { "title": "Erro ao logar", "description": "Cliente reporta que a senha de reset não chega", "status": "open", "priority": "high", "category": "acesso", "account_name": "Acme Corp" }
-      ]
-
       Texto extraído do PDF:
       """
       ${textContent.substring(0, 15000)}
       """
+
+      Retorne APENAS o array JSON de tickets, conforme o contrato definido nas instruções.
     `
 
     const { result: rawJson } = await generateText(prompt, { systemInstruction: await buildSystemInstruction('support_ticket_pdf'), allowFallback: true })

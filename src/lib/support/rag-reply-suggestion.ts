@@ -189,16 +189,7 @@ export async function generateReplySuggestion(
     }
 
     // Build prompt for Gemini
-    const prompt = `Você é um experiente agente de Customer Success que responde tickets de suporte.
-
-Analise o ticket abaixo e gere uma resposta profissional, clara e empática em português.
-Sua resposta deve:
-- Reconhecer o problema
-- Explicar a solução ou próximos passos
-- Oferecer suporte adicional se necessário
-- Ser concisa (2-3 parágrafos)
-
-TICKET:
+    const prompt = `TICKET:
 Título: ${ticket.title}
 Categoria: ${ticket.category || 'Não categorizado'}
 Prioridade: ${ticket.priority}
@@ -206,7 +197,7 @@ Descrição: ${ticket.description}
 
 ${ragContext}
 
-Gere uma resposta profissional e amigável para este ticket:`
+Gere o corpo da resposta ao cliente para este ticket (apenas o texto, sem rótulos):`
 
     const response = await generateText(prompt, {
       systemInstruction: await buildSystemInstruction('support_reply_suggestion'),

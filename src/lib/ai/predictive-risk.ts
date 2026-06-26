@@ -72,21 +72,10 @@ export async function runPredictiveRiskAnalysis(accountId: string): Promise<Pred
     payload += `\n`
   }
 
-  // 4. Prompt system instruction
-  const systemInstruction = `
-Você é um especialista em Customer Success (CSM) e Analista de Risco de Churn.
-O usuário enviará um log de interações e tickets recentes de um cliente.
-Sua tarefa é analisar o sentimento do cliente e prever o risco de churn (cancelamento).
-
-Você DEVE retornar APENAS um JSON válido com o seguinte formato, sem nenhum markdown ou texto extra:
-{
-  "risk_score": <número inteiro de 0 a 100, onde 0 é nenhum risco e 100 é churn iminente>,
-  "sentiment_label": <string, estritamente um dos seguintes valores: "positive", "neutral", "negative", "at-risk">,
-  "ai_reasoning": <string, uma justificativa clara e executiva de no máximo 3 frases explicando o motivo da nota>
-}
-
-Seja rígido na análise. Reclamações repetidas, bugs críticos e tons agressivos aumentam consideravelmente o risk_score para a faixa de 70-100 (at-risk). Elogios e engajamento diminuem para 0-30 (positive).
-`
+  // 4. System instruction: fonte de verdade é o default do catálogo ('predictive_risk'),
+  // editável em /admin/settings. Este fallback é só rede de segurança — nunca roda enquanto
+  // o catálogo tiver default (sempre tem). Mantém o contrato exato consumido pelo parser.
+  const systemInstruction = 'Você é um analista de risco de churn em Customer Success. Retorne APENAS um JSON válido, sem markdown: {"risk_score": <inteiro 0-100>, "sentiment_label": "positive"|"neutral"|"negative"|"at-risk", "ai_reasoning": "<até 3 frases>"}. Seja rígido: reclamações repetidas/bugs críticos/tom agressivo elevam o risk_score (70-100, at-risk); elogios e engajamento reduzem (0-30, positive).'
 
   // 5. Call LLM
   try {
