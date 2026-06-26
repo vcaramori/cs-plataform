@@ -441,7 +441,7 @@ export async function getAccountVoc(supabase: SupabaseClient, accountId: string,
 
 export interface VocSignalsFilter {
   dateFrom: string; dateTo: string
-  source?: VocSource; polarity?: Polarity; theme?: string; account_id?: string; day?: string
+  source?: VocSource; polarity?: Polarity; theme?: string; themeBucket?: 'pain' | 'praise'; account_id?: string; day?: string
 }
 
 export async function queryVocSignals(supabase: SupabaseClient, filter: VocSignalsFilter): Promise<{ signals: VocSignal[]; total: number }> {
@@ -451,7 +451,16 @@ export async function queryVocSignals(supabase: SupabaseClient, filter: VocSigna
     if (filter.source && s.source !== filter.source) return false
     if (filter.polarity && s.polarity !== filter.polarity) return false
     if (filter.day && s.date.slice(0, 10) !== filter.day) return false
-    if (themeLc && !([...s.pains, ...s.praises, ...s.terms]).some((t) => t.toLowerCase() === themeLc)) return false
+    if (themeLc) {
+      // Casa pelo MESMO eixo que o "Top Dores/Elogios" contou: o tema no bucket de dor/encanto
+      // (polaridade do TEMA), NÃO a polaridade GERAL do sinal — senão o drill-down do elogio
+      // some com reuniões que elogiaram o tema mas tiveram sentimento geral neutro/negativo.
+      // Sem bucket (cliques genéricos), casa em qualquer lista.
+      const hay = filter.themeBucket === 'pain' ? s.pains
+        : filter.themeBucket === 'praise' ? s.praises
+        : [...s.pains, ...s.praises, ...s.terms]
+      if (!hay.some((t) => t.toLowerCase() === themeLc)) return false
+    }
     return true
   })
   filtered.sort((a, b) => b.date.localeCompare(a.date))

@@ -18,12 +18,14 @@ export async function GET(request: Request) {
     const dateFrom = url.searchParams.get('date_from') || new Date(now.getTime() - 30 * 86400000).toISOString()
     const dateTo = url.searchParams.get('date_to') || now.toISOString()
 
+    const tb = url.searchParams.get('theme_bucket')
     const filter: VocSignalsFilter = {
       dateFrom,
       dateTo,
       source: (url.searchParams.get('source') as VocSource) || undefined,
       polarity: (url.searchParams.get('polarity') as Polarity) || undefined,
       theme: url.searchParams.get('theme') || undefined,
+      themeBucket: tb === 'pain' || tb === 'praise' ? tb : undefined,
       account_id: url.searchParams.get('account_id') || undefined,
       day: url.searchParams.get('day') || undefined,
     }

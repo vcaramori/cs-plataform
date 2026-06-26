@@ -215,23 +215,23 @@ export default function VocPortfolioClient() {
       {/* Top Dores / Elogios — clique num termo abre os sinais daquele tema */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="space-y-4">
-          <SectionHeader title="Top Dores" subtitle="Tags (NPS) + keywords (suporte) de sinais negativos" />
+          <SectionHeader title="Top Dores" subtitle="Temas de reuniões + tags/keywords (NPS/suporte) — sinais de dor" />
           <Card><CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <Frown className="w-4 h-4 text-red-500" />
               <h3 className="text-[11px] font-black uppercase tracking-widest text-content-primary">O que dói</h3>
             </div>
-            <TermList items={top_pains} variant="pain" onPick={(t) => setDrawer({ kind: 'filter', title: `Dor: ${t}`, filter: { theme: t, polarity: 'negative' } })} />
+            <TermList items={top_pains} variant="pain" onPick={(t) => setDrawer({ kind: 'filter', title: `Dor: ${t}`, filter: { theme: t, theme_bucket: 'pain' } })} />
           </CardContent></Card>
         </div>
         <div className="space-y-4">
-          <SectionHeader title="Top Elogios" subtitle="Tags (NPS) + keywords (suporte) de sinais positivos" />
+          <SectionHeader title="Top Elogios" subtitle="Temas de reuniões + tags/keywords (NPS/suporte) — sinais de encanto" />
           <Card><CardContent className="p-5">
             <div className="flex items-center gap-2 mb-4">
               <ThumbsUp className="w-4 h-4 text-emerald-500" />
               <h3 className="text-[11px] font-black uppercase tracking-widest text-content-primary">O que encanta</h3>
             </div>
-            <TermList items={top_praises} variant="praise" onPick={(t) => setDrawer({ kind: 'filter', title: `Elogio: ${t}`, filter: { theme: t, polarity: 'positive' } })} />
+            <TermList items={top_praises} variant="praise" onPick={(t) => setDrawer({ kind: 'filter', title: `Elogio: ${t}`, filter: { theme: t, theme_bucket: 'praise' } })} />
           </CardContent></Card>
         </div>
       </div>
