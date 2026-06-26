@@ -123,7 +123,7 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
       await admin.from('interactions').update({ themes_extracted_at: stamp }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Da interação/reunião a seguir, extraia os principais TEMAS de DOR (pain) e de ENCANTO (praise) do cliente sobre o produto/atendimento, e até 3 CITAÇÕES curtas e FIÉIS do cliente (sem timestamps, sem nomes de remetente, sem metadados de log — só a fala). Ignore assuntos neutros/operacionais.\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [até 3 citações curtas]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 420)
+    const parsed = await classify(`Tarefa: TEMAS DE INTERAÇÃO. Aplique a CALIBRAGEM do system instruction (dor/encanto têm que ser SOBRE A PLANNERA — produto/atendimento; operacional/setup/dado-do-próprio-cliente/capacidade-desejada = "neutral") e extraia até 3 CITAÇÕES curtas e fiéis do cliente (sem timestamps, nomes de remetente ou metadados — só a fala).\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [até 3 citações curtas]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 420)
     const themes: Array<{ label: string; polarity: string }> = []
     if (parsed && Array.isArray(parsed.themes)) {
       for (const t of parsed.themes) {
@@ -226,7 +226,7 @@ export async function runVocEnrich(opts?: { budgetMs?: number }): Promise<VocEnr
   // primeiro; depois temas; NPS/CSAT são rápidos e fecham o ciclo.
   const sentiment = await enrichInteractionSentiment(40, deadline)
   const quotes = await enrichInteractionQuotes(25, deadline)
-  const interactions = await enrichInteractionThemes(10, deadline)
+  const interactions = await enrichInteractionThemes(20, deadline)
   const nps = await enrichNpsComments(15, deadline)
   const csat = await enrichCsatComments(15, deadline)
   return { nps, csat, sentiment, interactions, quotes, duration_ms: Date.now() - start }

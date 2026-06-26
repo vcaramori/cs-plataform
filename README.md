@@ -4,6 +4,15 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🎚️ Voz do Cliente — régua de dor/encanto editável + recalibrada (2026-06-26)
+
+A régua que decide dor/encanto estava **hardcoded** no `enrich.ts` (só a persona genérica era editável em /admin) e **ampla demais** — marcava tópicos de implantação/setup e qualidade-de-dado-do-cliente como dor, e "capacidade desejada" como elogio. Agora:
+- **Editável:** os critérios vivem no `default` de `voc_enrichment` em [instructions-catalog.ts](src/lib/ai/instructions-catalog.ts) — visível/editável em **/admin/settings → "IA — Contexto & Regras"** sob o domínio **"Voz do Cliente"** (relabel "Voz do Cliente — enriquecimento").
+- **Recalibrada:** dor/encanto só quando o sinal é sobre a **Plannera** (produto/atendimento); setup/implantação, dado do próprio cliente e capacidade desejada = **"neutral"**.
+- Temas históricos **reprocessados** (cron `voc-enrich`, bounded/IO-safe).
+
+---
+
 ## 🧩 Voz do Cliente — correção do "VoC linear" (sentimento + temas) (2026-06-26)
 
 O VoC parecia achatado por **buracos de dados**, não por natureza: (1) **361 reuniões do Read.ai sem sentimento** (só recebiam `metrics.sentiment` do Read.ai, que vem nulo, e nunca passavam pela nossa IA → invisíveis); (2) **1865 labels de tema distintos** → "Top Dores/Elogios" fragmentadas. Correções IO-safe:
