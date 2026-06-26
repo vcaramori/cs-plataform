@@ -148,8 +148,36 @@ export async function calcRelationshipScore(accountId: string): Promise<number> 
 }
 
 /**
+ * Calcula o VoC Sentiment Score: índice de sentimento da Voz do Cliente a partir das
+ * reuniões/interações (interactions.sentiment_score, −1..1) dos últimos 90 dias, normalizado
+ * para 0-100. Captura o que o NPS não vê (sentimento de reuniões — Read.ai/IA). Default 50
+ * (neutro) quando a conta não tem interações com sentimento no período. Query única e leve.
+ */
+export async function calcVocSentimentScore(accountId: string): Promise<number> {
+  const supabase = getSupabaseAdminClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any
+
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  const { data, error } = await db
+    .from('interactions')
+    .select('sentiment_score')
+    .eq('account_id', accountId)
+    .not('sentiment_score', 'is', null)
+    .gte('date', ninetyDaysAgo)
+
+  if (error || !data || data.length === 0) return 50.0
+
+  const avg = data.reduce((sum: number, r: any) => sum + (Number(r.sentiment_score) || 0), 0) / data.length
+  // −1..1 → 0..100
+  const normalized = ((avg + 1) / 2) * 100
+  return Math.round(Math.max(0, Math.min(100, normalized)) * 100) / 100
+}
+
+/**
  * Calculate Weighted Health Score v2
- * Weights: SLA 35%, NPS 30%, Adoption 25%, Relationship 10%
+ * Weights: SLA 30%, NPS 25%, Adoption 20%, Relationship 10%, VoC 15%
  * Classification:
  * - healthy: >= 75
  * - at-risk: 50-74
@@ -160,11 +188,12 @@ export function calcWeightedScore(components: {
   nps: number
   adoption: number
   relationship: number
+  voc: number
 }): WeightedScoreResult {
-  const { sla, nps, adoption, relationship } = components
+  const { sla, nps, adoption, relationship, voc } = components
 
-  // Weighted calculation
-  const score = (sla * 0.35) + (nps * 0.30) + (adoption * 0.25) + (relationship * 0.10)
+  // Weighted calculation — VoC (sentimento de reuniões) entra com 15%, rebalanceando os demais.
+  const score = (sla * 0.30) + (nps * 0.25) + (adoption * 0.20) + (relationship * 0.10) + (voc * 0.15)
   const finalScore = Math.round(Math.max(0, Math.min(100, score)) * 100) / 100
 
   // Classification
@@ -183,7 +212,8 @@ export function calcWeightedScore(components: {
       sla,
       nps,
       adoption,
-      relationship
+      relationship,
+      voc
     },
     status
   }
@@ -194,12 +224,13 @@ export function calcWeightedScore(components: {
  * This is the main orchestration function used by cron jobs
  */
 export async function calculateCompleteHealthScore(accountId: string): Promise<WeightedScoreResult> {
-  const [sla, nps, adoption, relationship] = await Promise.all([
+  const [sla, nps, adoption, relationship, voc] = await Promise.all([
     calcSLAScore(accountId),
     calcNPSScore(accountId),
     calcAdoptionScore(accountId),
-    calcRelationshipScore(accountId)
+    calcRelationshipScore(accountId),
+    calcVocSentimentScore(accountId)
   ])
 
-  return calcWeightedScore({ sla, nps, adoption, relationship })
+  return calcWeightedScore({ sla, nps, adoption, relationship, voc })
 }

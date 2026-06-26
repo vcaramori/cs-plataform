@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check } from 'lucide-react'
+import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check, Ban } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
@@ -25,6 +25,8 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
 
   const [saving, setSaving] = useState(false)
   const [created, setCreated] = useState(false)
+  const [fpSaving, setFpSaving] = useState(false)
+  const [fpDone, setFpDone] = useState(false)
   const [sourceOpen, setSourceOpen] = useState(false)
   const searchParams = useSearchParams()
   // "Abrir fonte": interação/NPS abrem o detalhe da origem num modal (sem navegar);
@@ -59,6 +61,29 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
       toast.error(e instanceof Error ? e.message : 'Erro ao criar tarefa')
     } finally {
       setSaving(false)
+    }
+  }
+  async function markFalsePositive() {
+    setFpSaving(true)
+    try {
+      const res = await fetch('/api/voc/action/false-positive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_id: signal.account_id,
+          signal_id: signal.id,
+          source: signal.source,
+          source_id: signal.source_id,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao marcar falso-positivo')
+      toast.success('Sinal marcado como falso-positivo (será excluído do VoC)')
+      setFpDone(true)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erro ao marcar falso-positivo')
+    } finally {
+      setFpSaving(false)
     }
   }
 
@@ -135,18 +160,44 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
         </div>
       )}
 
-      {/* Ação: criar atividade a partir do sinal */}
-      <button
-        onClick={createTask}
-        disabled={saving || created}
-        className={cn(
-          'w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors',
-          created ? 'bg-emerald-500/15 text-emerald-500' : 'bg-plannera-orange/10 text-plannera-orange hover:bg-plannera-orange/20 border border-plannera-orange/30'
-        )}
-      >
-        {created ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4" />}
-        {created ? 'Tarefa criada' : 'Criar tarefa'}
-      </button>
+      {/* Citações do cliente (extraídas da reunião pelo enriquecimento de VoC) */}
+      {Array.isArray(meta.quotes) && meta.quotes.length > 0 && (
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Citações do cliente</span>
+          <div className="space-y-1.5">
+            {meta.quotes.slice(0, 3).map((q: string, i: number) => (
+              <blockquote key={i} className="text-xs text-content-primary leading-relaxed border-l-2 border-plannera-primary/40 pl-3 italic">“{q}”</blockquote>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ações: criar atividade / marcar falso-positivo */}
+      <div className="space-y-2">
+        <button
+          onClick={createTask}
+          disabled={saving || created}
+          className={cn(
+            'w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors',
+            created ? 'bg-emerald-500/15 text-emerald-500' : 'bg-plannera-orange/10 text-plannera-orange hover:bg-plannera-orange/20 border border-plannera-orange/30'
+          )}
+        >
+          {created ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListPlus className="w-4 h-4" />}
+          {created ? 'Tarefa criada' : 'Criar tarefa'}
+        </button>
+        <button
+          onClick={markFalsePositive}
+          disabled={fpSaving || fpDone}
+          title="Excluir este sinal do VoC (sentimento avaliado incorretamente)"
+          className={cn(
+            'w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors border',
+            fpDone ? 'bg-surface-background text-content-secondary border-border-divider' : 'bg-transparent text-content-secondary hover:text-rose-500 hover:border-rose-500/30 border-border-divider'
+          )}
+        >
+          {fpDone ? <Check className="w-3.5 h-3.5" /> : fpSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />}
+          {fpDone ? 'Marcado como falso-positivo' : 'Marcar falso-positivo'}
+        </button>
+      </div>
 
       {/* Rodapé: conta, data e links */}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-divider">

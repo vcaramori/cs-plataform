@@ -302,6 +302,7 @@ export type HealthBreakdown = {
   nps: number        // 0-100: normalized NPS score
   adoption: number   // 0-100: % features active
   relationship: number // 0-100: interaction frequency in 30 days
+  voc?: number       // 0-100: índice de sentimento da Voz do Cliente (reuniões, 90d) — opcional p/ compat. com scores antigos
 }
 
 export type HealthScore = {

@@ -4,6 +4,18 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🗣️ Voz do Cliente — Fases 2 e 3 completadas (2026-06-26)
+
+Fechadas as lacunas que faltavam das Fases 2 e 3 do redesenho de VoC (plano em [docs/product/voc-plan.md](docs/product/voc-plan.md)):
+
+- **Marcar falso-positivo** (Fase 3): botão no Cartão de Evidência → `POST /api/voc/action/false-positive` grava curadoria (`risk_curation_feedback.source='voc'`, migration) e `buildVocSignals` exclui o sinal — mesma curadoria que o RAG respeita.
+- **Tie-in VoC → Perguntar/RAG** (Fase 3): o assistente (modo conta) recebe um bloco "Voz do Cliente" com dores/elogios recorrentes das reuniões.
+- **Tie-in VoC → Health Score** (Fase 3): novo componente **VoC (15%)** no score ponderado (sentimento de reuniões 90d) — pesos rebalanceados (SLA 30 / NPS 25 / Adoção 20 / Relacionamento 10 / VoC 15); exibido no breakdown de saúde.
+- **Citações por reunião** (Fase 2): `voc-enrich` extrai 1-3 citações fiéis → `interactions.quotes`, exibidas no Cartão de Evidência.
+- **Métricas no webhook** (Fase 2): o webhook do Read.ai faz fetch leve via REST e preenche o `sentiment_score` na hora (antes só o cron horário).
+
+---
+
 ## 🧹 Saneamento de débitos técnicos — schema desalinhado + crons (2026-06-25)
 
 Varredura de débitos cruzando os **logs do Postgres** com o **schema real** (`information_schema`). Detalhes em [docs/product/tech-debt.md](docs/product/tech-debt.md).

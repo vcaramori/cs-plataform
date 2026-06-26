@@ -1,5 +1,13 @@
 # Plano de Implementação — Módulo de VOC | Voz do Cliente (Revisado)
 
+> **Atualização (2026-06-26) — Fases 2 e 3 COMPLETAS.** Fechadas as lacunas que faltavam:
+> - **Falso-positivo (Fase 3):** migration ampliou `risk_curation_feedback.source` p/ `voc`; `POST /api/voc/action/false-positive`; botão no Cartão de Evidência; `buildVocSignals` exclui o sinal curado (mesma curadoria do RAG).
+> - **Tie-in VoC → RAG (Fase 3):** o Perguntar (modo conta) ganha um bloco "Voz do Cliente" com dores/elogios recorrentes (de `interaction_themes`).
+> - **Tie-in VoC → Health Score (Fase 3):** componente `voc` (15%) no score ponderado ([weighted-score.ts](../../src/lib/health/weighted-score.ts)) — pesos SLA 30 / NPS 25 / Adoção 20 / Relacionamento 10 / VoC 15; exibido no breakdown.
+> - **Citações por reunião (Fase 2):** `voc-enrich` extrai 1-3 citações → `interactions.quotes`, exibidas no Cartão de Evidência (forward-only).
+> - **Métricas no webhook (Fase 2):** webhook do Read.ai faz fetch REST leve (`expand=metrics`) e preenche `sentiment_score` na hora.
+> - **Fora de escopo (evolução):** clustering de temas por IA (segue normalização por dicionário).
+
 > **Atualização (2026-06-23) — Redesenho de usabilidade: tudo clicável + evidência + CSAT + visão por conta (Fase 1)**
 >
 > O dashboard deixou de ser "morto ao clique". Agora **todo número é uma porta**: KPIs, barras de fonte, termos de dor/encanto, dias da tendência e citações abrem um **Drawer de Sinais** (a lista que compõe o número), e cada sinal expande no **Cartão de Evidência** — mostrando **como foi avaliado**: origem (Read.ai? IA nossa? nota direta do cliente?), nota + escala, texto-fonte, keywords/confiança e link para a fonte.

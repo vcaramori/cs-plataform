@@ -4,16 +4,11 @@
 
 ## 🔴 Aberto
 
-### Voz do Cliente — follow-ups da Fase 3 (feature, 2026-06-23)
-- **Marcar falso-positivo** a partir de um sinal de VoC: `risk_curation_feedback.source` tem CHECK só `alert|assessment`; ampliar o enum (ou criar caminho próprio) para registrar falso-positivo de sentimento. É **feature de Fase 3** — exige também o caminho de UI/ação; só ampliar o CHECK não resolve sozinho.
-- **Tie-ins** do índice VoC com o **health-score** (componente de sentimento) e com o **RAG/Perguntar** (contexto por conta) — ainda não ligados.
-- Normalização de temas de VoC por **dicionário** (`voc_theme_synonyms`), sem clustering por IA. Evolução assíncrona possível.
+### Voz do Cliente — clustering de temas por IA (evolução, 2026-06-23)
+Normalização de temas de VoC é por **dicionário** (`voc_theme_synonyms`), sem clustering semântico por IA. Evolução assíncrona possível (cron que agrupa labels por embedding e popula o dicionário). Era **fora de escopo da v1**; o dicionário atende hoje. As demais lacunas das Fases 2 e 3 (falso-positivo, tie-ins VoC↔RAG/Health, citações, webhook) foram fechadas — ver Resolvidos.
 
-### Read.ai — webhook não traz `metrics.sentiment` (baixo impacto, 2026-06-23)
-Reuniões que chegam só por webhook ficam sem sentimento até o próximo fetch REST. **Baixo impacto:** o cron `readai-sync` (horário) re-busca reuniões recentes e preenche o sentimento em ≤1h. Fechar o gap (enfileirar um fetch leve de métricas no webhook) é otimização, não correção urgente. (O `read_score`/engagement já passou a ser persistido em `interactions.meta.metrics` — ver Resolvidos.)
-
-### `interactions.quotes` — coluna não usada (decisão: manter, 2026-06-23)
-Coluna jsonb criada por migração, nunca populada. **Decisão: manter** (sem custo; candidata a ser populada por extração de citações por reunião no futuro). Drop seria migração destrutiva — não fazer agora.
+### Backfill de citações de reunião (`interactions.quotes`) (2026-06-26)
+O cron `voc-enrich` passou a extrair citações, mas só processa interações com `themes_extracted_at` nulo → as ~2010 interações já extraídas **não** ganham citações retroativamente. Opcional: resetar `themes_extracted_at` de um lote bounded para repreencher (re-roda extração de temas; respeitar o orçamento de IO). Forward-only é o comportamento atual.
 
 ### IA — `sentiment_response_suggestion` sem consumidor (2026-06-25)
 O único call site dessa instrução era o `advanced-alerts-service` (removido — ver Resolvidos). A instrução continua no catálogo, mas **não é mais chamada**. Decidir: remover do catálogo ou religar a uma sugestão de resposta no caminho de alertas que funciona (`proactive_alerts`).
@@ -26,6 +21,12 @@ O refresh token do Read.ai é single-use rotativo; cron + clique concorrentes pa
 
 ## ✅ Resolvidos
 
+- (2026-06-26) **Voz do Cliente — Fases 2 e 3 completadas** (lacunas que faltavam da entrega original):
+  - **Falso-positivo de VoC (Fase 3):** migration ampliou `risk_curation_feedback.source` p/ incluir `voc`; endpoint `POST /api/voc/action/false-positive`; botão "Marcar falso-positivo" no Cartão de Evidência; `buildVocSignals` exclui sinais curados (mesma curadoria que o RAG respeita).
+  - **Tie-in VoC → RAG (Fase 3):** o Perguntar (modo conta) recebe um bloco "Voz do Cliente" com dores/elogios recorrentes (de `interaction_themes`).
+  - **Tie-in VoC → Health Score (Fase 3):** novo componente `voc` no score ponderado (sentimento de reuniões 90d) com peso 15% — pesos rebalanceados p/ SLA 30 / NPS 25 / Adoção 20 / Relacionamento 10 / VoC 15; exibido no breakdown de saúde (card + modal). Componente opcional no tipo p/ compat. com scores antigos.
+  - **Citações por reunião (Fase 2):** o cron `voc-enrich` passou a extrair 1-3 citações fiéis → `interactions.quotes`; exibidas no Cartão de Evidência. (Forward-only — ver backfill opcional em Aberto.)
+  - **Métricas no webhook (Fase 2):** o webhook do Read.ai agora faz um fetch leve via REST (`expand=metrics`) e dá patch no `sentiment_score` na hora, em vez de esperar o cron horário.
 - (2026-06-25) **Schema desalinhado — queries em colunas inexistentes** — auditado contra o schema real (`information_schema`) e os logs do Postgres; corrigido em todos os call sites:
   - `proactive_alerts.alert_type/title/description/tags` (**erro ATIVO** no log, vindo do bloco de alertas do RAG) → colunas reais `type/message/metadata` em [rag-pipeline.ts](../../src/lib/rag/rag-pipeline.ts). O contexto "alertas ativos" do Perguntar estava sempre vazio.
   - `sla_events.sla_status_resolution` (**erro ATIVO**, cron `escalate-sla-violations` horário) → os campos `sla_status_resolution`/`resolution_deadline` são do `support_tickets`, não do embed `sla_events`; corrigido em [sla-escalation.ts](../../src/lib/support/sla-escalation.ts).

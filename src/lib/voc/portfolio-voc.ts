@@ -161,10 +161,16 @@ export async function buildVocSignals(
 
   const accountsQuery = supabase.from('accounts').select('id, name, health_score, segment')
   const synonymsQuery = supabase.from('voc_theme_synonyms').select('synonym, canonical')
+  // Curadoria (Fase 3): sinais marcados como falso-positivo de sentimento são EXCLUÍDOS.
+  let curationQuery = supabase
+    .from('risk_curation_feedback')
+    .select('risk_key')
+    .eq('source', 'voc')
+    .eq('decision', 'false_positive')
 
   let interQ = supabase
     .from('interactions')
-    .select('id, account_id, sentiment_score, title, summary, raw_transcript, source, type, meta, date, created_at')
+    .select('id, account_id, sentiment_score, title, summary, raw_transcript, source, type, meta, quotes, date, created_at')
     .not('sentiment_score', 'is', null)
     .gte('date', fromDay).lte('date', toDay)
     .order('date', { ascending: false }).limit(SOURCE_CAP)
@@ -191,10 +197,11 @@ export async function buildVocSignals(
     interQ = interQ.eq('account_id', accountId)
     npsQ = npsQ.eq('account_id', accountId)
     csatQ = csatQ.eq('account_id', accountId)
+    curationQuery = curationQuery.eq('account_id', accountId)
   }
 
-  const [{ data: accounts }, { data: synonymRows }, { data: interactions }, { data: npsRows }, { data: replies }, { data: csats }] =
-    await Promise.all([accountsQuery, synonymsQuery, interQ, npsQ, repliesQ, csatQ])
+  const [{ data: accounts }, { data: synonymRows }, { data: interactions }, { data: npsRows }, { data: replies }, { data: csats }, { data: curationRows }] =
+    await Promise.all([accountsQuery, synonymsQuery, interQ, npsQ, repliesQ, csatQ, curationQuery])
 
   const accountMeta = new Map<string, { name: string; health_score: number; segment: string | null }>()
   for (const a of (accounts as any[]) ?? []) {
@@ -238,7 +245,7 @@ export async function buildVocSignals(
         excerpt: i.raw_transcript ? truncate(i.raw_transcript, 1200) : (i.summary ? truncate(i.summary, 1200) : null),
         keywords: themes.map((t) => t.theme),
         confidence: null, author: null,
-        meta: { interaction_type: i.type ?? null, summary: i.summary ?? null, participants: meta.participants ?? null, report_url: meta.report_url ?? null, read_score: (meta as any).read_score ?? null },
+        meta: { interaction_type: i.type ?? null, summary: i.summary ?? null, participants: meta.participants ?? null, report_url: meta.report_url ?? null, read_score: (meta as any).read_score ?? null, quotes: Array.isArray(i.quotes) ? i.quotes : null },
         deep_link: null, // interação abre o detalhe da origem num modal (VocSourceModal), sem navegar
 
       },
@@ -348,7 +355,10 @@ export async function buildVocSignals(
     })
   }
 
-  return { signals, accountMeta }
+  // Exclui sinais curados como falso-positivo (match exato pelo id do sinal).
+  const fpSet = new Set<string>(((curationRows as any[]) ?? []).map((r) => String(r.risk_key)).filter(Boolean))
+  const filtered = fpSet.size > 0 ? signals.filter((s) => !fpSet.has(s.id)) : signals
+  return { signals: filtered, accountMeta }
 }
 
 // --- Derivações compartilhadas ---

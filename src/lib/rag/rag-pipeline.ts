@@ -608,6 +608,31 @@ Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_month
     ? 'sobre um LOGO específico'
     : 'sobre o portfólio completo de CS'
 
+  // VOZ DO CLIENTE (tie-in Fase 3): temas recorrentes de dor/encanto extraídos das reuniões
+  // (interaction_themes, já normalizados pelo cron voc-enrich). Query leve, só no modo conta.
+  let vocContext = ''
+  if (accountId) {
+    const { data: vocThemes } = await (supabase as any)
+      .from('interaction_themes')
+      .select('theme, polarity')
+      .eq('account_id', accountId)
+      .limit(500)
+    const rows = (vocThemes as any[]) ?? []
+    if (rows.length > 0) {
+      const tally = (pol: string) => {
+        const m = new Map<string, number>()
+        for (const r of rows) if (r.polarity === pol) m.set(r.theme, (m.get(r.theme) ?? 0) + 1)
+        return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([t, c]) => `${t} (${c}×)`)
+      }
+      const pains = tally('pain')
+      const praises = tally('praise')
+      const parts: string[] = []
+      if (pains.length) parts.push(`Dores recorrentes (Voz do Cliente): ${pains.join(', ')}`)
+      if (praises.length) parts.push(`Elogios recorrentes (Voz do Cliente): ${praises.join(', ')}`)
+      if (parts.length) vocContext = `\n\n## VOZ DO CLIENTE (temas das reuniões)\n${parts.join('\n')}`
+    }
+  }
+
   const userContent = `## Contexto disponível (${scopeDescription})
 
 ### 1. Reuniões, Transcrições e Tickets (Busca Semântica)
@@ -623,6 +648,7 @@ ${openTicketsContext}
 ${slaViolationsContext}
 ${riskCurationContext}
 ${npsContext}
+${vocContext}
 ${portfolioContext}
 ${stakeholderContext}
 ${extraAccountContext}

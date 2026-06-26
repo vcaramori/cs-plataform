@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Activity, Zap, Users, Clock } from 'lucide-react'
+import { Activity, Zap, Users, Clock, MessageSquare } from 'lucide-react'
 import type { HealthBreakdown } from '@/lib/supabase/types'
 import {
   Tooltip,
@@ -71,6 +71,7 @@ export function HealthBreakdownCard({ breakdown, status, classifiedAt }: Props) 
     )
   }
 
+  const hasVoc = typeof breakdown.voc === 'number'
   const dimensions = [
     {
       label: 'SLA Compliance',
@@ -100,9 +101,16 @@ export function HealthBreakdownCard({ breakdown, status, classifiedAt }: Props) 
       description: 'Frequência de contato (30d)',
       tooltipText: 'Interaction frequency: 1-7d=100, 8-14d=75, 15-21d=50, 22-30d=25'
     },
+    ...(hasVoc ? [{
+      label: 'Voz do Cliente',
+      value: breakdown.voc as number,
+      icon: MessageSquare,
+      description: 'Sentimento de reuniões/VoC (90d)',
+      tooltipText: 'Índice de sentimento das reuniões (Read.ai/IA) normalizado para 0-100'
+    }] : []),
   ]
 
-  const weights = [0.35, 0.30, 0.25, 0.10]
+  const weights = hasVoc ? [0.30, 0.25, 0.20, 0.10, 0.15] : [0.35, 0.30, 0.25, 0.10]
 
   return (
     <Card>

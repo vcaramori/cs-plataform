@@ -123,7 +123,7 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
       await admin.from('interactions').update({ themes_extracted_at: stamp }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Da interação/reunião a seguir, extraia os principais TEMAS de DOR (pain) e de ENCANTO (praise) do cliente sobre o produto/atendimento. Ignore assuntos neutros/operacionais.\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}]} (máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 320)
+    const parsed = await classify(`Da interação/reunião a seguir, extraia os principais TEMAS de DOR (pain) e de ENCANTO (praise) do cliente sobre o produto/atendimento, e até 3 CITAÇÕES curtas e FIÉIS do cliente (sem timestamps, sem nomes de remetente, sem metadados de log — só a fala). Ignore assuntos neutros/operacionais.\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [até 3 citações curtas]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 420)
     const themes: Array<{ label: string; polarity: string }> = []
     if (parsed && Array.isArray(parsed.themes)) {
       for (const t of parsed.themes) {
@@ -132,12 +132,19 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
         if (label && label.length <= 40) themes.push({ label, polarity })
       }
     }
+    const quotes: string[] = []
+    if (parsed && Array.isArray(parsed.quotes)) {
+      for (const q of parsed.quotes) {
+        const s = String(q ?? '').trim().replace(/\s+/g, ' ')
+        if (s.length >= 8 && s.length <= 400) quotes.push(s)
+      }
+    }
     // Idempotente: limpa temas anteriores desta interação e regrava.
     await admin.from('interaction_themes').delete().eq('interaction_id', i.id)
     if (themes.length > 0) {
       await admin.from('interaction_themes').insert(themes.slice(0, 6).map((t) => ({ interaction_id: i.id, account_id: i.account_id, theme: t.label, polarity: t.polarity })))
     }
-    await admin.from('interactions').update({ themes_extracted_at: stamp }).eq('id', i.id)
+    await admin.from('interactions').update({ themes_extracted_at: stamp, quotes: quotes.slice(0, 3) }).eq('id', i.id)
   }, deadline)
 }
 

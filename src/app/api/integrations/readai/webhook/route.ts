@@ -8,7 +8,9 @@ import {
 } from '@/lib/integrations/readai/webhook'
 import { ingestReadAiMeeting } from '@/lib/integrations/readai/ingest'
 import { loadAccountIndex, resolveMeetingAccount } from '@/lib/integrations/readai/sync'
-import { meetingDateISO } from '@/lib/integrations/readai/client'
+import { meetingDateISO, getMeeting } from '@/lib/integrations/readai/client'
+import { getValidAccessToken } from '@/lib/integrations/readai/tokens'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { logReadAiImport } from '@/lib/integrations/readai/import-log'
 
 export const dynamic = 'force-dynamic'
@@ -84,7 +86,27 @@ export async function POST(request: Request) {
 
     const result = await ingestReadAiMeeting(meeting, accountId, csmId)
     await logReadAiImport({ source: 'webhook', userId: csmId, externalMeetingId: result.externalMeetingId, accountId: result.accountId, title: result.title, meetingDate, action: result.action, detail: result.detail ?? null })
-    return NextResponse.json({ status: result.action, session_id: payload.session_id })
+
+    // Fecha o gap do webhook: o payload NÃO traz metrics.sentiment (só o REST/expand traz).
+    // Busca leve via REST (apenas expand=metrics) e dá patch no sentiment_score da interação.
+    // AWAITED de propósito — trabalho pós-resposta não é confiável na Vercel. Best-effort:
+    // se falhar (sem token/erro), o sentimento entra no próximo ciclo do cron readai-sync.
+    let sentimentPatched = false
+    try {
+      const token = await getValidAccessToken(csmId)
+      if (token) {
+        const full = await getMeeting(token, payload.session_id, { expand: ['metrics'], baseUrl: cfg.api_base_url?.trim() || undefined })
+        const s = typeof full?.metrics?.sentiment === 'number' ? full.metrics.sentiment : null
+        if (s != null && s >= -1 && s <= 1) {
+          const admin = getSupabaseAdminClient() as any
+          await admin.from('interactions').update({ sentiment_score: Math.round(s * 1000) / 1000 }).eq('external_meeting_id', payload.session_id)
+          sentimentPatched = true
+        }
+      }
+    } catch (e) {
+      console.warn('[Read.ai webhook] fetch de métricas falhou (sentimento virá no próximo sync):', e instanceof Error ? e.message : e)
+    }
+    return NextResponse.json({ status: result.action, session_id: payload.session_id, sentiment_patched: sentimentPatched })
   } catch (e) {
     const message = e instanceof Error ? e.message : 'erro'
     console.error('[Read.ai webhook] Falha ao ingerir:', message)

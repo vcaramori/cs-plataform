@@ -122,12 +122,13 @@ export function HealthScoreDetailsModal({ isOpen, onClose, accountId, accountNam
                      'Crítico'}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className={cn('grid gap-3', typeof data.health_breakdown.voc === 'number' ? 'grid-cols-5' : 'grid-cols-4')}>
                   {[
                     { name: 'SLA', value: data.health_breakdown.sla, color: 'bg-blue-500/20 text-blue-300', icon: '⚡' },
                     { name: 'NPS', value: data.health_breakdown.nps, color: 'bg-purple-500/20 text-purple-300', icon: '👥' },
                     { name: 'Adoption', value: data.health_breakdown.adoption, color: 'bg-green-500/20 text-green-300', icon: '🚀' },
-                    { name: 'Relationship', value: data.health_breakdown.relationship, color: 'bg-orange-500/20 text-orange-300', icon: '🤝' }
+                    { name: 'Relationship', value: data.health_breakdown.relationship, color: 'bg-orange-500/20 text-orange-300', icon: '🤝' },
+                    ...(typeof data.health_breakdown.voc === 'number' ? [{ name: 'VoC', value: data.health_breakdown.voc, color: 'bg-pink-500/20 text-pink-300', icon: '💬' }] : []),
                   ].map((dim, idx) => (
                     <div key={idx} className={cn("p-3 rounded-lg", dim.color)}>
                       <div className="flex items-center gap-1.5 mb-2">
