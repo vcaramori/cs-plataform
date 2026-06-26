@@ -7,14 +7,6 @@ SELECT cron.schedule('cron-adoption-analysis', '0 2 1,15 * *', $$
   );
 $$);
 
-SELECT cron.schedule('cron-alert-analysis', '0 5 * * 1', $$
-  SELECT net.http_post(
-    url := 'https://mgkwaejxazwwevblqycd.supabase.co/functions/v1/cron-alert-analysis',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1na3dhZWp4YXp3d2V2YmxxeWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTMzNDIsImV4cCI6MjA5MDE4OTM0Mn0.1bT4-Z1ElatAmY_vT1LsJS4dobN-Bzsjoj1Wxgpng8I"}'::jsonb,
-    body := '{}'::jsonb
-  );
-$$);
-
 SELECT cron.schedule('cron-analyze-ticket-sentiments', '0 6 * * *', $$
   SELECT net.http_post(
     url := 'https://mgkwaejxazwwevblqycd.supabase.co/functions/v1/cron-analyze-ticket-sentiments',

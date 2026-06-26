@@ -3,7 +3,6 @@ const path = require('path');
 
 const functions = [
   { name: 'cron-adoption-analysis', schedule: '0 2 1,15 * *' },
-  { name: 'cron-alert-analysis', schedule: '0 5 * * 1' },
   { name: 'cron-analyze-ticket-sentiments', schedule: '0 6 * * *' },
   { name: 'cron-auto-assign-tickets', schedule: '*/5 * * * *' },
   { name: 'cron-auto-checkin-generate', schedule: '0 3 * * *' },

@@ -94,6 +94,23 @@ export async function getValidAccessToken(userId: string): Promise<string | null
     await saveOAuthTokens(userId, tokens)
     return tokens.access_token
   } catch (e) {
+    // Corrida de refresh token SINGLE-USE: se cron + clique (ou dois syncs) rodam juntos
+    // para o mesmo CSM, um rotaciona o refresh e o outro recebe um já inválido. Antes de
+    // desistir, relê UMA vez — a execução concorrente provavelmente já persistiu um access
+    // token novo e válido. Mitiga o erro transitório "token inválido" sem migração/lock.
+    try {
+      const { data: retry } = await (admin as any)
+        .from('user_integrations')
+        .select('access_token, token_expires_at')
+        .eq('user_id', userId)
+        .eq('provider', PROVIDER)
+        .maybeSingle()
+      const r = (retry ?? null) as { access_token: string | null; token_expires_at: string | null } | null
+      const exp = r?.token_expires_at ? new Date(r.token_expires_at).getTime() : 0
+      if (r?.access_token && exp - Date.now() > EXPIRY_SKEW_MS) {
+        return await decrypt(r.access_token)
+      }
+    } catch { /* ignora — cai no return null abaixo */ }
     console.error(`[Read.ai] refresh falhou para ${userId}:`, e instanceof Error ? e.message : e)
     return null
   }

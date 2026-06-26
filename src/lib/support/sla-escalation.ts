@@ -38,10 +38,8 @@ async function getCriticalTickets(): Promise<CriticalTicket[]> {
       assigned_to,
       created_at,
       account_id,
-      sla_events (
-        sla_status_resolution,
-        deadline_resolution
-      )
+      sla_status_resolution,
+      resolution_deadline
     `
     )
     .neq("status", "closed")
@@ -55,10 +53,7 @@ async function getCriticalTickets(): Promise<CriticalTicket[]> {
   const criticalTickets: CriticalTicket[] = [];
 
   for (const ticket of ticketsData || []) {
-    const slaEvent = ticket.sla_events?.[0];
-    if (!slaEvent) continue;
-
-    const slaStatus = slaEvent.sla_status_resolution;
+    const slaStatus = ticket.sla_status_resolution;
     if (slaStatus !== "vencido" && slaStatus !== "atencao") continue;
 
     const { data: accountData } = await supabase
@@ -86,7 +81,7 @@ async function getCriticalTickets(): Promise<CriticalTicket[]> {
       priority: ticket.priority || "medium",
       sla_status: slaStatus,
       hours_elapsed: hoursElapsed,
-      deadline_at: slaEvent.deadline_resolution,
+      deadline_at: ticket.resolution_deadline,
     });
   }
 

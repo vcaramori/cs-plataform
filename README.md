@@ -4,6 +4,18 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🧹 Saneamento de débitos técnicos — schema desalinhado + crons (2026-06-25)
+
+Varredura de débitos cruzando os **logs do Postgres** com o **schema real** (`information_schema`). Detalhes em [docs/product/tech-debt.md](docs/product/tech-debt.md).
+
+- **Erros de schema ATIVOS corrigidos:** bloco de alertas do RAG lia colunas inexistentes em `proactive_alerts` (`alert_type/title/description/tags` → `type/message/metadata`); cron `escalate-sla-violations` lia `sla_status_resolution` do embed errado (`sla_events` → `support_tickets`).
+- **Erros latentes alinhados ao schema:** `ticket_events.occurred_at→created_at`, `support_ticket_messages.deleted_at` (removido) e `message_type→type`, `contracts.created_at` → `renewal_date`/`start_date`/`onboarding_started_at`, `health_scores.health_score_v2` → lê de `accounts`, `adoption_metrics` (EAV) reescrito.
+- **Cron morto removido:** `advanced-alerts-service` escrevia/lia 6 tabelas inexistentes; o cron semanal `cron-alert-analysis` (job 6) gerava 0 alertas. Service + rota + edge function + entradas de cron removidos e job desagendado. Funcionalidade já coberta por `proactive_alerts`.
+- **Código morto removido:** `voc-service.ts` (endpoints 404, sem importadores).
+- **Read.ai:** `read_score`/engagement agora persistidos em `interactions.meta.metrics`; corrida de refresh de token mitigada (retry-on-fail).
+
+---
+
 ## 🧠 Governança de Prompts de IA — reescrita + correção de precedência (2026-06-25)
 
 Auditamos e reescrevemos **todas as 28 interações de IA em uso** sob a ótica de um CSM sênior de B2B enterprise, com verificação adversarial de que cada reescrita **preserva o contrato de saída** que o call site parseia.

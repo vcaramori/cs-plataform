@@ -86,8 +86,7 @@ export async function batchAnalyzeSentiments(
   const { data: replies, error: fetchError } = await supabase
     .from('support_ticket_messages')
     .select('id, body, ticket_id')
-    .in('id', replyIds)
-    .is('deleted_at', null);
+    .in('id', replyIds);
 
   if (fetchError || !replies) {
     console.error('Failed to fetch replies for sentiment analysis:', fetchError);
@@ -161,8 +160,7 @@ export async function analyzeUnanalyzedReplies(): Promise<number> {
   const { data: unananlyzedReplies, error: fetchError } = await supabase
     .from('support_ticket_messages')
     .select('id')
-    .is('deleted_at', null)
-    .eq('message_type', 'reply')
+    .eq('type', 'reply')
     .not(
       'id',
       'in',

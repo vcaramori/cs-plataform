@@ -375,8 +375,8 @@ export class ProductivityService {
       .select('mrr')
       .eq('csm_owner_id', csmId)
       .eq('contract_type', 'additive')
-      .gte('created_at', `${periodStart}T00:00:00`)
-      .lte('created_at', `${periodEnd}T23:59:59`)
+      .gte('start_date', periodStart)
+      .lte('start_date', periodEnd)
 
     const expansionValue = (expansions ?? []).reduce((s: number, e: any) => s + (e.mrr || 0), 0)
 

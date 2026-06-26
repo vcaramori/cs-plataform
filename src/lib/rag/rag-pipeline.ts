@@ -149,14 +149,14 @@ export async function runRAGPipeline(
     accountId
       ? db
           .from('proactive_alerts')
-          .select('alert_type, title, description, severity, created_at, tags')
+          .select('type, severity, message, metadata, created_at')
           .eq('account_id', accountId)
           .is('resolved_at', null)
           .order('created_at', { ascending: false })
           .limit(5)
       : db
           .from('proactive_alerts')
-          .select('alert_type, title, description, severity, created_at, tags, accounts(name)')
+          .select('type, severity, message, metadata, created_at, accounts(name)')
           .is('resolved_at', null)
           .order('created_at', { ascending: false })
           .limit(10),
@@ -544,9 +544,9 @@ Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_month
     }
     const lines = alertRecords.map((a: any) => {
       const severity = severityMap[a.severity] ?? a.severity?.toUpperCase() ?? 'N/A'
-      const tags = a.tags?.length > 0 ? ` [${a.tags.join(', ')}]` : ''
+      const tags = Array.isArray(a.metadata?.tags) && a.metadata.tags.length > 0 ? ` [${a.metadata.tags.join(', ')}]` : ''
       const accountLine = a.accounts?.name ? ` | Conta: ${a.accounts.name}` : ''
-      return `- [${severity}] ${a.title}${accountLine}${tags}: ${a.description ?? ''} (desde ${a.created_at?.slice(0, 10) ?? 'N/A'})`
+      return `- [${severity}] ${a.type}${accountLine}${tags}: ${a.message ?? ''} (desde ${a.created_at?.slice(0, 10) ?? 'N/A'})`
     }).join('\n')
     alertsContext = `\n\n## ALERTAS ATIVOS (NÃO RESOLVIDOS)\n${lines}`
   }

@@ -79,6 +79,9 @@ export async function ingestReadAiMeeting(
     topics: m.topics ?? null,
     report_url: m.report_url ?? null,
     platform: m.platform ?? null,
+    // Métricas do Read.ai (read_score/engagement/sentiment etc.) — antes só o sentiment
+    // era persistido; agora guardamos o bloco inteiro para análise futura. jsonb, sem migração.
+    metrics: m.metrics ?? null,
   }
 
   // Conta (para o chunk do RAG).
@@ -187,7 +190,7 @@ export async function ingestReadAiMeeting(
       .select('id')
       .eq('account_id', accountId)
       .eq('onboarding_status', 'in-progress')
-      .order('created_at', { ascending: true })
+      .order('onboarding_started_at', { ascending: true })
       .limit(1)
       .single()
     if (contract) {

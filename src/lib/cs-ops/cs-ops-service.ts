@@ -334,8 +334,8 @@ export class CSOperationsService {
       .select('id, mrr')
       .eq('csm_owner_id', csmId)
       .eq('contract_type', 'additive')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('start_date', periodStart)
+      .lte('start_date', periodEnd)
 
     const expansionValue = (expansions || []).reduce((sum: number, e: any) => sum + (e.mrr || 0), 0)
 
@@ -346,8 +346,8 @@ export class CSOperationsService {
       .eq('csm_owner_id', csmId)
       .eq('contract_type', 'renewal')
       .eq('status', 'active')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('renewal_date', periodStart)
+      .lte('renewal_date', periodEnd)
 
     // Get churn
     const { data: accounts } = await this.supabase
@@ -360,8 +360,8 @@ export class CSOperationsService {
       .select('id')
       .eq('csm_owner_id', csmId)
       .eq('status', 'churned')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('renewal_date', periodStart)
+      .lte('renewal_date', periodEnd)
 
     const { data: profile } = await this.supabase
       .from('profiles')
@@ -481,24 +481,24 @@ export class CSOperationsService {
       .select('id')
       .eq('contract_type', 'renewal')
       .eq('status', 'active')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('renewal_date', periodStart)
+      .lte('renewal_date', periodEnd)
 
     // Get churned
     const { data: churned } = await this.supabase
       .from('contracts')
       .select('id')
       .eq('status', 'churned')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('renewal_date', periodStart)
+      .lte('renewal_date', periodEnd)
 
     // Get expansion
     const { data: expansions } = await this.supabase
       .from('contracts')
       .select('mrr')
       .eq('contract_type', 'additive')
-      .gte('created_at', periodStart)
-      .lte('created_at', periodEnd)
+      .gte('start_date', periodStart)
+      .lte('start_date', periodEnd)
 
     // Get CSM count
     const { data: csms } = await this.supabase

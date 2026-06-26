@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       .from('contracts')
       .select('id, description, contract_code, account_id, accounts!inner(name, csm_owner_id)')
       .eq('onboarding_status', 'not-started')
-      .order('created_at', { ascending: false })
+      .order('start_date', { ascending: false })
       .limit(500)
     if (scope !== 'global') q = q.eq('accounts.csm_owner_id', user.id)
     const { data, error } = await q

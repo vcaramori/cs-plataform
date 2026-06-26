@@ -108,29 +108,29 @@ export class AlertService {
     const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
 
-    const { data: thisMonth } = await this.supabase
-      .from('adoption_metrics')
-      .select('active_feature_count, total_feature_count')
-      .eq('account_id', accountId)
-      .gte('evaluated_at', firstDayThisMonth.toISOString())
-      .order('evaluated_at', { ascending: false })
-      .limit(1)
-      .single()
+    // adoption_metrics é EAV (metric_name/value/measured_at) — não tem colunas wide
+    // (active_feature_count/total_feature_count) nem evaluated_at. Lê a taxa de adoção
+    // (% de features ativas) por período via metric_name='adoption_rate'. Sem snapshots
+    // suficientes (hoje a tabela está vazia) → retorna null, sem erro de schema.
+    const readRate = async (from: Date, to?: Date): Promise<number | null> => {
+      let q = this.supabase
+        .from('adoption_metrics')
+        .select('value, measured_at')
+        .eq('account_id', accountId)
+        .eq('metric_name', 'adoption_rate')
+        .gte('measured_at', from.toISOString())
+        .order('measured_at', { ascending: false })
+        .limit(1)
+      if (to) q = q.lt('measured_at', to.toISOString())
+      const { data } = await q.maybeSingle()
+      const v = data?.value
+      return typeof v === 'number' && isFinite(v) ? v : null
+    }
 
-    const { data: lastMonth } = await this.supabase
-      .from('adoption_metrics')
-      .select('active_feature_count, total_feature_count')
-      .eq('account_id', accountId)
-      .gte('evaluated_at', firstDayLastMonth.toISOString())
-      .lt('evaluated_at', firstDayThisMonth.toISOString())
-      .order('evaluated_at', { ascending: false })
-      .limit(1)
-      .single()
+    const thisMonthRate = await readRate(firstDayThisMonth)
+    const lastMonthRate = await readRate(firstDayLastMonth, firstDayThisMonth)
+    if (thisMonthRate == null || lastMonthRate == null || lastMonthRate === 0) return null
 
-    if (!thisMonth || !lastMonth) return null
-
-    const thisMonthRate = thisMonth.active_feature_count / thisMonth.total_feature_count
-    const lastMonthRate = lastMonth.active_feature_count / lastMonth.total_feature_count
     const dropPercent = ((lastMonthRate - thisMonthRate) / lastMonthRate) * 100
 
     if (dropPercent > 20) {
@@ -142,7 +142,6 @@ export class AlertService {
           this_month_rate: (thisMonthRate * 100).toFixed(1),
           last_month_rate: (lastMonthRate * 100).toFixed(1),
           drop_percent: dropPercent.toFixed(1),
-          features_disabled: lastMonth.active_feature_count - thisMonth.active_feature_count,
           recommendation: 'Analisar qual(is) feature(s) foram desativadas e por quê'
         }
       }
@@ -402,13 +401,11 @@ export class AlertService {
 
   // 7. PLAYBOOK TRIGGER: health_score_v2 < 50 (Wave 4, Story 14.2)
   async checkPlaybookTrigger(accountId: string): Promise<AlertCheckResult> {
-    // Get latest health score v2
+    // health_score_v2 (ponderado) vive em accounts, não em health_scores.
     const { data: healthData } = await this.supabase
-      .from('health_scores')
+      .from('accounts')
       .select('health_score_v2')
-      .eq('account_id', accountId)
-      .order('evaluated_at', { ascending: false })
-      .limit(1)
+      .eq('id', accountId)
       .single()
 
     if (!healthData || !healthData.health_score_v2 || healthData.health_score_v2 >= 50) {

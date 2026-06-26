@@ -38,10 +38,10 @@ export async function generateTicketSummary(
     // Fetch last 3 replies/notes
     const { data: events, error: eventsError } = await supabase
       .from('ticket_events')
-      .select('id, event_type, occurred_at, metadata')
+      .select('id, event_type, created_at, payload')
       .eq('ticket_id', ticketId)
       .in('event_type', ['reply', 'note'])
-      .order('occurred_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(3)
 
     if (eventsError) {
@@ -53,7 +53,7 @@ export async function generateTicketSummary(
     if (events && events.length > 0) {
       replyContext = '\n\nÚltimas respostas:\n'
       events.forEach((event, idx) => {
-        const body = event.metadata?.body || ''
+        const body = event.payload?.body || ''
         replyContext += `${idx + 1}. ${body.substring(0, 100)}...\n`
       })
     }
