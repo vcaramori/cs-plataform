@@ -144,19 +144,90 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
     if (themes.length > 0) {
       await admin.from('interaction_themes').insert(themes.slice(0, 6).map((t) => ({ interaction_id: i.id, account_id: i.account_id, theme: t.label, polarity: t.polarity })))
     }
-    await admin.from('interactions').update({ themes_extracted_at: stamp, quotes: quotes.slice(0, 3) }).eq('id', i.id)
+    await admin.from('interactions').update({ themes_extracted_at: stamp, quotes_extracted_at: stamp, quotes: quotes.slice(0, 3) }).eq('id', i.id)
   }, deadline)
 }
 
-export interface VocEnrichResult { nps: number; csat: number; interactions: number; duration_ms: number }
+/**
+ * Sentimento da NOSSA IA para interações SEM sentiment_score — corrige o "VoC linear":
+ * reuniões do Read.ai chegam sem `metrics.sentiment` (vem nulo) e nunca passavam pela nossa IA,
+ * ficando invisíveis no VoC. Aqui pontuamos a transcrição/resumo via a instrução `interaction_sentiment`
+ * (contrato = número puro −1..1). Marca `meta.sentiment_ai` p/ a evidência rotular "Avaliado por IA".
+ */
+export async function enrichInteractionSentiment(limit: number, deadline: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const { data } = await admin
+    .from('interactions')
+    .select('id, raw_transcript, summary, meta')
+    .is('sentiment_score', null)
+    .or('raw_transcript.not.is.null,summary.not.is.null')
+    .order('date', { ascending: false })
+    .limit(limit)
+  const rows = (data as any[]) ?? []
+  if (rows.length === 0) return 0
+  const sys = await buildSystemInstruction('interaction_sentiment')
+  return runBatched(rows, async (i) => {
+    const text = (i.raw_transcript && String(i.raw_transcript).trim()) || (i.summary && String(i.summary).trim()) || ''
+    if (text.length < 40) return // texto insuficiente — deixa null (não força sentimento)
+    let score: number | null = null
+    try {
+      const res = await Promise.race([
+        generateText(`Transcrição da reunião/interação a avaliar:\n${text.slice(0, 4000)}`, { systemInstruction: sys, temperature: 0, maxOutputTokens: 12, disableThinking: true, allowFallback: true }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('llm timeout')), LLM_TIMEOUT_MS)),
+      ])
+      const n = parseFloat(String(res?.result ?? '').trim())
+      if (Number.isFinite(n)) score = Math.max(-1, Math.min(1, Math.round(n * 1000) / 1000))
+    } catch (e) {
+      console.error('[voc-enrich] sentiment LLM error:', e instanceof Error ? e.message : e)
+    }
+    if (score == null) return // não conseguiu agora — tenta no próximo ciclo
+    const meta = { ...(i.meta && typeof i.meta === 'object' ? i.meta : {}), sentiment_ai: true }
+    await admin.from('interactions').update({ sentiment_score: score, meta }).eq('id', i.id)
+  }, deadline)
+}
+
+/** Citações fiéis do cliente por reunião — backfill independente dos temas (gate `quotes_extracted_at`). */
+export async function enrichInteractionQuotes(limit: number, deadline: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const { data } = await admin
+    .from('interactions')
+    .select('id, title, summary, raw_transcript')
+    .is('quotes_extracted_at', null)
+    .or('raw_transcript.not.is.null,summary.not.is.null')
+    .order('date', { ascending: false })
+    .limit(limit)
+  const rows = (data as any[]) ?? []
+  return runBatched(rows, async (i) => {
+    const text = (i.summary && String(i.summary).trim()) || (i.raw_transcript && String(i.raw_transcript).trim()) || ''
+    const stamp = new Date().toISOString()
+    if (text.length < 40) {
+      await admin.from('interactions').update({ quotes_extracted_at: stamp, quotes: [] }).eq('id', i.id)
+      return
+    }
+    const parsed = await classify(`Extraia até 3 CITAÇÕES curtas e FIÉIS do cliente a partir da reunião a seguir (só a fala; sem timestamps, sem nomes de remetente, sem metadados de log).\nRetorne JSON: {"quotes": [até 3 citações curtas]}\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 300)
+    const quotes: string[] = []
+    if (parsed && Array.isArray(parsed.quotes)) {
+      for (const q of parsed.quotes) {
+        const s = String(q ?? '').trim().replace(/\s+/g, ' ')
+        if (s.length >= 8 && s.length <= 400) quotes.push(s)
+      }
+    }
+    await admin.from('interactions').update({ quotes: quotes.slice(0, 3), quotes_extracted_at: stamp }).eq('id', i.id)
+  }, deadline)
+}
+
+export interface VocEnrichResult { nps: number; csat: number; sentiment: number; interactions: number; quotes: number; duration_ms: number }
 
 /** Roda um ciclo bounded de enriquecimento (chamado pelo cron). */
 export async function runVocEnrich(opts?: { budgetMs?: number }): Promise<VocEnrichResult> {
   const start = Date.now()
   const deadline = start + (opts?.budgetMs ?? 180000)
-  // Ordem: NPS e CSAT (rápidos) primeiro; interações (texto maior) por último.
+  // Prioridade: sentimento (corrige o "VoC linear" — reuniões sem score) e citações (backfill)
+  // primeiro; depois temas; NPS/CSAT são rápidos e fecham o ciclo.
+  const sentiment = await enrichInteractionSentiment(20, deadline)
+  const quotes = await enrichInteractionQuotes(15, deadline)
+  const interactions = await enrichInteractionThemes(10, deadline)
   const nps = await enrichNpsComments(15, deadline)
   const csat = await enrichCsatComments(15, deadline)
-  const interactions = await enrichInteractionThemes(10, deadline)
-  return { nps, csat, interactions, duration_ms: Date.now() - start }
+  return { nps, csat, sentiment, interactions, quotes, duration_ms: Date.now() - start }
 }

@@ -221,8 +221,10 @@ export async function buildVocSignals(
   const themeMap = await fetchInteractionThemes(supabase, interRows.map((i) => i.id))
   for (const i of interRows) {
     const score = Number(i.sentiment_score)
-    const isReadAi = i.source === 'readai'
     const meta = (i.meta ?? {}) as Record<string, unknown>
+    // Read.ai = sentimento do próprio Read.ai; mas se foi a NOSSA IA que pontuou (backfill,
+    // meta.sentiment_ai), a evidência deve rotular "Avaliado por IA", não "pelo Read.ai".
+    const isReadAi = i.source === 'readai' && (meta as any).sentiment_ai !== true
     const themes = themeMap.get(i.id) ?? []
     const pains = normList(themes.filter((t) => t.polarity === 'pain').map((t) => t.theme))
     const praises = normList(themes.filter((t) => t.polarity === 'praise').map((t) => t.theme))
