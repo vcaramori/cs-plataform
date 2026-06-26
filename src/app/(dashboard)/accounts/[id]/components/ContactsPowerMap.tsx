@@ -37,6 +37,13 @@ function linkedinPhoto(url?: string | null): string | undefined {
   return match ? `https://unavatar.io/linkedin/${match[1]}` : undefined
 }
 
+function getWhatsAppLink(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (!digits) return '#'
+  if (digits.length >= 10 && digits.length <= 11) return `https://wa.me/55${digits}`
+  return `https://wa.me/${digits}`
+}
+
 const influenceConfig: Record<string, { label: string; color: string; bg: string; ring: string; icon: any }> = {
   Champion:  { label: 'Campeão',    color: 'text-plannera-ds',      bg: 'bg-plannera-ds/10',      ring: 'ring-plannera-ds/20',      icon: Crown },
   Detractor: { label: 'Detrator',   color: 'text-plannera-demand',  bg: 'bg-plannera-demand/10',  ring: 'ring-plannera-demand/20',  icon: ShieldAlert },
@@ -404,7 +411,9 @@ export function ContactsPowerMap({
                                 )}
                                 {c.phone && (
                                   <a
-                                    href={`tel:${c.phone}`}
+                                    href={getWhatsAppLink(c.phone)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     onClick={e => e.stopPropagation()}
                                     className="inline-flex items-center gap-1 text-[9px] font-bold text-content-secondary hover:text-plannera-ds transition-colors uppercase tracking-wide"
                                   >

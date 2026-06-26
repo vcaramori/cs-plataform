@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Iniciativas de IA — Time de Customer Success | Plannera</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --bg2:#111626;
+    --card:#161c2e;
+    --card2:#1c2438;
+    --line:#26304a;
+    --txt:#eef2fb;
+    --muted:#9aa6c2;
+    --brand:#4f7cff;
+    --brand2:#7b5cff;
+    --accent:#22d3a7;
+    --warn:#f5b84b;
+    --danger:#ff6b8a;
+    --shadow:0 24px 60px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 80% -10%,rgba(123,92,255,.18),transparent 60%),
+               radial-gradient(1000px 700px at -10% 110%,rgba(79,124,255,.16),transparent 55%),
+               var(--bg);
+    color:var(--txt);
+    overflow:hidden;
+  }
+  .deck{height:100vh;width:100vw;position:relative}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;
+    padding:clamp(28px,5vw,72px);
+    animation:fade .5s ease;
+    overflow-y:auto;
+  }
+  .slide.active{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--brand);font-weight:700;margin-bottom:18px;
+  }
+  .kicker::before{content:"";width:26px;height:2px;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:2px}
+  h1{font-size:clamp(2.6rem,6vw,4.8rem);line-height:1.05;font-weight:800;letter-spacing:-.02em}
+  h2{font-size:clamp(2rem,4.2vw,3.2rem);font-weight:800;letter-spacing:-.01em;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:clamp(1.2rem,1.9vw,1.55rem);margin-top:18px;max-width:62ch;line-height:1.5}
+  .gradient{background:linear-gradient(120deg,#fff 10%,#a9c0ff 50%,#c9b8ff 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .grid{display:grid;gap:18px;margin-top:26px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:1100px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);
+    border-radius:18px;padding:22px;
+    box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  .card .ico{font-size:1.9rem;margin-bottom:10px;display:block}
+  .card h3{font-size:1.4rem;font-weight:700;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:1.12rem;line-height:1.5}
+  .card .tag{
+    display:inline-block;margin-top:14px;font-size:.92rem;font-weight:700;
+    padding:6px 12px;border-radius:999px;background:rgba(34,211,167,.12);
+    color:var(--accent);border:1px solid rgba(34,211,167,.25);
+  }
+  .card.warn .tag{background:rgba(245,184,75,.12);color:var(--warn);border-color:rgba(245,184,75,.25)}
+
+  .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(34,211,167,.12);color:var(--accent);
+    border:1px solid rgba(34,211,167,.3);padding:8px 16px;border-radius:999px;font-weight:700;font-size:.9rem}
+  .pill.live::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(34,211,167,.6);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,211,167,.5)}70%{box-shadow:0 0 0 12px rgba(34,211,167,0)}100%{box-shadow:0 0 0 0 rgba(34,211,167,0)}}
+
+  .split{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center;flex:1}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+
+  .before,.after{border-radius:16px;padding:20px;border:1px solid var(--line)}
+  .before{background:rgba(255,107,138,.07);border-color:rgba(255,107,138,.25)}
+  .after{background:rgba(34,211,167,.07);border-color:rgba(34,211,167,.25)}
+  .before h4,.after h4{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+  .before h4{color:var(--danger)} .after h4{color:var(--accent)}
+  .before ul,.after ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .before li,.after li{font-size:1.18rem;color:var(--txt);padding-left:26px;position:relative;line-height:1.45}
+  .before li::before{content:"\2715";position:absolute;left:0;color:var(--danger);font-weight:700}
+  .after li::before{content:"\2713";position:absolute;left:0;color:var(--accent);font-weight:700}
+
+  .skill{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;
+    background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
+    border-radius:16px;padding:18px 22px;box-shadow:var(--shadow)}
+  .skill .name{font-weight:700;font-size:1.3rem;display:flex;align-items:center;gap:10px}
+  .skill .desc{color:var(--muted);font-size:1.08rem;margin-top:8px;line-height:1.5;max-width:74ch}
+  .saving{text-align:right;white-space:nowrap}
+  .saving .big{font-size:1.75rem;font-weight:800;color:var(--accent);line-height:1}
+  .saving .lbl{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+  .ba{font-size:.98rem;color:var(--muted);margin-top:8px}
+  .ba b{color:var(--txt)}
+
+  .stat{text-align:center;padding:8px}
+  .stat .n{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:800;background:linear-gradient(120deg,#fff,#9db8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .c{color:var(--muted);font-size:1.12rem;margin-top:6px}
+
+  .nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:14px;background:rgba(15,20,35,.8);backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:999px;padding:8px 16px;z-index:50}
+  .nav button{background:none;border:none;color:var(--txt);cursor:pointer;font-size:1.2rem;width:34px;height:34px;border-radius:50%;transition:.2s}
+  .nav button:hover{background:var(--card2)}
+  .nav .count{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:54px;text-align:center}
+  .progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2),var(--accent));z-index:60;transition:width .35s ease}
+  .brandbar{position:fixed;top:16px;right:26px;z-index:40;display:flex;align-items:center}
+  .brandbar img{height:42px;width:auto;opacity:.95}
+  .hint{position:fixed;bottom:26px;right:26px;color:var(--muted);font-size:.78rem;z-index:40;opacity:.7}
+
+  .lead{display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap}
+  .chip{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:1.02rem;color:var(--muted)}
+  .chip b{color:var(--txt)}
+  .footnote{margin-top:auto;padding-top:18px;color:var(--muted);font-size:1rem}
+  .pill{font-size:1.02rem}
+  .kicker{font-size:.92rem}
+
+  /* carrossel */
+  .carousel{flex:1;display:flex;flex-direction:column;margin-top:18px;min-height:0}
+  .stage{position:relative;flex:1;border-radius:18px;border:1px solid var(--line);overflow:hidden;
+    background:linear-gradient(180deg,var(--card),var(--card2));box-shadow:var(--shadow);min-height:0}
+  .stage .frame{position:absolute;inset:0;opacity:0;transition:opacity .5s ease;display:flex;align-items:center;justify-content:center;padding:18px}
+  .stage .frame.on{opacity:1}
+  .stage .frame img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  .stage .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 26px;
+    background:linear-gradient(0deg,rgba(8,11,20,.92),transparent);text-align:left}
+  .stage .cap h3{font-size:1.5rem;font-weight:800}
+  .stage .cap p{color:var(--muted);font-size:1.1rem;margin-top:4px}
+  .cbtn{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:48px;height:48px;border-radius:50%;
+    background:rgba(15,20,35,.75);border:1px solid var(--line);color:#fff;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+  .cbtn:hover{background:var(--brand)}
+  .cbtn.prev{left:16px} .cbtn.next{right:16px}
+  .dots{display:flex;gap:10px;justify-content:center;margin-top:16px}
+  .dots span{width:11px;height:11px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s}
+  .dots span.on{background:var(--brand);width:30px;border-radius:6px}
+  /* painel de agentes */
+  .agents{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-top:16px}
+  .amenu{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:900px){.amenu{grid-template-columns:repeat(2,1fr)}}
+  .abtn{display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer;
+    background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;color:var(--txt);font:inherit;transition:.16s}
+  .abtn:hover{border-color:var(--brand);transform:translateY(-2px)}
+  .abtn .ic{font-size:1.3rem;flex-shrink:0}
+  .abtn .tx b{font-size:.98rem;font-weight:700;display:block;line-height:1.15}
+  .abtn .tx span{font-size:.8rem;color:var(--muted)}
+  .abtn.on{border-color:transparent;background:linear-gradient(120deg,var(--brand),var(--brand2));box-shadow:var(--shadow)}
+  .abtn.on .tx span{color:rgba(255,255,255,.85)}
+  .adetail{flex:1;min-height:0;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
+    border-radius:18px;padding:clamp(22px,3vw,38px);box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center}
+  .adetail .big-ic{font-size:3rem;margin-bottom:6px}
+  .adetail .role{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);background:rgba(34,211,167,.12);border:1px solid rgba(34,211,167,.25);
+    padding:5px 13px;border-radius:999px;margin-bottom:14px;width:fit-content}
+  .adetail h3{font-size:clamp(1.6rem,2.6vw,2.3rem);font-weight:800;margin-bottom:12px}
+  .adetail .desc{font-size:clamp(1.1rem,1.5vw,1.35rem);line-height:1.55;color:var(--txt)}
+  .adetail .when{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+  .adetail .when div b{display:block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .adetail .when div p{font-size:1.05rem}
+  .frame.noimg img{display:none}
+  .frame.noimg::after{content:"Imagem pendente — salve o arquivo em /public/apresentacao/";
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:1.1rem;padding:30px;text-align:center}
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+<div class="brandbar"><img src="brand/logo-com-assinatura-branca.png" alt="Plannera — especialistas em S&OP" /></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1. CAPA -->
+  <section class="slide active" style="justify-content:center">
+    <img src="brand/logo-com-assinatura-branca.png" alt="Plannera — especialistas em S&OP" style="height:72px;width:auto;margin-bottom:26px;align-self:flex-start" />
+    <div class="kicker">Apresentação ao Time · 2026</div>
+    <h1 class="gradient">Inteligência Artificial<br/>no time de Customer Success</h1>
+    <p class="sub">Como estamos usando IA para centralizar dados, dar visão 360º dos clientes e devolver horas de trabalho operacional ao time — da plataforma de CS aos agentes de Suporte, Onboarding e Ongoing.</p>
+    <div class="lead">
+      <span class="chip"><b>1</b> Plataforma própria de CS</span>
+      <span class="chip"><b>3</b> frentes de agentes</span>
+      <span class="chip"><b>+10</b> rotinas automatizadas</span>
+    </div>
+  </section>
+
+  <!-- 2. CONTEXTO / POR QUE -->
+  <section class="slide">
+    <div class="kicker">Por que começamos</div>
+    <h2>De planilhas espalhadas para uma visão única do cliente</h2>
+    <div class="split">
+      <div class="before">
+        <h4>Antes — Airtable e planilhas</h4>
+        <ul>
+          <li>Dados espalhados, sem centralização</li>
+          <li>Nenhuma visão 360º do cliente</li>
+          <li>Histórico de contato perdido entre ferramentas</li>
+          <li>Health, NPS, suporte e esforço em silos</li>
+          <li>Decisão baseada em memória, não em dado</li>
+        </ul>
+      </div>
+      <div class="after">
+        <h4>Agora — Plataforma de CS</h4>
+        <ul>
+          <li>Tudo num único painel: clientes, contratos, esforço</li>
+          <li>Visão 360º: suporte, adoção, health, NPS, reuniões</li>
+          <li>Linha do tempo unificada por cliente</li>
+          <li>Motor de IA que responde sobre qualquer conta</li>
+          <li>Decisão guiada por dado e por alertas proativos</li>
+        </ul>
+      </div>
+    </div>
+    <p class="footnote">A plataforma nasceu para resolver a dor de não ter os dados centralizados e não enxergar o cliente por inteiro.</p>
+  </section>
+
+  <!-- 3. PLATAFORMA — O QUE FAZ -->
+  <section class="slide">
+    <div class="kicker">A plataforma · O que ela faz</div>
+    <h2>A central de Customer Success</h2>
+    <p class="sub">Centraliza a gestão de clientes, contratos, esforço, suporte, adoção, health score e NPS — com um motor de IA que responde perguntas em linguagem natural sobre qualquer cliente ou o portfólio inteiro.</p>
+    <div class="grid g4">
+      <div class="card"><span class="ico">🏢</span><h3>Cliente 360º</h3><p>Ficha completa da conta com adoção executiva, mapa de stakeholders e linha do tempo unificada de eventos.</p></div>
+      <div class="card"><span class="ico">💬</span><h3>Suporte & SLA</h3><p>Sincronização automática de chamados, categorização por IA, métricas de SLA e thread completa do atendimento.</p></div>
+      <div class="card"><span class="ico">🤖</span><h3>Perguntar à IA</h3><p>Chat 360º que cruza notas, financeiro e suporte para responder qualquer pergunta sobre um cliente.</p></div>
+      <div class="card"><span class="ico">🔔</span><h3>Alertas Proativos</h3><p>Monitoramento diário de 6 indicadores de saúde — risco de churn vira ação antes de virar problema.</p></div>
+      <div class="card"><span class="ico">📈</span><h3>Health & NPS</h3><p>Health Score por conta, medidor de lealdade NPS global e evolução do portfólio.</p></div>
+      <div class="card"><span class="ico">🔄</span><h3>Renovações</h3><p>Painel de renovação com vigência, contagem regressiva e histórico de negociação.</p></div>
+      <div class="card"><span class="ico">🎥</span><h3>Reuniões (Read.ai)</h3><p>Transcrição completa das reuniões importada automaticamente para a timeline, o esforço e a IA.</p></div>
+      <div class="card"><span class="ico">🗣️</span><h3>Voz do Cliente</h3><p>Sentimento por conta cruzando interações, NPS, suporte e CSAT — dores e elogios com evidência.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. STATUS PRODUÇÃO -->
+  <section class="slide" style="justify-content:center">
+    <div class="kicker">Status</div>
+    <h2>Em produção — e em uso real</h2>
+    <div class="lead"><span class="pill live">No ar e operando</span><span class="chip">Cadastros em andamento · bases históricas sendo importadas e processadas</span></div>
+    <div class="grid g4" style="margin-top:34px">
+      <div class="stat"><div class="n">360º</div><div class="c">visão por cliente</div></div>
+      <div class="stat"><div class="n">12+</div><div class="c">rotinas automáticas</div></div>
+      <div class="stat"><div class="n">6</div><div class="c">indicadores de alerta proativo</div></div>
+      <div class="stat"><div class="n">5</div><div class="c">fontes de Voz do Cliente</div></div>
+    </div>
+    <p class="sub" style="margin-top:34px">A plataforma está <b>em produção</b>, com os cadastros de clientes sendo populados de forma contínua. Conforme as contas entram, a visão 360º, os alertas e a Voz do Cliente "acendem" automaticamente para cada cliente.</p>
+  </section>
+
+  <!-- 4b. CARROSSEL DA PLATAFORMA -->
+  <section class="slide" style="padding-bottom:90px">
+    <div class="kicker">A plataforma por dentro</div>
+    <h2>Como ela aparece no dia a dia</h2>
+    <div class="carousel">
+      <div class="stage">
+        <button class="cbtn prev" aria-label="Anterior">‹</button>
+        <button class="cbtn next" aria-label="Próximo">›</button>
+        <div class="frame on"><img src="apresentacao/image-1782416484325.png" alt="Início" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Início · Centro de comando</h3><p>Briefing do dia, tarefas priorizadas por IA, agenda e reuniões importadas automaticamente.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416508993.png" alt="Portfólio" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Portfolio Control</h3><p>Visão executiva de clientes e receita recorrente: logos, MRR, health, risco e pipeline de renovações.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416520244.png" alt="Risco" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Cockpit de Risco</h3><p>Receita em risco, matriz saúde × risco da IA e priorização da retenção do portfólio.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416523930.png" alt="Voz do Cliente" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Voz do Cliente</h3><p>Índice de sentimento, sinais analisados e tendência cruzando reuniões, NPS, suporte e CSAT.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416527237.png" alt="Suporte" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Painel de Suporte</h3><p>CSAT, compliance de SLA, tempos de resposta/resolução e volume — indicadores da área inteira.</p></div></div>
+      </div>
+      <div class="dots"></div>
+    </div>
+  </section>
+
+  <!-- 4c. 8 AGENTES DA PLATAFORMA (interativo) -->
+  <section class="slide" style="padding-bottom:80px">
+    <div class="kicker">Inteligência dentro da plataforma · Perguntar à IA</div>
+    <h2>8 agentes de IA — um time de especialistas</h2>
+    <p class="sub">Dentro do "Perguntar à IA", oito agentes especializados em S&OP analisam cada cliente e o portfólio. Clique para ver o que cada um faz.</p>
+    <div class="agents">
+      <div class="amenu" id="amenu"></div>
+      <div class="adetail" id="adetail"></div>
+    </div>
+  </section>
+
+  <!-- 5. AGENTES — DIVISÃO -->
+  <section class="slide" style="justify-content:center">
+    <div class="kicker">Agentes de IA dentro do CS</div>
+    <h2>Agentes especializados por frente do time</h2>
+    <p class="sub">Além da plataforma, criamos agentes de IA que executam tarefas operacionais ponta a ponta — cada frente do CS tem os seus.</p>
+    <div class="grid g3" style="margin-top:30px">
+      <div class="card"><span class="ico">🛠️</span><h3>Suporte</h3><p>Fusão de Itens, Report Mensal, Validação 1 para 1 e Processos Mortos.</p><span class="tag">4 agentes</span></div>
+      <div class="card warn"><span class="ico">🚀</span><h3>Onboarding</h3><p>Fábia, Análises Padrão, Manuela e Simulação Estatística.</p><span class="tag">Em andamento</span></div>
+      <div class="card"><span class="ico">📊</span><h3>Ongoing</h3><p>Resumo de Visita, Farol S&OP, Fechamento Mensal e Check de Uso.</p><span class="tag">4 agentes</span></div>
+    </div>
+  </section>
+
+  <!-- 6. SUPORTE -->
+  <section class="slide">
+    <div class="kicker">Frente · Suporte</div>
+    <h2>Agentes de Suporte</h2>
+    <div class="grid" style="margin-top:18px;gap:14px">
+      <div class="skill">
+        <div>
+          <div class="name">🔀 Fusão de Itens</div>
+          <div class="desc">Processa chamados de fusão de itens do Helpdesk: extrai os pares De/Para de SKU, cruza com o arquivo de referência do cliente e gera o CSV pronto para importar no admin tool.</div>
+          <div class="ba"><b>Sem o agente:</b> 15–25 min por chamado · <b>Com:</b> 2–3 min</div>
+        </div>
+        <div class="saving"><div class="big">~20 min</div><div class="lbl">por chamado</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">📊 Report Mensal de Suporte</div>
+          <div class="desc">Gera o report mensal em apresentação (10 slides) a partir do Excel do mês: KPIs, volumes por instância e módulo, tempo de resolução, avaliações e histórico — no template e nas cores da Plannera.</div>
+          <div class="ba"><b>Sem o agente:</b> 2–4 h por mês · <b>Com:</b> 5–10 min</div>
+        </div>
+        <div class="saving"><div class="big">~2–3 h</div><div class="lbl">por mês</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">✅ Validação 1 para 1</div>
+          <div class="desc">Valida se um atributo pode ser filtro ou coluna numa Tela de Plano: verifica se existe relação 1:1 e, quando não há, mostra exatamente quais combinações conflitam.</div>
+          <div class="ba"><b>Sem o agente:</b> 20–40 min · <b>Com:</b> 2–3 min</div>
+        </div>
+        <div class="saving"><div class="big">~30 min</div><div class="lbl">por validação</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">💀 Processos Mortos</div>
+          <div class="desc">Recupera edições manuais perdidas por processos mortos: detecta a chave da tela, resolve duplicatas, pivota os dados por registro e mês e gera o CSV de importação pronto e no formato correto.</div>
+          <div class="ba"><b>Sem o agente:</b> 45–90 min · <b>Com:</b> 3–5 min</div>
+        </div>
+        <div class="saving"><div class="big">~1 h</div><div class="lbl">por ocorrência</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. ONBOARDING -->
+  <section class="slide">
+    <div class="kicker">Frente · Onboarding</div>
+    <h2>Agentes de Onboarding</h2>
+    <p class="sub">Frente conduzida por Marcela e Lucas — acelerando as implantações de S&OP.</p>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card warn"><span class="ico">📐</span><h3>Fábia</h3><p>Calcula o FA a partir da simulação estatística. Conduzida por Marcela e Lucas.</p><span class="tag">Em andamento</span></div>
+      <div class="card warn"><span class="ico">📋</span><h3>Análises Padrão</h3><p>Gera as análises padrão para entrega das implantações puras de S&OP.</p><span class="tag">Em andamento</span></div>
+      <div class="card warn"><span class="ico">📖</span><h3>Manuela</h3><p>Produz manuais de uso da ferramenta conforme a especificação de cada cliente, partindo do uso geral e dos conceitos da ferramenta.</p><span class="tag">Em andamento</span></div>
+      <div class="card warn"><span class="ico">🧪</span><h3>Simulação Estatística</h3><p>Começamos esta semana a estudar, com o Cosmos, fazer a simulação estatística pela IA.</p><span class="tag">Em estudo</span></div>
+    </div>
+  </section>
+
+  <!-- 8. ONGOING -->
+  <section class="slide">
+    <div class="kicker">Frente · Ongoing</div>
+    <h2>Agentes de Ongoing</h2>
+    <div class="grid" style="margin-top:16px;gap:14px">
+      <div class="skill">
+        <div>
+          <div class="name">📊 Resumo de Visita</div>
+          <div class="desc">Gera um resumo gerencial (apresentação) a partir de todos os touchpoints da visita (Read.ai, e-mail, Teams, To Do, Wishlist): assuntos tratados, evoluções e uma lista de próximos passos — no template e cores da Plannera.</div>
+          <div class="ba"><b>Sem o agente:</b> 2–3 h por visita · <b>Com:</b> 18–20 min</div>
+        </div>
+        <div class="saving"><div class="big">~1h40–2h40</div><div class="lbl">por visita</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">🚦 Farol S&OP</div>
+          <div class="desc">Instrumento de gestão de carteira: monitora a execução das etapas de planejamento em todos os clientes. Etapas vermelhas recorrentes viram contato proativo; gaps em clientes Professional/Essential sinalizam treinamento ou upsell; ausência de rodada antecipa risco de desengajamento.</div>
+          <div class="ba"><b>Sem o agente:</b> ~2 h por semana · <b>Com:</b> 1 minuto</div>
+        </div>
+        <div class="saving"><div class="big">~8 h</div><div class="lbl">por mês</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">📈 Fechamento Mensal de Clientes</div>
+          <div class="desc">Consolida os principais indicadores de cada cliente numa visão gerencial única: Health Score, FA, colaboração e faturamento com comparativo anual. Indicadores em queda viram contato proativo; gaps de health, intervenção consultiva; queda de faturamento antecipa churn.</div>
+          <div class="ba"><b>Sem o agente:</b> 4–8 h por mês · <b>Com:</b> poucos minutos</div>
+        </div>
+        <div class="saving"><div class="big">~4–8 h</div><div class="lbl">por ciclo</div></div>
+      </div>
+      <div class="skill">
+        <div>
+          <div class="name">🔎 Check de Uso</div>
+          <div class="desc">Acompanha o uso real da ferramenta pelo cliente, sinalizando quedas de utilização e oportunidades de retomada de adoção — apoiando a ação proativa do time de Ongoing. Conduzido por Júlia.</div>
+        </div>
+        <div class="saving"><span class="pill" style="background:rgba(34,211,167,.12)">Disponível</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. IMPACTO -->
+  <section class="slide" style="justify-content:center">
+    <div class="kicker">Impacto consolidado</div>
+    <h2>Tempo que a IA devolve ao time</h2>
+    <p class="sub">Cada agente troca horas de trabalho manual e repetitivo por minutos. Abaixo, quanto tempo economizamos em cada tarefa — e com que frequência ela acontece.</p>
+    <div class="grid g4" style="margin-top:30px">
+      <div class="card">
+        <div class="stat" style="padding:0"><div class="n">~20 min</div></div>
+        <h3 style="margin-top:10px">Fusão de Itens</h3>
+        <p>Economia <b style="color:var(--accent)">a cada chamado de suporte</b> de fusão de SKUs resolvido.</p>
+      </div>
+      <div class="card">
+        <div class="stat" style="padding:0"><div class="n">~8 h</div></div>
+        <h3 style="margin-top:10px">Farol S&OP</h3>
+        <p>Economia <b style="color:var(--accent)">por mês</b> ao monitorar as etapas de planejamento de toda a carteira (4 execuções semanais).</p>
+      </div>
+      <div class="card">
+        <div class="stat" style="padding:0"><div class="n">~2 h+</div></div>
+        <h3 style="margin-top:10px">Resumo de Visita</h3>
+        <p>Economia <b style="color:var(--accent)">a cada visita</b> feita a um cliente, consolidando todos os pontos de contato.</p>
+      </div>
+      <div class="card">
+        <div class="stat" style="padding:0"><div class="n">4–8 h</div></div>
+        <h3 style="margin-top:10px">Fechamento Mensal</h3>
+        <p>Economia <b style="color:var(--accent)">por mês</b> no relatório gerencial que consolida os indicadores de cada cliente.</p>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:26px">Menos esforço operacional, mais consistência (template e padrão Plannera em tudo) e <b>decisão guiada por dado</b> — da plataforma 360º aos agentes de cada frente.</p>
+  </section>
+
+  <!-- 9b. PLATAFORMA DE INTEGRAÇÕES — CONTEXTO -->
+  <section class="slide">
+    <div class="kicker">Mais uma iniciativa · Plataforma de Integrações</div>
+    <h2>Plannera integrada ao ERP dos clientes</h2>
+    <p class="sub">Uma segunda plataforma, construída no Lovable, para controlar a iniciativa de integrações — tornar a Plannera conectada ao ERP de cada cliente, reduzindo trabalho manual no fluxo de dados.</p>
+    <div class="grid g4" style="margin-top:8px">
+      <div class="card"><span class="ico">🗂️</span><h3>Board</h3><p>Kanban dos clientes por etapa da integração (On Hold → Priorizado → Agendado → Em andamento → Concluído).</p></div>
+      <div class="card"><span class="ico">🌊</span><h3>Ondas</h3><p>Implantação organizada em ondas, com status, MRR e próximos contatos consolidados por onda.</p></div>
+      <div class="card"><span class="ico">📅</span><h3>Calendário</h3><p>Entregas e atividades planejadas por dia, por responsável — visão de execução da semana.</p></div>
+      <div class="card"><span class="ico">📊</span><h3>Dashboard</h3><p>Cards por etapa, MRR por onda, mix de produtos e cards atrasados — visão gerencial da iniciativa.</p></div>
+    </div>
+    <div class="lead" style="margin-top:20px">
+      <span class="chip"><b>44</b> clientes em integração</span>
+      <span class="chip"><b>R$ 1,26 Mi</b> de MRR no pipeline</span>
+      <span class="chip"><b>4</b> ondas de implantação</span>
+    </div>
+  </section>
+
+  <!-- 9c. CARROSSEL INTEGRAÇÕES -->
+  <section class="slide" style="padding-bottom:90px">
+    <div class="kicker">Plataforma de Integrações por dentro</div>
+    <h2>Como acompanhamos as integrações</h2>
+    <div class="carousel">
+      <div class="stage">
+        <button class="cbtn prev" aria-label="Anterior">‹</button>
+        <button class="cbtn next" aria-label="Próximo">›</button>
+        <div class="frame on"><img src="apresentacao/image-1782416535752.png" alt="Board" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Board por etapa</h3><p>Cada cliente é um card com MRR, CSM, onda e produtos — movido pelas etapas da integração.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416539880.png" alt="Calendário" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Calendário de entregas</h3><p>Entregas e atividades planejadas da semana, por responsável.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416543021.png" alt="Ondas" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Ondas de implementação</h3><p>Visão consolidada por onda: status, MRR, clientes em risco e última nota de cada conta.</p></div></div>
+        <div class="frame"><img src="apresentacao/image-1782416546573.png" alt="Dashboard" onerror="this.closest('.frame').classList.add('noimg')" /><div class="cap"><h3>Dashboard gerencial</h3><p>Cards por etapa, MRR por onda, mix de produtos e cards atrasados num só lugar.</p></div></div>
+      </div>
+      <div class="dots"></div>
+    </div>
+  </section>
+
+  <!-- 10. FECHAMENTO -->
+  <section class="slide" style="justify-content:center;align-items:center;text-align:center">
+    <div class="kicker" style="justify-content:center">Obrigado</div>
+    <h1 class="gradient">IA a serviço do cliente<br/>e do time de CS</h1>
+    <p class="sub" style="margin-left:auto;margin-right:auto">Plataforma centralizada + agentes especializados = visão 360º, menos trabalho manual e mais tempo para o que gera valor.</p>
+    <div class="lead" style="justify-content:center"><span class="chip">Plannera · Customer Success</span><span class="chip">2026</span></div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" aria-label="Anterior">‹</button>
+  <span class="count" id="count">1 / 10</span>
+  <button id="next" aria-label="Próximo">›</button>
+</div>
+<div class="hint">← → para navegar · F para tela cheia</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  const bar=document.getElementById('bar');
+  const count=document.getElementById('count');
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    count.textContent=(i+1)+' / '+slides.length;
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')show(i+1);
+    if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+    if(e.key==='Home')show(0);
+    if(e.key==='End')show(slides.length-1);
+    if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+  });
+  document.getElementById('deck').addEventListener('click',e=>{
+    if(e.target.closest('.nav'))return;
+    const x=e.clientX/window.innerWidth;
+    if(x>0.7)show(i+1);else if(x<0.3)show(i-1);
+  });
+  show(0);
+
+  // carrosseis (um init por bloco .carousel)
+  document.querySelectorAll('.carousel').forEach(car=>{
+    const frames=[...car.querySelectorAll('.frame')];
+    const dotsBox=car.querySelector('.dots');
+    let ci=0;
+    frames.forEach((_,k)=>{const d=document.createElement('span');d.onclick=e=>{e.stopPropagation();go(k);};dotsBox.appendChild(d);});
+    const dots=[...dotsBox.children];
+    function go(n){
+      ci=(n+frames.length)%frames.length;
+      frames.forEach((f,k)=>f.classList.toggle('on',k===ci));
+      dots.forEach((d,k)=>d.classList.toggle('on',k===ci));
+    }
+    let timer=setInterval(()=>go(ci+1),2000);
+    function reset(){clearInterval(timer);timer=setInterval(()=>go(ci+1),2000);}
+    car.querySelector('.cbtn.next').onclick=e=>{e.stopPropagation();go(ci+1);reset();};
+    car.querySelector('.cbtn.prev').onclick=e=>{e.stopPropagation();go(ci-1);reset();};
+    [...dots].forEach(d=>d.addEventListener('click',reset));
+    go(0);
+  });
+
+  // 8 agentes da plataforma
+  const agents=[
+    {ic:"🧭",name:"Gerente de CS",role:"Orquestrador",
+     desc:"O ponto de entrada para qualquer pergunta complexa. Entende o contexto do cliente ou do portfólio, prioriza o que realmente importa e aciona os agentes especialistas certos para montar uma resposta completa.",
+     when:"Toda pergunta multidimensional sobre uma conta ou o portfólio."},
+    {ic:"🛡️",name:"Sentinela de Risco",role:"Risk",
+     desc:"Vigia continuamente os sinais de churn — queda de health, silêncio do cliente, NPS negativo, atrasos no ciclo de planejamento — e antecipa quais contas precisam de atenção antes que o risco vire perda de receita.",
+     when:"Suspeita de risco ou preparação para uma renovação."},
+    {ic:"🚀",name:"Explorador de Expansão",role:"Expansão",
+     desc:"Identifica oportunidades de crescimento na base: contas saudáveis em platô, novas demandas e padrões de uso que indicam espaço para upsell ou cross-sell. Transforma sinais de adoção em pauta comercial.",
+     when:"Conta saudável estagnada ou nova demanda do cliente."},
+    {ic:"🎯",name:"Coach de Adoção",role:"Adoção",
+     desc:"Diagnostica o nível de adoção e o time-to-value de cada cliente, aponta os bloqueadores que travam o uso e recomenda os próximos passos para destravar o valor da ferramenta.",
+     when:"Onboarding, baixa ativação ou bloqueadores de uso."},
+    {ic:"🔄",name:"Estrategista de Renovação",role:"Renovação",
+     desc:"A partir de 90 dias antes do vencimento, monta a estratégia de renovação: leitura de risco, histórico de negociação e os argumentos certos para garantir a continuidade do contrato.",
+     when:"A partir de D-90 (90 dias antes do vencimento)."},
+    {ic:"📐",name:"Arquiteto de QBR",role:"QBR / EBR",
+     desc:"Desenha QBRs e EBRs estruturados: organiza a narrativa da reunião executiva — resultados do período, valor entregue, saúde da conta, riscos e o plano dos próximos passos — pronta para apresentar à liderança do cliente.",
+     when:"Preparando uma reunião executiva (QBR/EBR) com o cliente."},
+    {ic:"🗣️",name:"Analista de Voz do Cliente",role:"Voz do Cliente",
+     desc:"Sintetiza tudo que o cliente disse — reuniões, NPS, suporte e CSAT — em dores, elogios e padrões recorrentes, revelando o sentimento real por trás dos números.",
+     when:"Análise de feedback e descoberta de padrões."},
+    {ic:"🔍",name:"Auditor de CS Ops",role:"Operação do time",
+     desc:"Faz a auditoria interna do time de CS: produtividade, gargalos e distribuição da carteira. Dá ao gestor um retrato honesto da operação para decidir onde ajustar.",
+     when:"Snapshot trimestral ou análise de gargalos."},
+  ];
+  const amenu=document.getElementById('amenu');
+  const adetail=document.getElementById('adetail');
+  if(amenu){
+    agents.forEach((a,i)=>{
+      const b=document.createElement('button');
+      b.className='abtn'+(i===0?' on':'');
+      b.innerHTML=`<span class="ic">${a.ic}</span><span class="tx"><b>${a.name}</b><span>${a.role}</span></span>`;
+      b.onclick=e=>{e.stopPropagation();selectAgent(i);};
+      amenu.appendChild(b);
+    });
+    function selectAgent(i){
+      [...amenu.children].forEach((b,k)=>b.classList.toggle('on',k===i));
+      const a=agents[i];
+      adetail.innerHTML=`<div class="big-ic">${a.ic}</div><span class="role">${a.role}</span>`+
+        `<h3>${a.name}</h3><p class="desc">${a.desc}</p>`+
+        `<div class="when"><span style="font-size:1.4rem">⏱️</span><div><b>Quando usar</b><p>${a.when}</p></div></div>`;
+    }
+    selectAgent(0);
+  }
+</script>
+</body>
+</html>

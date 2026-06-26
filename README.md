@@ -4,6 +4,12 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 📱 Stakeholders — Link direto para WhatsApp (2026-06-26)
+
+O telefone cadastrado nos stakeholders (Power Map) agora é um link direto para abertura no WhatsApp (`https://wa.me/...`), substituindo o formato antigo (`tel:`). O número é formatado automaticamente, removendo caracteres não numéricos e incluindo o DDI `55` caso seja um número nacional sem código de país, facilitando o contato rápido com os clientes.
+
+---
+
 ## 🎚️ Voz do Cliente — régua de dor/encanto editável + recalibrada (2026-06-26)
 
 A régua que decide dor/encanto estava **hardcoded** no `enrich.ts` (só a persona genérica era editável em /admin) e **ampla demais** — marcava tópicos de implantação/setup e qualidade-de-dado-do-cliente como dor, e "capacidade desejada" como elogio. Agora:
