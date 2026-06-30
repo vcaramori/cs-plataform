@@ -4,6 +4,12 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🎁 Wishlist v2 — plano de redesenho do funil (2026-06-30)
+
+Plano canônico inicial em [docs/product/wishlist-plan-v2.md](docs/product/wishlist-plan-v2.md). Diagnóstico frio: a Wishlist captura muito bem (636 sinais de IA, 30 contas) mas **morre depois da captura** — 89% dos sinais ficam `pending`, só 4 viraram itens, 0 briefs e 0 handoffs chegaram ao Produto. Princípio: **"nenhum pedido fica órfão — todo sinal vira demanda consolidada, priorizada e rastreável até o roadmap, e o cliente sabe que foi ouvido"**. Três fases (CS enterprise · Designer · PM): **(1)** desentupir a triagem com cron `wishlist-enrich` (match de catálogo em lote + categorização por taxonomia + clustering por embedding) e triagem assistida em lote; **(2)** consolidação de demanda + RICE assistido com score/ranking; **(3)** brief automático + handoff real + **loop de retorno ao cliente** + tie-ins (conta/RAG/renovação). Em desenvolvimento, fase a fase.
+
+---
+
 ## 🗓️🗣️ Voz do Cliente — filtros de data calendário + stakeholders e citação no drawer (2026-06-30)
 
 Duas melhorias de usabilidade no `/voc`:
