@@ -8,7 +8,7 @@ import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check, Ban, Star } from 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
-import { POLARITY_META, SOURCE_META, fmtDate } from './voc-ui'
+import { POLARITY_META, SOURCE_META, fmtDate, asQuote } from './voc-ui'
 import { VocSourceModal } from './VocSourceModal'
 
 /**
@@ -187,14 +187,21 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
         </div>
       ) : null}
 
-      {/* Citações do cliente (extraídas da reunião pelo enriquecimento de VoC) */}
+      {/* Citações do cliente (extraídas da reunião pelo enriquecimento de VoC) — com quem disse */}
       {Array.isArray(meta.quotes) && meta.quotes.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Citações do cliente</span>
-          <div className="space-y-1.5">
-            {meta.quotes.slice(0, 3).map((q: string, i: number) => (
-              <blockquote key={i} className="text-xs text-content-primary leading-relaxed border-l-2 border-plannera-primary/40 pl-3 italic">“{q}”</blockquote>
-            ))}
+          <div className="space-y-2">
+            {meta.quotes.slice(0, 3).map((raw: unknown, i: number) => {
+              const q = asQuote(raw)
+              if (!q.q) return null
+              return (
+                <blockquote key={i} className="text-xs text-content-primary leading-relaxed border-l-2 border-plannera-primary/40 pl-3 italic">
+                  “{q.q}”
+                  {q.by && <span className="block not-italic text-[10px] font-bold text-plannera-orange mt-0.5">— {q.by}</span>}
+                </blockquote>
+              )
+            })}
           </div>
         </div>
       )}

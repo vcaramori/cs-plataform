@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { calculateDateRange, type DateRangePeriod } from '@/lib/date-range'
 import type { VocSignal, VocStakeholder } from '@/lib/voc/portfolio-voc'
-import { POLARITY_META, SOURCE_META, fmtDate } from './voc-ui'
+import { POLARITY_META, SOURCE_META, fmtDate, asQuote } from './voc-ui'
 import { SignalEvidence } from './SignalEvidence'
 
 // Presets do filtro de data local do drawer ('' = herda o período da tela).
@@ -53,9 +53,10 @@ function SignalRow({ signal }: { signal: VocSignal }) {
   const [open, setOpen] = useState(false)
   const pol = POLARITY_META[signal.polarity]
   const meta = (signal.evidence.meta ?? {}) as Record<string, any>
-  const quote: string | null = Array.isArray(meta.quotes) && meta.quotes.length ? String(meta.quotes[0]) : null
+  const quote = Array.isArray(meta.quotes) && meta.quotes.length ? asQuote(meta.quotes[0]) : null
   const stakeholders: VocStakeholder[] = Array.isArray(meta.stakeholders) ? meta.stakeholders : []
-  const text = quote ?? signal.excerpt ?? signal.evidence.title ?? '—'
+  const hasQuote = !!quote?.q
+  const text = hasQuote ? quote!.q : (signal.excerpt ?? signal.evidence.title ?? '—')
   return (
     <li className="rounded-xl border border-border-divider bg-surface-background overflow-hidden">
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-start gap-3 p-3 text-left hover:bg-surface-card transition-colors">
@@ -67,9 +68,10 @@ function SignalRow({ signal }: { signal: VocSignal }) {
             <span className="text-[12px] font-black text-content-primary truncate">{signal.account_name}</span>
             <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary shrink-0">{SOURCE_META[signal.source].label}</span>
           </div>
-          <p className={cn('text-xs leading-relaxed line-clamp-3', quote ? 'text-content-primary italic' : 'text-content-secondary')}>
-            {quote ? `“${text}”` : text}
+          <p className={cn('text-xs leading-relaxed line-clamp-3', hasQuote ? 'text-content-primary italic' : 'text-content-secondary')}>
+            {hasQuote ? `“${text}”` : text}
           </p>
+          {quote?.by && <span className="block text-[10px] font-bold text-plannera-orange">— {quote.by}</span>}
           <StakeholderChips stakeholders={stakeholders} />
           <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/70">{fmtDate(signal.date)}</span>
         </div>

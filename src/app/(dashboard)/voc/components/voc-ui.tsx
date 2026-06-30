@@ -31,3 +31,14 @@ export function dominantPolarity(a: { positive: number; neutral: number; negativ
 export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
+
+/** Normaliza uma citação para {q, by} — tolera string (legado) e {q,by}/{quote,speaker}. */
+export function asQuote(x: unknown): { q: string; by: string | null } {
+  if (typeof x === 'string') return { q: x, by: null }
+  if (x && typeof x === 'object') {
+    const o = x as Record<string, unknown>
+    const by = o.by ?? o.speaker
+    return { q: String(o.q ?? o.quote ?? ''), by: by ? String(by) : null }
+  }
+  return { q: '', by: null }
+}

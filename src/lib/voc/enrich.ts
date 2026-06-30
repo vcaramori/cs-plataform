@@ -41,6 +41,26 @@ function cleanKeywords(v: unknown): string[] {
   if (!Array.isArray(v)) return []
   return [...new Set(v.map((x) => String(x).trim().toLowerCase()).filter((s) => s && s.length <= 40))].slice(0, 6)
 }
+/** Normaliza citações para {q, by} (a fala + quem disse). Tolera string legada e {q,by}/{quote,speaker}. */
+function cleanQuotes(v: unknown): Array<{ q: string; by: string | null }> {
+  if (!Array.isArray(v)) return []
+  const out: Array<{ q: string; by: string | null }> = []
+  for (const item of v) {
+    let q = ''
+    let by: string | null = null
+    if (typeof item === 'string') q = item
+    else if (item && typeof item === 'object') {
+      const o = item as Record<string, unknown>
+      q = String(o.q ?? o.quote ?? '')
+      const b = o.by ?? o.speaker
+      by = b ? String(b).trim() : null
+    }
+    q = q.trim().replace(/\s+/g, ' ')
+    if (by) by = by.replace(/\s+/g, ' ').slice(0, 80) || null
+    if (q.length >= 8 && q.length <= 400) out.push({ q, by: by || null })
+  }
+  return out.slice(0, 3)
+}
 async function runBatched<T>(items: T[], fn: (item: T) => Promise<void>, deadline: number): Promise<number> {
   let done = 0
   for (let i = 0; i < items.length; i += CONCURRENCY) {
@@ -123,7 +143,7 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
       await admin.from('interactions').update({ themes_extracted_at: stamp }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Tarefa: TEMAS DE INTERAÇÃO. Aplique a CALIBRAGEM do system instruction (dor/encanto têm que ser SOBRE A PLANNERA — produto/atendimento; operacional/setup/dado-do-próprio-cliente/capacidade-desejada = "neutral") e extraia até 3 CITAÇÕES curtas e fiéis do cliente (sem timestamps, nomes de remetente ou metadados — só a fala).\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [até 3 citações curtas]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 420)
+    const parsed = await classify(`Tarefa: TEMAS DE INTERAÇÃO. Aplique a CALIBRAGEM do system instruction (dor/encanto têm que ser SOBRE A PLANNERA — produto/atendimento; operacional/setup/dado-do-próprio-cliente/capacidade-desejada = "neutral") e extraia até 3 CITAÇÕES curtas e fiéis do cliente COM QUEM DISSE (a fala + o nome de quem falou conforme aparece no texto; "" se não der p/ saber).\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [{"q": fala curta, "by": quem disse}]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 480)
     const themes: Array<{ label: string; polarity: string }> = []
     if (parsed && Array.isArray(parsed.themes)) {
       for (const t of parsed.themes) {
@@ -132,19 +152,13 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
         if (label && label.length <= 40) themes.push({ label, polarity })
       }
     }
-    const quotes: string[] = []
-    if (parsed && Array.isArray(parsed.quotes)) {
-      for (const q of parsed.quotes) {
-        const s = String(q ?? '').trim().replace(/\s+/g, ' ')
-        if (s.length >= 8 && s.length <= 400) quotes.push(s)
-      }
-    }
+    const quotes = cleanQuotes(parsed?.quotes)
     // Idempotente: limpa temas anteriores desta interação e regrava.
     await admin.from('interaction_themes').delete().eq('interaction_id', i.id)
     if (themes.length > 0) {
       await admin.from('interaction_themes').insert(themes.slice(0, 6).map((t) => ({ interaction_id: i.id, account_id: i.account_id, theme: t.label, polarity: t.polarity })))
     }
-    await admin.from('interactions').update({ themes_extracted_at: stamp, quotes_extracted_at: stamp, quotes: quotes.slice(0, 3) }).eq('id', i.id)
+    await admin.from('interactions').update({ themes_extracted_at: stamp, quotes_extracted_at: stamp, quotes }).eq('id', i.id)
   }, deadline)
 }
 
@@ -204,15 +218,9 @@ export async function enrichInteractionQuotes(limit: number, deadline: number): 
       await admin.from('interactions').update({ quotes_extracted_at: stamp, quotes: [] }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Extraia até 3 CITAÇÕES curtas e FIÉIS do cliente a partir da reunião a seguir (só a fala; sem timestamps, sem nomes de remetente, sem metadados de log).\nRetorne JSON: {"quotes": [até 3 citações curtas]}\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 300)
-    const quotes: string[] = []
-    if (parsed && Array.isArray(parsed.quotes)) {
-      for (const q of parsed.quotes) {
-        const s = String(q ?? '').trim().replace(/\s+/g, ' ')
-        if (s.length >= 8 && s.length <= 400) quotes.push(s)
-      }
-    }
-    await admin.from('interactions').update({ quotes: quotes.slice(0, 3), quotes_extracted_at: stamp }).eq('id', i.id)
+    const parsed = await classify(`Extraia até 3 CITAÇÕES curtas e FIÉIS do cliente a partir da reunião a seguir, COM QUEM DISSE (a fala, sem timestamps/metadados de log; e o nome de quem falou conforme aparece no texto — use "" se não der p/ saber).\nRetorne JSON: {"quotes": [{"q": fala curta, "by": quem disse}]}\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 360)
+    const quotes = cleanQuotes(parsed?.quotes)
+    await admin.from('interactions').update({ quotes, quotes_extracted_at: stamp }).eq('id', i.id)
   }, deadline)
 }
 
