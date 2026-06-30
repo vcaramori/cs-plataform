@@ -1,0 +1,218 @@
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { generateText, generateEmbedding } from '@/lib/llm/gateway'
+import { buildSystemInstruction } from '@/lib/ai/ai-context'
+import { safeParseLLMJson } from '@/lib/llm/safe-json'
+import { suggestCatalogMatch } from './matching'
+
+/**
+ * Enriquecimento ASSÍNCRONO da Wishlist (rodado SÓ pelo cron `wishlist-enrich`) — Fase 1 do v2.
+ *
+ * Destrava o funil: os sinais `pending` chegam categorizados (área), pré-casados com o catálogo
+ * e agrupados em clusters, para a triagem ser feita em LOTE (aprovar um cluster, não 569 cliques).
+ *
+ * IO-SAFE (lição do incidente de Disk-IO): lotes pequenos, concorrência baixa, idempotente
+ * (gates `area`/`catalog_match`/`enriched_at`/`cluster_key`) e com ORÇAMENTO DE TEMPO. Nunca rodar
+ * dentro de request de usuário. As chamadas de IA vão ao provedor (não tocam o disco do Postgres).
+ */
+
+const CONCURRENCY = 3
+const LLM_TIMEOUT_MS = 15000
+const CAT_BATCH = 30 // sinais por chamada de categorização
+const SIM_THRESHOLD = 0.8 // cosseno — acima disso, "mesmo pedido" (cluster)
+const MAX_CLUSTER = 1500 // teto de sinais por execução de clustering
+
+const DEFAULT_AREAS = [
+  'indicadores e kpis', 'estoque e ruptura', 'custo, cogs e fluxo de caixa',
+  'integração e importação de dados', 'planejamento de demanda e previsão',
+  'planejamento de compras e fornecedores', 'bom e estrutura de produto',
+  'rateio e alocação', 'relatórios e visualização', 'interface e usabilidade',
+  'cadastro e dados mestres', 'colaboração e processo s&op', 'performance e processamento', 'outros',
+]
+
+const AREA_FALLBACK =
+  'Você categoriza pedidos de produto (wishlist) de uma plataforma SaaS de S&OP/S&OE em UMA área canônica ' +
+  'da lista fornecida no input. Responda SEMPRE em PT-BR e SOMENTE com JSON válido. Use exclusivamente as ' +
+  'áreas da lista; se nenhuma servir, use "outros". Saída: {"itens":[{"id":<id>,"area":<área>}]}'
+
+function normArea(s: string): string {
+  return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+async function loadAreas(admin: any): Promise<string[]> {
+  try {
+    const { data } = await admin.from('app_settings').select('value').eq('key', 'wishlist_area_taxonomy').maybeSingle()
+    const areas = (data?.value as any)?.areas
+    if (Array.isArray(areas) && areas.length) {
+      const list = [...new Set(areas.map((a: unknown) => String(a).trim().toLowerCase()).filter(Boolean))]
+      if (!list.includes('outros')) list.push('outros')
+      return list
+    }
+  } catch { /* usa default */ }
+  return DEFAULT_AREAS
+}
+
+function cosine(a: number[], b: number[]): number {
+  let dot = 0, na = 0, nb = 0
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i] }
+  const d = Math.sqrt(na) * Math.sqrt(nb)
+  return d ? dot / d : 0
+}
+
+async function runBatched<T>(items: T[], fn: (item: T) => Promise<void>, deadline: number): Promise<number> {
+  let done = 0
+  for (let i = 0; i < items.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) break
+    const batch = items.slice(i, i + CONCURRENCY)
+    await Promise.all(batch.map(async (it) => { await fn(it); done++ }))
+  }
+  return done
+}
+
+/** A) Categoriza sinais pendentes em áreas canônicas (em LOTE, barato). */
+export async function categorizeSignals(limit: number, deadline: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const areas = await loadAreas(admin)
+  const areaSet = new Set(areas)
+  const { data } = await admin
+    .from('wishlist_signals')
+    .select('id, summary, verbatim')
+    .eq('triage_outcome', 'pending')
+    .is('area', null)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  const rows = (data as any[]) ?? []
+  if (rows.length === 0) return 0
+
+  const sys = await buildSystemInstruction('wishlist_area_taxonomy', AREA_FALLBACK)
+  let done = 0
+  for (let i = 0; i < rows.length; i += CAT_BATCH) {
+    if (Date.now() > deadline) break
+    const batch = rows.slice(i, i + CAT_BATCH)
+    const prompt = [
+      'ÁREAS canônicas (use SOMENTE estas; se nenhuma servir, "outros"):',
+      areas.map((a) => `- ${a}`).join('\n'),
+      '',
+      'Classifique CADA pedido abaixo em UMA área, pelo significado:',
+      batch.map((s) => `- [${s.id}] ${String(s.summary ?? s.verbatim ?? '').slice(0, 200)}`).join('\n'),
+      '',
+      'Responda SOMENTE com JSON {"itens":[{"id":"<id>","area":"<área>"}]} incluindo TODOS.',
+    ].join('\n')
+    let parsed: any = null
+    try {
+      const res = await Promise.race([
+        generateText(prompt, { systemInstruction: sys, temperature: 0, maxOutputTokens: 1200, responseMimeType: 'application/json', disableThinking: true }),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('llm timeout')), LLM_TIMEOUT_MS)),
+      ])
+      parsed = res?.result ? safeParseLLMJson(res.result) : null
+    } catch (e) {
+      console.error('[wishlist-enrich] categorize error:', e instanceof Error ? e.message : e)
+      continue
+    }
+    const arr: any[] = Array.isArray(parsed) ? parsed : (parsed?.itens ?? parsed?.items ?? [])
+    const byId = new Map<string, string>()
+    for (const it of arr) {
+      const id = String(it?.id ?? '').trim()
+      let area = String(it?.area ?? '').trim().toLowerCase()
+      if (!id) continue
+      if (!areaSet.has(area)) area = 'outros'
+      byId.set(id, area)
+    }
+    // Persiste cada sinal do lote (sinais sem retorno do modelo caem em "outros" p/ não reprocessar à toa).
+    for (const s of batch) {
+      const area = byId.get(s.id) ?? 'outros'
+      await admin.from('wishlist_signals').update({ area }).eq('id', s.id)
+      done++
+    }
+  }
+  return done
+}
+
+/** B) Pré-casa cada sinal pendente com o catálogo de features (tira a IA do clique manual). */
+export async function matchSignalsCatalog(limit: number, deadline: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const { data } = await admin
+    .from('wishlist_signals')
+    .select('id, summary, verbatim')
+    .eq('triage_outcome', 'pending')
+    .is('enriched_at', null)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  const rows = (data as any[]) ?? []
+  if (rows.length === 0) return 0
+
+  return runBatched(rows, async (s) => {
+    const text = String(s.summary ?? '').trim() || String(s.verbatim ?? '').trim()
+    let match: any = null
+    if (text.length >= 8) {
+      try { match = await suggestCatalogMatch(text) } catch { match = null }
+    }
+    await admin.from('wishlist_signals')
+      .update({ catalog_match: match, enriched_at: new Date().toISOString() })
+      .eq('id', s.id)
+  }, deadline)
+}
+
+/**
+ * C) Agrupa os sinais pendentes em clusters por embedding (greedy por cosseno). O cluster_key é o id
+ * do sinal mais representativo (primeiro do cluster). Permite a triagem aprovar um grupo de uma vez.
+ */
+export async function clusterSignals(deadline: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const { data } = await admin
+    .from('wishlist_signals')
+    .select('id, summary, verbatim')
+    .eq('triage_outcome', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(MAX_CLUSTER)
+  const rows = (data as any[]) ?? []
+  if (rows.length === 0) return 0
+
+  // Embeddings em memória (provedor externo; não toca o disco do Postgres).
+  const vectors = new Map<string, number[]>()
+  for (let i = 0; i < rows.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) break
+    const batch = rows.slice(i, i + CONCURRENCY)
+    await Promise.all(batch.map(async (s) => {
+      const text = String(s.summary ?? s.verbatim ?? '').trim()
+      if (text.length < 8) return
+      try {
+        const { result } = await generateEmbedding(text, { allowFallback: true })
+        if (Array.isArray(result) && result.length) vectors.set(s.id, result)
+      } catch { /* ignora */ }
+    }))
+  }
+
+  // Clustering guloso: cada sinal entra no cluster cujo representante é mais similar (>= threshold).
+  const clusters: Array<{ key: string; vec: number[] }> = []
+  const assign = new Map<string, string>()
+  for (const s of rows) {
+    const v = vectors.get(s.id)
+    if (!v) continue
+    let best: { key: string; sim: number } | null = null
+    for (const c of clusters) {
+      const sim = cosine(v, c.vec)
+      if (sim >= SIM_THRESHOLD && (!best || sim > best.sim)) best = { key: c.key, sim }
+    }
+    if (best) assign.set(s.id, best.key)
+    else { clusters.push({ key: s.id, vec: v }); assign.set(s.id, s.id) }
+  }
+
+  let done = 0
+  for (const [id, key] of assign) {
+    await admin.from('wishlist_signals').update({ cluster_key: key }).eq('id', id)
+    done++
+  }
+  return done
+}
+
+export interface WishlistEnrichResult { categorized: number; matched: number; clustered: number; duration_ms: number }
+
+/** Roda um ciclo bounded de enriquecimento da Wishlist (chamado pelo cron). */
+export async function runWishlistEnrich(opts?: { budgetMs?: number }): Promise<WishlistEnrichResult> {
+  const start = Date.now()
+  const deadline = start + (opts?.budgetMs ?? 180000)
+  const categorized = await categorizeSignals(120, deadline)
+  const matched = await matchSignalsCatalog(40, deadline)
+  const clustered = await clusterSignals(deadline)
+  return { categorized, matched, clustered, duration_ms: Date.now() - start }
+}

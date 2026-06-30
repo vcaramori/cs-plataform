@@ -14,6 +14,20 @@ O VoC foi "todo número é uma porta" (rastreabilidade até a evidência). A Wis
 
 ---
 
+## Decisão de arquitetura (2026-06-30) — Enriquecimento UNIFICADO
+
+VoC, Wishlist e Oportunidades leem os MESMOS dados de origem (transcrições, NPS, tickets). Decidido **consolidar** para eliminar releitura, divergência de números e a concorrência de crons (que causou a instabilidade do Supabase). Três princípios:
+
+1. **Uma leitura por documento** — um passe (`enrichInteraction`/`enrichNps`/`enrichTicket`) lê o texto UMA vez e emite tudo (sentimento + temas + citações + sinais de wishlist + sinais de oportunidade), coerente. Move a extração do ingest para o cron (tira LLM síncrono do ingest).
+2. **Um orquestrador (`/api/cron/enrich`)** — roda todos os estágios sob UM orçamento de tempo/IO, isolado por estágio (try/catch). Aposenta os crons separados `voc-enrich`/`wishlist-enrich`/`voc-cluster-themes` (viram estágios/módulos).
+3. **Primitivas de métrica compartilhadas** — qualquer número sobre dado comum (sentimento da conta, demanda/ARR de pedido) numa função única, reusada por todos → nunca diverge.
+
+**Prompts seguem especializados e editáveis** (a vitória da governança): a unificação é do *passe* e do *cron*, não dos prompts num mega-prompt frágil.
+
+**Sequência de build (sem regredir o VoC, que alimenta o health score):** (1) orquestrador único reusando os estágios atuais — risco zero; (2) leitura única por documento, **validada contra a saída atual** antes de trocar; (3) primitivas de métrica; (4) então Wishlist F2–F3 sobre a base unificada. O `wishlist-enrich` (Fase 1) vira módulo/estágio do orquestrador.
+
+---
+
 ## Estado atual (baseline) — o que JÁ existe e funciona
 
 Arquitetura de dois níveis, code-complete e **viva em produção**:
