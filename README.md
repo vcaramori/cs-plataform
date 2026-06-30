@@ -4,6 +4,19 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🎁🔗 Wishlist v2 — enriquecimento consolidado + RICE + brief/loop (2026-06-30)
+
+Implementado o redesenho do plano v2 + a **consolidação do enriquecimento** (decisão de arquitetura: VoC/Wishlist/Oportunidades leem os mesmos dados → um serviço só).
+
+- **Enriquecimento unificado:** um cron `/api/cron/enrich` orquestra VoC + Wishlist + taxonomia sob **um orçamento de IO**, estágios isolados. Aposentou os crons separados (`voc-enrich`/`voc-cluster-themes`) — fim da concorrência que estressava a instância. ([orchestrator.ts](src/lib/enrich/orchestrator.ts))
+- **Fase 1 (motor):** cron categoriza os sinais por **taxonomia editável** (`wishlist_area_taxonomy`), **clusteriza** por embedding (564 sinais → 43 grupos multi-conta = demanda cross-conta real) e pré-casa com o catálogo. ([wishlist/enrich.ts](src/lib/wishlist/enrich.ts))
+- **Fase 2 (RICE):** `rice_score` calculado por **primitiva única** (R×I×C; pesos editáveis em `wishlist_rice_weights`; Esforço fica com o Produto), recalculado no save/demanda (nunca diverge). Itens listados **ordenados por RICE** (backlog priorizado). ([wishlist/rice.ts](src/lib/wishlist/rice.ts))
+- **Fase 3:** **brief automático** ao aceitar; **loop de retorno** (ao entregar, notifica os CSMs das contas solicitantes para avisarem o cliente); **tie-ins** — card de pedidos na página da conta e bloco Wishlist no RAG (modo conta).
+
+Pendências futuras (notadas no plano): leitura única por documento (passo 2 da consolidação), UI de triagem em lote e match por-cluster.
+
+---
+
 ## 🎁 Wishlist v2 — plano de redesenho do funil (2026-06-30)
 
 Plano canônico inicial em [docs/product/wishlist-plan-v2.md](docs/product/wishlist-plan-v2.md). Diagnóstico frio: a Wishlist captura muito bem (636 sinais de IA, 30 contas) mas **morre depois da captura** — 89% dos sinais ficam `pending`, só 4 viraram itens, 0 briefs e 0 handoffs chegaram ao Produto. Princípio: **"nenhum pedido fica órfão — todo sinal vira demanda consolidada, priorizada e rastreável até o roadmap, e o cliente sabe que foi ouvido"**. Três fases (CS enterprise · Designer · PM): **(1)** desentupir a triagem com cron `wishlist-enrich` (match de catálogo em lote + categorização por taxonomia + clustering por embedding) e triagem assistida em lote; **(2)** consolidação de demanda + RICE assistido com score/ranking; **(3)** brief automático + handoff real + **loop de retorno ao cliente** + tie-ins (conta/RAG/renovação). Em desenvolvimento, fase a fase.
