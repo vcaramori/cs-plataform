@@ -17,7 +17,11 @@ import { generateEmbedding } from '@/lib/llm/gateway'
  * ~N linhas pequenas de sinônimo. As chamadas de embedding vão ao provedor (Gemini), não ao banco.
  */
 
-const SIM_THRESHOLD = 0.86 // cosseno — acima disso, "mesmo tema"
+// Cosseno — acima disso, "mesmo tema". 0.80 (era 0.86) é um STOPGAP: funde as quase-duplicatas
+// textuais (família "performance…", "…manual") sem exigir texto idêntico. A consolidação semântica
+// real (ex.: "performance" ↔ "lentidão na importação") é resolvida pela taxonomia canônica via IA
+// (mapThemesToTaxonomy) — este clustering por embedding é frágil por construção e será aposentado.
+const SIM_THRESHOLD = 0.80
 const EMBED_CONCURRENCY = 5
 const MAX_LABELS = 2500 // teto de segurança por execução
 
