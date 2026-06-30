@@ -79,56 +79,54 @@ export function AdoptionForm({
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300 pb-10">
-      <div className="flex items-center justify-between bg-surface-background p-4 rounded-2xl border border-border-divider shadow-sm sticky top-0 z-10 backdrop-blur-md">
+    <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-10">
+      <div className="flex items-center justify-between bg-surface-background p-3 rounded-2xl border border-border-divider shadow-sm sticky top-0 z-10 backdrop-blur-md">
         <div>
-          <h3 className="text-xl font-black uppercase text-content-primary tracking-tight leading-tight">{selectedRecord.product_features.name}</h3>
+          <h3 className="text-lg font-black uppercase text-content-primary tracking-tight leading-tight">{selectedRecord.product_features.name}</h3>
           <p className="text-[10px] font-bold uppercase text-content-secondary tracking-widest">{selectedRecord.product_features.module}</p>
         </div>
         <Button
           onClick={() => onUpdate(selectedRecord)}
           disabled={!!saving}
-          className="bg-emerald-600 hover:bg-success text-white font-bold uppercase text-[10px] tracking-widest h-11 rounded-xl px-8 shadow-[0_0_20px_rgba(5,150,105,0.2)] transition-all hover:scale-105 active:scale-95 gap-2"
+          className="bg-emerald-600 hover:bg-success text-white font-bold uppercase text-[10px] tracking-widest h-9 rounded-xl px-6 shadow-[0_0_20px_rgba(5,150,105,0.2)] transition-all hover:scale-105 active:scale-95 gap-2"
         >
           {saving === selectedRecord.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Salvar
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div className="space-y-2">
+      <div className="bg-surface-background p-5 rounded-2xl border border-border-divider space-y-5">
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1 space-y-3">
             <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Status de Adoção</Label>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="flex flex-wrap gap-2">
               {statusOptions.map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => onRecordChange({...selectedRecord, status: opt.value as any})}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                    "flex-1 min-w-[120px] flex items-center gap-2 p-2.5 rounded-xl border transition-all text-left",
                     selectedRecord.status === opt.value
-                      ? "bg-surface-card border-border-divider ring-1 ring-border-divider"
-                      : "bg-surface-background border-border-divider opacity-50 hover:opacity-100"
+                      ? "bg-surface-card border-border-divider ring-1 ring-border-divider shadow-sm"
+                      : "bg-surface-background border-border-divider opacity-60 hover:opacity-100"
                   )}
                 >
-                  <opt.icon className={cn("w-4 h-4", opt.color)} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-content-primary">{opt.label}</span>
+                  <opt.icon className={cn("w-3.5 h-3.5 shrink-0", opt.color)} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-content-primary leading-none truncate">{opt.label}</span>
                 </button>
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-2">
-              <Calendar className="w-3 h-3" /> Data Alvo para Evolução
+          <div className="w-[180px] shrink-0 space-y-3">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" /> Data Alvo
             </Label>
             <Input
               type="date"
               value={selectedRecord.target_date || ''}
               onChange={(e) => onRecordChange({...selectedRecord, target_date: e.target.value || null})}
-              className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-plannera-orange"
+              className="bg-surface-card border-border-divider text-content-primary h-10 rounded-xl focus:border-plannera-orange w-full"
             />
           </div>
         </div>
@@ -136,15 +134,15 @@ export function AdoptionForm({
 
       {/* Blocker Details Section */}
       {(selectedRecord.status === 'blocked' || selectedRecord.status === 'na') && (
-        <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-6 animate-in slide-in-from-top-2">
+        <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-4 animate-in slide-in-from-top-2">
           <div className="flex items-center gap-2 text-red-400">
             <Ban className="w-4 h-4" />
-            <h4 className="text-[10px] font-black uppercase tracking-widest">Detalhamento da Exceção / Bloqueio</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest">Exceção / Bloqueio</h4>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Categoria do Bloqueio</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Categoria</Label>
               <SearchableSelect
                 value={selectedRecord.blocker_category || ''}
                 onValueChange={(v) => onRecordChange({...selectedRecord, blocker_category: v as any})}
@@ -160,7 +158,7 @@ export function AdoptionForm({
                 value={selectedRecord.blocker_reason || ''}
                 onChange={(e) => onRecordChange({...selectedRecord, blocker_reason: e.target.value})}
                 placeholder="Ex: Falta de processo interno..."
-                className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-red-400"
+                className="bg-surface-card border-border-divider text-content-primary h-10 rounded-xl focus:border-red-400"
               />
             </div>
           </div>
@@ -169,10 +167,10 @@ export function AdoptionForm({
 
       {/* Action Plan Section */}
       {selectedRecord.status !== 'in_use' && (
-        <div className="space-y-4 animate-in slide-in-from-top-2 p-6 rounded-2xl bg-surface-background border border-border-divider">
+        <div className="space-y-3 animate-in slide-in-from-top-2 p-5 rounded-2xl bg-surface-background border border-border-divider">
           <div className="flex items-center justify-between">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-primary flex items-center gap-2">
-              <Settings2 className="w-3.5 h-3.5 text-plannera-orange" />
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-primary flex items-center gap-1.5">
+              <Settings2 className="w-3 h-3 text-plannera-orange" />
               Próximos Passos (Resumo)
             </Label>
             {accountId && (
@@ -180,11 +178,11 @@ export function AdoptionForm({
                 type="button"
                 variant="default"
                 size="sm"
-                className="gap-2 text-[10px] font-black uppercase tracking-wide bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-lg h-8 px-4"
+                className="gap-1.5 text-[9px] font-black uppercase tracking-wide bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-lg h-7 px-3"
                 onClick={() => setTaskModalOpen(true)}
               >
-                <Plus className="w-3.5 h-3.5" />
-                Criar Atividade para esta Feature
+                <Plus className="w-3 h-3" />
+                Criar Atividade
               </Button>
             )}
           </div>
@@ -192,18 +190,18 @@ export function AdoptionForm({
             value={selectedRecord.action_plan || ''}
             onChange={(e) => onRecordChange({...selectedRecord, action_plan: e.target.value})}
             placeholder="Resuma o que precisa ser feito ou crie uma atividade formal no botão acima."
-            className="bg-surface-card border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-plannera-orange"
+            className="bg-surface-card border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange resize-y"
           />
         </div>
       )}
 
-      <div className="space-y-2 border-t border-border-divider pt-6">
+      <div className="space-y-3 p-5 rounded-2xl bg-surface-background border border-border-divider">
         <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Observações Gerais</Label>
         <Textarea
           value={selectedRecord.observation || ''}
           onChange={(e) => onRecordChange({...selectedRecord, observation: e.target.value})}
           placeholder="Notas adicionais sobre o progresso..."
-          className="bg-surface-background border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange"
+          className="bg-surface-card border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange resize-y"
         />
       </div>
 

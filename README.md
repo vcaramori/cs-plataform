@@ -26,6 +26,7 @@ O painel de Adoção Funcional (`/accounts/[id]`) foi refatorado para remover o 
 - **Remoção de Redundâncias na UI e Banco:** Removidos os campos "Responsável pela Ação", "Prioridade", "Status da Ação" e "Responsável (CSM)" do formulário e da tabela `feature_adoption`.
 - **Próximos Passos:** O antigo "Plano de Ação" virou "Próximos Passos (Resumo)" focado estritamente em documentar a estratégia para adoção.
 - **Governança por Tarefa:** O botão **Criar Atividade para esta Feature** agora é a fonte de verdade única (SSOT) para destravamento, integrando diretamente com a agenda do CSM.
+- **Redesign Compacto:** O modal inteiro foi condensado e alinhado como um painel de controle (Cockpit). O buraco visual deixado pela "Data Alvo" foi removido unindo-a ao bloco principal, e os status agora operam como tags horizontais ocupando menos pixels verticais.
 
 ---
 

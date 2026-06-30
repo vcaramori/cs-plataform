@@ -6,17 +6,19 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 /**
- * Cron de clustering de temas de VoC por IA. Agrupa os labels livres de `interaction_themes`
- * por similaridade de embedding e popula `voc_theme_synonyms` (sinônimo→canônico), consolidando
- * as "Top Dores/Elogios". IO-safe (embeddings em memória; só lê labels e escreve sinônimos).
- * Auth: segredo dos crons. Recomenda-se rodar semanalmente (novos temas se acumulam).
+ * Cron de consolidação de temas de VoC por TAXONOMIA CANÔNICA via IA. Mapeia os labels livres de
+ * `interaction_themes` para uma lista fechada de temas (editável em app_settings.voc_theme_taxonomy)
+ * e popula `voc_theme_synonyms` (sinônimo→canônico), consolidando as "Top Dores/Elogios". IO-safe
+ * (chamadas de IA fora do banco; só lê labels e escreve sinônimos). Incremental por padrão;
+ * `?rebuild=1` limpa e remapeia tudo (usar após mudar a taxonomia). Roda semanalmente.
  */
 async function handle(request: Request) {
   if (!(await verifyHelpDeskRequest(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const result = await clusterVocThemes({ deadlineMs: 260000 })
+    const rebuild = new URL(request.url).searchParams.get('rebuild') === '1'
+    const result = await clusterVocThemes({ deadlineMs: 260000, rebuild })
     return NextResponse.json({ success: true, ...result })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido'
