@@ -207,12 +207,15 @@ export async function clusterSignals(deadline: number): Promise<number> {
 
 export interface WishlistEnrichResult { categorized: number; matched: number; clustered: number; duration_ms: number }
 
-/** Roda um ciclo bounded de enriquecimento da Wishlist (chamado pelo cron). */
+/** Roda um ciclo bounded de enriquecimento da Wishlist (chamado pelo orquestrador). */
 export async function runWishlistEnrich(opts?: { budgetMs?: number }): Promise<WishlistEnrichResult> {
   const start = Date.now()
   const deadline = start + (opts?.budgetMs ?? 180000)
+  // Ordem importa: categorizar (barato) e clusterizar (essencial p/ a triagem em lote) ANTES do
+  // match de catálogo (lento — manda o catálogo inteiro no contexto). O match usa o tempo restante
+  // e drena ao longo dos ciclos; a próxima iteração o tornará por-cluster (1 chamada por grupo).
   const categorized = await categorizeSignals(120, deadline)
-  const matched = await matchSignalsCatalog(40, deadline)
   const clustered = await clusterSignals(deadline)
+  const matched = await matchSignalsCatalog(40, deadline)
   return { categorized, matched, clustered, duration_ms: Date.now() - start }
 }
