@@ -32,13 +32,17 @@ export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR')
 }
 
-/** Normaliza uma citação para {q, by} — tolera string (legado) e {q,by}/{quote,speaker}. */
-export function asQuote(x: unknown): { q: string; by: string | null } {
-  if (typeof x === 'string') return { q: x, by: null }
+/**
+ * Normaliza uma citação para {q, lit, by}: q = explicação em 3ª pessoa, lit = trecho literal,
+ * by = quem disse. Tolera formatos legados (string; {q,by}; {quote,speaker}).
+ */
+export function asQuote(x: unknown): { q: string; lit: string | null; by: string | null } {
+  if (typeof x === 'string') return { q: x, lit: null, by: null }
   if (x && typeof x === 'object') {
     const o = x as Record<string, unknown>
+    const lit = o.lit ?? o.literal
     const by = o.by ?? o.speaker
-    return { q: String(o.q ?? o.quote ?? ''), by: by ? String(by) : null }
+    return { q: String(o.q ?? o.quote ?? ''), lit: lit ? String(lit) : null, by: by ? String(by) : null }
   }
-  return { q: '', by: null }
+  return { q: '', lit: null, by: null }
 }

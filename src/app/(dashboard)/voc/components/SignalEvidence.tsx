@@ -191,15 +191,16 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
       {Array.isArray(meta.quotes) && meta.quotes.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Citações do cliente</span>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {meta.quotes.slice(0, 3).map((raw: unknown, i: number) => {
               const q = asQuote(raw)
-              if (!q.q) return null
+              if (!q.q && !q.lit) return null
               return (
-                <blockquote key={i} className="text-xs text-content-primary leading-relaxed border-l-2 border-plannera-primary/40 pl-3 italic">
-                  “{q.q}”
-                  {q.by && <span className="block not-italic text-[10px] font-bold text-plannera-orange mt-0.5">— {q.by}</span>}
-                </blockquote>
+                <div key={i} className="border-l-2 border-plannera-primary/40 pl-3 space-y-0.5">
+                  {q.q && <p className="text-xs text-content-secondary leading-relaxed">{q.q}</p>}
+                  {q.lit && <blockquote className="text-xs text-content-primary leading-relaxed italic">“{q.lit}”</blockquote>}
+                  {q.by && <span className="block text-[10px] font-bold text-plannera-orange">— {q.by}</span>}
+                </div>
               )
             })}
           </div>

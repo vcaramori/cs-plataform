@@ -41,23 +41,30 @@ function cleanKeywords(v: unknown): string[] {
   if (!Array.isArray(v)) return []
   return [...new Set(v.map((x) => String(x).trim().toLowerCase()).filter((s) => s && s.length <= 40))].slice(0, 6)
 }
-/** Normaliza citações para {q, by} (a fala + quem disse). Tolera string legada e {q,by}/{quote,speaker}. */
-function cleanQuotes(v: unknown): Array<{ q: string; by: string | null }> {
+/**
+ * Normaliza citações para {q, lit, by}: q = explicação em 3ª pessoa, lit = trecho literal/verbatim
+ * do cliente, by = quem disse. Tolera formatos legados (string; {q,by}; {quote,speaker}).
+ */
+function cleanQuotes(v: unknown): Array<{ q: string; lit: string | null; by: string | null }> {
   if (!Array.isArray(v)) return []
-  const out: Array<{ q: string; by: string | null }> = []
+  const out: Array<{ q: string; lit: string | null; by: string | null }> = []
   for (const item of v) {
     let q = ''
+    let lit: string | null = null
     let by: string | null = null
     if (typeof item === 'string') q = item
     else if (item && typeof item === 'object') {
       const o = item as Record<string, unknown>
       q = String(o.q ?? o.quote ?? '')
+      const l = o.lit ?? o.literal
+      lit = l ? String(l).trim() : null
       const b = o.by ?? o.speaker
       by = b ? String(b).trim() : null
     }
     q = q.trim().replace(/\s+/g, ' ')
+    if (lit) lit = lit.replace(/\s+/g, ' ').slice(0, 400) || null
     if (by) by = by.replace(/\s+/g, ' ').slice(0, 80) || null
-    if (q.length >= 8 && q.length <= 400) out.push({ q, by: by || null })
+    if (q.length >= 8 && q.length <= 400) out.push({ q, lit: lit || null, by: by || null })
   }
   return out.slice(0, 3)
 }
@@ -143,7 +150,7 @@ export async function enrichInteractionThemes(limit: number, deadline: number): 
       await admin.from('interactions').update({ themes_extracted_at: stamp }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Tarefa: TEMAS DE INTERAÇÃO. Aplique a CALIBRAGEM do system instruction (dor/encanto têm que ser SOBRE A PLANNERA — produto/atendimento; operacional/setup/dado-do-próprio-cliente/capacidade-desejada = "neutral") e extraia até 3 CITAÇÕES curtas e fiéis do cliente COM QUEM DISSE (a fala + o nome de quem falou conforme aparece no texto; "" se não der p/ saber).\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [{"q": fala curta, "by": quem disse}]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 480)
+    const parsed = await classify(`Tarefa: TEMAS DE INTERAÇÃO. Aplique a CALIBRAGEM do system instruction (dor/encanto têm que ser SOBRE A PLANNERA — produto/atendimento; operacional/setup/dado-do-próprio-cliente/capacidade-desejada = "neutral") e extraia até 3 CITAÇÕES do cliente, cada uma com q=EXPLICAÇÃO curta em 3ª pessoa, lit=trecho LITERAL copiado FIELMENTE do texto ("" se for só resumo) e by=quem disse ("" se não souber). NÃO invente o literal.\nRetorne JSON: {"themes": [{"label": tema curto em minúsculo, "polarity": "pain"|"praise"|"neutral"}], "quotes": [{"q": explicação, "lit": trecho literal, "by": quem disse}]} (temas máx 6).\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 640)
     const themes: Array<{ label: string; polarity: string }> = []
     if (parsed && Array.isArray(parsed.themes)) {
       for (const t of parsed.themes) {
@@ -218,7 +225,7 @@ export async function enrichInteractionQuotes(limit: number, deadline: number): 
       await admin.from('interactions').update({ quotes_extracted_at: stamp, quotes: [] }).eq('id', i.id)
       return
     }
-    const parsed = await classify(`Extraia até 3 CITAÇÕES curtas e FIÉIS do cliente a partir da reunião a seguir, COM QUEM DISSE (a fala, sem timestamps/metadados de log; e o nome de quem falou conforme aparece no texto — use "" se não der p/ saber).\nRetorne JSON: {"quotes": [{"q": fala curta, "by": quem disse}]}\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 360)
+    const parsed = await classify(`Extraia até 3 CITAÇÕES do cliente da reunião a seguir. Para CADA uma: q=EXPLICAÇÃO curta em 3ª pessoa do ponto; lit=trecho LITERAL/verbatim copiado FIELMENTE do texto (sem timestamps/metadados de log; "" se o texto for só resumo e não houver fala literal); by=quem disse (nome conforme o texto; "" se não souber). NÃO invente o literal — só copie o que está no texto.\nRetorne JSON: {"quotes": [{"q": explicação, "lit": trecho literal, "by": quem disse}]}\n\nTítulo: ${i.title ?? '—'}\nTexto:\n${text.slice(0, 6000)}`, 520)
     const quotes = cleanQuotes(parsed?.quotes)
     await admin.from('interactions').update({ quotes, quotes_extracted_at: stamp }).eq('id', i.id)
   }, deadline)
@@ -233,7 +240,7 @@ export async function runVocEnrich(opts?: { budgetMs?: number }): Promise<VocEnr
   // Prioridade: sentimento (corrige o "VoC linear" — reuniões sem score) e citações (backfill)
   // primeiro; depois temas; NPS/CSAT são rápidos e fecham o ciclo.
   const sentiment = await enrichInteractionSentiment(40, deadline)
-  const quotes = await enrichInteractionQuotes(25, deadline)
+  const quotes = await enrichInteractionQuotes(60, deadline)
   const interactions = await enrichInteractionThemes(20, deadline)
   const nps = await enrichNpsComments(15, deadline)
   const csat = await enrichCsatComments(15, deadline)

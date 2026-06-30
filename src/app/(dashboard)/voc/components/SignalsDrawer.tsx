@@ -55,8 +55,7 @@ function SignalRow({ signal }: { signal: VocSignal }) {
   const meta = (signal.evidence.meta ?? {}) as Record<string, any>
   const quote = Array.isArray(meta.quotes) && meta.quotes.length ? asQuote(meta.quotes[0]) : null
   const stakeholders: VocStakeholder[] = Array.isArray(meta.stakeholders) ? meta.stakeholders : []
-  const hasQuote = !!quote?.q
-  const text = hasQuote ? quote!.q : (signal.excerpt ?? signal.evidence.title ?? '—')
+  const explain = quote?.q || signal.excerpt || signal.evidence.title || '—'
   return (
     <li className="rounded-xl border border-border-divider bg-surface-background overflow-hidden">
       <button onClick={() => setOpen((o) => !o)} className="w-full flex items-start gap-3 p-3 text-left hover:bg-surface-card transition-colors">
@@ -68,9 +67,12 @@ function SignalRow({ signal }: { signal: VocSignal }) {
             <span className="text-[12px] font-black text-content-primary truncate">{signal.account_name}</span>
             <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary shrink-0">{SOURCE_META[signal.source].label}</span>
           </div>
-          <p className={cn('text-xs leading-relaxed line-clamp-3', hasQuote ? 'text-content-primary italic' : 'text-content-secondary')}>
-            {hasQuote ? `“${text}”` : text}
-          </p>
+          {/* Explicação em 3ª pessoa */}
+          <p className="text-xs text-content-secondary leading-relaxed line-clamp-2">{explain}</p>
+          {/* Citação literal (verbatim), quando houver */}
+          {quote?.lit && (
+            <p className="text-xs text-content-primary italic leading-relaxed line-clamp-2 border-l-2 border-plannera-primary/40 pl-2">“{quote.lit}”</p>
+          )}
           {quote?.by && <span className="block text-[10px] font-bold text-plannera-orange">— {quote.by}</span>}
           <StakeholderChips stakeholders={stakeholders} />
           <span className="text-[9px] font-bold uppercase tracking-widest text-content-secondary/70">{fmtDate(signal.date)}</span>
