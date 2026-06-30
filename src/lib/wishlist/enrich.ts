@@ -3,6 +3,7 @@ import { generateText, generateEmbedding } from '@/lib/llm/gateway'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { safeParseLLMJson } from '@/lib/llm/safe-json'
 import { suggestCatalogMatch } from './matching'
+import { recomputeItemRice } from './rice'
 
 /**
  * Enriquecimento ASSÍNCRONO da Wishlist (rodado SÓ pelo cron `wishlist-enrich`) — Fase 1 do v2.
@@ -205,7 +206,17 @@ export async function clusterSignals(deadline: number): Promise<number> {
   return done
 }
 
-export interface WishlistEnrichResult { categorized: number; matched: number; clustered: number; duration_ms: number }
+/** D) Calcula o rice_score dos itens que ainda não têm (sem IA — só leitura+cálculo). */
+export async function scoreUnscoredItems(limit: number): Promise<number> {
+  const admin = getSupabaseAdminClient() as any
+  const { data } = await admin.from('wishlist_items').select('id').is('rice_score', null).limit(limit)
+  const rows = (data as any[]) ?? []
+  let done = 0
+  for (const it of rows) { try { await recomputeItemRice(it.id); done++ } catch { /* ignora */ } }
+  return done
+}
+
+export interface WishlistEnrichResult { categorized: number; matched: number; clustered: number; scored: number; duration_ms: number }
 
 /** Roda um ciclo bounded de enriquecimento da Wishlist (chamado pelo orquestrador). */
 export async function runWishlistEnrich(opts?: { budgetMs?: number }): Promise<WishlistEnrichResult> {
@@ -217,5 +228,6 @@ export async function runWishlistEnrich(opts?: { budgetMs?: number }): Promise<W
   const categorized = await categorizeSignals(120, deadline)
   const clustered = await clusterSignals(deadline)
   const matched = await matchSignalsCatalog(40, deadline)
-  return { categorized, matched, clustered, duration_ms: Date.now() - start }
+  const scored = await scoreUnscoredItems(50) // barato (sem IA); mantém o rice_score populado
+  return { categorized, matched, clustered, scored, duration_ms: Date.now() - start }
 }

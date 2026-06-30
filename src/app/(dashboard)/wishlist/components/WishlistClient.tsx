@@ -86,7 +86,7 @@ export function WishlistClient({
         </TabsContent>
 
         <TabsContent value="items" className="mt-0 space-y-3">
-          <p className="text-xs text-content-secondary">Itens reúnem pedidos semelhantes de vários clientes, priorizados por demanda/ARR. Clique para curar e encaminhar ao produto.</p>
+          <p className="text-xs text-content-secondary">Itens reúnem pedidos semelhantes de vários clientes, <strong>ordenados por RICE</strong> (alcance × impacto × confiança). Clique para curar e encaminhar ao produto.</p>
           {items.length === 0 ? (
             <EmptyState text="Nenhum item ainda. Promova sinais da triagem para criar itens curados." />
           ) : (
@@ -105,6 +105,11 @@ export function WishlistClient({
                         <Badge variant="outline">{it.kind === 'enhancement' ? 'Melhoria' : 'Novo'}</Badge>
                         {it.priority && <Badge variant="secondary">{it.priority}</Badge>}
                         {it.category && <Badge variant="neutral">{it.category}</Badge>}
+                        {it.rice_score != null && (
+                          <Badge variant="default" className="ml-auto" title="Score RICE (alcance × impacto × confiança, sem esforço)">
+                            RICE {Number(it.rice_score).toFixed(1)}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-content-secondary pt-1">
                         <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {it.demand_accounts} conta(s)</span>

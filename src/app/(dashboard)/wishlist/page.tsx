@@ -23,7 +23,8 @@ export default async function WishlistPage() {
 
   const { data: items } = await db
     .from('wishlist_items')
-    .select('id, title, kind, status, priority, category, demand_accounts, demand_arr, updated_at')
+    .select('id, title, kind, status, priority, category, demand_accounts, demand_arr, rice_score, updated_at')
+    .order('rice_score', { ascending: false, nullsFirst: false })
     .order('updated_at', { ascending: false })
     .limit(200)
 

@@ -5,6 +5,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { findSimilar, suggestCatalogMatch, type MatchResult } from '@/lib/wishlist/matching'
 import { recomputeItemDemand } from '@/lib/wishlist/demand'
+import { recomputeItemRice } from '@/lib/wishlist/rice'
 import { buildProductBrief, handoffItem, saveWishlistSettings, getWishlistSettings } from '@/lib/wishlist/handoff'
 import { storeEmbeddings } from '@/lib/supabase/vector-search'
 import type {
@@ -179,6 +180,8 @@ export interface RiceFields {
 export async function updateItemRice(itemId: string, fields: RiceFields) {
   await requireUser()
   await db().from('wishlist_items').update(fields).eq('id', itemId)
+  // Recalcula o score com a PRIMITIVA ÚNICA (nunca diverge da listagem/backlog).
+  await recomputeItemRice(itemId).catch(() => {})
   revalidatePath(`/wishlist/${itemId}`)
   revalidatePath('/wishlist')
 }

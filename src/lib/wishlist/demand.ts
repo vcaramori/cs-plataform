@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
+import { recomputeItemRice } from './rice'
 
 export interface AccountDemand {
   account_id: string
@@ -72,5 +73,7 @@ export async function recomputeItemDemand(itemId: string): Promise<DemandSummary
     .from('wishlist_items')
     .update({ demand_accounts: summary.accounts, demand_arr: summary.arr })
     .eq('id', itemId)
+  // O alcance (R) do RICE deriva da demanda → recalcula o score na mesma transação lógica.
+  await recomputeItemRice(itemId).catch(() => {})
   return summary
 }
