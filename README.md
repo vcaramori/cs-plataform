@@ -10,6 +10,15 @@ O telefone cadastrado nos stakeholders (Power Map) agora é um link direto para 
 
 ---
 
+## 🎯 Adoção Funcional — Centralização da Governança de Tarefas (2026-06-30)
+
+O painel de Adoção Funcional (`/accounts/[id]`) foi refatorado para remover o duplo preenchimento e centralizar toda a gestão de tarefas no backlog oficial (`csm_tasks`).
+- **Remoção de Redundâncias na UI e Banco:** Removidos os campos "Responsável pela Ação", "Prioridade", "Status da Ação" e "Responsável (CSM)" do formulário e da tabela `feature_adoption`.
+- **Próximos Passos:** O antigo "Plano de Ação" virou "Próximos Passos (Resumo)" focado estritamente em documentar a estratégia para adoção.
+- **Governança por Tarefa:** O botão **Criar Atividade para esta Feature** agora é a fonte de verdade única (SSOT) para destravamento, integrando diretamente com a agenda do CSM.
+
+---
+
 ## 🎚️ Voz do Cliente — régua de dor/encanto editável + recalibrada (2026-06-26)
 
 A régua que decide dor/encanto estava **hardcoded** no `enrich.ts` (só a persona genérica era editável em /admin) e **ampla demais** — marcava tópicos de implantação/setup e qualidade-de-dado-do-cliente como dor, e "capacidade desejada" como elogio. Agora:

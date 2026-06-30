@@ -29,11 +29,7 @@ interface AdoptionRecord {
   blocker_category: 'data_integration' | 'product_roadmap' | 'people_process' | 'governance' | 'no_strategic_relevance' | 'other' | null
   blocker_reason: string | null
   action_plan: string | null
-  action_owner: string | null
-  responsible_id: string | null
   target_date: string | null
-  action_status: 'not_started' | 'in_progress' | 'completed' | 'paused'
-  priority_level: 'low' | 'medium' | 'high'
   product_features: Feature
 }
 
@@ -90,11 +86,7 @@ export function AdoptionDetailsModal({ accountId, accountName }: { accountId: st
         blocker_category: record.blocker_category || null,
         blocker_reason: record.blocker_reason || null,
         action_plan: record.action_plan || null,
-        action_owner: record.action_owner || null,
-        responsible_id: record.responsible_id || null,
-        target_date: record.target_date || null,
-        action_status: record.action_status,
-        priority_level: record.priority_level
+        target_date: record.target_date || null
       }
 
       const res = await fetch(`/api/accounts/${accountId}/adoption`, {

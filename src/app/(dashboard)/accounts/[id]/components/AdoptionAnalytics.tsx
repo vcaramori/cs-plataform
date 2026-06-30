@@ -18,11 +18,7 @@ interface AdoptionRecord {
   blocker_category: 'data_integration' | 'product_roadmap' | 'people_process' | 'governance' | 'no_strategic_relevance' | 'other' | null
   blocker_reason: string | null
   action_plan: string | null
-  action_owner: string | null
-  responsible_id: string | null
   target_date: string | null
-  action_status: 'not_started' | 'in_progress' | 'completed' | 'paused'
-  priority_level: 'low' | 'medium' | 'high'
   product_features: Feature
 }
 

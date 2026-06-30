@@ -9,11 +9,7 @@ const UpdateAdoptionSchema = z.object({
   blocker_category: z.enum(['data_integration', 'product_roadmap', 'people_process', 'governance', 'no_strategic_relevance', 'other']).optional().nullable(),
   blocker_reason: z.string().optional().nullable(),
   action_plan: z.string().optional().nullable(),
-  action_owner: z.string().optional().nullable(),
-  responsible_id: z.string().uuid().optional().nullable(),
   target_date: z.string().optional().nullable(),
-  action_status: z.enum(['not_started', 'in_progress', 'completed', 'paused']).optional(),
-  priority_level: z.enum(['low', 'medium', 'high']).optional(),
 })
 
 import { getAccountPlanSummary } from '@/lib/adoption/risk-engine'

@@ -166,11 +166,11 @@ Projete a % de adoção em ${forecastDays} dias. Responda em JSON:
     // updated_at por feature para detectedAt
     const { data: rows } = await this.supabase
       .from('feature_adoption')
-      .select('feature_id, updated_at, priority_level')
+      .select('feature_id, updated_at')
       .eq('account_id', accountId)
       .eq('status', 'blocked')
-    const meta = new Map<string, { updated_at: string | null; priority_level: string | null }>(
-      ((rows as any[]) ?? []).map((r) => [r.feature_id, { updated_at: r.updated_at, priority_level: r.priority_level }])
+    const meta = new Map<string, { updated_at: string | null }>(
+      ((rows as any[]) ?? []).map((r) => [r.feature_id, { updated_at: r.updated_at }])
     )
 
     return adoption.blockers.map((b) => {
@@ -182,7 +182,7 @@ Projete a % de adoção em ${forecastDays} dias. Responda em JSON:
         featureId: b.featureId,
         featureName: b.featureName,
         blockerType: BLOCKER_TYPE[b.blockerCategory ?? 'other'] ?? 'other',
-        severity: PRIORITY_SEVERITY[m?.priority_level ?? ''] ?? 'medium',
+        severity: 'medium',
         description: b.blockerReason || `Bloqueio em ${b.featureName}`,
         rootCauseAnalysis: factors.length || recommendations.length ? { factors, recommendations } : undefined,
         detectedAt: m?.updated_at ?? new Date().toISOString(),

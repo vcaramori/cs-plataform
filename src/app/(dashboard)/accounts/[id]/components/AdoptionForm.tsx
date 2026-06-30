@@ -25,11 +25,7 @@ interface AdoptionRecord {
   blocker_category: 'data_integration' | 'product_roadmap' | 'people_process' | 'governance' | 'no_strategic_relevance' | 'other' | null
   blocker_reason: string | null
   action_plan: string | null
-  action_owner: string | null
-  responsible_id: string | null
   target_date: string | null
-  action_status: 'not_started' | 'in_progress' | 'completed' | 'paused'
-  priority_level: 'low' | 'medium' | 'high'
   product_features: Feature
 }
 
@@ -71,19 +67,6 @@ export function AdoptionForm({
     { label: 'Governança', value: 'governance' },
     { label: 'Sem Relevância Estratégica', value: 'no_strategic_relevance' },
     { label: 'Outros', value: 'other' },
-  ]
-
-  const priorityOptions = [
-    { label: 'Baixa', value: 'low' },
-    { label: 'Média', value: 'medium' },
-    { label: 'Alta', value: 'high' },
-  ]
-
-  const actionStatuses = [
-    { label: 'Não Iniciado', value: 'not_started' },
-    { label: 'Em Curso', value: 'in_progress' },
-    { label: 'Concluído', value: 'completed' },
-    { label: 'Pausado', value: 'paused' },
   ]
 
   if (!selectedRecord) {
@@ -139,20 +122,6 @@ export function AdoptionForm({
         <div className="space-y-6">
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-2">
-              <User className="w-3 h-3" /> Responsável (CSM)
-            </Label>
-            <SearchableSelect
-              value={selectedRecord.responsible_id || ''}
-              onValueChange={(v) => onRecordChange({...selectedRecord, responsible_id: v || null})}
-              options={[
-                { label: 'Sem Responsável', value: '' },
-                ...users.map(u => ({ label: u.email, value: u.id }))
-              ]}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1 flex items-center gap-2">
               <Calendar className="w-3 h-3" /> Data Alvo para Evolução
             </Label>
             <Input
@@ -200,67 +169,31 @@ export function AdoptionForm({
 
       {/* Action Plan Section */}
       {selectedRecord.status !== 'in_use' && (
-        <div className="space-y-6 animate-in slide-in-from-top-2">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Plano de Ação para Ativação</Label>
-            <Textarea
-              value={selectedRecord.action_plan || ''}
-              onChange={(e) => onRecordChange({...selectedRecord, action_plan: e.target.value})}
-              placeholder="Quais passos serão tomados para mitigar o bloqueio?"
-              className="bg-surface-background border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-success-500"
-            />
+        <div className="space-y-4 animate-in slide-in-from-top-2 p-6 rounded-2xl bg-surface-background border border-border-divider">
+          <div className="flex items-center justify-between">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-primary flex items-center gap-2">
+              <Settings2 className="w-3.5 h-3.5 text-plannera-orange" />
+              Próximos Passos (Resumo)
+            </Label>
+            {accountId && (
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="gap-2 text-[10px] font-black uppercase tracking-wide bg-plannera-orange hover:bg-plannera-orange/90 text-white rounded-lg h-8 px-4"
+                onClick={() => setTaskModalOpen(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Criar Atividade para esta Feature
+              </Button>
+            )}
           </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Responsável pela Ação</Label>
-              <Input
-                value={selectedRecord.action_owner || ''}
-                onChange={(e) => onRecordChange({...selectedRecord, action_owner: e.target.value})}
-                placeholder="Ex: Time de Produto, CSM, Cliente..."
-                className="bg-surface-background border-border-divider text-content-primary h-11 rounded-xl focus:border-success-500"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Prioridade da Ação</Label>
-              <div className="flex gap-2">
-                {priorityOptions.map(p => (
-                  <button
-                    key={p.value}
-                    onClick={() => onRecordChange({...selectedRecord, priority_level: p.value as any})}
-                    className={cn(
-                      "flex-1 p-2 rounded-lg border text-[9px] font-bold uppercase tracking-widest transition-all",
-                      selectedRecord.priority_level === p.value
-                        ? "bg-surface-card border-border-divider text-content-primary"
-                        : "bg-surface-background border-border-divider text-content-secondary hover:text-content-primary"
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-content-secondary ml-1">Status da Ação</Label>
-            <div className="flex gap-2">
-              {actionStatuses.map(s => (
-                <button
-                  key={s.value}
-                  onClick={() => onRecordChange({...selectedRecord, action_status: s.value as any})}
-                  className={cn(
-                    "flex-1 p-2 rounded-lg border text-[9px] font-bold uppercase tracking-widest transition-all",
-                    selectedRecord.action_status === s.value
-                      ? "bg-surface-card border-border-divider text-content-primary"
-                      : "bg-surface-background border-border-divider text-content-secondary hover:text-content-primary"
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <Textarea
+            value={selectedRecord.action_plan || ''}
+            onChange={(e) => onRecordChange({...selectedRecord, action_plan: e.target.value})}
+            placeholder="Resuma o que precisa ser feito ou crie uma atividade formal no botão acima."
+            className="bg-surface-card border-border-divider text-content-primary min-h-[80px] rounded-xl focus:border-plannera-orange"
+          />
         </div>
       )}
 
@@ -273,21 +206,6 @@ export function AdoptionForm({
           className="bg-surface-background border-border-divider text-content-primary min-h-[60px] rounded-xl focus:border-plannera-orange"
         />
       </div>
-
-      {accountId && (
-        <div className="border-t border-border-divider pt-6">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-2 text-[10px] font-black uppercase tracking-wide"
-            onClick={() => setTaskModalOpen(true)}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Criar Atividade para esta Feature
-          </Button>
-        </div>
-      )}
 
       {accountId && (
         <CreateTaskModal
