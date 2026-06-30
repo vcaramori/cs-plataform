@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { AccountHeader } from './components/AccountHeader'
 import { AccountDetailPageClient } from './components/AccountDetailPageClient'
+import { AccountWishlistCard } from './components/AccountWishlistCard'
 import type {
   Contract, Interaction, SupportTicket, TimeEntry, Contact,
   SuccessPlanGoal, AdoptionMetrics, NPSResponse, CommercialGovernance,
@@ -128,6 +129,8 @@ export default async function AccountDetailPage({ params }: { params: Promise<{ 
         commercialGovernance={commercialGovernance}
         healthScores={healthScores}
       />
+
+      <AccountWishlistCard accountId={id} />
     </PageContainer>
   )
 }

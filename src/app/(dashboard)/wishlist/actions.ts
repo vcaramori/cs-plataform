@@ -27,6 +27,35 @@ async function log(entry: { item_id?: string | null; signal_id?: string | null; 
   await db().from('wishlist_curation_log').insert(entry)
 }
 
+/**
+ * Fase 3 — LOOP DE RETORNO: ao entregar um item, notifica os CSMs das contas que pediram
+ * (e o dono do item) para avisarem o cliente que o que ele pediu foi entregue. É o diferencial
+ * de CS enterprise: fecha o ciclo de confiança. Best-effort (não bloqueia a mudança de status).
+ */
+async function notifyDelivered(itemId: string, actorId: string) {
+  const d = db()
+  const { data: item } = await d.from('wishlist_items').select('title, owner_id').eq('id', itemId).single()
+  if (!item) return
+  const { data: signals } = await d.from('wishlist_signals').select('account_id').eq('item_id', itemId)
+  const accountIds = Array.from(new Set((signals ?? []).map((s: any) => s.account_id).filter(Boolean)))
+  let accounts: any[] = []
+  if (accountIds.length) {
+    const { data } = await d.from('accounts').select('id, name, csm_owner_id').in('id', accountIds)
+    accounts = data ?? []
+  }
+  const names = accounts.map((a) => a.name).filter(Boolean)
+  const recipients = new Set<string>()
+  if (item.owner_id) recipients.add(item.owner_id)
+  for (const a of accounts) if (a.csm_owner_id) recipients.add(a.csm_owner_id)
+  const msg = `Pedido entregue: "${item.title}". Avise ${names.length ? names.join(', ') : 'as contas solicitantes'} de que o que pediram foi entregue.`
+  const rows = [...recipients].map((uid) => ({
+    user_id: uid, type: 'wishlist_delivered', message: msg,
+    metadata: { item_id: itemId, account_ids: accountIds }, read: false, created_at: new Date().toISOString(),
+  }))
+  if (rows.length) await d.from('notifications').insert(rows)
+  await log({ item_id: itemId, actor_id: actorId, action: 'delivered_notified', to_status: 'delivered', note: names.join(', ') || null })
+}
+
 // ── Captura manual ───────────────────────────────────────────────────────────
 export async function createSignalManual(input: {
   accountId: string
@@ -193,6 +222,10 @@ export async function setItemStatus(itemId: string, status: WishlistItemStatus) 
   if (status === 'accepted') patch.accepted_at = new Date().toISOString()
   await db().from('wishlist_items').update(patch).eq('id', itemId)
   await log({ item_id: itemId, actor_id: user.id, action: 'set_status', from_status: cur?.status, to_status: status })
+  // Fase 3 — brief automático ao ACEITAR (best-effort; não bloqueia a mudança de status).
+  if (status === 'accepted') { try { await buildProductBrief(itemId) } catch { /* gera depois no handoff */ } }
+  // Fase 3 — loop de retorno: ao ENTREGAR, notifica os CSMs das contas solicitantes.
+  if (status === 'delivered') { try { await notifyDelivered(itemId, user.id) } catch { /* best-effort */ } }
   revalidatePath(`/wishlist/${itemId}`)
   revalidatePath('/wishlist')
 }

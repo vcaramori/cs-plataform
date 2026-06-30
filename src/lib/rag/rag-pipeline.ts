@@ -633,6 +633,26 @@ Renovação: ${renewalInfo} | Horas Contratadas/Mês: ${c.contracted_hours_month
     }
   }
 
+  // WISHLIST (tie-in Fase 3): pedidos de produto que ESTA conta levantou (sinais), por área.
+  // Permite responder "o que a conta X já pediu?". Query leve, só no modo conta.
+  let wishlistContext = ''
+  if (accountId) {
+    const { data: wl } = await (supabase as any)
+      .from('wishlist_signals')
+      .select('summary, verbatim, area, kind')
+      .eq('account_id', accountId)
+      .order('created_at', { ascending: false })
+      .limit(60)
+    const rows = (wl as any[]) ?? []
+    if (rows.length > 0) {
+      const lines = rows.slice(0, 15).map((r) => {
+        const txt = (r.summary ?? r.verbatim ?? '').toString().slice(0, 160)
+        return `- ${txt}${r.area ? ` [${r.area}]` : ''}${r.kind ? ` (${r.kind})` : ''}`
+      })
+      wishlistContext = `\n\n## WISHLIST (pedidos de produto desta conta — ${rows.length})\n${lines.join('\n')}`
+    }
+  }
+
   const userContent = `## Contexto disponível (${scopeDescription})
 
 ### 1. Reuniões, Transcrições e Tickets (Busca Semântica)
@@ -649,6 +669,7 @@ ${slaViolationsContext}
 ${riskCurationContext}
 ${npsContext}
 ${vocContext}
+${wishlistContext}
 ${portfolioContext}
 ${stakeholderContext}
 ${extraAccountContext}
