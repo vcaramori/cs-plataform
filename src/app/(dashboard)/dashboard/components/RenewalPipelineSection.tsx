@@ -121,7 +121,7 @@ function RenewalCard({ card, idx }: { card: RenewalCard; idx: number }) {
 export default function RenewalPipelineSection() {
   const [pipeline, setPipeline] = useState<RenewalPipeline | null>(null)
   const [loading, setLoading] = useState(true)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
 
   useEffect(() => {
     fetch('/api/dashboard/renewal-pipeline')
@@ -129,8 +129,8 @@ export default function RenewalPipelineSection() {
       .then(data => {
         if (data?.critico && data?.urgente && data?.planejamento) {
           setPipeline(data)
-          const t = data.critico.length + data.urgente.length + data.planejamento.length
-          setCollapsed(t === 0)
+          // Default to collapsed regardless of items
+          setCollapsed(true)
         } else {
           setPipeline({ critico: [], urgente: [], planejamento: [] })
           setCollapsed(true)
