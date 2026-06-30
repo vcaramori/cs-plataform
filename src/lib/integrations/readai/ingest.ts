@@ -29,7 +29,7 @@ export interface IngestOutcome {
   externalMeetingId: string
 }
 
-interface ExistingInteraction { id: string; time_entry_id: string | null; raw_transcript: string | null; summary: string | null }
+interface ExistingInteraction { id: string; time_entry_id: string | null; raw_transcript: string | null; summary: string | null; sentiment_score: number | null; meta: Record<string, unknown> | null }
 
 async function attemptExtractSignals(interactionId: string, accountId: string, userId: string, transcript?: string | null) {
   if (!transcript || transcript.trim().length < 50) return
@@ -101,13 +101,21 @@ export async function ingestReadAiMeeting(
   // ---------------------------------------------------------------------------
   const { data: existing } = await admin
     .from('interactions')
-    .select('id, time_entry_id, raw_transcript, summary')
+    .select('id, time_entry_id, raw_transcript, summary, sentiment_score, meta')
     .eq('external_meeting_id', m.id)
     .maybeSingle()
   const prior = (existing ?? null) as ExistingInteraction | null
 
   if (prior) {
-    const intPatch: Record<string, unknown> = { title, date, direct_hours: hours, sentiment_score: sentiment, meta }
+    // meta: MESCLA (não substitui). O bloco do Read.ai (participants/metrics/…) é atualizado,
+    // mas flags de enriquecimento que SÓ a plataforma escreve — `sentiment_ai` (posto pela nossa
+    // IA), etc. — são preservadas. Substituir o meta inteiro apagava esse marcador a cada re-sync.
+    const mergedMeta = { ...(prior.meta ?? {}), ...meta }
+    const intPatch: Record<string, unknown> = { title, date, direct_hours: hours, meta: mergedMeta }
+    // sentiment_score: só PREENCHE quando está vazio E o Read.ai trouxe valor. NUNCA sobrescreve
+    // o score calculado pela nossa IA com o (quase sempre nulo) sentiment do Read.ai — era isso
+    // que zerava o sentimento das reuniões já enriquecidas sempre que um re-sync as revisitava.
+    if (prior.sentiment_score == null && sentiment != null) intPatch.sentiment_score = sentiment
     if (transcript) intPatch.raw_transcript = transcript
     if (summary) intPatch.summary = summary
     await admin.from('interactions').update(intPatch).eq('id', prior.id)

@@ -4,6 +4,16 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🛡️ Read.ai — fim do clobber de sentimento da IA no re-sync (2026-06-30)
+
+Correção de um bug de integridade de dados descoberto ao validar ao vivo as reuniões do Read.ai com sentimento nulo. A cada re-sync/backfill, o caminho de UPDATE de `ingestReadAiMeeting` regravava `sentiment_score` com o `metrics.sentiment` do Read.ai (quase sempre **nulo**) e **substituía o `meta` inteiro** — apagando o score e a flag `sentiment_ai` que a **nossa IA** havia calculado. Resultado: backfills revertiam ao nulo reuniões já enriquecidas.
+
+- **Correção:** o UPDATE agora **mescla** o `meta` (preserva flags que só a plataforma escreve) e só **preenche** `sentiment_score` quando está vazio E o Read.ai trouxe valor — **nunca sobrescreve** a pontuação da nossa IA. ([ingest.ts](src/lib/integrations/readai/ingest.ts))
+- **Validação ao vivo:** re-buscar as reuniões "sem texto" recuperou pouquíssimas transcrições → a maioria **genuinamente não tem transcrição no Read.ai** (reuniões externas só-metadados), corretamente nulas.
+- **Cobertura do sync:** confirmado que o cron `readai-sync-hourly` sincroniza **todos os CSMs conectados** (token pessoal por usuário; o Read.ai não tem token de workspace) — não os que nunca conectaram.
+
+---
+
 ## 📱 Stakeholders — Link direto para WhatsApp (2026-06-26)
 
 O telefone cadastrado nos stakeholders (Power Map) agora é um link direto para abertura no WhatsApp (`https://wa.me/...`), substituindo o formato antigo (`tel:`). O número é formatado automaticamente, removendo caracteres não numéricos e incluindo o DDI `55` caso seja um número nacional sem código de país, facilitando o contato rápido com os clientes.
