@@ -3,6 +3,7 @@
 
 export type DateRangePeriod =
   | 'today'
+  | 'wtd' // Week-to-date (esta semana, início na segunda)
   | '7d'
   | '30d'
   | '90d'
@@ -32,6 +33,13 @@ const QUARTER_END = (d: Date) => {
 }
 const YEAR_START = (d: Date) => new Date(d.getFullYear(), 0, 1)
 const YEAR_END = (d: Date) => new Date(d.getFullYear(), 11, 31)
+// Início da semana = SEGUNDA (convenção de negócio BR). getDay(): 0=dom..6=sáb.
+const WEEK_START = (d: Date) => {
+  const daysFromMonday = (d.getDay() + 6) % 7
+  const from = new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysFromMonday)
+  from.setHours(0, 0, 0, 0)
+  return from
+}
 
 export function calculateDateRange(period: DateRangePeriod, customFrom?: Date, customTo?: Date): DateRange {
   const now = new Date()
@@ -42,6 +50,9 @@ export function calculateDateRange(period: DateRangePeriod, customFrom?: Date, c
       const today = new Date(now)
       today.setHours(0, 0, 0, 0)
       return { from: today, to: now, label: 'Hoje', period: 'today' }
+    }
+    case 'wtd': {
+      return { from: WEEK_START(now), to: now, label: 'Esta semana', period: 'wtd' }
     }
     case '7d': {
       const from = new Date(now)

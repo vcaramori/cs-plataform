@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check, Ban } from 'lucide-react'
+import { ExternalLink, ArrowUpRight, ListPlus, Loader2, Check, Ban, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { VocSignal } from '@/lib/voc/portfolio-voc'
@@ -22,6 +22,7 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
   const Src = SOURCE_META[signal.source].icon
   const meta = (ev.meta ?? {}) as Record<string, any>
   const participants = Array.isArray(meta.participants) ? meta.participants : null
+  const stakeholders: any[] = Array.isArray(meta.stakeholders) ? meta.stakeholders : []
 
   const [saving, setSaving] = useState(false)
   const [created, setCreated] = useState(false)
@@ -152,13 +153,39 @@ export function SignalEvidence({ signal }: { signal: VocSignal }) {
         </div>
       )}
 
-      {/* Detalhes específicos da fonte */}
-      {participants && participants.length > 0 && (
+      {/* Quem participou — participantes casados com o Power Map (cargo + decisor) */}
+      {stakeholders.length > 0 ? (
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Quem participou</span>
+          <div className="flex flex-wrap gap-1.5">
+            {stakeholders.map((s, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'inline-flex items-center gap-1 text-[10px] font-bold rounded-lg px-2 py-1 border',
+                  s.is_internal
+                    ? 'bg-surface-background border-border-divider text-content-secondary/70'
+                    : s.in_power_map
+                      ? 'bg-plannera-primary/10 border-plannera-primary/20 text-plannera-primary'
+                      : 'bg-surface-background border-border-divider text-content-primary'
+                )}
+                title={s.is_internal ? 'Time Plannera' : s.in_power_map ? 'Stakeholder no Power Map' : 'Participante fora do Power Map'}
+              >
+                {s.decision_maker && <Star className="w-2.5 h-2.5 fill-current" />}
+                {s.name}
+                {s.role ? <span className="opacity-70">· {s.role}</span> : null}
+                {s.attended === false && <span className="opacity-50">(não compareceu)</span>}
+              </span>
+            ))}
+          </div>
+          <p className="text-[9px] text-content-secondary/60">Realçados casam com o Power Map; ★ = decisor.</p>
+        </div>
+      ) : participants && participants.length > 0 ? (
         <div className="space-y-1">
           <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">Participantes</span>
           <p className="text-xs text-content-secondary">{participants.map((p: any) => p?.name ?? p?.email ?? '—').filter(Boolean).join(' · ')}</p>
         </div>
-      )}
+      ) : null}
 
       {/* Citações do cliente (extraídas da reunião pelo enriquecimento de VoC) */}
       {Array.isArray(meta.quotes) && meta.quotes.length > 0 && (

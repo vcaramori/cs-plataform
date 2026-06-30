@@ -39,6 +39,16 @@ export interface VocEvidence {
   deep_link: string | null
 }
 
+/** Participante de reunião casado (ou não) com o Power Map (tabela `contacts`). */
+export interface VocStakeholder {
+  name: string
+  role: string | null
+  decision_maker: boolean
+  in_power_map: boolean // casou com um contato do Power Map
+  is_internal: boolean // e-mail @plannera.com.br (time interno, não stakeholder do cliente)
+  attended: boolean
+}
+
 export interface VocSignal {
   id: string
   source: VocSource
@@ -121,6 +131,46 @@ function toISO(value: string | null | undefined, fallback: string): string {
   return value
 }
 
+/** Normaliza nome para casar (lowercase, sem acento, espaços colapsados). */
+function normName(s: string | null | undefined): string {
+  return (s ?? '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ')
+}
+
+interface ContactLite { name: string | null; role: string | null; decision_maker: boolean }
+type ContactIndex = Map<string, { byEmail: Map<string, ContactLite>; byName: Map<string, ContactLite> }>
+
+/** Casa os participantes de uma reunião (Read.ai) com o Power Map (`contacts`) da conta. */
+function matchStakeholders(accountId: string, participants: unknown, idx: ContactIndex): VocStakeholder[] {
+  if (!Array.isArray(participants) || participants.length === 0) return []
+  const acc = idx.get(accountId)
+  const out: VocStakeholder[] = []
+  const seen = new Set<string>()
+  for (const p of participants as any[]) {
+    const email = p?.email ? String(p.email).trim().toLowerCase() : null
+    const name = p?.name ? String(p.name).trim() : null
+    if (!email && !name) continue
+    const key = email || normName(name)
+    if (seen.has(key)) continue
+    seen.add(key)
+    const c = acc
+      ? (email ? acc.byEmail.get(email) : undefined) ?? (name ? acc.byName.get(normName(name)) : undefined) ?? null
+      : null
+    out.push({
+      name: c?.name ?? name ?? email ?? '—',
+      role: c?.role ?? null,
+      decision_maker: c?.decision_maker ?? false,
+      in_power_map: !!c,
+      is_internal: email ? email.endsWith('@plannera.com.br') : false,
+      attended: p?.attended === true,
+    })
+  }
+  // Ordem: stakeholder do cliente no Power Map → cliente solto → time interno (Plannera) por último.
+  return out.sort((a, b) => {
+    const rank = (s: VocStakeholder) => (s.is_internal ? 2 : s.in_power_map ? 0 : 1)
+    return rank(a) - rank(b)
+  })
+}
+
 /** Normaliza um termo (lowercase + sem acento) e resolve o sinônimo → canônico. */
 function makeNormalizer(synonyms: Map<string, string>) {
   return (label: string): string => {
@@ -161,6 +211,8 @@ export async function buildVocSignals(
 
   const accountsQuery = supabase.from('accounts').select('id, name, health_score, segment')
   const synonymsQuery = supabase.from('voc_theme_synonyms').select('synonym, canonical')
+  // Power Map (contacts) — para casar participantes de reunião com stakeholders (cargo/decisor).
+  let contactsQuery = supabase.from('contacts').select('account_id, name, role, decision_maker, email, departed_at')
   // Curadoria (Fase 3): sinais marcados como falso-positivo de sentimento são EXCLUÍDOS.
   let curationQuery = supabase
     .from('risk_curation_feedback')
@@ -198,10 +250,11 @@ export async function buildVocSignals(
     npsQ = npsQ.eq('account_id', accountId)
     csatQ = csatQ.eq('account_id', accountId)
     curationQuery = curationQuery.eq('account_id', accountId)
+    contactsQuery = contactsQuery.eq('account_id', accountId)
   }
 
-  const [{ data: accounts }, { data: synonymRows }, { data: interactions }, { data: npsRows }, { data: replies }, { data: csats }, { data: curationRows }] =
-    await Promise.all([accountsQuery, synonymsQuery, interQ, npsQ, repliesQ, csatQ, curationQuery])
+  const [{ data: accounts }, { data: synonymRows }, { data: contactRows }, { data: interactions }, { data: npsRows }, { data: replies }, { data: csats }, { data: curationRows }] =
+    await Promise.all([accountsQuery, synonymsQuery, contactsQuery, interQ, npsQ, repliesQ, csatQ, curationQuery])
 
   const accountMeta = new Map<string, { name: string; health_score: number; segment: string | null }>()
   for (const a of (accounts as any[]) ?? []) {
@@ -213,6 +266,17 @@ export async function buildVocSignals(
   for (const s of (synonymRows as any[]) ?? []) synonyms.set(String(s.synonym).toLowerCase(), s.canonical)
   const normalize = makeNormalizer(synonyms)
   const normList = (arr: string[]) => [...new Set(arr.map(normalize).filter(Boolean))]
+
+  // Índice do Power Map por conta (e-mail + nome) — contatos que já saíram são ignorados.
+  const contactIdx: ContactIndex = new Map()
+  for (const c of (contactRows as any[]) ?? []) {
+    if (c.departed_at) continue
+    let entry = contactIdx.get(c.account_id)
+    if (!entry) { entry = { byEmail: new Map(), byName: new Map() }; contactIdx.set(c.account_id, entry) }
+    const lite: ContactLite = { name: c.name ?? null, role: c.role ?? null, decision_maker: !!c.decision_maker }
+    if (c.email) entry.byEmail.set(String(c.email).trim().toLowerCase(), lite)
+    if (c.name) entry.byName.set(normName(c.name), lite)
+  }
 
   const signals: VocSignal[] = []
 
@@ -247,7 +311,7 @@ export async function buildVocSignals(
         excerpt: i.raw_transcript ? truncate(i.raw_transcript, 1200) : (i.summary ? truncate(i.summary, 1200) : null),
         keywords: themes.map((t) => t.theme),
         confidence: null, author: null,
-        meta: { interaction_type: i.type ?? null, summary: i.summary ?? null, participants: meta.participants ?? null, report_url: meta.report_url ?? null, read_score: (meta as any).read_score ?? null, quotes: Array.isArray(i.quotes) ? i.quotes : null },
+        meta: { interaction_type: i.type ?? null, summary: i.summary ?? null, participants: meta.participants ?? null, stakeholders: matchStakeholders(i.account_id, meta.participants, contactIdx), report_url: meta.report_url ?? null, read_score: (meta as any).read_score ?? null, quotes: Array.isArray(i.quotes) ? i.quotes : null },
         deep_link: null, // interação abre o detalhe da origem num modal (VocSourceModal), sem navegar
 
       },
