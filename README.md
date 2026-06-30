@@ -4,6 +4,16 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🗓️🗣️ Voz do Cliente — filtros de data calendário + stakeholders e citação no drawer (2026-06-30)
+
+Duas melhorias de usabilidade no `/voc`:
+
+**Filtros de data.** O seletor passou a ter períodos **calendário** corretos — **MTD** (início do mês), **QTD** (início do trimestre), **YTD** (início do ano) — além de **"Esta semana"** (week-to-date, início na segunda) e **intervalo personalizado** (data início–fim). Vale no portfólio, na visão por conta e no filtro local do drawer.
+
+**Drawer com quem disse + Power Map.** Ao clicar numa Top Dor/Elogio, cada sinal agora mostra **a citação no primeiro nível** (em vez de um excerpt genérico) e **quem participou**, casando os participantes da reunião (Read.ai) com o **Power Map** (`contacts`) por e-mail/nome — com **cargo** e marca de **decisor** (★). A citação passou a carregar **o autor** (`{q, by}`): a extração de VoC agora captura quem falou (`voc_theme_taxonomy`/`voc_enrichment`), e o frontend mostra "— Fulano" sob a fala (tolera o formato legado). Backfill por reset de `quotes_extracted_at` + cron `voc-enrich`. ([SignalsDrawer.tsx](src/app/(dashboard)/voc/components/SignalsDrawer.tsx), [portfolio-voc.ts](src/lib/voc/portfolio-voc.ts))
+
+---
+
 ## 🧮 Voz do Cliente — consolidação de temas por taxonomia canônica via IA (2026-06-30)
 
 As "Top Dores/Elogios" mostravam **tudo "1x"** (nenhum tema repetia). Diagnóstico frio: dos **1.925** rótulos livres em `interaction_themes`, a `voc_theme_synonyms` cobria só **1,6%**. Causa: o clustering por **embedding** (cosseno 0,86) deixava ~86% dos rótulos como singletons — rótulos do **mesmo tema** mas com texto distante (`lentidão na importação` vs `gargalo` vs `carregamento de página`) não fundiam.

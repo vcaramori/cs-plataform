@@ -1,5 +1,10 @@
 # Plano de Implementação — Módulo de VOC | Voz do Cliente (Revisado)
 
+> **Atualização (2026-06-30) — Taxonomia de temas + filtros de data + stakeholders no drawer.**
+> - **Temas:** clustering por embedding aposentado → **taxonomia canônica via IA** (mapeia rótulo livre → 1 de ~17 temas fechados em `app_settings.voc_theme_taxonomy`, editável). Acaba com o "tudo 1x" (1.925 rótulos → 17 temas, 100% cobertos). Cron `voc-cluster-themes` reusado (`?rebuild=1` remapeia tudo).
+> - **Datas:** seletor com períodos calendário (MTD/QTD/YTD = início do mês/trimestre/ano), **"Esta semana"** (`wtd`) e **intervalo personalizado** (início–fim).
+> - **Drawer:** ao clicar numa Top Dor/Elogio, cada sinal mostra a **citação no 1º nível** com **autor** (`{q, by}`) e **quem participou**, casando participantes da reunião com o **Power Map** (`contacts`) por e-mail/nome — cargo + decisor.
+
 > **Atualização (2026-06-26) — "VoC linear" corrigido (buracos de dados).** O VoC parecia achatado porque a maior fonte (reuniões) estava invisível e os temas não agregavam:
 > - **Sentimento:** 361 reuniões do Read.ai estavam com `sentiment_score` NULL (só recebiam `metrics.sentiment` do Read.ai, que vem nulo) → `enrichInteractionSentiment` (cron `voc-enrich`) pontua via nossa IA; evidência rotula "Avaliado por IA" (`meta.sentiment_ai`).
 > - **Temas:** 1865 labels distintos (de 2016) → novo cron `voc-cluster-themes` (`clusterVocThemes`) embeda e agrupa por cosseno, populando `voc_theme_synonyms` (sinônimo→canônico). IO-safe (embeddings em memória).
