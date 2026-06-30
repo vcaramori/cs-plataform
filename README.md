@@ -4,6 +4,17 @@ CS-Continuum é uma plataforma interna de Customer Success construída para a Pl
 
 ---
 
+## 🧮 Voz do Cliente — consolidação de temas por taxonomia canônica via IA (2026-06-30)
+
+As "Top Dores/Elogios" mostravam **tudo "1x"** (nenhum tema repetia). Diagnóstico frio: dos **1.925** rótulos livres em `interaction_themes`, a `voc_theme_synonyms` cobria só **1,6%**. Causa: o clustering por **embedding** (cosseno 0,86) deixava ~86% dos rótulos como singletons — rótulos do **mesmo tema** mas com texto distante (`lentidão na importação` vs `gargalo` vs `carregamento de página`) não fundiam.
+
+- **Correção de raiz:** aposentado o clustering por embedding. Agora a IA mapeia cada rótulo livre para **UM tema de uma lista fechada** (taxonomia canônica), por **significado** e não por texto, gravando sinônimo→canônico na mesma `voc_theme_synonyms`. O painel passa a agregar de verdade (`desempenho e lentidão 7x`, `automação e retrabalho manual 5x`…). ([cluster-themes.ts](src/lib/voc/cluster-themes.ts))
+- **Editável (zero-env):** a taxonomia vive em `app_settings.voc_theme_taxonomy` (lista de ~17 temas, editável) e a moldura da IA no catálogo (`voc_theme_taxonomy`, em /admin → IA — Contexto & Regras).
+- **Sem schema novo, sem reprocessar temas.** Cron `voc-cluster-themes` reusado (incremental; `?rebuild=1` limpa e remapeia tudo após mudar a taxonomia).
+- **Stopgap aplicado antes:** limiar do clustering antigo baixado 0,86→0,80 (alívio parcial: cobertura global 1,6%→5,9%), substituído pela taxonomia.
+
+---
+
 ## 🛡️ Read.ai — fim do clobber de sentimento da IA no re-sync (2026-06-30)
 
 Correção de um bug de integridade de dados descoberto ao validar ao vivo as reuniões do Read.ai com sentimento nulo. A cada re-sync/backfill, o caminho de UPDATE de `ingestReadAiMeeting` regravava `sentiment_score` com o `metrics.sentiment` do Read.ai (quase sempre **nulo**) e **substituía o `meta` inteiro** — apagando o score e a flag `sentiment_ai` que a **nossa IA** havia calculado. Resultado: backfills revertiam ao nulo reuniões já enriquecidas.
