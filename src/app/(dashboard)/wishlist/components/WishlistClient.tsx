@@ -235,14 +235,17 @@ function SettingsDialog() {
   const [open, setOpen] = useState(false)
   const [pending, start] = useTransition()
   const [endpoint, setEndpoint] = useState('')
-  const [secret, setSecret] = useState('')
+  const [headerName, setHeaderName] = useState('x-api-key')
+  const [apiKey, setApiKey] = useState('')
+  const [hasKey, setHasKey] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (open && !loaded) {
       getSettingsAction().then((s) => {
         setEndpoint(s.handoff_endpoint ?? '')
-        setSecret(s.handoff_secret_header ?? '')
+        setHeaderName(s.handoff_header_name ?? 'x-api-key')
+        setHasKey(!!s.handoff_api_key)
         setLoaded(true)
       })
     }
@@ -250,7 +253,13 @@ function SettingsDialog() {
 
   const save = () => {
     start(async () => {
-      await saveSettingsAction({ handoff_endpoint: endpoint.trim() || null, handoff_secret_header: secret.trim() || null })
+      await saveSettingsAction({
+        handoff_endpoint: endpoint.trim() || null,
+        handoff_header_name: headerName.trim() || 'x-api-key',
+        // Só sobrescreve a chave se o usuário digitou uma nova (mantém a existente se em branco).
+        handoff_api_key: apiKey.trim() ? apiKey.trim() : undefined as any,
+        handoff_secret_header: null,
+      } as any)
       setOpen(false)
     })
   }
@@ -262,17 +271,23 @@ function SettingsDialog() {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Configurações de handoff</DialogTitle>
-          <DialogDescription>Endpoint (https) que recebe os itens aceitos enviados ao produto. O segredo vai no header X-Wishlist-Secret.</DialogDescription>
+          <DialogTitle>Handoff ao Produto (Plannera RICE)</DialogTitle>
+          <DialogDescription>Endpoint (https) e chave de API que recebem os itens aceitos. Guardado no banco (app_settings), nunca em .env.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Webhook (https)</Label>
-            <Input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://produto.exemplo.com/webhook/wishlist" />
+            <Label>Endpoint (https)</Label>
+            <Input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://…/functions/v1/webhook-feature-create" />
           </div>
-          <div>
-            <Label>Segredo (opcional)</Label>
-            <Input value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="token compartilhado" />
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <Label>Header</Label>
+              <Input value={headerName} onChange={(e) => setHeaderName(e.target.value)} placeholder="x-api-key" />
+            </div>
+            <div className="col-span-2">
+              <Label>Chave de API {hasKey && <span className="text-[10px] text-emerald-500">· configurada</span>}</Label>
+              <Input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={hasKey ? '•••••••• (deixe em branco p/ manter)' : 'cole a chave'} />
+            </div>
           </div>
         </div>
         <DialogFooter>

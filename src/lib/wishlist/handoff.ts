@@ -14,17 +14,45 @@ export async function getWishlistSettings(): Promise<WishlistSettings> {
   const v = data?.value ?? {}
   return {
     handoff_endpoint: v.handoff_endpoint ?? null,
+    handoff_header_name: v.handoff_header_name ?? null,
+    handoff_api_key: v.handoff_api_key ?? null,
     handoff_secret_header: v.handoff_secret_header ?? null,
   }
 }
 
-export async function saveWishlistSettings(settings: WishlistSettings, userId: string | null): Promise<void> {
+/**
+ * Mapeia o ProductBrief para o contrato do webhook Plannera RICE (webhook-feature-create):
+ * {titulo, descricao, produto, epico, tipo, criticidade, clientes, areas}.
+ */
+function toRiceFeatureBody(brief: ProductBrief): Record<string, unknown> {
+  const tipo = (brief.tipo === 'Estratégico' || brief.tipo === 'Estrela') ? 'estrela' : 'quick_win'
+  const critMap: Record<string, string> = { 'Baixa': 'baixa', 'Média': 'media', 'Media': 'media', 'Alta': 'alta', 'Crítica': 'critica', 'Critica': 'critica' }
+  const criticidade = critMap[brief.criticidade ?? ''] ?? 'media'
+  const clientes = brief.demand.accounts_list.map((a) => a.account_name).filter(Boolean).join('; ')
+  const areas = (brief.areas ?? []).filter(Boolean).join('; ')
+  return {
+    titulo: brief.titulo,
+    descricao: brief.narrative || brief.descricao || brief.problem || '',
+    produto: brief.squad || 'S&OP',
+    ...(brief.epico ? { epico: brief.epico } : {}),
+    tipo,
+    criticidade,
+    ...(clientes ? { clientes } : {}),
+    ...(areas ? { areas } : {}),
+  }
+}
+
+export async function saveWishlistSettings(settings: Partial<WishlistSettings>, userId: string | null): Promise<void> {
   const db = getSupabaseAdminClient() as any
+  // MESCLA com o existente: campos `undefined` NÃO sobrescrevem (ex.: chave em branco mantém a atual).
+  const { data } = await db.from('app_settings').select('value').eq('key', SETTINGS_KEY).maybeSingle()
+  const merged: Record<string, unknown> = { ...(data?.value ?? {}) }
+  for (const [k, v] of Object.entries(settings)) { if (v !== undefined) merged[k] = v }
   await db.from('app_settings').upsert(
     {
       key: SETTINGS_KEY,
-      value: settings,
-      description: 'Configuração de handoff do módulo Wishlist',
+      value: merged,
+      description: 'Config de handoff do Wishlist → Plannera RICE (endpoint + api key + header). Editável no admin.',
       updated_by: userId,
       updated_at: new Date().toISOString(),
     },
@@ -172,14 +200,16 @@ export async function handoffItem(
     throw new Error('Configure o endpoint de webhook em Configurações do Wishlist antes de enviar.')
   }
 
-  const headers: Record<string, string> = {}
-  if (settings.handoff_secret_header) headers['X-Wishlist-Secret'] = settings.handoff_secret_header
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  // Header de auth configurável (ex.: 'x-api-key' do Plannera RICE); legado 'X-Wishlist-Secret'.
+  if (settings.handoff_api_key) headers[settings.handoff_header_name || 'x-api-key'] = settings.handoff_api_key
+  else if (settings.handoff_secret_header) headers['X-Wishlist-Secret'] = settings.handoff_secret_header
 
   const cfg = {
     http_url: settings.handoff_endpoint,
     http_method: 'POST',
     http_headers: headers,
-    http_body: JSON.stringify({ type: 'wishlist_item', item_id: itemId, brief }),
+    http_body: JSON.stringify(toRiceFeatureBody(brief)),
   } as unknown as NodeConfig
 
   let result: Record<string, any>

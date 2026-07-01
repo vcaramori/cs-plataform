@@ -139,8 +139,13 @@ export interface ProductBrief {
   generated_at: string
 }
 
-/** Config de handoff guardada em app_settings (chave 'wishlist_settings'). */
+/** Config de handoff guardada em app_settings (chave 'wishlist_settings'). Editável no admin. */
 export interface WishlistSettings {
   handoff_endpoint: string | null
+  /** Nome do header de autenticação (ex.: 'x-api-key' para o Plannera RICE). */
+  handoff_header_name: string | null
+  /** Valor da chave de API (guardado só no banco, nunca em .env/git). */
+  handoff_api_key: string | null
+  /** Legado: header antigo 'X-Wishlist-Secret' (mantido p/ compat). */
   handoff_secret_header: string | null
 }
