@@ -16,14 +16,14 @@ export default async function WishlistPage() {
 
   const { data: pendingSignals } = await db
     .from('wishlist_signals')
-    .select('id, account_id, source_type, verbatim, summary, kind, ai_confidence, requester_name, created_at, cluster_key, catalog_match, area, accounts(name)')
+    .select('id, account_id, source_type, verbatim, summary, kind, ai_confidence, requester_name, created_at, cluster_key, catalog_match, area, accounts(name, csm_owner_id)')
     .eq('triage_outcome', 'pending')
     .order('created_at', { ascending: false })
     .limit(400)
 
   const { data: items } = await db
     .from('wishlist_items')
-    .select('id, title, kind, status, priority, category, demand_accounts, demand_arr, rice_score, updated_at')
+    .select('id, title, kind, status, priority, category, areas, demand_accounts, demand_arr, rice_score, updated_at')
     .order('rice_score', { ascending: false, nullsFirst: false })
     .order('updated_at', { ascending: false })
     .limit(200)
@@ -34,6 +34,13 @@ export default async function WishlistPage() {
     .select('id, name')
     .order('name', { ascending: true })
     .limit(500)
+
+  // CSMs (donos das contas) para o filtro — resolve nomes dos csm_owner_id presentes nos sinais.
+  const csmIds = [...new Set(((pendingSignals ?? []) as any[]).map((s) => s.accounts?.csm_owner_id).filter(Boolean))]
+  const { data: csmProfiles } = csmIds.length
+    ? await db.from('profiles').select('id, full_name').in('id', csmIds)
+    : { data: [] as any[] }
+  const csms = (csmProfiles ?? []).map((p: any) => ({ id: p.id, name: p.full_name ?? '—' }))
 
   return (
     <PageContainer>
@@ -47,6 +54,7 @@ export default async function WishlistPage() {
           pendingSignals={pendingSignals ?? []}
           items={items ?? []}
           accounts={accounts ?? []}
+          csms={csms}
         />
       </Suspense>
     </PageContainer>

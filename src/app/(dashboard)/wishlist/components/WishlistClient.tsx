@@ -33,12 +33,17 @@ export function formatBRL(v: number): string {
   return 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR')
 }
 
+const SOURCE_OPTS: Array<[string, string]> = [
+  ['interaction', 'Reunião'], ['time_entry', 'Esforço'], ['nps_response', 'NPS'], ['support_ticket', 'Suporte'], ['manual', 'Manual'],
+]
+
 export function WishlistClient({
-  pendingSignals, items, accounts,
+  pendingSignals, items, accounts, csms = [],
 }: {
   pendingSignals: any[]
   items: any[]
   accounts: { id: string; name: string }[]
+  csms?: { id: string; name: string }[]
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -50,6 +55,35 @@ export function WishlistClient({
   const inCuration = items.filter((i) => i.status === 'under_curation').length
   const accepted = items.filter((i) => ['accepted', 'handed_off', 'delivered'].includes(i.status)).length
 
+  // ── Filtros (conta · CSM · área · fonte · status · busca) ──
+  const [q, setQ] = useState('')
+  const [fConta, setFConta] = useState('all')
+  const [fCsm, setFCsm] = useState('all')
+  const [fArea, setFArea] = useState('all')
+  const [fFonte, setFFonte] = useState('all')
+  const [fStatus, setFStatus] = useState('all')
+
+  const contaOpts = [...new Set(pendingSignals.map((s) => s.accounts?.name).filter(Boolean))].sort()
+  const areaOpts = [...new Set([...pendingSignals.map((s) => s.area), ...items.flatMap((i) => i.areas ?? [])].filter(Boolean))].sort()
+  const statusOpts = [...new Set(items.map((i) => i.status).filter(Boolean))]
+
+  const ql = q.trim().toLowerCase()
+  const matchQ = (txt: string) => !ql || (txt ?? '').toLowerCase().includes(ql)
+
+  const filteredSignals = pendingSignals.filter((s) =>
+    (fConta === 'all' || s.accounts?.name === fConta) &&
+    (fCsm === 'all' || s.accounts?.csm_owner_id === fCsm) &&
+    (fArea === 'all' || s.area === fArea) &&
+    (fFonte === 'all' || s.source_type === fFonte) &&
+    (matchQ(s.summary) || matchQ(s.verbatim)))
+  const filteredItems = items.filter((i) =>
+    (fStatus === 'all' || i.status === fStatus) &&
+    (fArea === 'all' || (i.areas ?? []).includes(fArea)) &&
+    matchQ(i.title))
+
+  const anyFilter = !!q || [fConta, fCsm, fArea, fFonte, fStatus].some((v) => v !== 'all')
+  const clearFilters = () => { setQ(''); setFConta('all'); setFCsm('all'); setFArea('all'); setFFonte('all'); setFStatus('all') }
+
   return (
     <div className="space-y-8">
       {/* Como funciona */}
@@ -60,17 +94,21 @@ export function WishlistClient({
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi icon={<Inbox className="w-4 h-4" />} label="Sinais na triagem" value={String(pendingSignals.length)} />
-        <Kpi icon={<Layers className="w-4 h-4" />} label="Em curadoria" value={String(inCuration)} />
-        <Kpi icon={<ArrowRight className="w-4 h-4" />} label="Aceitos / enviados" value={String(accepted)} />
-        <Kpi icon={<DollarSign className="w-4 h-4" />} label="ARR em jogo (curadoria+)" value={formatBRL(totalArr)} />
+        <Kpi icon={<Inbox className="w-4 h-4" />} label="Sinais na triagem" value={String(pendingSignals.length)}
+          onClick={() => { setTab('triage'); clearFilters() }} />
+        <Kpi icon={<Layers className="w-4 h-4" />} label="Em curadoria" value={String(inCuration)}
+          onClick={() => { setTab('items'); setFStatus('under_curation') }} />
+        <Kpi icon={<ArrowRight className="w-4 h-4" />} label="Aceitos / enviados" value={String(accepted)}
+          onClick={() => { setTab('items'); setFStatus('accepted') }} />
+        <Kpi icon={<DollarSign className="w-4 h-4" />} label="ARR em jogo (curadoria+)" value={formatBRL(totalArr)}
+          onClick={() => { setTab('items'); setFStatus('all') }} />
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="triage">Triagem ({pendingSignals.length})</TabsTrigger>
-            <TabsTrigger value="items">Itens ({items.length})</TabsTrigger>
+            <TabsTrigger value="triage">Triagem ({filteredSignals.length}{anyFilter ? `/${pendingSignals.length}` : ''})</TabsTrigger>
+            <TabsTrigger value="items">Itens ({filteredItems.length}{anyFilter ? `/${items.length}` : ''})</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
@@ -79,19 +117,31 @@ export function WishlistClient({
         </div>
       </div>
 
+      {/* Barra de filtros */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar pedido…" className="h-9 w-48" />
+        <FSel value={fConta} onChange={setFConta} allLabel="Todas as contas" opts={contaOpts.map((c) => [c as string, c as string])} />
+        {csms.length > 0 && <FSel value={fCsm} onChange={setFCsm} allLabel="Todos os CSMs" opts={csms.map((c) => [c.id, c.name])} />}
+        <FSel value={fArea} onChange={setFArea} allLabel="Todas as áreas" opts={areaOpts.map((a) => [a as string, a as string])} />
+        {tab === 'triage'
+          ? <FSel value={fFonte} onChange={setFFonte} allLabel="Todas as fontes" opts={SOURCE_OPTS} />
+          : <FSel value={fStatus} onChange={setFStatus} allLabel="Todos os status" opts={statusOpts.map((s) => [s as string, STATUS_LABEL[s as string] ?? (s as string)])} />}
+        {anyFilter && <Button variant="ghost" size="sm" onClick={clearFilters}>Limpar</Button>}
+      </div>
+
       <Tabs value={tab} onValueChange={setTab}>
         <TabsContent value="triage" className="mt-0 space-y-3">
           <p className="text-xs text-content-secondary">Cada sinal é um pedido de um cliente. Decida o desfecho: já existe, vira melhoria, vira item novo, ou descarte.</p>
-          <TriageInbox signals={pendingSignals} />
+          <TriageInbox signals={filteredSignals} />
         </TabsContent>
 
         <TabsContent value="items" className="mt-0 space-y-3">
           <p className="text-xs text-content-secondary">Itens reúnem pedidos semelhantes de vários clientes, <strong>ordenados por RICE</strong> (alcance × impacto × confiança). Clique para curar e encaminhar ao produto.</p>
-          {items.length === 0 ? (
-            <EmptyState text="Nenhum item ainda. Promova sinais da triagem para criar itens curados." />
+          {filteredItems.length === 0 ? (
+            <EmptyState text={anyFilter ? 'Nenhum item com esses filtros.' : 'Nenhum item ainda. Promova sinais da triagem para criar itens curados.'} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {items.map((it) => (
+              {filteredItems.map((it) => (
                 <Link key={it.id} href={`/wishlist/${it.id}`}>
                   <Card className="cursor-pointer hover:border-plannera-primary/40 transition-colors h-full">
                     <CardContent className="p-4 space-y-3">
@@ -131,9 +181,9 @@ export function WishlistClient({
   )
 }
 
-function Kpi({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Kpi({ icon, label, value, onClick }: { icon: React.ReactNode; label: string; value: string; onClick?: () => void }) {
   return (
-    <Card>
+    <Card onClick={onClick} className={onClick ? 'cursor-pointer hover:border-plannera-primary/40 transition-colors' : undefined}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-content-secondary text-[11px] font-semibold uppercase tracking-wide">
           {icon}{label}
@@ -152,6 +202,20 @@ export function EmptyState({ text }: { text: string }) {
         <p className="text-sm text-content-secondary max-w-md mx-auto">{text}</p>
       </CardContent>
     </Card>
+  )
+}
+
+/** Select compacto de filtro (nativo, para listas com muitas opções). */
+function FSel({ value, onChange, allLabel, opts }: { value: string; onChange: (v: string) => void; allLabel: string; opts: [string, string][] }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-9 text-xs px-2 rounded-md bg-surface-card border border-border-divider text-content-primary focus:outline-none focus:ring-1 focus:ring-plannera-primary/30 max-w-[180px]"
+    >
+      <option value="all">{allLabel}</option>
+      {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    </select>
   )
 }
 
