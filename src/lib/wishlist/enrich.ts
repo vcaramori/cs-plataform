@@ -180,49 +180,60 @@ export async function matchSignalsCatalog(limitClusters: number, deadline: numbe
  */
 export async function clusterSignals(deadline: number): Promise<number> {
   const admin = getSupabaseAdminClient() as any
-  const { data } = await admin
+  // INCREMENTAL: só processa sinais AINDA sem cluster. Quando tudo já está clusterizado, é no-op
+  // imediato — evita re-embeddar os 564 a cada ciclo (o que starvava o match). Novos sinais são
+  // atribuídos ao cluster existente mais similar, ou viram um cluster novo.
+  const { data: newRows } = await admin
     .from('wishlist_signals')
     .select('id, summary, verbatim')
     .eq('triage_outcome', 'pending')
+    .is('cluster_key', null)
     .order('created_at', { ascending: false })
     .limit(MAX_CLUSTER)
-  const rows = (data as any[]) ?? []
-  if (rows.length === 0) return 0
+  const news = (newRows as any[]) ?? []
+  if (news.length === 0) return 0
 
-  // Embeddings em memória (provedor externo; não toca o disco do Postgres).
-  const vectors = new Map<string, number[]>()
-  for (let i = 0; i < rows.length; i += CONCURRENCY) {
-    if (Date.now() > deadline) break
-    const batch = rows.slice(i, i + CONCURRENCY)
-    await Promise.all(batch.map(async (s) => {
-      const text = String(s.summary ?? s.verbatim ?? '').trim()
-      if (text.length < 8) return
-      try {
-        const { result } = await generateEmbedding(text, { allowFallback: true })
-        if (Array.isArray(result) && result.length) vectors.set(s.id, result)
-      } catch { /* ignora */ }
-    }))
+  // Representantes dos clusters existentes (o sinal semente = aquele cujo id == cluster_key).
+  const { data: repRows } = await admin
+    .from('wishlist_signals')
+    .select('id, cluster_key, summary, verbatim')
+    .eq('triage_outcome', 'pending')
+    .not('cluster_key', 'is', null)
+  const reps = ((repRows as any[]) ?? []).filter((r) => r.id === r.cluster_key)
+
+  const embedText = async (s: any): Promise<number[] | null> => {
+    const text = String(s.summary ?? s.verbatim ?? '').trim()
+    if (text.length < 8) return null
+    try { const { result } = await generateEmbedding(text, { allowFallback: true }); return Array.isArray(result) && result.length ? result : null }
+    catch { return null }
   }
 
-  // Clustering guloso: cada sinal entra no cluster cujo representante é mais similar (>= threshold).
+  // Embeda os representantes existentes + os novos (concorrência baixa, respeitando o deadline).
   const clusters: Array<{ key: string; vec: number[] }> = []
-  const assign = new Map<string, string>()
-  for (const s of rows) {
-    const v = vectors.get(s.id)
-    if (!v) continue
-    let best: { key: string; sim: number } | null = null
-    for (const c of clusters) {
-      const sim = cosine(v, c.vec)
-      if (sim >= SIM_THRESHOLD && (!best || sim > best.sim)) best = { key: c.key, sim }
-    }
-    if (best) assign.set(s.id, best.key)
-    else { clusters.push({ key: s.id, vec: v }); assign.set(s.id, s.id) }
+  for (let i = 0; i < reps.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) break
+    const batch = reps.slice(i, i + CONCURRENCY)
+    const vecs = await Promise.all(batch.map(embedText))
+    batch.forEach((r, j) => { if (vecs[j]) clusters.push({ key: r.cluster_key, vec: vecs[j]! }) })
   }
 
   let done = 0
-  for (const [id, key] of assign) {
-    await admin.from('wishlist_signals').update({ cluster_key: key }).eq('id', id)
-    done++
+  for (let i = 0; i < news.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) break
+    const batch = news.slice(i, i + CONCURRENCY)
+    const vecs = await Promise.all(batch.map(embedText))
+    for (let j = 0; j < batch.length; j++) {
+      const v = vecs[j]; if (!v) continue
+      let best: { key: string; sim: number } | null = null
+      for (const c of clusters) {
+        const sim = cosine(v, c.vec)
+        if (sim >= SIM_THRESHOLD && (!best || sim > best.sim)) best = { key: c.key, sim }
+      }
+      const key = best ? best.key : batch[j].id
+      if (!best) clusters.push({ key, vec: v })
+      await admin.from('wishlist_signals').update({ cluster_key: key }).eq('id', batch[j].id)
+      done++
+    }
   }
   return done
 }
