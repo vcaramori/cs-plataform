@@ -2,7 +2,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { generateText, generateEmbedding } from '@/lib/llm/gateway'
 import { buildSystemInstruction } from '@/lib/ai/ai-context'
 import { safeParseLLMJson } from '@/lib/llm/safe-json'
-import { suggestCatalogMatch } from './matching'
+import { loadActiveFeatures, matchAgainstFeatures, type CatalogFeature } from './matching'
 import { recomputeItemRice } from './rice'
 
 /**
@@ -157,13 +157,38 @@ export async function matchSignalsCatalog(limitClusters: number, deadline: numbe
     .map(([key, g]) => ({ key, rep: g.rep ?? g.members[0], size: g.members.length }))
     .sort((a, b) => b.size - a.size)
 
+  // OTIMIZAÇÃO (pré-filtro por embedding): embeda as features do catálogo UMA vez por run e, por
+  // cluster, manda ao LLM só as TOP_K mais similares — prompt menor, mais barato e mais focado
+  // (antes ia o catálogo inteiro a cada chamada). Se o embed falhar, cai no catálogo completo.
+  const TOP_K = 12
+  const features = await loadActiveFeatures()
+  const featVecs: Array<{ f: CatalogFeature; vec: number[] }> = []
+  for (let i = 0; i < features.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) break
+    const batch = features.slice(i, i + CONCURRENCY)
+    const vecs = await Promise.all(batch.map(async (f) => {
+      try { const { result } = await generateEmbedding(`${f.name}. ${f.description ?? ''}`.slice(0, 500), { allowFallback: true }); return Array.isArray(result) && result.length ? result : null }
+      catch { return null }
+    }))
+    batch.forEach((f, j) => { if (vecs[j]) featVecs.push({ f, vec: vecs[j]! }) })
+  }
+
   let done = 0
   for (const c of clusters) {
     if (done >= limitClusters || Date.now() > deadline) break
     const text = String(c.rep.summary ?? '').trim() || String(c.rep.verbatim ?? '').trim()
     let match: any = null
     if (text.length >= 8) {
-      try { match = await suggestCatalogMatch(text) } catch { match = null }
+      let candidates = features
+      if (featVecs.length) {
+        try {
+          const { result: rv } = await generateEmbedding(text, { allowFallback: true })
+          if (Array.isArray(rv) && rv.length) {
+            candidates = featVecs.map((fv) => ({ f: fv.f, sim: cosine(rv, fv.vec) })).sort((a, b) => b.sim - a.sim).slice(0, TOP_K).map((x) => x.f)
+          }
+        } catch { /* usa o catálogo completo */ }
+      }
+      try { match = await matchAgainstFeatures(text, candidates) } catch { match = null }
     }
     // Aplica o match a todos os membros pendentes ainda não casados do cluster.
     await admin.from('wishlist_signals')

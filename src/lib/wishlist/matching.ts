@@ -115,25 +115,24 @@ const CATALOG_SYSTEM = `Você é um especialista no produto de uma plataforma Sa
 Dada a lista de funcionalidades existentes e um pedido de cliente, diga se o pedido JÁ É ATENDIDO por alguma funcionalidade existente.
 Responda SOMENTE em JSON: {"feature_id":"<id ou null>","confidence":0.0,"rationale":"curto"}. Se nada se encaixa, feature_id=null.`
 
-/**
- * Sugere uma funcionalidade existente do catálogo (product_features) que possa
- * atender ao pedido — base do caminho "já existe / insuficiente". Retorna null se nada encaixa.
- */
-export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | null> {
-  if (!text || text.trim().length < 8) return null
+export interface CatalogFeature { id: string; name: string; description: string | null; module: string | null }
+
+/** Carrega as features ativas do catálogo (até 200). */
+export async function loadActiveFeatures(): Promise<CatalogFeature[]> {
   const db = getSupabaseAdminClient() as any
-  const { data: features } = await db
-    .from('product_features')
-    .select('id, name, description, module')
-    .eq('is_active', true)
-    .limit(200)
+  const { data } = await db.from('product_features').select('id, name, description, module').eq('is_active', true).limit(200)
+  return (data ?? []) as CatalogFeature[]
+}
 
-  if (!features || features.length === 0) return null
-
+/**
+ * Núcleo do match: dada uma lista de features (já pré-filtrada quando possível — ver otimização
+ * por embedding no cron), decide se o pedido já é atendido. Prompt proporcional à lista recebida.
+ */
+export async function matchAgainstFeatures(text: string, features: CatalogFeature[]): Promise<CatalogMatch | null> {
+  if (!text || text.trim().length < 8 || features.length === 0) return null
   const catalog = features
-    .map((f: any) => `- [${f.id}] ${f.name}${f.module ? ` (${f.module})` : ''}: ${f.description ?? ''}`)
+    .map((f) => `- [${f.id}] ${f.name}${f.module ? ` (${f.module})` : ''}: ${f.description ?? ''}`)
     .join('\n')
-
   try {
     const { result } = await generateText(
       `Funcionalidades existentes:\n${catalog}\n\nPedido do cliente:\n${text.slice(0, 1500)}`,
@@ -143,7 +142,7 @@ export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | 
     if (txt.startsWith('```')) txt = txt.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
     const parsed = JSON.parse(txt)
     if (!parsed || !parsed.feature_id) return null
-    const feature = features.find((f: any) => f.id === parsed.feature_id)
+    const feature = features.find((f) => f.id === parsed.feature_id)
     if (!feature) return null
     return {
       feature_id: feature.id,
@@ -155,4 +154,15 @@ export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | 
     console.error('[wishlist/matching] catalog match failed:', e instanceof Error ? e.message : e)
     return null
   }
+}
+
+/**
+ * Sugere uma funcionalidade existente do catálogo que atenda ao pedido — caminho "já existe".
+ * Usado no clique "Analisar" da triagem (carrega todas as features). No cron, prefira o pré-filtro
+ * por embedding + matchAgainstFeatures (top-K) para prompts menores.
+ */
+export async function suggestCatalogMatch(text: string): Promise<CatalogMatch | null> {
+  if (!text || text.trim().length < 8) return null
+  const features = await loadActiveFeatures()
+  return matchAgainstFeatures(text, features)
 }
