@@ -128,29 +128,50 @@ export async function categorizeSignals(limit: number, deadline: number): Promis
   return done
 }
 
-/** B) Pré-casa cada sinal pendente com o catálogo de features (tira a IA do clique manual). */
-export async function matchSignalsCatalog(limit: number, deadline: number): Promise<number> {
+/**
+ * B) Pré-casa com o catálogo de features POR CLUSTER (não por sinal): 1 chamada de IA por grupo,
+ * aplicada a TODOS os membros (mesmo pedido = mesmo match). Corta o gargalo do match por-sinal
+ * (o catálogo inteiro no contexto é caro) e resolve os grupos multi-conta de uma vez. `limitClusters`
+ * = quantos grupos casar por execução; maiores primeiro (mais valor por chamada).
+ */
+export async function matchSignalsCatalog(limitClusters: number, deadline: number): Promise<number> {
   const admin = getSupabaseAdminClient() as any
   const { data } = await admin
     .from('wishlist_signals')
-    .select('id, summary, verbatim')
+    .select('id, cluster_key, summary, verbatim')
     .eq('triage_outcome', 'pending')
     .is('enriched_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+    .not('cluster_key', 'is', null)
   const rows = (data as any[]) ?? []
   if (rows.length === 0) return 0
 
-  return runBatched(rows, async (s) => {
-    const text = String(s.summary ?? '').trim() || String(s.verbatim ?? '').trim()
+  // Agrupa por cluster; representante = o sinal cujo id == cluster_key (ou o primeiro do grupo).
+  const byCluster = new Map<string, { rep: any; members: any[] }>()
+  for (const s of rows) {
+    const g = byCluster.get(s.cluster_key) ?? { rep: null, members: [] as any[] }
+    g.members.push(s)
+    if (s.id === s.cluster_key) g.rep = s
+    byCluster.set(s.cluster_key, g)
+  }
+  const clusters = [...byCluster.entries()]
+    .map(([key, g]) => ({ key, rep: g.rep ?? g.members[0], size: g.members.length }))
+    .sort((a, b) => b.size - a.size)
+
+  let done = 0
+  for (const c of clusters) {
+    if (done >= limitClusters || Date.now() > deadline) break
+    const text = String(c.rep.summary ?? '').trim() || String(c.rep.verbatim ?? '').trim()
     let match: any = null
     if (text.length >= 8) {
       try { match = await suggestCatalogMatch(text) } catch { match = null }
     }
+    // Aplica o match a todos os membros pendentes ainda não casados do cluster.
     await admin.from('wishlist_signals')
       .update({ catalog_match: match, enriched_at: new Date().toISOString() })
-      .eq('id', s.id)
-  }, deadline)
+      .eq('cluster_key', c.key).eq('triage_outcome', 'pending').is('enriched_at', null)
+    done++
+  }
+  return done
 }
 
 /**
