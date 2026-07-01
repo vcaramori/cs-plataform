@@ -28,6 +28,8 @@ VoC, Wishlist e Oportunidades leem os MESMOS dados de origem (transcrições, NP
 
 ---
 
+> **Decisão (2026-07-01) — leitura única resolvida como "manter split".** Entregues: orquestrador único (`/api/cron/enrich`), primitivas de métrica (`rice_score`), e Fases 1–3. O passo "1 leitura por documento" foi avaliado na prática: o ganho central da consolidação (um cron, um orçamento de IO, fim da concorrência de crons, métricas em primitivas únicas) **já foi capturado**. Fundir as DUAS leituras de IA numa só (VoC no cron + sinais no ingest) forçaria escolher entre **LLM pesado no ingest** (risco de IO — a instabilidade que evitamos) ou **lag dos sinais** (extração no cron). Decidido **manter o split**: sinais extraídos no ingest em tempo real (1 chamada combinada wishlist+oportunidades) + VoC no cron. A dupla leitura do texto (barata) é custo aceito. Otimização futura registrada em tech-debt: pré-filtro por embedding no `wishlist_catalog_match` (hoje manda o catálogo inteiro no contexto → ~15 clusters/run).
+
 ## Estado atual (baseline) — o que JÁ existe e funciona
 
 Arquitetura de dois níveis, code-complete e **viva em produção**:
