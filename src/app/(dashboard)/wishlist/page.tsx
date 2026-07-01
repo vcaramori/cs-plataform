@@ -16,10 +16,10 @@ export default async function WishlistPage() {
 
   const { data: pendingSignals } = await db
     .from('wishlist_signals')
-    .select('id, account_id, source_type, verbatim, summary, kind, ai_confidence, requester_name, created_at, accounts(name)')
+    .select('id, account_id, source_type, verbatim, summary, kind, ai_confidence, requester_name, created_at, cluster_key, catalog_match, area, accounts(name)')
     .eq('triage_outcome', 'pending')
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(400)
 
   const { data: items } = await db
     .from('wishlist_items')

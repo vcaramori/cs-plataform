@@ -178,6 +178,63 @@ export async function promoteToExistingItem(signalId: string, itemId: string, ki
   revalidatePath(`/wishlist/${itemId}`)
 }
 
+// ── Triagem em LOTE por cluster (Fase 1 v2) ───────────────────────────────────
+/** Promove um cluster inteiro (grupo de sinais semelhantes) a UM item, somando a demanda. */
+export async function promoteClusterToItem(clusterKey: string, input: { title: string; kind: WishlistKind; matchedFeatureId?: string | null }) {
+  const { user } = await requireUser()
+  const { data: sigs } = await db()
+    .from('wishlist_signals').select('id, summary, verbatim')
+    .eq('cluster_key', clusterKey).eq('triage_outcome', 'pending')
+  const signals = (sigs ?? []) as any[]
+  if (signals.length === 0) throw new Error('Cluster sem sinais pendentes')
+  const rep = signals[0]
+
+  const { data: item, error } = await db().from('wishlist_items').insert({
+    title: input.title.trim() || rep.summary || String(rep.verbatim).slice(0, 120),
+    problem: rep.summary ?? rep.verbatim,
+    kind: input.kind,
+    status: 'under_curation',
+    matched_feature_id: input.matchedFeatureId ?? null,
+    created_by: user.id,
+    owner_id: user.id,
+  }).select('id').single()
+  if (error) throw new Error(error.message)
+
+  await db().from('wishlist_signals').update({
+    item_id: item.id,
+    triage_outcome: outcomeForKind(input.kind),
+    matched_feature_id: input.matchedFeatureId ?? null,
+    triaged_by: user.id,
+    triaged_at: new Date().toISOString(),
+  }).eq('cluster_key', clusterKey).eq('triage_outcome', 'pending')
+
+  await recomputeItemDemand(item.id)
+  await log({ item_id: item.id, actor_id: user.id, action: 'promote_cluster_item', to_status: 'under_curation', note: `${signals.length} sinal(is) do cluster` })
+  revalidatePath('/wishlist')
+  return item.id as string
+}
+
+/** Marca todo o cluster como "já existe" (liga à feature) — sem criar item. */
+export async function resolveClusterExisting(clusterKey: string, matchedFeatureId: string | null, note: string | null) {
+  const { user } = await requireUser()
+  await db().from('wishlist_signals').update({
+    triage_outcome: 'resolved_existing', matched_feature_id: matchedFeatureId,
+    triage_note: note, triaged_by: user.id, triaged_at: new Date().toISOString(),
+  }).eq('cluster_key', clusterKey).eq('triage_outcome', 'pending')
+  await log({ actor_id: user.id, action: 'resolve_cluster_existing', to_status: 'resolved_existing', note })
+  revalidatePath('/wishlist')
+}
+
+/** Descarta todo o cluster. */
+export async function dismissCluster(clusterKey: string, note: string | null) {
+  const { user } = await requireUser()
+  await db().from('wishlist_signals').update({
+    triage_outcome: 'dismissed', triage_note: note, triaged_by: user.id, triaged_at: new Date().toISOString(),
+  }).eq('cluster_key', clusterKey).eq('triage_outcome', 'pending')
+  await log({ actor_id: user.id, action: 'dismiss_cluster', to_status: 'dismissed', note })
+  revalidatePath('/wishlist')
+}
+
 // ── Curadoria do item ─────────────────────────────────────────────────────────
 export async function updateItem(itemId: string, patch: {
   title?: string; problem?: string; desired_outcome?: string; category?: string;
